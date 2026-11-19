@@ -67,6 +67,7 @@ async function submit(request: ReportSubmitRequest) {
                 WEB_CHANNELS.reportCopy,
                 request.expectedShowFileName ?? "",
                 !!request.includeAudio,
+                !!request.includeAssets,
             );
             if (!bytes)
                 throw new ReportSubmitError(

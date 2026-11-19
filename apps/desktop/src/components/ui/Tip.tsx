@@ -14,6 +14,12 @@ import type { ActionId } from "@/shortcuts/definitions";
 const InRichTips = createContext(false);
 
 /**
+ * How wide a control's tooltip grows before its text wraps: a name, its shortcut and one short
+ * line, never a sentence running across the field (owner, 2026-11-17)
+ */
+export const TIP_MAX_WIDTH = "max-w-[320px]";
+
+/**
  * What a {@link Tip} writes on its control for the app's long press (`LongPressGuard`), which
  * explains a control to a finger or pen: hover never reaches a tablet, so the long press shows
  * the tooltip's label, shortcut and hint line instead.
@@ -90,6 +96,7 @@ export function Tip({
             disabled={disabled}
             side={side}
             closeOnPress
+            className={TIP_MAX_WIDTH}
         >
             {control}
         </ShortcutTooltip>

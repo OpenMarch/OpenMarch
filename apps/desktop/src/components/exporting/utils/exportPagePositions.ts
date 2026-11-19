@@ -4,6 +4,7 @@ import {
     readTimelinePageSnapshot,
     sampleTimelinePagePositions,
 } from "@/timeline/timelinePagePositions";
+import { exportWalkedPaths, type ExportWalkedPaths } from "./exportWalkedPaths";
 
 /**
  * Page positions for the coordinate sheet and drill chart exports
@@ -80,6 +81,8 @@ export interface TimelineExportPositions {
     pageIds: readonly number[];
     /** Every marcher id the snapshot's resolver knows */
     marcherIds: readonly number[];
+    /** The same snapshot's walked paths between pages, for the drill charts (pathways step 18) */
+    walkedPaths?: ExportWalkedPaths;
 }
 
 /** The pages or marchers an export was started with differ from the snapshot it sampled. */
@@ -144,8 +147,15 @@ export async function readTimelineExportPositions(
         ),
         pageIds: snapshot.pages.map((page) => page.id),
         marcherIds: [...snapshot.resolver.marcherIds()],
+        walkedPaths:
+            snapshot.walks && exportWalkedPaths(snapshot.walks, snapshot.pages),
     };
 }
+
+/** An export's positions, with the walked paths between pages from the same snapshot. */
+export type ExportPositions = PagePositionMap & {
+    walkedPaths?: ExportWalkedPaths;
+};
 
 /**
  * The positions an export draws (P7.7): the resolver snapshot, after checking that `rendered`
@@ -161,8 +171,8 @@ export async function readExportPositions({
     db: DbConnection;
     rendered: Parameters<typeof assertExportMatchesSnapshot>[1];
     showChangedMessage?: string;
-}): Promise<PagePositionMap> {
+}): Promise<ExportPositions> {
     const timeline = await readTimelineExportPositions(db);
     assertExportMatchesSnapshot(timeline, rendered, showChangedMessage);
-    return timeline.positions;
+    return { ...timeline.positions, walkedPaths: timeline.walkedPaths };
 }

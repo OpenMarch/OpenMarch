@@ -2,7 +2,7 @@
 // Inverse SQL per row change, grouped per edit; undo replays a group in reverse sequence order; redo replays the
 // statements undo generated, also in reverse. Every call runs inside the §6 write wrapper and returns its change log.
 
-export const TRACKED = ['marchers', 'shapes', 'timelines', 'transitions', 'assignments', 'slot_destinations'];
+export const TRACKED = ['marchers', 'shapes', 'timelines', 'transitions', 'assignments', 'slot_destinations', 'routes', 'lanes'];   // v0.10: routes and lanes are undoable too
 
 const HISTORY_DDL = `
 CREATE TABLE history_undo (sequence INTEGER PRIMARY KEY, history_group INTEGER NOT NULL, sql TEXT NOT NULL);

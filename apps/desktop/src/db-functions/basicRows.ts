@@ -1,4 +1,4 @@
-import { asc, eq, inArray } from "drizzle-orm";
+import { asc, eq, inArray, sql } from "drizzle-orm";
 import { schema } from "@/global/database/db";
 import type { BasicRow } from "@/timeline/basicSimple";
 import type { DbConnection, DbTransaction } from "./types";
@@ -26,6 +26,10 @@ export async function readBasicRows(
             slotCount: t.slot_count,
             shapeId: t.dest_shape_id,
             pathStyle: t.path_style,
+            // v0.10: the row's slot walks a drawn path (a lane), whatever the style
+            laned: sql<boolean>`EXISTS (SELECT 1 FROM timeline_lanes l WHERE l.transition_id = ${a.transition_id} AND l.slot_index = ${a.slot_index})`.mapWith(
+                Boolean,
+            ),
         })
         .from(a)
         .innerJoin(t, eq(a.transition_id, t.id));

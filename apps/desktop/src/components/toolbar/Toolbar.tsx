@@ -3,6 +3,7 @@ import { useFieldLayerRef } from "@/components/canvas/fieldLayers";
 import { FileTab } from "./tabs/FileTab";
 import AlignmentTab from "./tabs/AlignmentTab";
 import ShapesTab from "@/shapes/tool/ShapesTab";
+import PathsTab from "@/pathways/PathsTab";
 import { useEffect, useRef, useState } from "react";
 import clsx from "clsx";
 import { createPortal } from "react-dom";
@@ -28,7 +29,7 @@ import { usePanelInsets } from "./touchPanelInsets";
 const touchTabRowClassName = "[&>div]:flex-wrap [&>div>*]:max-w-full";
 
 /**
- * The touch title bar row is a size container (`row`). Below 480 px all four tabs, the
+ * The touch title bar row is a size container (`row`). Below 480 px all the tabs, the
  * chevron and the row's end don't fit side by side, so the tabs get shorter (Alignment → Align,
  * smaller text, less padding) and the chevron goes: tapping a tab opens the panel, and tapping
  * the open tab closes it. On the iPad web build (no window buttons) the row is about 400 px at
@@ -87,6 +88,14 @@ function ToolbarTabsList({
             >
                 <T keyName="inspector.shape.shapesTab" />
             </TabItem>
+            {/* Pathways: how a marcher walks its move, apart from shapes */}
+            <TabItem
+                value="paths"
+                data-testid="toolbar-paths-tab"
+                {...props("paths")}
+            >
+                <T keyName="toolbar.pathsTab" defaultValue="Paths" />
+            </TabItem>
             <TabItem value="select" {...props("select")}>
                 <T keyName="inspector.shape.selectTab" />
             </TabItem>
@@ -107,6 +116,10 @@ function ToolbarTabContents({ className }: { className?: string }) {
 
             <TabContent value="shapes" className={className}>
                 <ShapesTab />
+            </TabContent>
+
+            <TabContent value="paths" className={className}>
+                <PathsTab />
             </TabContent>
 
             <TabContent value="select" className={className}>

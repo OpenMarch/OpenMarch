@@ -4,6 +4,7 @@
 import { makeOracle } from './oracle.mjs';
 import { makeResolver } from './resolver.mjs';
 import { arcPoint, destinationsOf } from './geom.mjs';   // subjects of the R-8 cross-check and the bit-exact arrival check only
+import { randArcRoute, randAdjust, hasArc, hasSmooth } from './arcroutes.mjs';   // route generation only (R-14″ worlds)
 
 const SEEDS = +(process.argv[2] ?? 300);
 function mulberry32(a) { return () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
@@ -49,6 +50,57 @@ function arcCentreForm(A, B, k, p) {             // the textbook centre/radius c
   return [C[0] + R * Math.cos(a), C[1] + R * Math.sin(a)];
 }
 
+// ---------- routes with corners and arc legs (R-14 cleaning, R-14″), written from the spec ----------
+// Smooth points are not modelled: these checks run only on routes with none. Arc lengths come from the centre form
+// (2·φ·R), not R-14″'s r·θ formula; a bulge under 1e-7 is taken as its chord, within 2·|bulge|·chord.
+const EPSG = 1e-9, TINY = 1e-7;
+function cleanLegs(A, pts, B, toBulge) {
+  const V = [A], K = [null];
+  for (const q of pts) if (d2(V[V.length - 1], q.at) >= EPSG) { V.push(q.at); K.push(q.bulge ?? null); }
+  let dropped = false, into = null;                        // inner points on B go; the leg into B keeps the first one's bulge
+  while (V.length > 1 && d2(V[V.length - 1], B) < EPSG) { V.pop(); into = K.pop(); dropped = true; }
+  V.push(B); K.push(dropped ? into : (toBulge ?? null));
+  const legs = [];
+  for (let j = 0; j + 1 < V.length; j++) {
+    const P = V[j], Q = V[j + 1], k = K[j + 1], c = d2(P, Q);
+    if (k === null || c === 0 || Math.abs(k) < TINY) { legs.push({ P, Q, k: null, len: c, slack: k ? 2 * Math.abs(k) * c : 0 }); continue; }
+    const sg = Math.abs(k) * c, Rr = (c * c / 4 + sg * sg) / (2 * sg), phi = Math.atan2(c / 2, Rr - sg);
+    legs.push({ P, Q, k, len: 2 * phi * Rr, slack: 0 });
+  }
+  const D = [0]; legs.forEach((l) => D.push(D[D.length - 1] + l.len));
+  return { V, legs, D, L: D[D.length - 1], slack: legs.reduce((a, l) => a + l.slack, 0) };
+}
+const legAt = (l, f) => (l.k === null ? [l.P[0] + (l.Q[0] - l.P[0]) * f, l.P[1] + (l.Q[1] - l.P[1]) * f] : arcCentreForm(l.P, l.Q, l.k, f));
+function walkAtDist(W, d) {
+  let j = 0; while (j < W.legs.length - 1 && !(d < W.D[j + 1])) j++;
+  const l = W.legs[j]; return legAt(l, l.len > 0 ? Math.min(1, Math.max(0, (d - W.D[j]) / l.len)) : 0);
+}
+/** R-14 own path: A to B through the route, at one speed; one leg alone is R-7 or R-8 by progress. */
+function ownWalkAt(A, g, B, p) {
+  const W = cleanLegs(A, g.points, B, g.toBulge);
+  if (p <= 0) return { at: A, slack: 0 }; if (p >= 1) return { at: B, slack: 0 };
+  if (W.legs.length === 1) return { at: legAt(W.legs[0], p), slack: W.slack };
+  return { at: walkAtDist(W, p * W.L), slack: W.slack };
+}
+/** R-14 group schedule with no Adjust: own first leg to W_1 + o, W + o between the moments, own last leg; arc legs stay arcs. */
+function groupWalkAt(A, g, B, o, p) {
+  const W = cleanLegs(g.from, g.points, g.to, g.toBulge), m = W.V.length - 2;
+  if (p <= 0) return { at: A, slack: 0 }; if (p >= 1) return { at: B, slack: 0 };
+  const add = (q) => [q[0] + o[0], q[1] + o[1]];
+  if (m < 1) return { at: legAt({ ...W.legs[0], P: A, Q: B }, p), slack: W.slack + (W.legs[0].k === null ? 0 : 0) };
+  const uF = W.D[1] / W.L, uL = W.D[m] / W.L;
+  if (p < uF) return { at: legAt({ ...W.legs[0], P: A, Q: add(W.V[1]) }, p / uF), slack: W.slack };
+  if (p <= uL) return { at: add(walkAtDist(W, p * W.L)), slack: W.slack };
+  return { at: legAt({ ...W.legs[m], P: add(W.V[m]), Q: B }, (p - uL) / (1 - uL)), slack: W.slack };
+}
+/** Distance from p to one leg: its segment, or its circle (the centre form). */
+function distToLeg(p, l) {
+  if (l.k === null) return Math.max(0, distToSeg(p, l.P, l.Q) - l.slack);
+  const c = d2(l.P, l.Q), sg = l.k * c, Rr = (c * c / 4 + sg * sg) / (2 * Math.abs(sg)), M = [(l.P[0] + l.Q[0]) / 2, (l.P[1] + l.Q[1]) / 2];
+  const n = [-(l.Q[1] - l.P[1]) / c, (l.Q[0] - l.P[0]) / c], off = sg - Math.sign(sg) * Rr, C = [M[0] + off * n[0], M[1] + off * n[1]];
+  return Math.abs(d2(p, C) - Rr);
+}
+
 // ---------- world generator (normal and boundary-valued) ----------
 function makeWorld(seed, boundary) {
   const R = mulberry32(seed * 104729 + (boundary ? 1 : 0));
@@ -90,7 +142,39 @@ function makeWorld(seed, boundary) {
     const r = { id: rid, marcher: pick(db.marchers).id, transition: t.id, slot: ri(0, t.slots - 1), start: s, end: e, layer: pick([0, 0, 0, 1, 2]) };
     if (ok(r)) { db.assignments.push(r); rid++; }
   }
-  return { db, S, R };
+  return { db, S, R, pt, c, ri, pick };
+}
+
+// Route worlds (R-14′ lanes, R-9′ trails, R-14″ arc legs) on their own seeds, so the other modes are unchanged. Half of them
+// have no smooth point anywhere, so every route is checked against the independent walk above and P-13 applies.
+function routeWorld(seed, boundary) {
+  const w = makeWorld(seed + 7777777, boundary), { db, S, R, pt, c, ri, pick } = w;
+  const smoothShare = R() < 0.5 ? 0 : 0.35;
+  db.routes = {}; db.lanes = {};
+  let nr = 1, nl = 1;
+  const route = (o) => { db.routes[nr] = { geometry: randArcRoute(R, { pt, n: ri(0, 5), smoothShare, scale: S, ...o }) }; return nr++; };
+  for (const t of Object.values(db.transitions)) {
+    const dests = destinationsOf(t, db.shapes);
+    if (t.style === 'follow_the_leader') { if (R() < 0.6) t.route = route({ targets: [exactSamples(db.shapes[t.dest], 1)[0]] }); continue; }
+    if (R() < 0.3) continue;
+    if (R() < 0.5) {
+      const F = pt(), G = pt(), rid = route({ targets: [F, G], from: F, to: G });
+      for (let k = 0; k < t.slots; k++) if (R() < 0.8) {
+        db.lanes[nl++] = { transition: t.id, slot: k, route: rid, offset: R() < 0.15 ? [0, 0] : [c() / 10, c() / 10],
+                           ...(R() < 0.35 ? { adjust: randAdjust(R, db.routes[rid].geometry, S / 20) } : {}) };
+      }
+    } else for (let k = 0; k < t.slots; k++) if (R() < 0.75) db.lanes[nl++] = { transition: t.id, slot: k, route: route({ targets: [dests[k]] }), offset: null };
+  }
+  return w;
+}
+/** β over the routes: every route point (and its placed copy on each lane), plus the largest Adjust displacement. */
+function routeBeta(db) {
+  let b = 0, dmax = 0; const see = (q) => (b = Math.max(b, Math.hypot(q[0], q[1])));
+  const offs = (rid) => [[0, 0], ...Object.values(db.lanes ?? {}).filter((l) => l.route === +rid && l.offset).map((l) => l.offset)];
+  for (const [rid, r] of Object.entries(db.routes ?? {})) for (const o of offs(rid))
+    for (const q of [r.geometry.from, r.geometry.to, ...r.geometry.points.map((x) => x.at)]) see([q[0] + o[0], q[1] + o[1]]);
+  for (const l of Object.values(db.lanes ?? {})) for (const k of l.adjust?.keys ?? []) dmax = Math.max(dmax, Math.hypot(k.d[0], k.d[1]));
+  return b + dmax;
 }
 
 // Adversarial chain: repeated partial minor arcs at |bulge| = 1/2, each exit aimed away from the next target.
@@ -132,12 +216,18 @@ const pass = (prop) => { counts[prop + ' checked'] = (counts[prop + ' checked'] 
 const finite = (p) => Number.isFinite(p[0]) && Number.isFinite(p[1]);
 const fmt = (p) => `(${p.map((v) => +v.toPrecision(10)).join(', ')})`;
 
-for (let seed = 1; seed <= SEEDS; seed++) for (const mode of ['normal', 'boundary', 'chain']) {
+const laneOf = (db, tid, slot) => Object.values(db.lanes ?? {}).find((l) => l.transition === tid && l.slot === slot);
+const routeTally = { worlds: 0, arcRoutes: 0 };
+for (let seed = 1; seed <= SEEDS; seed++) for (const mode of ['normal', 'boundary', 'chain', 'route']) {
   if (mode === 'chain' && seed % 10) continue;                       // one adversarial chain per 10 seeds
-  const boundary = mode !== 'normal';
-  const { db, S, R } = mode === 'chain' ? chainWorld(seed) : makeWorld(seed, boundary);
-  const beta = betaOf(db);
-  const A = db.marchers.reduce((a, m) => a + o0(db).spans(m.id).filter((s) => s.row && db.transitions[s.row.transition].style === 'arc').length, 0);   // arc spans in the show
+  const boundary = mode === 'boundary' || mode === 'chain' || (mode === 'route' && seed % 2 === 0);   // route worlds alternate
+  const { db, S, R } = mode === 'chain' ? chainWorld(seed) : mode === 'route' ? routeWorld(seed, boundary) : makeWorld(seed, boundary);
+  if (mode === 'route') { routeTally.worlds++; routeTally.arcRoutes += Object.values(db.routes).filter((r) => hasArc(r.geometry)).length; }
+  const smoothRoutes = Object.values(db.routes ?? {}).some((r) => hasSmooth(r.geometry));
+  const beta = Math.max(betaOf(db), routeBeta(db));
+  // arc spans in the show; every founding span on a route (a lane's or a trail's) counts as one too (§8.11)
+  const onRoute = (o, s) => { const t = db.transitions[s.row.transition]; return o.kind(s) === 'founding' && (t.style === 'follow_the_leader' ? t.route != null : !!laneOf(db, t.id, s.row.slot)); };
+  const A = db.marchers.reduce((a, m) => { const o = o0(db); return a + o.spans(m.id).filter((s) => s.row && (db.transitions[s.row.transition].style === 'arc' || onRoute(o, s))).length; }, 0);
   const eps = 1e-9 * Math.max(1, S) + 1e-12;
   const o = makeOracle(db), res = makeResolver(db);
   const F = (p, why) => fail(p, seed, boundary, why);
@@ -150,7 +240,8 @@ for (let seed = 1; seed <= SEEDS; seed++) for (const mode of ['normal', 'boundar
         const b2 = Math.min(b, s.end === Infinity ? b : s.end);
         const x = o.evalSpan(s, b2);
         if (!finite(x)) F('P-11 finite', `M${m.id} span@${s.start} b=${b2} -> ${x}`); else pass('P-11 finite');
-        if (!(Math.hypot(x[0], x[1]) <= beta * Math.sqrt(1 + A) * (1 + 1e-12) + 1e-9)) F('P-13 derived range', `M${m.id}@${b2}: |P| = ${Math.hypot(x[0], x[1]).toExponential(3)} > β√(1+a) = ${(beta * Math.sqrt(1 + A)).toExponential(3)}`); else pass('P-13 derived range');
+        if (smoothRoutes) {}                                         // a smooth route's cubic can overshoot its points: no bound here
+        else if (!(Math.hypot(x[0], x[1]) <= beta * Math.sqrt(1 + A) * (1 + 1e-12) + 1e-9)) F('P-13 derived range', `M${m.id}@${b2}: |P| = ${Math.hypot(x[0], x[1]).toExponential(3)} > β√(1+a) = ${(beta * Math.sqrt(1 + A)).toExponential(3)}`); else pass('P-13 derived range');
         const y = res.positionAt(m.id, b2 === s.end ? b2 - 0 : b2);
         const z = o.positionAt(m.id, b2);
         if (!(d2(y, z) <= eps)) F('resolver = oracle', `M${m.id}@${b2}: ${fmt(y)} vs ${fmt(z)}`); else pass('resolver = oracle');
@@ -183,8 +274,35 @@ for (let seed = 1; seed <= SEEDS; seed++) for (const mode of ['normal', 'boundar
         const exact = own[idx];
         if (!(got[0] === exact[0] && got[1] === exact[1])) F('P-7 bit-exact arrival', `M${m.id} T${t.id} (${t.style}): ${fmt(got)} vs ${fmt(exact)}`); else pass('P-7 bit-exact arrival');
       }
-      // P-6 trail adherence during founding FTL spans
-      if (s.row && db.transitions[s.row.transition].style === 'follow_the_leader' && s.start === db.transitions[s.row.transition].start) {
+      // P-14 (R-14, R-14″): a founding span on a lane's route of corners and arc legs walks it as the spec's walk, written above
+      const lane = s.row && laneOf(db, s.row.transition, s.row.slot), lt = s.row && db.transitions[s.row.transition];
+      if (lane && lt.style !== 'follow_the_leader' && o.kind(s) === 'founding') {
+        const g = db.routes[lane.route].geometry, Aorig = o.evalSpan(s, s.start), Bdst = destinationsOf(lt, db.shapes)[s.row.slot];
+        if (!hasSmooth(g) && !(lane.offset && lane.adjust?.keys?.length)) {
+          const kind = lane.offset ? 'group' : 'own';
+          for (const f of [0.03, 0.2, 0.37, 0.5, 0.61, 0.8, 0.97, R()]) {
+            const b = s.start + f * (s.end - s.start), pr = (b - lt.start) / (lt.end - lt.start);
+            const want = lane.offset ? groupWalkAt(Aorig, g, Bdst, lane.offset, pr) : ownWalkAt(Aorig, g, Bdst, pr), got = o.evalSpan(s, b);
+            const tag = `P-14 ${kind} route${hasArc(g) ? ' with arcs' : ''}`;
+            if (!(d2(got, want.at) <= 10 * eps + want.slack)) F(tag, `M${m.id} T${lt.id}@${b}: ${fmt(got)} vs ${fmt(want.at)} (${JSON.stringify(g).slice(0, 160)})`); else pass(tag);
+          }
+        }
+      }
+      // P-6 trail adherence during founding FTL spans; with a trail route, on the line-up, the route's legs or the shape
+      const ftlT = s.row && db.transitions[s.row.transition];
+      if (ftlT && ftlT.style === 'follow_the_leader' && ftlT.route != null && s.start === ftlT.start) {
+        const g = db.routes[ftlT.route].geometry;
+        if (!hasSmooth(g)) {
+          const e = o.ftlEntry(ftlT.id), origins = e.members.map((mm) => o.evalSpan(o.spans(mm).find((x) => x.row && x.row.transition === ftlT.id && x.start === ftlT.start), ftlT.start));
+          const W = cleanLegs(origins[origins.length - 1], g.points, exactSamples(db.shapes[ftlT.dest], 1)[0], g.toBulge);
+          const tag = `P-6 trail route${hasArc(g) ? ' with arcs' : ''}`;
+          for (const f of [0, 0.2, 0.4, 0.5, 0.6, 0.8, 1, R()]) {
+            const b = s.start + f * (s.end - s.start), p = o.evalSpan(s, b);
+            const dist = Math.min(distToShape(p, db.shapes[ftlT.dest]), distToPoly(p, origins), ...W.legs.map((l) => distToLeg(p, l)));
+            if (!(dist <= 10 * eps)) F(tag, `M${m.id} T${ftlT.id}@${b}: ${dist.toExponential(2)} off the trail`); else pass(tag);
+          }
+        }
+      } else if (s.row && db.transitions[s.row.transition].style === 'follow_the_leader' && s.start === db.transitions[s.row.transition].start) {
         const t = db.transitions[s.row.transition], e = o.ftlEntry(t.id);
         const pre = [...e.members.map((mm) => o.evalSpan(o.spans(mm).find((x) => x.row && x.row.transition === t.id && x.start === t.start), t.start)),
                      ...(t.params?.waypoints ?? [])];
@@ -250,6 +368,6 @@ for (let seed = 1; seed <= SEEDS; seed++) for (const mode of ['normal', 'boundar
   }
 }
 
-console.log(JSON.stringify({ seeds: SEEDS, modes: ['normal', 'boundary', 'chain'], counts, failures }, null, 1));
+console.log(JSON.stringify({ seeds: SEEDS, modes: ['normal', 'boundary', 'chain', 'route'], routeWorlds: routeTally, counts, failures }, null, 1));
 console.log(`${Object.entries(counts).filter(([k]) => k.endsWith('checked')).reduce((a, [, v]) => a + v, 0)} property checks, ${failures.length} failures`);
 if (failures.length) process.exitCode = 1;

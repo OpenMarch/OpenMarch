@@ -8,7 +8,13 @@ import { create } from "zustand";
  *
  * The mouse layout doesn't use this: its toolbar always shows and opens on Alignment.
  */
-export const TOOLBAR_TABS = ["file", "alignment", "shapes", "select"] as const;
+export const TOOLBAR_TABS = [
+    "file",
+    "alignment",
+    "shapes",
+    "paths",
+    "select",
+] as const;
 export type ToolbarTab = (typeof TOOLBAR_TABS)[number];
 
 export const TOOLBAR_PANEL_STORAGE_KEY = "openmarch:toolbarPanel";

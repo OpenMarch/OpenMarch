@@ -13,7 +13,11 @@ import { renameTimeline } from "@/db-functions/timelineCommands";
 import { readStoredTimelineMemberships } from "@/timeline/useTimelineSelectionHost";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import { pageFlags } from "@/timeline/timelinePlayhead";
-import { createMoveCommands, moveAtPlayhead } from "../useTimelineCommands";
+import {
+    createMoveCommands,
+    moveAtPlayhead,
+    splitAtPlayheadBlocker,
+} from "../useTimelineCommands";
 
 /**
  * UI-14 review: a move's commands on a real database. A repeated Delete deletes once and says
@@ -277,5 +281,38 @@ describeDbTests("a move's commands (UI-14 review)", (it) => {
             playheadBeat: 13,
         } as unknown as Parameters<typeof moveAtPlayhead>[0];
         expect(moveAtPlayhead(state)).toMatchObject({ id: 2 });
+    });
+    it("⌘K's and the field menu's Split at playhead is available exactly when it would split (#792 review)", () => {
+        const move = {
+            id: 2,
+            start: 10,
+            end: 16,
+            marcherIds: new Set<number>(),
+        };
+        const at = (playheadBeat: number, trail = false) =>
+            ({
+                selection: { kind: "none" },
+                storedTimelines: [{ ...move, trail }],
+                isolation: null,
+                pageBoxes: [
+                    { start: 1, end: 9, label: "1" },
+                    { start: 9, end: 17, label: "2" },
+                ],
+                playheadBeat,
+            }) as unknown as Parameters<typeof moveAtPlayhead>[0];
+        // Strictly inside a plain move: available
+        expect(splitAtPlayheadBlocker(at(13), false)).toBeNull();
+        // On the move's end, or its start: not available, with the reason the action would give
+        for (const beat of [16, 10]) {
+            const reason = splitAtPlayheadBlocker(at(beat), false);
+            expect(reason).toEqual(expect.any(String));
+            expect(reason).toBe(moveAtPlayhead(at(beat)));
+        }
+        // Inside a move whose line follows a trail: the trail's reason
+        expect(splitAtPlayheadBlocker(at(13, true), false)).toMatch(
+            /follows a trail/,
+        );
+        // Playing: the pause reason
+        expect(splitAtPlayheadBlocker(at(13), true)).toMatch(/^Pause/);
     });
 });

@@ -1,0 +1,1051 @@
+<!-- cspell:disable -->
+<!doctype html>
+<html>
+    <head>
+        <meta charset="utf-8" />
+        <style>
+            :root {
+                --background: #0b0b0d;
+                --foreground: #ececf1;
+                --muted-foreground: #9a9aa5;
+                --card: #141417;
+                --secondary: #26262b;
+                --border: #2e2e35;
+                --primary: #7aa2ff;
+                --primary-foreground: #0b0b0d;
+                --warning: #f5a524;
+                --destructive: #f05252;
+                --chart-1: #5b8cff;
+                --chart-2: #34d399;
+                --chart-3: #c084fc;
+                --chart-4: #f472b6;
+                --radius: 10px;
+                --font-sans: system-ui, sans-serif;
+            }
+            body {
+                background: var(--background);
+                color: var(--foreground);
+                font-family: var(--font-sans);
+                max-width: 760px;
+                margin: 16px auto !important;
+                padding: 0 12px;
+            }
+        </style>
+        <style>
+            :root {
+                --route: var(--chart-1);
+                --pin: var(--warning);
+                --bad: var(--destructive);
+                --steal: var(--chart-4);
+                --resume: var(--chart-2);
+            }
+            body {
+                margin: 0;
+            }
+            .q {
+                border: 1px solid var(--border);
+                border-radius: var(--radius);
+                padding: 16px;
+                margin: 0 0 18px;
+                background: var(--card);
+            }
+            .q h2 {
+                font-size: 16px;
+                margin: 0 0 6px;
+            }
+            .q h2 .n {
+                color: var(--muted-foreground);
+                font-weight: 500;
+                margin-right: 6px;
+            }
+            .unc {
+                font-size: 13px;
+                color: var(--muted-foreground);
+                margin: 0 0 12px;
+                line-height: 1.45;
+            }
+            .unc b {
+                color: var(--foreground);
+                font-weight: 600;
+            }
+            .opts {
+                display: grid;
+                grid-template-columns: repeat(3, 1fr);
+                gap: 10px;
+            }
+            .opt {
+                border: 1px solid var(--border);
+                border-radius: calc(var(--radius) - 2px);
+                padding: 8px;
+                background: var(--background);
+            }
+            .opt .lbl {
+                font-size: 13px;
+                font-weight: 600;
+                margin: 6px 0 2px;
+            }
+            .opt .lbl .k {
+                display: inline-block;
+                width: 18px;
+                height: 18px;
+                line-height: 18px;
+                text-align: center;
+                border-radius: 4px;
+                background: var(--secondary);
+                margin-right: 4px;
+                font-size: 11px;
+            }
+            .opt .d {
+                font-size: 12px;
+                color: var(--muted-foreground);
+                line-height: 1.4;
+            }
+            .opt svg {
+                width: 100%;
+                height: auto;
+                display: block;
+            }
+            .lean {
+                margin-top: 10px;
+                font-size: 12.5px;
+                line-height: 1.45;
+            }
+            .lean b {
+                color: var(--primary);
+            }
+            .legend {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 14px;
+                font-size: 12px;
+                color: var(--muted-foreground);
+                margin: 0 0 14px;
+            }
+            .legend span::before {
+                content: "";
+                display: inline-block;
+                width: 14px;
+                height: 3px;
+                vertical-align: middle;
+                margin-right: 5px;
+                background: var(--c);
+                border-radius: 2px;
+            }
+        </style>
+    </head>
+    <body>
+        <div class="legend">
+            <span style="--c: var(--route)">route</span>
+            <span style="--c: var(--pin)">pinned to a count</span>
+            <span style="--c: var(--foreground)"
+                >dot = where the marcher is on each count</span
+            >
+            <span style="--c: var(--bad)">problem</span>
+            <span style="--c: var(--steal)">higher layer takes over</span>
+            <span style="--c: var(--resume)">after it lets go</span>
+        </div>
+        <div id="root"></div>
+
+        <script>
+            const NS = "http://www.w3.org/2000/svg";
+            function el(tag, attrs, parent, text) {
+                const e = document.createElementNS(NS, tag);
+                for (const [k, v] of Object.entries(attrs || {}))
+                    e.setAttribute(k, v);
+                if (text != null) e.textContent = text;
+                if (parent) parent.appendChild(e);
+                return e;
+            }
+            function mk(h = 170) {
+                const s = el("svg", { viewBox: `0 0 240 ${h}` });
+                const g = el(
+                    "g",
+                    { style: "stroke: var(--border); stroke-width: 0.6" },
+                    s,
+                );
+                for (let x = 0; x <= 240; x += 20)
+                    el("line", { x1: x, y1: 0, x2: x, y2: h }, g);
+                for (let y = 0; y <= h; y += 20)
+                    el("line", { x1: 0, y1: y, x2: 240, y2: y }, g);
+                return s;
+            }
+            const P = (pts) => pts.map((p) => p.join(",")).join(" ");
+            function line(s, pts, color, o = {}) {
+                el(
+                    "polyline",
+                    {
+                        points: P(pts),
+                        style: `fill:none; stroke:var(${color}); stroke-width:${o.w || 2.2}; stroke-linejoin:round; stroke-linecap:round;${o.dash ? " stroke-dasharray:" + o.dash + ";" : ""}${o.op ? " opacity:" + o.op + ";" : ""}`,
+                    },
+                    s,
+                );
+            }
+            function text(s, x, y, t, o = {}) {
+                el(
+                    "text",
+                    {
+                        x,
+                        y,
+                        "text-anchor": o.a || "start",
+                        style: `font: ${o.size || 9.5}px var(--font-sans); fill: var(${o.c || "--muted-foreground"}); ${o.bold ? "font-weight:600;" : ""}`,
+                    },
+                    s,
+                    t,
+                );
+            }
+            function diamond(s, x, y, color = "--pin", r = 5) {
+                el(
+                    "polygon",
+                    {
+                        points: P([
+                            [x, y - r],
+                            [x + r, y],
+                            [x, y + r],
+                            [x - r, y],
+                        ]),
+                        style: `fill: var(${color}); stroke: var(--background); stroke-width: 1`,
+                    },
+                    s,
+                );
+            }
+            function dist(a, b) {
+                return Math.hypot(a[0] - b[0], a[1] - b[1]);
+            }
+            function pointAt(pts, f) {
+                const L = [];
+                let tot = 0;
+                for (let i = 1; i < pts.length; i++) {
+                    const d = dist(pts[i - 1], pts[i]);
+                    L.push(d);
+                    tot += d;
+                }
+                let t = f * tot;
+                for (let i = 0; i < L.length; i++) {
+                    if (t <= L[i] || i === L.length - 1) {
+                        const u = L[i] ? Math.min(1, t / L[i]) : 0;
+                        return [
+                            pts[i][0] + (pts[i + 1][0] - pts[i][0]) * u,
+                            pts[i][1] + (pts[i + 1][1] - pts[i][1]) * u,
+                        ];
+                    }
+                    t -= L[i];
+                }
+            }
+            // positions on each count. pins[i] = count for verts[i] or null. first/last always pinned.
+            function positions(verts, pins, total) {
+                pins = pins.slice();
+                pins[0] = 0;
+                pins[pins.length - 1] = total;
+                const idx = pins
+                    .map((c, i) => (c == null ? null : i))
+                    .filter((i) => i != null);
+                const out = [];
+                for (let k = 0; k < idx.length - 1; k++) {
+                    const a = idx[k],
+                        b = idx[k + 1],
+                        ca = pins[a],
+                        cb = pins[b];
+                    const sub = verts.slice(a, b + 1);
+                    for (let c = ca; c < cb; c++)
+                        out.push(pointAt(sub, (c - ca) / (cb - ca)));
+                }
+                out.push(verts[verts.length - 1]);
+                return out;
+            }
+            function dots(s, pts, o = {}) {
+                pts.forEach((p, i) => {
+                    const big = o.max && i > 0 && dist(p, pts[i - 1]) > o.max;
+                    el(
+                        "circle",
+                        {
+                            cx: p[0],
+                            cy: p[1],
+                            r: o.r || 2.6,
+                            style: `fill: var(${big ? "--bad" : o.c || "--foreground"})`,
+                        },
+                        s,
+                    );
+                });
+            }
+            function bar(s, y, total, pins, o = {}) {
+                const x0 = 16,
+                    w = 208;
+                el(
+                    "rect",
+                    {
+                        x: x0,
+                        y,
+                        width: w,
+                        height: 12,
+                        rx: 3,
+                        style: "fill: var(--secondary); stroke: var(--border)",
+                    },
+                    s,
+                );
+                for (let c = 0; c <= total; c++)
+                    el(
+                        "line",
+                        {
+                            x1: x0 + (w * c) / total,
+                            y1: y + 8,
+                            x2: x0 + (w * c) / total,
+                            y2: y + 12,
+                            style: "stroke: var(--muted-foreground); stroke-width: 0.8",
+                        },
+                        s,
+                    );
+                pins.forEach((c) =>
+                    diamond(s, x0 + (w * c) / total, y + 6, "--pin", 4.5),
+                );
+                text(s, x0, y + 24, "count 0", { size: 8.5 });
+                text(s, x0 + w, y + 24, `count ${total}`, {
+                    size: 8.5,
+                    a: "end",
+                });
+                if (o.label)
+                    text(s, 120, y + 24, o.label, { size: 8.5, a: "middle" });
+            }
+
+            const Q = [];
+
+            /* ---------- Q1: resizing a move with pinned corners ---------- */
+            (() => {
+                const V = [
+                    [40, 120],
+                    [40, 30],
+                    [210, 30],
+                ];
+                const mkOpt = (corner, total, note) => {
+                    const s = mk(170);
+                    line(s, V, "--route");
+                    dots(s, positions(V, [0, corner, total], total));
+                    diamond(s, 40, 30);
+                    text(s, 48, 46, `corner on count ${corner}`, {
+                        c: "--foreground",
+                    });
+                    text(s, 46, 124, "start");
+                    text(s, 210, 46, "end", { a: "end" });
+                    bar(s, 136, total, [corner], { label: note });
+                    return s;
+                };
+                Q.push({
+                    t: "When a move gets longer or shorter, what happens to its pinned corners?",
+                    u: "An 8-count move turns its corner <b>on count 4</b>. You drag its end out to <b>12 counts</b>. Should the corner stay on count 4, or move? (Dragging the start works the same way, measured from the end.) Also unresolved: if the move gets <b>shorter</b> than a pin, is the drag refused, or is that pin dropped?",
+                    o: [
+                        {
+                            k: "A",
+                            l: "Pins keep their counts",
+                            d: "The corner stays 4 counts from the edge you didn't drag. The second leg gets the extra counts, so its steps get smaller.",
+                            s: mkOpt(4, 12, "4 up · 8 across"),
+                        },
+                        {
+                            k: "B",
+                            l: "Pins scale with the move",
+                            d: "Every pin keeps the same fraction of the move: 4 of 8 becomes 6 of 12. Pins round to whole counts.",
+                            s: mkOpt(6, 12, "6 up · 6 across"),
+                        },
+                        {
+                            k: "C",
+                            l: "Keep by default, a modifier scales",
+                            d: "A plain drag behaves like A. A held key (Alt, like time-stretching audio in a DAW) behaves like B.",
+                            s: (() => {
+                                const s = mkOpt(4, 12, "plain drag");
+                                diamond(s, 40 + 0, 30, "--pin");
+                                const p = positions(V, [0, 6, 12], 12);
+                                p.forEach((q) =>
+                                    el(
+                                        "circle",
+                                        {
+                                            cx: q[0],
+                                            cy: q[1],
+                                            r: 4,
+                                            style: "fill:none; stroke: var(--muted-foreground); stroke-dasharray: 1.5 1.5",
+                                        },
+                                        s,
+                                    ),
+                                );
+                                text(s, 228, 112, "dashed = Alt-drag", {
+                                    a: "end",
+                                });
+                                return s;
+                            })(),
+                        },
+                    ],
+                    lean: "<b>My lean: C.</b> Count-defined corners are the reason to pin, so a plain drag shouldn't move them. Shrinking past a pin refuses the drag, which matches how drags already stop at other moves.",
+                });
+            })();
+
+            /* ---------- Q2: move's end position changes ---------- */
+            (() => {
+                const S = [30, 130],
+                    v1 = [30, 70],
+                    v2 = [110, 70],
+                    E = [110, 120],
+                    E2 = [175, 125];
+                const ghost = (s) => {
+                    line(s, [S, v1, v2, E], "--muted-foreground", {
+                        w: 1.4,
+                        dash: "3 3",
+                        op: 0.8,
+                    });
+                    el(
+                        "circle",
+                        {
+                            cx: E[0],
+                            cy: E[1],
+                            r: 3.5,
+                            style: "fill:none; stroke: var(--muted-foreground)",
+                        },
+                        s,
+                    );
+                };
+                const mark = (s, r) => {
+                    r.slice(1, -1).forEach((p) =>
+                        el(
+                            "circle",
+                            {
+                                cx: p[0],
+                                cy: p[1],
+                                r: 3.2,
+                                style: "fill: var(--background); stroke: var(--route); stroke-width: 1.6",
+                            },
+                            s,
+                        ),
+                    );
+                    el(
+                        "circle",
+                        {
+                            cx: E2[0],
+                            cy: E2[1],
+                            r: 4,
+                            style: "fill: var(--route)",
+                        },
+                        s,
+                    );
+                    text(s, E2[0], E2[1] + 16, "new end", {
+                        a: "middle",
+                        c: "--foreground",
+                    });
+                    text(s, E[0], E[1] + 16, "old end", { a: "middle" });
+                    text(s, S[0] + 6, S[1] + 3, "start");
+                };
+                // similarity transform mapping S->E onto S->E2
+                const sim = (p) => {
+                    const ax = E[0] - S[0],
+                        ay = E[1] - S[1],
+                        bx = E2[0] - S[0],
+                        by = E2[1] - S[1];
+                    const den = ax * ax + ay * ay,
+                        a = (ax * bx + ay * by) / den,
+                        b = (ax * by - ay * bx) / den;
+                    const x = p[0] - S[0],
+                        y = p[1] - S[1];
+                    return [S[0] + a * x - b * y, S[1] + b * x + a * y];
+                };
+                const A = (() => {
+                    const s = mk();
+                    ghost(s);
+                    const r = [S, v1, v2, E2];
+                    line(s, r, "--route");
+                    line(s, [v2, E2], "--bad", { w: 2.4 });
+                    mark(s, r);
+                    text(s, 230, 80, "last leg bends", {
+                        a: "end",
+                        c: "--bad",
+                    });
+                    return s;
+                })();
+                const B = (() => {
+                    const s = mk();
+                    ghost(s);
+                    const r = [S, sim(v1), sim(v2), E2];
+                    line(s, r, "--route");
+                    mark(s, r);
+                    text(s, 120, 158, "whole route turns and stretches", {
+                        a: "middle",
+                    });
+                    return s;
+                })();
+                const C = (() => {
+                    const s = mk();
+                    ghost(s);
+                    const dx = E2[0] - E[0];
+                    const r = [S, v1, [v2[0] + dx, v2[1]], E2];
+                    line(s, r, "--route");
+                    mark(s, r);
+                    text(s, 34, 60, "follows start", { size: 8.5 });
+                    text(s, 225, 60, "follows end", { a: "end", size: 8.5 });
+                    return s;
+                })();
+                Q.push({
+                    t: "When a move's end position changes, what does its route do?",
+                    u: "The end can move without anyone touching the route: a shape edit, a keyframe dragged on the next page, a split move. The route's middle points have to be stored <b>relative to something</b>. What should they be relative to?",
+                    o: [
+                        {
+                            k: "A",
+                            l: "Points stay on the field",
+                            d: "Absolute coordinates, like FTL waypoints today. A route drawn around an obstacle still avoids it, but the leg into the moved end bends.",
+                            s: A,
+                        },
+                        {
+                            k: "B",
+                            l: "Route moves with start and end",
+                            d: "Points are stored relative to the start–end line. The route keeps its shape but turns and stretches, so block-letter corners stop being square.",
+                            s: B,
+                        },
+                        {
+                            k: "C",
+                            l: "Each point follows the nearer end",
+                            d: "Points in the first half move with the start, points in the second half with the end. Corners stay square and only the middle stretches.",
+                            s: C,
+                        },
+                    ],
+                    lean: "<b>My lean: A for stored data, with a warning.</b> The route is the design and is usually drawn to fit the field. When an endpoint moves, the route is flagged as changed, and B or C becomes a one-click fix rather than something that happens silently.",
+                });
+            })();
+
+            /* ---------- Q3: group pathways vs one marcher ---------- */
+            (() => {
+                const trail = [
+                    [20, 140],
+                    [20, 50],
+                    [130, 50],
+                    [130, 110],
+                    [220, 110],
+                ];
+                const ms = [0.15, 0.32, 0.5, 0.68];
+                const base = (s, o = {}) => {
+                    line(s, trail, "--route", o);
+                    ms.forEach((f, i) => {
+                        const p = pointAt(trail, f);
+                        if (i !== 2 || o.keep3)
+                            el(
+                                "circle",
+                                {
+                                    cx: p[0],
+                                    cy: p[1],
+                                    r: 4,
+                                    style: "fill: var(--foreground)",
+                                },
+                                s,
+                            );
+                    });
+                };
+                const A = (() => {
+                    const s = mk();
+                    base(s);
+                    const p = pointAt(trail, 0.5);
+                    line(
+                        s,
+                        [
+                            [110, 50],
+                            [118, 30],
+                            [142, 30],
+                            [150, 50],
+                        ],
+                        "--pin",
+                        { dash: "3 2" },
+                    );
+                    el(
+                        "circle",
+                        { cx: 130, cy: 30, r: 4, style: "fill: var(--pin)" },
+                        s,
+                    );
+                    text(s, 130, 20, "M3's override", {
+                        a: "middle",
+                        c: "--foreground",
+                    });
+                    text(s, 120, 162, "one route + a stored detour for M3", {
+                        a: "middle",
+                    });
+                    return s;
+                })();
+                const B = (() => {
+                    const s = mk();
+                    [-6, -2, 2, 6].forEach((o, i) =>
+                        line(
+                            s,
+                            trail.map((p) => [p[0] + o, p[1] + o]),
+                            i === 2 ? "--pin" : "--route",
+                            { w: 1.3 },
+                        ),
+                    );
+                    ms.forEach((f, i) => {
+                        const p = pointAt(trail, f);
+                        el(
+                            "circle",
+                            {
+                                cx: p[0],
+                                cy: p[1],
+                                r: 4,
+                                style: `fill: var(${i === 2 ? "--pin" : "--foreground"})`,
+                            },
+                            s,
+                        );
+                    });
+                    text(s, 120, 162, "4 independent copies; M3's is edited", {
+                        a: "middle",
+                    });
+                    return s;
+                })();
+                const C = (() => {
+                    const s = mk();
+                    base(s);
+                    line(
+                        s,
+                        [
+                            [95, 50],
+                            [110, 75],
+                            [150, 75],
+                            [165, 110],
+                        ],
+                        "--pin",
+                    );
+                    el(
+                        "circle",
+                        { cx: 130, cy: 75, r: 4, style: "fill: var(--pin)" },
+                        s,
+                    );
+                    text(s, 70, 95, "M3: own route", {
+                        a: "middle",
+                        c: "--foreground",
+                    });
+                    text(
+                        s,
+                        120,
+                        162,
+                        "M3 left the group route; 3 still share it",
+                        { a: "middle" },
+                    );
+                    return s;
+                })();
+                Q.push({
+                    t: "Is a group's route one shared thing, or a copy per marcher?",
+                    u: "Four marchers follow one route. You fix a collision by editing <b>only M3's</b> path. Later you edit the group's route. <b>Does M3 follow that edit?</b> This decides what gets stored per marcher.",
+                    o: [
+                        {
+                            k: "A",
+                            l: "Shared route + overrides",
+                            d: "One route, plus a per-marcher change stored as a difference from it. Editing the group route carries M3's detour along. This is the override model ADR 0006 dropped.",
+                            s: A,
+                        },
+                        {
+                            k: "B",
+                            l: "Every marcher has a copy",
+                            d: "The tool writes one route per marcher, with no link between them. Simple storage, but no group route is left to edit, and FTL needs one shared trail.",
+                            s: B,
+                        },
+                        {
+                            k: "C",
+                            l: "Shared until edited, then M3 leaves",
+                            d: "Editing one marcher moves it onto its own route. The group's later edits skip it. Same rule as placed shapes: on the spot or out of the recipe.",
+                            s: C,
+                        },
+                    ],
+                    lean: "<b>My lean: C.</b> It matches the binary membership you chose for shapes in October, it's easy to see (M3's route is drawn in a different color), and it avoids storing overrides that go stale.",
+                });
+            })();
+
+            /* ---------- Q4: higher layer cuts in ---------- */
+            (() => {
+                const V = [
+                    [40, 140],
+                    [40, 40],
+                    [210, 40],
+                ];
+                const pos = positions(V, [0, 4, 8], 8);
+                const at3 = pos[3],
+                    rel = [120, 100];
+                const base = (s) => {
+                    line(s, V, "--route", { op: 0.55 });
+                    dots(s, pos, { c: "--muted-foreground", r: 2 });
+                    diamond(s, 40, 40);
+                    line(s, [at3, [85, 95], rel], "--steal", { w: 2.4 });
+                    el(
+                        "circle",
+                        {
+                            cx: rel[0],
+                            cy: rel[1],
+                            r: 4,
+                            style: "fill: var(--steal)",
+                        },
+                        s,
+                    );
+                    text(s, rel[0] + 6, rel[1] + 14, "let go on count 5", {
+                        c: "--foreground",
+                    });
+                    text(s, at3[0] - 4, at3[1] + 3, "3", { a: "end" });
+                };
+                const A = (() => {
+                    const s = mk();
+                    base(s);
+                    const tgt = pos[6];
+                    line(s, [rel, tgt, pos[7], pos[8]], "--resume");
+                    dots(s, [rel, tgt, pos[7], pos[8]], {
+                        c: "--resume",
+                        max: 45,
+                    });
+                    text(s, tgt[0] + 4, tgt[1] - 6, "back on count 6", {
+                        c: "--foreground",
+                    });
+                    return s;
+                })();
+                const B = (() => {
+                    const s = mk();
+                    base(s);
+                    const r = [rel, at3, V[1], V[2]];
+                    line(s, r, "--resume");
+                    const p = [0, 1, 2, 3].map((i) => pointAt(r, i / 3));
+                    dots(s, p, { c: "--resume", max: 70 });
+                    text(s, 120, 162, "red = steps too big to march", {
+                        a: "middle",
+                        c: "--bad",
+                    });
+                    return s;
+                })();
+                const C = (() => {
+                    const s = mk();
+                    base(s);
+                    const r = [rel, V[2]];
+                    line(s, r, "--resume");
+                    dots(
+                        s,
+                        [0, 1, 2, 3].map((i) => pointAt(r, i / 3)),
+                        { c: "--resume" },
+                    );
+                    text(s, 120, 162, "the corner never happens", {
+                        a: "middle",
+                    });
+                    return s;
+                })();
+                Q.push({
+                    t: "When a higher layer takes over partway through, where does the marcher go after?",
+                    u: "An 8-count L route turns on count 4. A higher-layer move takes the marcher over on <b>counts 3–5</b> and lets go somewhere else. Today a plain move just aims at its end again over the counts left (D-12). <b>With a route, what's the rule?</b> Whatever it is must not jump, and must keep positions bounded (spec §8.11).",
+                    o: [
+                        {
+                            k: "A",
+                            l: "Rejoin the route, keep its counts",
+                            d: "Head for where the route will be a count or two later, then carry on, keeping the remaining pins. Needs a rule for how far ahead to aim.",
+                            s: A,
+                        },
+                        {
+                            k: "B",
+                            l: "Go back and finish the whole route",
+                            d: "Return to where the marcher left and walk all of the rest in the counts left. Pins slide later. Every part of the route is walked, but steps can get huge.",
+                            s: B,
+                        },
+                        {
+                            k: "C",
+                            l: "Drop the route, go straight",
+                            d: "Today's rule: aim at the end over the counts left. Simple and bounded, but the designer's corner is lost.",
+                            s: C,
+                        },
+                    ],
+                    lean: "<b>My lean: A</b> for count-pinned routes and <b>C</b> for unpinned ones (a flutter has no corner to respect). This is the one I most want Fable to check, because the bound proof has to cover it.",
+                });
+            })();
+
+            /* ---------- Q5: step size ---------- */
+            (() => {
+                const V = [
+                    [30, 130],
+                    [30, 40],
+                    [215, 40],
+                ];
+                const A = (() => {
+                    const s = mk();
+                    line(
+                        s,
+                        [
+                            [30, 130],
+                            [30, 20],
+                        ],
+                        "--muted-foreground",
+                        { w: 1.2, dash: "3 3" },
+                    );
+                    line(s, V, "--route");
+                    dots(s, positions(V, [0, 4, 8], 8));
+                    diamond(s, 30, 40);
+                    text(s, 38, 22, "dragged here…", {});
+                    text(s, 38, 56, "…snaps to a legal step", {
+                        c: "--foreground",
+                    });
+                    text(s, 120, 162, "every count is a set step size", {
+                        a: "middle",
+                    });
+                    return s;
+                })();
+                const B = (() => {
+                    const s = mk();
+                    line(s, V, "--route");
+                    dots(s, positions(V, [0, 2, 8], 8), { max: 34 });
+                    diamond(s, 30, 40);
+                    text(s, 38, 92, "corner on count 2", { c: "--foreground" });
+                    text(s, 120, 162, "allowed, big steps shown in red", {
+                        a: "middle",
+                        c: "--bad",
+                    });
+                    return s;
+                })();
+                const C = (() => {
+                    const s = mk();
+                    const top = [
+                        [30, 130],
+                        [30, 70],
+                        [140, 70],
+                    ];
+                    line(s, top, "--route");
+                    dots(s, positions(top, [0, 4, 8], 8));
+                    el(
+                        "rect",
+                        {
+                            x: 150,
+                            y: 60,
+                            width: 70,
+                            height: 20,
+                            rx: 10,
+                            style: "fill: var(--secondary); stroke: var(--border)",
+                        },
+                        s,
+                    );
+                    text(s, 185, 74, "Drill: 8 to 5", {
+                        a: "middle",
+                        c: "--foreground",
+                        size: 9,
+                    });
+                    const bot = [
+                        [30, 150],
+                        [80, 120],
+                        [120, 145],
+                        [215, 105],
+                    ];
+                    line(s, bot, "--chart-3");
+                    dots(s, positions(bot, [0, null, null, 0], 5), {
+                        c: "--chart-3",
+                    });
+                    text(s, 215, 98, "Free: just warn", {
+                        a: "end",
+                        c: "--foreground",
+                        size: 9,
+                    });
+                    text(s, 120, 20, "the move's style decides", {
+                        a: "middle",
+                    });
+                    return s;
+                })();
+                Q.push({
+                    t: "Should routes enforce step size, or only warn?",
+                    u: "Military-style drill means every count is a set step (8 to 5, 6 to 5…) and corners land on whole steps. A flutter or run doesn't care. <b>Is a legal step a rule the editor enforces, or a warning?</b> The app already warns about big steps between pages.",
+                    o: [
+                        {
+                            k: "A",
+                            l: "Enforce while editing",
+                            d: "Corners and pins snap so every count is an exact step. You can't draw an illegal route, but you also can't make a deliberate exception.",
+                            s: A,
+                        },
+                        {
+                            k: "B",
+                            l: "Warn only",
+                            d: "Anything goes, and steps over the limit are drawn red, like the existing step-size warning. Nothing is stored beyond the route.",
+                            s: B,
+                        },
+                        {
+                            k: "C",
+                            l: "The move's style decides",
+                            d: "A route stores a style: Drill (snaps to its step size) or Free (warns only). One field in the route's data.",
+                            s: C,
+                        },
+                    ],
+                    lean: "<b>My lean: B now, with room for C.</b> Store an optional <code>style</code> in the route's data from the start (missing = Free), so adding Drill snapping later needs no migration.",
+                });
+            })();
+
+            /* ---------- Q6: double / half time ---------- */
+            (() => {
+                const strip = (
+                    s,
+                    y,
+                    n,
+                    label,
+                    sub,
+                    color = "--foreground",
+                    every = 1,
+                ) => {
+                    text(s, 12, y - 6, label, {
+                        c: "--foreground",
+                        bold: true,
+                        size: 9,
+                    });
+                    el(
+                        "line",
+                        {
+                            x1: 12,
+                            y1: y + 8,
+                            x2: 228,
+                            y2: y + 8,
+                            style: "stroke: var(--border)",
+                        },
+                        s,
+                    );
+                    for (let i = 0; i <= 8; i++)
+                        el(
+                            "line",
+                            {
+                                x1: 12 + i * 27,
+                                y1: y + 2,
+                                x2: 12 + i * 27,
+                                y2: y + 14,
+                                style: "stroke: var(--muted-foreground); stroke-width: 1",
+                            },
+                            s,
+                        );
+                    for (let i = 0; i <= n; i++)
+                        el(
+                            "circle",
+                            {
+                                cx: 12 + (i * 216) / n,
+                                cy: y + 8,
+                                r: 2.8,
+                                style: `fill: var(${color})`,
+                            },
+                            s,
+                        );
+                    if (sub) text(s, 228, y + 26, sub, { a: "end", size: 8.5 });
+                };
+                const A = (() => {
+                    const s = mk();
+                    strip(s, 40, 8, "Normal: 8 beats, 8 steps", "");
+                    strip(
+                        s,
+                        100,
+                        8,
+                        "Double time?",
+                        "can't say it: steps are beats",
+                        "--muted-foreground",
+                    );
+                    text(s, 120, 162, "ticks = beats · dots = steps", {
+                        a: "middle",
+                    });
+                    return s;
+                })();
+                const B = (() => {
+                    const s = mk();
+                    strip(s, 30, 8, "steps per beat = 1", "");
+                    strip(
+                        s,
+                        80,
+                        16,
+                        "steps per beat = 2 (double time)",
+                        "",
+                        "--resume",
+                    );
+                    strip(
+                        s,
+                        130,
+                        4,
+                        "steps per beat = ½ (half time)",
+                        "",
+                        "--pin",
+                    );
+                    return s;
+                })();
+                const C = (() => {
+                    const s = mk();
+                    strip(s, 40, 8, "Music: 8 beats", "");
+                    text(s, 12, 94, "Tempo map adds beats", {
+                        c: "--foreground",
+                        bold: true,
+                        size: 9,
+                    });
+                    el(
+                        "line",
+                        {
+                            x1: 12,
+                            y1: 108,
+                            x2: 228,
+                            y2: 108,
+                            style: "stroke: var(--border)",
+                        },
+                        s,
+                    );
+                    for (let i = 0; i <= 16; i++) {
+                        el(
+                            "line",
+                            {
+                                x1: 12 + i * 13.5,
+                                y1: 102,
+                                x2: 12 + i * 13.5,
+                                y2: 114,
+                                style: "stroke: var(--bad); stroke-width: 1",
+                            },
+                            s,
+                        );
+                        el(
+                            "circle",
+                            {
+                                cx: 12 + i * 13.5,
+                                cy: 108,
+                                r: 2.6,
+                                style: "fill: var(--foreground)",
+                            },
+                            s,
+                        );
+                    }
+                    text(
+                        s,
+                        228,
+                        128,
+                        "16 'beats': counts no longer match music",
+                        { a: "end", size: 8.5, c: "--bad" },
+                    );
+                    return s;
+                })();
+                Q.push({
+                    t: "Do double time and half time belong in the data model now?",
+                    u: "Normally one count is one step. In double time it's two steps per count, in half time one step every two counts. This affects <b>per-step editing</b> (how many points a move has) and <b>step-size checks</b>. Sub-beat authoring is already an open question (spec Q-6). Do we design for it now, even with no UI?",
+                    o: [
+                        {
+                            k: "A",
+                            l: "Not now: steps are beats",
+                            d: "Per-step editing means per-beat editing. Simplest, but adding it later changes what every saved per-step route means.",
+                            s: A,
+                        },
+                        {
+                            k: "B",
+                            l: "A steps-per-beat field on the route",
+                            d: "The route's timing stores a rate (default 1). Pins can land on half beats when the rate is 2. No UI yet, but old files read as 1.",
+                            s: B,
+                        },
+                        {
+                            k: "C",
+                            l: "Leave it to the tempo map",
+                            d: "Double time means adding beats to the beats table. No new route field, but counts stop lining up with the music and page numbering.",
+                            s: C,
+                        },
+                    ],
+                    lean: "<b>My lean: B.</b> One optional field now (missing = 1) keeps per-step routes meaning the same thing later, and it doesn't touch the beat grid that pages, flags and music share.",
+                });
+            })();
+
+            /* ---------- render ---------- */
+            const root = document.getElementById("root");
+            Q.forEach((q, i) => {
+                const d = document.createElement("div");
+                d.className = "q";
+                d.innerHTML = `<h2><span class="n">Q${i + 1}</span>${q.t}</h2><p class="unc">${q.u}</p><div class="opts"></div><div class="lean">${q.lean}</div>`;
+                const opts = d.querySelector(".opts");
+                q.o.forEach((o) => {
+                    const c = document.createElement("div");
+                    c.className = "opt";
+                    c.appendChild(o.s);
+                    c.insertAdjacentHTML(
+                        "beforeend",
+                        `<div class="lbl"><span class="k">${o.k}</span>${o.l}</div><div class="d">${o.d}</div>`,
+                    );
+                    opts.appendChild(c);
+                });
+                root.appendChild(d);
+            });
+        </script>
+    </body>
+</html>

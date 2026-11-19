@@ -17,6 +17,7 @@ import {
 } from "./areaGestures";
 import {
     boundsOf,
+    frameEdges,
     centerOf,
     handleAt,
     handleCursor,
@@ -144,6 +145,13 @@ export type FieldEditorPorts = {
      */
     selectionBoxPadding?(): number;
     /**
+     * Ground the selection box also stands clear of, in field units: the order
+     * lane drawn on the selection, with its tip and its marchers' names (pathways
+     * step 4j). The box grows to take it in, a drag from inside it moves the
+     * selection, and its handles sit on its edges. Null or omitted: none.
+     */
+    selectionCovers?(): FieldRect | null;
+    /**
      * Draws these marchers at these positions instead of where the show has
      * them (a drag, then a drop waiting to be saved); null draws the show.
      */
@@ -207,9 +215,15 @@ export type FieldEditorPorts = {
      * A right-click (a right press released under the click slop, with no
      * open shape) asks for the field's menu here (#315), after selecting the
      * marcher clicked if it wasn't selected. `hit` is the marcher under it, or null (tablet 1.5:
-     * the menu's "Go inside box" goes in at that marcher).
+     * the menu's "Go inside box" goes in at that marcher). `actions`, when a mode gave them
+     * ({@link FieldMode.fieldMenuAt}), are what the menu offers there instead of its own (a
+     * marcher's path, pathways).
      */
-    openMenu?(at: FieldPointer, hit: number | null): void;
+    openMenu?(
+        at: FieldPointer,
+        hit: number | null,
+        actions?: readonly string[],
+    ): void;
 };
 
 export type DropResult = "saved" | "refused";
@@ -304,6 +318,8 @@ type LastClick = {
     screen: FieldPoint;
     hit: number | null;
     mode?: boolean;
+    /** A mode's `takeClick` took it: a change of mode that follows doesn't end the double-click */
+    taken?: boolean;
     /** It was on the selection's pivot crosshair: a second click there sends it back to the center */
     pivot?: boolean;
     /**
@@ -346,6 +362,16 @@ export type FieldModeDrawing = {
     /** The outline is open: drawn without joining its last point to its first (a line, #524) */
     openOutline?: boolean;
     /**
+     * The outline is a drawn path (pathways): drawn solid and heavier than a shape's outline, so it
+     * reads over a group's faint lanes; heaviest while drawn or open (`edited`), a little lighter
+     * while only shown (`shown`, closed: Paths All's lines); `quiet` for the selected marchers'
+     * path while it's closed, in the faint path color, so only a line being edited is deep
+     * (pathways interaction round 3); `selected` while the path is selected as an object
+     * (pathways step 3a), drawn in the selection color with a halo; `context` thin and grey behind
+     * the one lane being worked on (pathways step 3b)
+     */
+    pathLine?: "shown" | "quiet" | "edited" | "selected" | "context";
+    /**
      * Circles the shape is drawn on, quiet solid lines under it: an Arc's whole circle (#634)
      */
     construction?: readonly {
@@ -364,6 +390,64 @@ export type FieldModeDrawing = {
     rings?: readonly FieldPoint[];
     /** The marcher at each of `rings`, whose ghost is drawn in its own color */
     ringIds?: readonly number[];
+    /**
+     * The real marchers drawn somewhere else than the show has them, full size (pathways step 4c,
+     * DL-16): the Follow tool's line at its end spots (`spots`, which then aren't drawn as spots),
+     * or, with `walk`, looping the walk (▶ Preview, DL-17: `walk(p)` is where each is at progress
+     * `p` of the move, 0 to 1). `ids` and the points are in the same order.
+     */
+    marchersAt?: {
+        readonly ids: readonly number[];
+        readonly spots: readonly FieldPoint[];
+        readonly walk?: (p: number) => readonly FieldPoint[];
+    };
+    /**
+     * Thin, faint lines (pathways step 15): each member's lane of a group path, from its start
+     * along its copy of the path to its end spot
+     */
+    lanes?: readonly (readonly FieldPoint[])[];
+    /** The marcher who walks each of `lanes`, in the same order (pathways), when known */
+    laneIds?: readonly number[];
+    /**
+     * How `lanes` are drawn: `faint` (thin, under a group path's line, the default) or `quiet`
+     * (each one the line a marcher walks, at a shown path's weight in the faint path color: a
+     * quiet group path's selected marchers, or every member while the group path is edited, so
+     * only the line being edited is deep; pathways interaction rounds 2 and 3)
+     */
+    lanesWeight?: "faint" | "quiet";
+    /** Which of `lanes` the pointer is on: tinted, lighter than a picked lane (pathways step 3b) */
+    laneHighlights?: readonly number[];
+    /** Which of `lanes` is being worked on: the only heavy line, over the path's (pathways step 3b) */
+    lanePicked?: number;
+    /**
+     * Which of `lanes` have an adjustment (pathways, interaction system rule 5): drawn in the
+     * group ring's color, so who bends off the group path reads whenever it shows
+     */
+    lanesAdjusted?: readonly number[];
+    /** An adjusted lane's keys, small round handles while its path is open (pathways step 3b) */
+    adjustHandles?: readonly { at: FieldPoint; selected: boolean }[];
+    /**
+     * Rings round marchers' starts (pathways step 15): `group` on each member of the group path
+     * shown ("Follows the group path"), `own` on a selected marcher in the move that isn't on it
+     * ("Own path" when it walks one); `label` is the ring's tooltip
+     */
+    memberRings?: readonly {
+        at: FieldPoint;
+        /** The marcher it rings, whose shape it takes */
+        marcherId: number;
+        kind: "group" | "own";
+        label: string;
+        /** Pulses, asking to be pressed: the Follow tool's ends (pathways step 4b) */
+        pulse?: boolean;
+        /** Drawn dashed: a marcher detached from the group path shown (pathways step 3c) */
+        dashed?: boolean;
+    }[];
+    /**
+     * The Follow tool's grab cue (pathways step 4d): on each end of the line, chevrons pointing
+     * out along `dir` (a unit vector, the line's own way at that end) that slide outward and fade
+     * on a loop, until an end is grabbed
+     */
+    pullArrows?: readonly { at: FieldPoint; dir: FieldPoint }[];
     /**
      * Spots the shape leaves empty on purpose, drawn as dashed rings: an odd-count outline's gap
      * (#390), which a click on another spot between corners moves
@@ -474,6 +558,14 @@ export type FieldModePress = {
     reachesInside(): boolean;
     /** The editor's `isMac`: on a Mac, $mod is Cmd. */
     readonly isMac: boolean;
+    /** Whether a marcher's dot (or an item) is under the press, so it is the dot's (P-1) */
+    onDot(): boolean;
+};
+
+/** What the editor knows of the pointer when it asks a mode for its cursor. */
+export type FieldModeHover = {
+    /** Whether a marcher's dot (or an item) is under the pointer, so a press there is the marcher's */
+    onDot(): boolean;
 };
 
 /**
@@ -501,8 +593,11 @@ export interface FieldMode {
     ): void;
     /** The press it claimed was lost: nothing is saved. */
     cancel(): void;
-    /** The cursor over `pointer` with no button down, or null for the editor's. */
-    cursorAt(pointer: FieldPointer): FieldCursor | null;
+    /**
+     * The cursor over `pointer` with no button down, or null for the editor's. `hover.onDot` says
+     * whether a marcher's dot (or an item) is under it, which the editor's rules give the press.
+     */
+    cursorAt(pointer: FieldPointer, hover?: FieldModeHover): FieldCursor | null;
     /** The pointer left the field with no button down. */
     leave?(): void;
     /** What it draws over the field, or null for nothing. */
@@ -527,6 +622,19 @@ export interface FieldMode {
      * for the field's rules. Absent: always the field's.
      */
     openMenu?(pointer: FieldPointer): boolean;
+    /**
+     * A right-click or long press at `pointer` that `openMenu` didn't take: the actions the
+     * field's menu offers there instead of its own (a marcher's path, pathways), or null for the
+     * field's rules. Not asked over a marcher's dot, which is the dot's (pathways AP-O3).
+     */
+    fieldMenuAt?(pointer: FieldPointer): readonly string[] | null;
+    /**
+     * A click on empty field (no marcher or handle under it) at `pointer`, before the editor's
+     * rules, which change the selection: the mode takes it and returns true, or returns false for
+     * the editor's. `double` for a double-click's second click. Only clicks come here, so drags,
+     * marquees and lassos from the same spot stay the editor's.
+     */
+    takeClick?(pointer: FieldPointer, double: boolean): boolean;
     /**
      * One of its presses held still for a long press (a pen or finger that has no right button,
      * tablet 1.5): true to give the press up for the menus a right-click there opens (the editor
@@ -584,6 +692,9 @@ export class FieldEditor {
     private gesture: FieldGesture | null = null;
     private gestureButton = 0;
     private hover: FieldCursor = "default";
+    private hoverHandle: HandleId | null = null;
+    /** The selection box's cover when a rotation started: the box turns with it until the release */
+    private rotateCovers: FieldRect | null = null;
     /**
      * Whether a drag from the empty spot under the pointer would draw an area: false inside a
      * multi-selection's box, where it moves the selection ({@link startMove}).
@@ -742,6 +853,8 @@ export class FieldEditor {
         const pivot = this.pivotAt(pointer);
         const handle = pivot ? null : this.handleAt(pointer);
         const hit = handle ? null : this.marcherAt(pointer);
+        // A press with no move before it (a pen, a tap) still shows the handle it drags
+        this.setHoverHandle(handle);
         this.press = {
             start: pointer,
             hit,
@@ -776,8 +889,12 @@ export class FieldEditor {
         if (this.ignoredButton !== null) return;
         const press = this.press;
         if (!press) {
-            const modeCursor = this.mode?.cursorAt(pointer) ?? null;
+            const modeCursor =
+                this.mode?.cursorAt(pointer, {
+                    onDot: () => this.marcherAt(pointer) !== null,
+                }) ?? null;
             if (modeCursor) {
+                this.setHoverHandle(null);
                 this.setHover(modeCursor);
                 return;
             }
@@ -789,6 +906,7 @@ export class FieldEditor {
                         fromCenter: false,
                     }).at ?? null;
                 this.setPivotHover(null);
+                this.setHoverHandle(null);
                 this.setHover("crosshair");
                 this.emit();
                 return;
@@ -796,10 +914,12 @@ export class FieldEditor {
             const near = this.pivotHoverAt(pointer);
             this.setPivotHover(near);
             if (near === "armed" || near === "own") {
+                this.setHoverHandle(null);
                 this.setHover("move");
                 return;
             }
             const handle = this.handleAt(pointer);
+            this.setHoverHandle(handle);
             if (handle) this.setHover(handleCursor(handle));
             else if (this.marcherAt(pointer) !== null) this.setHover("pointer");
             else this.setHover("default", !this.pressMoves(pointer));
@@ -835,7 +955,7 @@ export class FieldEditor {
             // is held. A mode's own menu first; then the field's, unless the
             // open shape is being edited (a Mac's Ctrl-click has none)
             if (!this.menuFree()) return;
-            if (this.mode?.openMenu?.(pointer)) return;
+            if (this.modeMenu(pointer)) return;
             if (!macCtrl && !this.blocksFieldMenu()) this.openMenu(pointer);
             return;
         }
@@ -902,6 +1022,14 @@ export class FieldEditor {
                   screen: press.start.screen,
                   hit: press.hit,
               };
+        // A mode may take a click on empty field (a double-click on a marcher's path opens it)
+        if (
+            press.hit === null &&
+            this.mode?.takeClick?.(pointer, press.double)
+        ) {
+            if (this.lastClick) this.lastClick.taken = true;
+            return;
+        }
         this.click(press, pointer.shift || press.add === true);
         this.noteClickSelection();
         if (press.double && press.hit !== null)
@@ -939,7 +1067,7 @@ export class FieldEditor {
             this.press = null;
             this.lastClick = null;
         }
-        if (this.mode?.openMenu?.(pointer)) return true;
+        if (this.modeMenu(pointer)) return true;
         if (this.blocksFieldMenu()) return false;
         this.openMenu(pointer);
         return true;
@@ -1003,7 +1131,23 @@ export class FieldEditor {
             reachesInside: () =>
                 this.reachInside(pointer, this.marcherAt(pointer)) !== null,
             isMac: this.options.isMac ?? false,
+            onDot: () => this.marcherAt(pointer) !== null,
         };
+    }
+
+    /**
+     * A mode's menu at `pointer`: its own (`openMenu`), or the field's with the actions it offers
+     * there (`fieldMenuAt`). Says whether one opened.
+     */
+    private modeMenu(pointer: FieldPointer): boolean {
+        if (this.mode?.openMenu?.(pointer)) return true;
+        // A marcher's dot is the dot's (pathways AP-O3): a path line under it isn't asked, so the
+        // press doesn't pick that path and the marcher's own menu opens
+        if (this.marcherAt(pointer) !== null) return false;
+        const actions = this.mode?.fieldMenuAt?.(pointer) ?? null;
+        if (!actions || actions.length === 0) return false;
+        this.ports.openMenu?.(pointer, null, actions);
+        return true;
     }
 
     /** No press, drag or prop tool that a menu would cut into */
@@ -1073,6 +1217,7 @@ export class FieldEditor {
     /** The pointer left the field with no button down. */
     pointerLeave(): void {
         this.mode?.leave?.();
+        this.setHoverHandle(null);
         this.setPivotHover(null);
         if (this.pickAt) {
             this.pickAt = null;
@@ -1094,6 +1239,11 @@ export class FieldEditor {
                     !this.ports.marcherHidden?.(id),
             ),
         );
+    }
+
+    /** The marchers selected now: the app's selection, as the editor reads it. */
+    selected(): readonly number[] {
+        return this.ports.selection.get();
     }
 
     /** Selects the marchers in `ids` that are drawn and can be selected (an app action, such as "Select box"). */
@@ -1146,10 +1296,13 @@ export class FieldEditor {
         this.unsubscribeMode?.();
         this.unsubscribeMode = null;
         this.mode = mode;
+        this.hoverHandle = null;
         if (mode) {
             this.cancelGesture();
             this.press = null;
-            this.lastClick = null;
+            // A click a mode took can change the mode (a path clicked under a selected box goes
+            // from the box's mode to the path's); the next click can still be its double-click
+            if (!this.lastClick?.taken) this.lastClick = null;
             this.unsubscribeMode = mode.subscribe(() => this.emit());
         }
         this.emit();
@@ -1250,15 +1403,32 @@ export class FieldEditor {
     rotationFrame(): {
         box: FieldRect;
         angle: number;
+        covers: FieldRect | null;
         around: FieldPoint;
     } | null {
         return this.gesture instanceof RotateGesture
             ? {
                   box: this.gesture.box,
                   angle: this.gesture.angle(),
+                  covers: this.rotateCovers,
                   around: this.gesture.center,
               }
             : null;
+    }
+
+    /** What the selection box stands clear of besides its marchers (step 4j), or null. */
+    selectionCovers(): FieldRect | null {
+        return this.ports.selectionCovers?.() ?? null;
+    }
+
+    /**
+     * The selection box handle the pointer is over with no button down, or the
+     * one being dragged (the hover isn't updated during a drag); null with
+     * none. A box standing clear of an order lane draws its middle handles
+     * only while they're pointed at (step 4j).
+     */
+    hoveredHandle(): HandleId | null {
+        return this.hoverHandle;
     }
 
     /**
@@ -1616,6 +1786,8 @@ export class FieldEditor {
      * dropped, and so is a last click that didn't leave this selection.
      */
     selectionChanged(): void {
+        // A handle pointed at belonged to the old selection's box
+        this.setHoverHandle(null);
         // Something other than the last click changed the selection: the next press starts
         // afresh (#628). The app trimming the click's own selection (members dimmed by an
         // isolated move, or hidden at this beat) is still that click's; Escape empties it.
@@ -1704,6 +1876,7 @@ export class FieldEditor {
             cancel: () => this.endLive(),
         };
         const keys = this.keysFor(press.start);
+        this.rotateCovers = this.selectionCovers();
         return press.handle === "rot"
             ? new RotateGesture(
                   press.start,
@@ -1735,11 +1908,18 @@ export class FieldEditor {
         const starts = this.drawnPositions(this.ports.selection.get());
         const box = boundsOf(starts);
         if (starts.length < 2 || !box) return null;
-        return { box, pad: this.ports.selectionBoxPadding?.() ?? 0, angle: 0 };
+        return {
+            box,
+            pad: this.ports.selectionBoxPadding?.() ?? 0,
+            angle: 0,
+            covers: this.selectionCovers(),
+        };
     }
 
     /**
-     * The handle of the selection box `pointer` is on, within its kind's reach, or null. A pen's
+     * The handle of the selection box `pointer` is on, within its kind's reach, or null. On a box
+     * standing clear of an order lane (step 4j) a middle handle gives way to a marcher under the
+     * pointer (see {@link MIDDLE_HANDLES}). A pen's
      * or finger's wider reach gives way to a move where the press is on a marcher or inside the
      * box ({@link wideHandleWins}, tablet 1.4); a mouse's is the handle as drawn, and wins there.
      */
@@ -1754,8 +1934,14 @@ export class FieldEditor {
             zoom,
             thresholdsFor(pointer.kind).handleReach,
         );
-        if (handle === null || pointer.kind === "mouse") return handle;
+        if (handle === null) return null;
         const hit = this.marcherAt(pointer);
+        // A box standing clear of an order lane (step 4j) draws its middle handles only while
+        // they're pointed at, so one gives way to a marcher under the pointer: the grown box's
+        // sides can reach the next marcher along the line
+        if (frame.covers && MIDDLE_HANDLES.has(handle) && hit !== null)
+            return null;
+        if (pointer.kind === "mouse") return handle;
         const [onMarcher] =
             hit !== null && !(this.ports.isItem?.(hit) ?? false)
                 ? this.drawnPositions([hit])
@@ -2036,14 +2222,19 @@ export class FieldEditor {
         if (selection.length < 2) return false;
         const starts = this.drawnPositions(selection);
         if (starts.length < 2) return false;
-        const pad = this.ports.selectionBoxPadding?.() ?? 0;
-        const xs = starts.map((p) => p.x);
-        const ys = starts.map((p) => p.y);
+        const box = boundsOf(starts);
+        if (!box) return false;
+        const { left, right, top, bottom } = frameEdges({
+            box,
+            pad: this.ports.selectionBoxPadding?.() ?? 0,
+            angle: 0,
+            covers: this.selectionCovers(),
+        });
         return (
-            point.x >= Math.min(...xs) - pad &&
-            point.x <= Math.max(...xs) + pad &&
-            point.y >= Math.min(...ys) - pad &&
-            point.y <= Math.max(...ys) + pad
+            point.x >= left &&
+            point.x <= right &&
+            point.y >= top &&
+            point.y <= bottom
         );
     }
 
@@ -2195,6 +2386,12 @@ export class FieldEditor {
         this.emit();
     }
 
+    private setHoverHandle(handle: HandleId | null) {
+        if (handle === this.hoverHandle) return;
+        this.hoverHandle = handle;
+        this.emit();
+    }
+
     /** `draws`: whether a drag from there would draw an area ({@link hoverDraws}) */
     private setHover(cursor: FieldCursor, draws = true) {
         if (cursor === this.hover && draws === this.hoverDraws) return;
@@ -2233,6 +2430,9 @@ export class FieldEditor {
         for (const listener of this.listeners) listener();
     }
 }
+
+/** The selection box's middle handles: drawn on a box clear of an order lane only while pointed at */
+const MIDDLE_HANDLES: ReadonlySet<HandleId> = new Set(["n", "e", "s", "w"]);
 
 /** `base` with `positions` written over it. */
 const withPositions = (

@@ -680,13 +680,21 @@ function registerWebHandlers() {
     });
     ipcMain.handle(
         WEB_CHANNELS.reportCopy,
-        (_, expectedFileName: string, includeAudio: boolean) => {
+        (
+            _,
+            expectedFileName: string,
+            includeAudio: boolean,
+            includeAssets: boolean,
+        ) => {
             const path = DatabaseServices.getDbPath();
             if (!path || openShowName() !== expectedFileName) return null;
             const copyPath = `/report/${crypto.randomUUID()}.dots`;
             writeDatabase(copyPath, exportDatabase(path));
             try {
-                scrubAndCompact(new DatabaseSync(copyPath), { includeAudio });
+                scrubAndCompact(new DatabaseSync(copyPath), {
+                    includeAudio,
+                    includeAssets: !!includeAssets,
+                });
                 return exportDatabase(copyPath);
             } finally {
                 deleteDatabase(copyPath);

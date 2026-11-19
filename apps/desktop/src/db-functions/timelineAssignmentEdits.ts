@@ -25,6 +25,23 @@ import {
 } from "./timelineAssignments";
 import { stealLayer } from "./timelineCommands";
 import { text } from "@/timeline/timelineText";
+import {
+    lanesOfTransitions,
+    sweepOrphanRoutesInTransaction,
+} from "./timelineLanes";
+
+/**
+ * AP-H2 (spec v0.10 J.8; plan step 24): casting moves people between a transition's slots, and a
+ * drawn path belongs to the slot (D-22), so its start offset would have to follow the new person
+ * (AP-R16, a later step). Until then casting refuses a transition with a lane.
+ */
+const refuseLanedTransition = async (
+    tx: DbTransaction,
+    transitionId: number,
+) => {
+    if ((await lanesOfTransitions(tx, [transitionId])).length > 0)
+        refuse(text.t("timeline.refusals.route.cantKeep"));
+};
 
 /**
  * The inspector's assignment edits (docs/timeline/phases/08-authoring-ui.md P8.4): casting
@@ -148,6 +165,7 @@ export const castMarchersIntoTransitionInTransaction = async ({
     const { snapshot } = await readTimelineTables(tx);
     const transition = snapshot.transitions[transitionId];
     if (!transition) refuse(`transition ${transitionId} does not exist`);
+    await refuseLanedTransition(tx, transitionId);
     const known = new Set(snapshot.marchers.map((m) => m.id));
     const missing = marcherIds.find((id) => !known.has(id));
     if (missing !== undefined) refuse(`marcher ${missing} does not exist`);
@@ -292,6 +310,7 @@ export const recastTransitionInTransaction = async ({
     const { snapshot } = await readTimelineTables(tx);
     const transition = snapshot.transitions[transitionId];
     if (!transition) refuse(`transition ${transitionId} does not exist`);
+    await refuseLanedTransition(tx, transitionId);
     if (!castsByNearestSlot(transition.style))
         refuse(text.t("timeline.refusals.casting.followTheLeader"));
     const members: AssignmentRow[] = snapshot.assignments
@@ -364,6 +383,7 @@ export const setAssignmentSlotInTransaction = async ({
 }): Promise<DatabaseTimelineAssignment[]> => {
     const row = await getAssignment(tx, assignmentId);
     const transition = await getTransition(tx, row.transition_id);
+    await refuseLanedTransition(tx, transition.id);
     if (!Number.isInteger(slot) || slot < 0 || slot >= transition.slot_count)
         throw new TimelineWriteError(
             "E-A2",
@@ -494,11 +514,13 @@ export const removeAssignmentInTransaction = async ({
     assignmentId: number;
 }): Promise<DatabaseTimelineAssignment> => {
     const row = await getAssignment(tx, assignmentId);
-    await mapDbErrors(() =>
-        tx
+    await mapDbErrors(async () => {
+        await tx
             .delete(schema.timeline_assignments)
-            .where(eq(schema.timeline_assignments.id, assignmentId)),
-    );
+            .where(eq(schema.timeline_assignments.id, assignmentId));
+        // AP-H3: the slot keeps its lane while its path has another marcher (Q1)
+        await sweepOrphanRoutesInTransaction(tx);
+    });
     return row;
 };
 

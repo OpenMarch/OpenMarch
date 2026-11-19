@@ -75,6 +75,20 @@ describe("FieldSettings", () => {
         });
     });
 
+    it("has Follow-the-leader (preview), off until it's turned on, and saves it (#1095)", async () => {
+        await renderSettings();
+        const toggle = screen.getByRole("switch", {
+            name: "Follow-the-leader (preview)",
+        });
+        expect(toggle).not.toBeChecked();
+        expect(settings().followTheLeader).toBe(false);
+        await userEvent.setup().click(toggle);
+        expect(settings().followTheLeader).toBe(true);
+        expect(
+            JSON.parse(localStorage.getItem(UI_SETTINGS_STORAGE_KEY)!),
+        ).toMatchObject({ followTheLeader: true });
+    });
+
     it("shows a change made elsewhere, such as the main window", async () => {
         await renderSettings();
         useUiSettingsStore.setState({

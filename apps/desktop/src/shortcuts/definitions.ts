@@ -17,6 +17,7 @@ export type ActionCategory =
     | "cursor"
     | "select"
     | "shape"
+    | "path"
     | "timeline"
     | "field";
 export type ActionArgs = Readonly<Record<string, string | number | boolean>>;
@@ -958,6 +959,230 @@ const STATIC_ACTIONS = {
         category: "shape",
         scope: "canvas",
         defaultBindings: ["$mod+Shift+G", "Control+Shift+G"],
+        ignoreRepeat: true,
+    },
+
+    // Pathways step 1 (ADR 0016): the Path pen draws a cornered path for one selected marcher's
+    // move at the playhead. P as in design tools' pen. While it draws, Enter (applyShape) finishes,
+    // Backspace (shapeRemoveLastPoint) takes the last corner back and Escape
+    // (cancelAlignmentUpdates) cancels, handled only then (pathways/PathPenKeys)
+    pathPen: {
+        labelKey: "actions.path.pen",
+        keywordsKey: "actions.path.keywords",
+        category: "path",
+        scope: "canvas",
+        defaultBindings: ["P"],
+        ignoreRepeat: true,
+    },
+    // Opens the selected marcher's path at the playhead for editing, as a double-click on it does
+    // (owner, 2026-11-04). No key: shapes have none for editing points (Enter places a shape)
+    editPath: {
+        labelKey: "actions.path.edit",
+        keywordsKey: "actions.path.keywords",
+        category: "path",
+        scope: "canvas",
+        defaultBindings: [],
+        ignoreRepeat: true,
+    },
+    // Remove path (AP-R2), the path open or not: the move goes straight again. No key, so it
+    // can't happen by accident (owner, 2026-11-04): the path's menu, its bar and the palette
+    removePath: {
+        labelKey: "actions.path.remove",
+        keywordsKey: "actions.path.keywords",
+        category: "path",
+        scope: "canvas",
+        defaultBindings: [],
+        ignoreRepeat: true,
+    },
+
+    // Pathways step 3b: Re-fit stretches the path onto where its marchers stand now; the rest act on
+    // the lane or key picked on the open group path. No keys of their own: the path's bar, its
+    // menus and the palette
+    refitPath: {
+        labelKey: "actions.path.refit",
+        keywordsKey: "actions.path.keywords",
+        category: "path",
+        scope: "canvas",
+        defaultBindings: [],
+        ignoreRepeat: true,
+    },
+    adjustRemoveKey: {
+        labelKey: "actions.path.adjustRemoveKey",
+        keywordsKey: "actions.path.keywords",
+        category: "path",
+        scope: "canvas",
+        defaultBindings: [],
+        ignoreRepeat: true,
+    },
+    // Edit <name>'s line (pathways interaction round 3, was Adjust): the selected member's line
+    // alone, editable, its handles shown at once. On the floating path bar, the Path menus and in
+    // the palette; no keys
+    editLine: {
+        labelKey: "actions.path.editLine",
+        keywordsKey: "actions.path.keywords",
+        category: "path",
+        scope: "canvas",
+        defaultBindings: [],
+        ignoreRepeat: true,
+    },
+    adjustResetSpot: {
+        labelKey: "actions.path.adjustResetSpot",
+        keywordsKey: "actions.path.keywords",
+        category: "path",
+        scope: "canvas",
+        defaultBindings: [],
+        ignoreRepeat: true,
+    },
+    adjustAcknowledge: {
+        labelKey: "actions.path.adjustAcknowledge",
+        keywordsKey: "actions.path.keywords",
+        category: "path",
+        scope: "canvas",
+        defaultBindings: [],
+        ignoreRepeat: true,
+    },
+
+    // Pathways step 3c: a group path's members break off with a copy of it that keeps the group's
+    // counts (Detach, AP-R9) or follow it again (Rejoin, AP-R10). On the floating path bar and in
+    // the palette; no keys
+    detachPath: {
+        labelKey: "actions.path.detachFromGroup",
+        keywordsKey: "actions.path.keywords",
+        category: "path",
+        scope: "canvas",
+        defaultBindings: [],
+        ignoreRepeat: true,
+    },
+    // Detach all (round 5): with every member of a group path selected, each gets its own copy and
+    // the group path ends. Under the bar's ···, beside Remove path, and in the Path menus and palette
+    detachAllPath: {
+        labelKey: "actions.path.detachAll",
+        keywordsKey: "actions.path.keywords",
+        category: "path",
+        scope: "canvas",
+        defaultBindings: [],
+        ignoreRepeat: true,
+    },
+    rejoinPath: {
+        labelKey: "actions.path.rejoinGroup",
+        keywordsKey: "actions.path.keywords",
+        category: "path",
+        scope: "canvas",
+        defaultBindings: [],
+        ignoreRepeat: true,
+    },
+
+    // Pathways step 4 (spec Appendix K): Follow draws a trail for the selected line with the Path
+    // pen, and the line follows it, leader first, into its end spots (AP-T1). Shift+L as in
+    // "leader", beside the Line's L. Reverse makes the other end lead (AP-T3), on the leader's
+    // mark, the path bar, the trail's menu and Alt+L
+    followTrail: {
+        labelKey: "actions.path.follow",
+        keywordsKey: "actions.path.followKeywords",
+        category: "path",
+        scope: "canvas",
+        defaultBindings: ["Shift+L"],
+        ignoreRepeat: true,
+    },
+    // Pathways step 4c (DL-17): ▶ Preview on the Follow tool's bar loops the line's walk. No key:
+    // the bar's button and the palette
+    followPreview: {
+        labelKey: "actions.path.followPreview",
+        keywordsKey: "actions.path.followKeywords",
+        category: "path",
+        scope: "canvas",
+        defaultBindings: [],
+        ignoreRepeat: true,
+    },
+    // Pathways step 9 (spec L.10, RP-1): the Follow tool's Ends, as commands so the bar, the
+    // palette and a custom key reach the same choice. No keys by default
+    followEndsTrail: {
+        labelKey: "actions.path.followEndsTrail",
+        keywordsKey: "actions.path.followKeywords",
+        category: "path",
+        scope: "canvas",
+        defaultBindings: [],
+        ignoreRepeat: true,
+    },
+    followEndsKeep: {
+        labelKey: "actions.path.followEndsKeep",
+        keywordsKey: "actions.path.followKeywords",
+        category: "path",
+        scope: "canvas",
+        defaultBindings: [],
+        ignoreRepeat: true,
+    },
+    followEndsRipple: {
+        labelKey: "actions.path.followEndsRipple",
+        keywordsKey: "actions.path.followKeywords",
+        category: "path",
+        scope: "canvas",
+        defaultBindings: [],
+        ignoreRepeat: true,
+    },
+    reverseTrail: {
+        labelKey: "actions.path.reverse",
+        keywordsKey: "actions.path.followKeywords",
+        category: "path",
+        scope: "canvas",
+        defaultBindings: ["Alt+L"],
+        ignoreRepeat: true,
+    },
+
+    // Pathways step 4g: a line's order on the field. Show order cycles the field display bar's
+    // setting (off and while selected; Always is picked on the bar). Set order sweeps the
+    // selected marchers in order. O is the Circle's, so Alt+O shows and Shift+O sets. Reverse and
+    // Clear have no key: the toolbar, the field's menu and the palette
+    toggleMarcherOrder: {
+        labelKey: "actions.path.showOrder",
+        keywordsKey: "actions.path.orderKeywords",
+        category: "path",
+        scope: "canvas",
+        defaultBindings: ["Alt+O"],
+        ignoreRepeat: true,
+    },
+    setMarcherOrder: {
+        labelKey: "actions.path.setOrder",
+        keywordsKey: "actions.path.orderKeywords",
+        category: "path",
+        scope: "canvas",
+        defaultBindings: ["Shift+O"],
+        ignoreRepeat: true,
+    },
+    reverseMarcherOrder: {
+        labelKey: "actions.path.reverseOrder",
+        keywordsKey: "actions.path.orderKeywords",
+        category: "path",
+        scope: "canvas",
+        defaultBindings: [],
+        ignoreRepeat: true,
+    },
+    clearMarcherOrder: {
+        labelKey: "actions.path.clearOrder",
+        keywordsKey: "actions.path.orderKeywords",
+        category: "path",
+        scope: "canvas",
+        defaultBindings: [],
+        ignoreRepeat: true,
+    },
+
+    // Pathways step 2: the selected point of an open path made a corner, or smooth, as a Line's
+    // Corner | Smooth (the point's menu, a double-click, the path's floating editor). No keys,
+    // as a Line's corner type has none
+    pathPointCorner: {
+        labelKey: "actions.path.pointCorner",
+        keywordsKey: "actions.path.keywords",
+        category: "path",
+        scope: "canvas",
+        defaultBindings: [],
+        ignoreRepeat: true,
+    },
+    pathPointSmooth: {
+        labelKey: "actions.path.pointSmooth",
+        keywordsKey: "actions.path.keywords",
+        category: "path",
+        scope: "canvas",
+        defaultBindings: [],
         ignoreRepeat: true,
     },
 

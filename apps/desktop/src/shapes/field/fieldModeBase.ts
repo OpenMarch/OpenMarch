@@ -45,10 +45,11 @@ export function shapeCursor(
 
 /**
  * A shape's handles as the field draws them: squares, the selected one filled too (#557), the
- * small round ones that add a point (#524), and the round ones on a selected point's bar (#557)
+ * small round ones that add a point (#524), and the round ones on a selected point's bar (#557).
+ * A path's corners draw through here too (pathways), so only `handles` is read.
  */
 export function handleDrawing(
-    kind: AnyToolKind,
+    kind: Pick<AnyToolKind, "handles">,
     params: unknown,
     n: number,
     selected: string | null | undefined,

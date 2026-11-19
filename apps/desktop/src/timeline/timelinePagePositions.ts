@@ -1,9 +1,13 @@
-import type { Resolver } from "@openmarch/core";
+import {
+    createResolver,
+    type Resolver,
+    type TimelineSnapshot,
+} from "@openmarch/core";
 import type { DbConnection } from "@/db-functions/types";
 import type Page from "@/global/classes/Page";
 import { readShowTiming } from "./showTiming";
 import { pageEndBeat } from "./timelineCanvas";
-import { acquireExportResolver } from "./timelineExport";
+import { readTimelineTablesSnapshot } from "./timelineRows";
 
 /**
  * "Marchers on page N" for the exports that still speak in pages (docs/timeline/phases/
@@ -23,10 +27,18 @@ export interface TimelinePagePosition {
 export interface TimelinePageSnapshot {
     resolver: Pick<Resolver, "marcherIds" | "positionsAt">;
     pages: readonly Pick<Page, "id" | "beats">[];
+    /**
+     * What walked paths are read from (pathways step 18): the tables the resolver was built
+     * from, and its spans. Absent on a stand-in snapshot.
+     */
+    walks?: {
+        host: TimelineSnapshot;
+        resolver: Pick<Resolver, "spanInfos" | "positionAt" | "ftlEntry">;
+    };
 }
 
 /**
- * Builds a private resolver (`acquireExportResolver`, not subscribed to changes) and reads the
+ * Builds a private resolver (as `acquireExportResolver` does, not subscribed to changes) and reads the
  * pages. It takes no lock: to read one moment, call it inside `withTimelineWriteLock` together
  * with the export's other reads. A wrapped write joins that FIFO lock when it is called, so
  * every write started before the lock is taken has committed by the time this runs.
@@ -34,9 +46,10 @@ export interface TimelinePageSnapshot {
 export async function readTimelinePageSnapshot(
     db: DbConnection,
 ): Promise<TimelinePageSnapshot> {
-    const resolver = await acquireExportResolver(db);
+    const { snapshot: host } = await readTimelineTablesSnapshot(db);
+    const resolver = createResolver(host);
     const { pages } = await readShowTiming(db);
-    return { resolver, pages };
+    return { resolver, pages, walks: { host, resolver } };
 }
 
 /** How long sampling may hold the main thread before it yields, in milliseconds. */

@@ -227,10 +227,41 @@ export function useStartFlagOverlay({
             shapeOf,
         ],
     );
+    // What the last plan before Play was made from, so a change of whose positions show while
+    // playing (the path pen's line gives its marchers back when Play clears it, #683) redraws them
+    // over that same window
+    const lastInput = useRef<Parameters<StartFlagPieces["plan"]>[0] | null>(
+        null,
+    );
+    if (shown && !isPlaying && toBeat > fromBeat)
+        lastInput.current = {
+            window: {
+                resolver: resolver!,
+                fromBeat,
+                toBeat,
+                stepSizeWarnings,
+                fieldProperties: fieldProperties!,
+            },
+            version,
+            marcherIds: marcherIds!,
+            selectedIds: selected,
+            levels,
+            dotsOnly: gesture,
+        };
+    const playingPlan = useMemo(() => {
+        const input = lastInput.current;
+        return isPlaying &&
+            input &&
+            marcherIds &&
+            input.marcherIds !== marcherIds
+            ? pieces.plan({ ...input, marcherIds })
+            : null;
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isPlaying, marcherIds, pieces]);
     let drawnPlan: StartFlagOverlay | null;
     if (!shown) drawnPlan = last.current = null;
     // While playing the plans from before Play stay, wherever playback put the cursor
-    else if (isPlaying) drawnPlan = last.current;
+    else if (isPlaying) drawnPlan = playingPlan ?? last.current;
     else drawnPlan = last.current = plan;
     usePublishDrawn(drawnPlan);
     return drawnPlan;

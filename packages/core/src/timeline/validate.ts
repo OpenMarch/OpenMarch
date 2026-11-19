@@ -15,8 +15,41 @@ export const COORD_BOUND = 1e6;
 export const MAX_ABS_BULGE = 0.5;
 const TWO_PI = 2 * Math.PI;
 
-/** `E-S1` shape, `E-P1` path params, `E-D2` destination, `E-N2` home. */
-export type ValidationCode = "E-S1" | "E-P1" | "E-D2" | "E-N2";
+/** `E-S1` shape, `E-P1` path params, `E-D2` destination, `E-N2` home, `E-R1` route (v0.9). */
+export type ValidationCode = "E-S1" | "E-P1" | "E-D2" | "E-N2" | "E-R1";
+
+/** Longest route point id (spec 5.2, I-R1). */
+export const MAX_ROUTE_POINT_ID_LENGTH = 16;
+
+/** Largest |dx| or |dy| of a lane's offset (spec J.1, v0.10): two points' difference. */
+export const MAX_ROUTE_OFFSET = 2 * COORD_BOUND;
+
+/** Roundest a smooth route point can be (spec 5.2, v0.9 step 2), as the Line's `MAX_TENSION`. */
+export const MAX_ROUTE_TENSION = 2;
+/** The largest bulge of an arc leg (R-14″, R-8's minor arc: a half circle) */
+export const MAX_ROUTE_BULGE = 0.5;
+
+/** Whether `k` is a stored leg bulge: a finite number with `0 < |k| <= 1/2` (R-14″). */
+export const isRouteBulge = (k: unknown): k is number =>
+    typeof k === "number" &&
+    Number.isFinite(k) &&
+    k !== 0 &&
+    Math.abs(k) <= MAX_ROUTE_BULGE;
+
+/**
+ * R-14″: the first smooth point at either end of an arc leg, or -1. Leg `i` arrives at point `i`
+ * (its `bulge`); the last leg arrives at `to` (`toBulge`). Such a point must be a corner.
+ */
+export function smoothBesideArc(
+    points: readonly { tension?: number; bulge?: number }[],
+    toBulge?: number,
+): number {
+    const arc = (leg: number) =>
+        !!(leg < points.length ? points[leg]?.bulge : toBulge);
+    return points.findIndex(
+        (p, i) => (p.tension ?? 0) > 0 && (arc(i) || arc(i + 1)),
+    );
+}
 
 export interface ValidationError {
     code: ValidationCode;
@@ -285,8 +318,14 @@ export function validatePathParams(
                 push("", "follow_the_leader path_params must be {waypoints}");
                 break;
             }
-            noExtraKeys(params, ["waypoints"], push);
+            // `reverse` (R-12′, pathways step 4): true, or absent
+            // `ends` (R-13″, pathways step 4b): "along", or absent
+            noExtraKeys(params, ["waypoints", "reverse", "ends"], push);
             pointList(params.waypoints, "waypoints", push);
+            if (params.reverse !== undefined && params.reverse !== true)
+                push("reverse", "reverse must be true or absent");
+            if (params.ends !== undefined && params.ends !== "along")
+                push("ends", 'ends must be "along" or absent');
             break;
         }
         default:
@@ -331,5 +370,176 @@ export function validateDestination(point: unknown): ValidationResult {
 export function validateHome(home: unknown): ValidationResult {
     const { push, result } = collector("E-N2");
     pointOf(home, "home", push);
+    return result();
+}
+
+/**
+ * Validate a lane's start offset (spec v0.10 J.1): null for an own lane, or `[dx, dy]`, each
+ * finite and within `[-2e6, 2e6]`. Errors are `E-P1`.
+ */
+export function validateLaneOffset(offset: unknown): ValidationResult {
+    const { push, result } = collector("E-P1");
+    if (offset === null) return result();
+    if (!Array.isArray(offset) || offset.length !== 2) {
+        push("offset", "offset must be an [dx, dy] pair");
+        return result();
+    }
+    offset.forEach((n, i) => {
+        if (
+            finiteNumber(n, `offset[${i}]`, push) &&
+            Math.abs(n) > MAX_ROUTE_OFFSET
+        )
+            push(`offset[${i}]`, `offset[${i}] must be within [-2e6, 2e6]`);
+    });
+    return result();
+}
+
+// ---------------------------------------------------------------------------
+// Adjust profiles (spec J.2, pathways step 3b)
+// ---------------------------------------------------------------------------
+
+/**
+ * Validate an Adjust profile's shape (spec J.2, part of I-J3): version 1, one key or more, each
+ * with point-id or end anchors, `f` in `[0, 1]` and a bounded finite `d`. Spacing and place (I-J4)
+ * need the route: `adjustRefusal` in `adjust.ts` checks them.
+ */
+export function validateAdjustProfile(profile: unknown): ValidationResult {
+    const { push, result } = collector("E-P1");
+    if (typeof profile !== "object" || profile === null) {
+        push("", "an Adjust profile must be an object {v, keys}");
+        return result();
+    }
+    const { v, keys } = profile as { v?: unknown; keys?: unknown };
+    if (v !== 1) push("v", "an Adjust profile's version must be 1");
+    if (!Array.isArray(keys) || keys.length === 0) {
+        push("keys", "an Adjust profile needs at least one key");
+        return result();
+    }
+    keys.forEach((entry: unknown, i: number) => {
+        const path = `keys[${i}]`;
+        if (typeof entry !== "object" || entry === null) {
+            push(path, "an Adjust key must be an object {a, b, f, d}");
+            return;
+        }
+        const key = entry as Record<string, unknown>;
+        for (const end of ["a", "b"] as const) {
+            const id = key[end];
+            if (
+                typeof id !== "string" ||
+                id.length === 0 ||
+                id.length > MAX_ROUTE_POINT_ID_LENGTH
+            )
+                push(`${path}.${end}`, "an anchor names a point id or an end");
+        }
+        const f = key.f;
+        if (typeof f !== "number" || !Number.isFinite(f) || f < 0 || f > 1)
+            push(`${path}.f`, "an anchor's f must be between 0 and 1");
+        const d = key.d;
+        if (
+            !Array.isArray(d) ||
+            d.length !== 2 ||
+            d.some(
+                (n) =>
+                    typeof n !== "number" ||
+                    !Number.isFinite(n) ||
+                    Math.abs(n) > MAX_ROUTE_OFFSET,
+            )
+        )
+            push(`${path}.d`, "a key's d must be two bounded finite numbers");
+    });
+    return result();
+}
+
+// ---------------------------------------------------------------------------
+// Routes (I-R1, v0.9 step 1)
+// ---------------------------------------------------------------------------
+
+/**
+ * Validate a route's `geometry` (spec 5.2, I-R1): version 1, `from`, `to` and every point
+ * finite and within the bound, point ids non-empty strings of at most 16 characters and unique,
+ * and every point `{id, at}` with an optional `tension` in (0, 2] (a smooth point, step 2) and
+ * an optional `bulge` with `0 < |bulge| <= 1/2` (its arriving leg is an arc, step 10a), and an
+ * optional `toBulge` likewise for the last leg; a point beside an arc leg is a corner (R-14″).
+ * Errors are `E-R1`.
+ */
+export function validateRouteGeometry(geometry: unknown): ValidationResult {
+    const { push, result } = collector("E-R1");
+    if (!isRecord(geometry)) {
+        push("", "route geometry must be an object {v, from, to, points}");
+        return result();
+    }
+    noExtraKeys(geometry, ["v", "from", "to", "points", "toBulge"], push);
+    const bulgeMessage = (where: string) =>
+        `${where} must be a number other than 0, at most ${MAX_ROUTE_BULGE} either way`;
+    if ("toBulge" in geometry && !isRouteBulge(geometry.toBulge))
+        push("toBulge", bulgeMessage("toBulge"));
+    if (geometry.v !== 1) push("v", "route geometry version must be 1");
+    pointOf(geometry.from, "from", push);
+    pointOf(geometry.to, "to", push);
+    if (!Array.isArray(geometry.points)) {
+        push("points", "points must be an array");
+        return result();
+    }
+    const ids = new Set<string>();
+    geometry.points.forEach((pt: unknown, i: number) => {
+        const path = `points[${i}]`;
+        if (!isRecord(pt)) {
+            push(path, `${path} must be an object {id, at}`);
+            return;
+        }
+        for (const key of Object.keys(pt))
+            if (
+                key !== "id" &&
+                key !== "at" &&
+                key !== "tension" &&
+                key !== "bulge"
+            )
+                push(`${path}.${key}`, `unexpected field "${key}"`);
+        if (
+            "tension" in pt &&
+            !(
+                typeof pt.tension === "number" &&
+                Number.isFinite(pt.tension) &&
+                pt.tension > 0 &&
+                pt.tension <= MAX_ROUTE_TENSION
+            )
+        )
+            push(
+                `${path}.tension`,
+                `${path}.tension must be a number above 0 and at most ${MAX_ROUTE_TENSION}`,
+            );
+        if ("bulge" in pt && !isRouteBulge(pt.bulge))
+            push(`${path}.bulge`, bulgeMessage(`${path}.bulge`));
+        const id = pt.id;
+        if (
+            typeof id !== "string" ||
+            id.length === 0 ||
+            id.length > MAX_ROUTE_POINT_ID_LENGTH
+        )
+            push(
+                `${path}.id`,
+                `${path}.id must be a string of 1 to 16 characters`,
+            );
+        else if (ids.has(id))
+            push(`${path}.id`, `point id "${id}" is repeated`);
+        else ids.add(id);
+        pointOf(pt.at, `${path}.at`, push);
+    });
+    // R-14″: a point at either end of an arc leg is a corner
+    const points = geometry.points.filter(isRecord) as {
+        tension?: number;
+        bulge?: number;
+    }[];
+    if (points.length === geometry.points.length) {
+        const i = smoothBesideArc(
+            points,
+            typeof geometry.toBulge === "number" ? geometry.toBulge : undefined,
+        );
+        if (i >= 0)
+            push(
+                `points[${i}].tension`,
+                `points[${i}] is beside an arc leg, so it must be a corner`,
+            );
+    }
     return result();
 }

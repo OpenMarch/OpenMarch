@@ -205,7 +205,10 @@ jobs:
     needs: check-changes
     if: needs.check-changes.outputs.desktop == 'true'
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    # The scenarios take about 13 minutes, and installing system packages from apt (FFmpeg,
+    # Chromium's libraries) anywhere from under a minute to 15 on a slow mirror (#1115); 20
+    # cancelled them
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
 
@@ -221,12 +224,19 @@ jobs:
       - name: Install project dependencies
         run: pnpm install --no-frozen-lockfile
 
+      # Keyed on Playwright's version, not the whole lockfile, so an unrelated dependency change
+      # doesn't download Chromium again (#1115)
+      - name: Read the Playwright version
+        id: playwright-version
+        working-directory: apps/desktop
+        run: echo "version=$(pnpm exec playwright --version | awk '{print $2}')" >> "$GITHUB_OUTPUT"
+
       - name: Cache Playwright browsers
         id: playwright-cache
         uses: actions/cache@v4
         with:
           path: ~/.cache/ms-playwright
-          key: playwright-chromium-${{ runner.os }}-${{ hashFiles('pnpm-lock.yaml') }}
+          key: playwright-chromium-${{ runner.os }}-${{ steps.playwright-version.outputs.version }}
 
       - name: Install Playwright Chromium
         if: steps.playwright-cache.outputs.cache-hit != 'true'

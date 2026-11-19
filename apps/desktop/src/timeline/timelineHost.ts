@@ -8,8 +8,10 @@ import {
 } from "@openmarch/core";
 import {
     addSlotDestination,
+    laneFromImage,
     marcherFromImage,
     removeSlotDestination,
+    routeFromImage,
     shapeFromImage,
     slotDestinationFromImage,
     transitionFromImage,
@@ -22,7 +24,7 @@ import {
  * The resolver host for one open file (ADR 0012 §4, spec §10.2): the resolver plus the
  * post-commit mirror it reads marchers, shapes and transitions from.
  *
- * The resolver keeps a reference to `snapshot` and reads `marchers`, `shapes` and `transitions`
+ * The resolver keeps a reference to `snapshot` and reads `marchers`, `shapes`, `transitions`, `routes` and `lanes`
  * from it on every batch, so the mirror is updated in place, and always before
  * `resolver.notify`. `snapshot.assignments` is only the cold build's input: the resolver keeps
  * its own assignment index, updated from the batches.
@@ -99,6 +101,20 @@ export function applyBatchToMirror(
                     addSlotDestination(destinations, d);
                     pointsChanged.add(d.transition);
                 }
+                break;
+            case "routes":
+                snapshot.routes ??= {};
+                if (change.after)
+                    snapshot.routes[change.rowId] = routeFromImage(
+                        change.after,
+                    );
+                else delete snapshot.routes[change.rowId];
+                break;
+            case "lanes":
+                snapshot.lanes ??= {};
+                if (change.after)
+                    snapshot.lanes[change.rowId] = laneFromImage(change.after);
+                else delete snapshot.lanes[change.rowId];
                 break;
             case "assignments":
                 // The resolver indexes assignments itself, from the batch (spec §10.2)

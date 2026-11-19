@@ -504,6 +504,24 @@ export const timeline_shapes = sqliteTable(
     ],
 );
 
+/**
+ * A drawn path (spec v0.9 §5.1 `routes`, ADR 0016, D-19): corner and smooth points in absolute
+ * field coordinates, between the `from` and `to` it was drawn against. No owner column, like
+ * shapes. Since v0.10 (ADR 0017, plan step 24) a slot walks it through a lane
+ * (`timeline_lanes`); every route has a lane whose slot holds a marcher (I-R3′, at commit).
+ */
+export const timeline_routes = sqliteTable(
+    "timeline_routes",
+    {
+        id: integer().primaryKey(),
+        /** JSON geometry `{v, from, to, points}` (spec §5.2, I-R1) */
+        geometry: text().notNull(),
+    },
+    (_table) => [
+        check("timeline_routes_geometry_check", sql`json_valid(geometry)`),
+    ],
+);
+
 /** Motion into a destination over a beat range (spec §5.1 `transitions`). */
 export const timeline_transitions = sqliteTable(
     "timeline_transitions",
@@ -516,10 +534,20 @@ export const timeline_transitions = sqliteTable(
         dest_shape_id: integer().references(() => timeline_shapes.id, {
             onDelete: "restrict",
         }),
-        /** direct, arc or follow_the_leader */
+        /**
+         * direct, arc or follow_the_leader. `route` (v0.9) is retired since v0.10 (I-R2′): no
+         * transition has it, and the CHECK keeps it only so the table isn't rebuilt
+         */
         path_style: text().notNull().default("direct"),
         /** JSON path parameters, by path_style (spec §5.2) */
         path_params: text(),
+        /**
+         * A follow-the-leader transition's trail route (I-R2′, R-9′, pathways step 4), else NULL;
+         * a slot walks a route through a lane instead
+         */
+        route_id: integer().references(() => timeline_routes.id, {
+            onDelete: "restrict",
+        }),
         /** inherit or slot */
         order_mode: text().notNull().default("inherit"),
         slot_count: integer().notNull(),
@@ -534,7 +562,7 @@ export const timeline_transitions = sqliteTable(
         ),
         check(
             "timeline_transitions_path_style_check",
-            sql`path_style IN ('direct', 'arc', 'follow_the_leader')`,
+            sql`path_style IN ('direct', 'arc', 'follow_the_leader', 'route')`,
         ),
         check(
             "timeline_transitions_path_params_check",
@@ -550,18 +578,125 @@ export const timeline_transitions = sqliteTable(
             sql`slot_count BETWEEN 1 AND 10000`,
         ),
         ...beatRangeChecks("timeline_transitions"),
-        // I-T5: follow-the-leader follows a path, so it needs a destination shape
+        // I-T5′ (pathways step 4): follow-the-leader follows a path, so it needs a destination
+        // shape or a trail route (then the line through its slots' destinations, R-13′)
         check(
             "timeline_transitions_ftl_shape_check",
-            sql`dest_shape_id IS NOT NULL OR path_style <> 'follow_the_leader'`,
+            sql`dest_shape_id IS NOT NULL OR route_id IS NOT NULL OR path_style <> 'follow_the_leader'`,
         ),
         // I-T2 (partial): an arc carries a numeric bulge with |bulge| <= 0.5 (minor arcs only)
         check(
             "timeline_transitions_arc_bulge_check",
             sql`path_style <> 'arc' OR (coalesce(json_type(path_params, '$.bulge'), '') IN ('integer', 'real') AND abs(json_extract(path_params, '$.bulge')) <= 0.5)`,
         ),
+        check(
+            "timeline_transitions_route_id_type_check",
+            sql`route_id IS NULL OR typeof(route_id) = 'integer'`,
+        ),
+        // I-R2 (v0.9): a route transition walks a route, has no shape and exactly one slot.
+        // Vacuous since v0.10 (no transition is `route`, I-R2′, checked at commit as E-R2); kept
+        // so the table isn't rebuilt.
+        check(
+            "timeline_transitions_route_check",
+            sql`path_style <> 'route' OR (route_id IS NOT NULL AND dest_shape_id IS NULL AND slot_count = 1)`,
+        ),
         index("timeline_idx_tr_shape").on(table.dest_shape_id),
+        index("timeline_idx_tr_route").on(table.route_id),
         index("timeline_idx_tr_timeline").on(table.timeline_id),
+    ],
+);
+
+/**
+ * A lane (spec v0.10 J.1, D-20, ADR 0017; plan step 24): slot `slot_index` of transition
+ * `transition_id` walks route `route_id`. Whoever occupies the slot walks it, so drawing a path
+ * never moves a marcher out of its move. `offset_x`/`offset_y` are the start offset `o_s` from the
+ * route's `from`: a group path's lane; both NULL for an own lane (one marcher's own path, walked
+ * alone, I-LN4). At most one lane per slot (I-LN3); the slot is one of the transition's (I-LN1,
+ * triggers). `adjust` is this spot's own Adjust profile as JSON (spec J.2, plan step 3b).
+ * `group_adjust_id` comes with step 26, as `ADD COLUMN`.
+ */
+export const timeline_lanes = sqliteTable(
+    "timeline_lanes",
+    {
+        id: integer().primaryKey(),
+        transition_id: integer()
+            .notNull()
+            .references(() => timeline_transitions.id, {
+                onDelete: "restrict",
+            }),
+        slot_index: integer().notNull(),
+        route_id: integer()
+            .notNull()
+            .references(() => timeline_routes.id, { onDelete: "restrict" }),
+        offset_x: real(),
+        offset_y: real(),
+        adjust: text(),
+    },
+    (table) => [
+        integerTypeCheck("timeline_lanes", "transition_id"),
+        integerTypeCheck("timeline_lanes", "slot_index"),
+        integerTypeCheck("timeline_lanes", "route_id"),
+        check("timeline_lanes_slot_index_check", sql`slot_index >= 0`),
+        check(
+            "timeline_lanes_offset_x_check",
+            sql`offset_x IS NULL OR (typeof(offset_x) IN ('integer', 'real') AND offset_x BETWEEN -2000000 AND 2000000)`,
+        ),
+        check(
+            "timeline_lanes_offset_y_check",
+            sql`offset_y IS NULL OR (typeof(offset_y) IN ('integer', 'real') AND offset_y BETWEEN -2000000 AND 2000000)`,
+        ),
+        check(
+            "timeline_lanes_offset_check",
+            sql`(offset_x IS NULL) = (offset_y IS NULL)`,
+        ),
+        check(
+            "timeline_lanes_adjust_check",
+            sql`adjust IS NULL OR json_valid(adjust)`,
+        ),
+        unique("timeline_lanes_transition_slot_unique").on(
+            table.transition_id,
+            table.slot_index,
+        ),
+        index("timeline_idx_lane_route").on(table.route_id),
+    ],
+);
+
+/**
+ * Where a route came from (spec v0.10 J.1, K6): app data beside the routes, never read by the
+ * resolver and outside the change log. Pathways step 3c writes `detached_from` (AP-R9 Detach), so
+ * Rejoin (AP-R10) knows the group path a copy came back from; the other kinds are for later steps
+ * (paste, mirror, split). Both route columns cascade, so a build that doesn't know this table and
+ * deletes a route leaves no link naming it; this build deletes the links itself first (AP-H3).
+ */
+export const timeline_route_sources = sqliteTable(
+    "timeline_route_sources",
+    {
+        id: integer().primaryKey(),
+        route_id: integer()
+            .notNull()
+            .references(() => timeline_routes.id, { onDelete: "cascade" }),
+        kind: text().notNull(),
+        source_route_id: integer().references(() => timeline_routes.id, {
+            onDelete: "cascade",
+        }),
+        data: text(),
+    },
+    (table) => [
+        integerTypeCheck("timeline_route_sources", "route_id"),
+        check(
+            "timeline_route_sources_source_route_id_type_check",
+            sql`source_route_id IS NULL OR typeof(source_route_id) = 'integer'`,
+        ),
+        check(
+            "timeline_route_sources_kind_check",
+            sql`kind IN ('detached_from', 'recipe', 'mirror_of', 'pasted_from', 'split_from', 'continues')`,
+        ),
+        check(
+            "timeline_route_sources_data_check",
+            sql`data IS NULL OR json_valid(data)`,
+        ),
+        index("timeline_idx_route_sources_route").on(table.route_id),
+        index("timeline_idx_route_sources_source").on(table.source_route_id),
     ],
 );
 
