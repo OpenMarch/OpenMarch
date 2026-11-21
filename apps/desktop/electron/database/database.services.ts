@@ -74,6 +74,11 @@ export function setDbPath(path: string, isNewFile = false) {
         return statusCode;
     };
 
+    // Let go of the previous show first, before anything below can return. Closing a show calls
+    // setDbPath(""), which returns at the existence check: the shared connection used to stay
+    // open there, and Windows kept the closed .dots locked until the app quit.
+    closePersistentConnection();
+
     if (!isNewFile) {
         if (!fs.existsSync(path)) {
             return failedDb(
@@ -91,9 +96,6 @@ export function setDbPath(path: string, isNewFile = false) {
             );
         }
     }
-
-    // Reset any existing long-lived DB handle before opening a new path.
-    closePersistentConnection();
 
     DB_PATH = path;
     const db = connect();

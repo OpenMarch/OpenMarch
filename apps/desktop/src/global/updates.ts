@@ -68,7 +68,12 @@ export type UpdatePhase =
 export interface UpdateState {
     /** The running app's version */
     readonly currentVersion: string;
-    /** Which feed this app follows: nightlies are a separate app with their own feed */
+    /**
+     * Which app this is: "nightly" for the separate OpenMarch Nightly app and its own feed,
+     * "stable" for the regular app, betas included. It only picks the release-page link. A beta
+     * still finds pre-releases: electron-updater's GitHub feed allows them whenever the running
+     * version is a pre-release.
+     */
     readonly channel: "stable" | "nightly";
     readonly phase: UpdatePhase;
     /**
