@@ -77,21 +77,35 @@ Consequences).
 
 ### 3. Timing is a list of keys in ticks
 
-- **Each key** is a tick and a distance along the shapes.
+- **Each key** is a tick and a place on the path.
+- **A place is one number: the piece number plus the share of that piece.**
+  - Every straight leg is a piece (a points shape with n corners is n legs), and so is every arc
+    and every cubic.
+  - Pieces are counted from 0. `1` is the end of the first piece (its corner), `1.5` is halfway
+    along the second, and the path's end is the number of pieces.
+  - This is how Adjust already anchors its keys: a point plus a fraction (ADR 0017).
+- **Why a place on a piece, not a distance along the whole path:** when an end spot moves, only
+  the end piece changes length. A key tied to a piece stays where it was, so a marcher who reaches
+  a corner on count 6 still does. A distance, or a share of the whole path, drifts off the corner,
+  and every key after the change would need rewriting. It also keeps apps in step: a key on a
+  corner lands exactly there in every app, even if two apps measure a curve slightly differently.
 - **Between keys** the marcher moves at a steady speed.
 - **Ticks** are counted from the move's start, at **480 per beat**. This is the MIDI PPQ that
   DAWs use and the one schema#1 uses: it divides evenly by 2, 3, 4, 5, 6, 8, 10, 12 and 16.
 - **Keys are whole ticks.** A key that falls between ticks is rounded to the nearest one. Step 2
   measures the error this causes.
-- **Holds:** two keys at the same distance are a hold.
+- **Holds:** two keys at the same place are a hold.
 - **Speed changes:** more keys.
-- **Distance is measured along the real curve:**
+- **Speed and shares are measured along the real curve:**
   - straight lines and arcs are measured exactly;
   - a cubic is measured by its true length, not by its raw Bézier parameter (which runs slower at
     the peaks) and not by OpenMarch's 64-chord approximation.
 
-  So an SVG curve played back at an even speed walks equal distances in equal times. After
-  Effects' roving keyframes measure the same way.
+  So an SVG curve played back at an even speed walks equal distances in equal times, and "halfway
+  along a cubic" means half its length. After Effects' roving keyframes measure the same way.
+- **Two keys never share a tick.** When retiming would round a key onto the same tick as the key
+  before it, that key is dropped (never the first or the last; if the last collides, the one
+  before it is dropped). The marcher then walks steadily across both places instead of jumping.
 
 ### 4. Its ends follow the spots, as current paths do
 
@@ -101,8 +115,9 @@ redrawn, the path's first or last point follows:
 - **Points:** the first or last point moves.
 - **Cubic:** the end moves, and its nearest control point moves with it.
 - **Arc:** the end moves, and the arc keeps its bend.
-- **Timing:** the key ticks are kept. The distances are rescaled to the new length, so the
-  marcher still arrives on the same count.
+- **Timing:** the keys are unchanged. They name places on pieces, so the marcher still reaches
+  every corner, and the end, on the same count. Only the moved end piece is walked faster or
+  slower.
 
 The middle of the path doesn't move. Moving the whole path with the marcher is parked (see
 Consequences).
@@ -205,7 +220,7 @@ store.
   - Compare it with `positionAt` at the same moment. The largest gap must be within **1/100 of a
     step** (0.1125 field units on the default field).
   - The test reports the worst gap per show and the cost of tick rounding on its own.
-- **Unit tests** for each shape's length and point-at-distance, the key rules (whole ticks,
-  distances never go backward, holds) and the end-following rules in §4.
+- **Unit tests** for each shape's length and point-at-place, the key rules (whole ticks,
+  places never go backward, holds, two keys never on one tick) and the end-following rules in §4.
 - **Steps 3 to 6** add their own checks, ending with export, import and identical playback in
   step 6.
