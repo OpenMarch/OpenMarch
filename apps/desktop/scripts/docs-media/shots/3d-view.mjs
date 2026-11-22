@@ -327,9 +327,8 @@ async function sidebarPanelBox(page) {
 
 /** The front ensemble view, opened from its row at the top of the Marchers panel. */
 async function frontEnsembleView(page) {
-    const presets = page.getByTestId("pit-presets-button");
     for (let i = 0; i < 4; i++) {
-        if (await presets.isVisible().catch(() => false)) return;
+        if (await frontEnsembleViewOpen(page)) return;
         const row = page.getByTestId("front-ensemble-summary");
         if (await row.isVisible().catch(() => false))
             await row.getByRole("button").click();
@@ -338,13 +337,35 @@ async function frontEnsembleView(page) {
     }
 }
 
-/** Applies a front ensemble preset from the front ensemble view's header, with its players. */
+/** Whether the front ensemble view is showing: its presets in the body (no pit) or header */
+async function frontEnsembleViewOpen(page) {
+    for (const id of ["pit-preset-start", "pit-presets-button"])
+        if (
+            await page
+                .getByTestId(id)
+                .isVisible()
+                .catch(() => false)
+        )
+            return true;
+    return false;
+}
+
+/**
+ * Applies a front ensemble preset, with its players: from the view's body while the show has no
+ * pit, otherwise from the header's popover.
+ */
 async function applyPitPreset(page, size) {
     await frontEnsembleView(page);
-    await page.getByTestId("pit-presets-button").click();
-    const popover = page.getByRole("dialog", { name: "Presets" });
-    await popover.getByTestId(`pit-preset-${size}`).click();
-    await popover.getByRole("button", { name: "Apply" }).click();
+    const start = page.getByTestId("pit-preset-start");
+    if (await start.isVisible().catch(() => false)) {
+        await start.getByTestId(`pit-preset-card-${size}`).click();
+        await start.getByRole("button", { name: "Use this preset" }).click();
+    } else {
+        await page.getByTestId("pit-presets-button").click();
+        const popover = page.getByRole("dialog", { name: "Presets" });
+        await popover.getByTestId(`pit-preset-${size}`).click();
+        await popover.getByRole("button", { name: "Apply" }).click();
+    }
     await page.waitForTimeout(2500);
 }
 
@@ -352,10 +373,7 @@ async function applyPitPreset(page, size) {
 async function closeMarchersPanel(page) {
     for (let i = 0; i < 3; i++) {
         const open =
-            (await page
-                .getByTestId("pit-presets-button")
-                .isVisible()
-                .catch(() => false)) ||
+            (await frontEnsembleViewOpen(page)) ||
             (await page
                 .getByTestId("front-ensemble-summary")
                 .isVisible()
@@ -1152,9 +1170,19 @@ const shots = [
         async setup(ctx) {
             const { page } = ctx;
             await frontEnsembleView(page);
+            // The header's Add once there's a pit; an empty view's Add equipment otherwise
             await page
                 .getByRole("button", { name: "Add", exact: true })
+                .or(
+                    page.getByRole("button", {
+                        name: "Add equipment",
+                        exact: true,
+                    }),
+                )
+                .first()
                 .click();
+            // Off the pictures, so none is hovered
+            await page.mouse.move(1596, 996);
             // Let the pictures load
             await ctx.wait(1500);
             return { box: await sidebarPanelBox(page) };
@@ -1231,26 +1259,29 @@ const shots = [
     {
         id: "3d-front-ensemble-presets",
         kind: "still",
-        // The front ensemble view of a show with no pit, the preset chooser open on Medium
+        // The front ensemble view of a show with no pit: the presets (Medium chosen) and Build it
+        // yourself in its body
         async setup(ctx) {
             const { page } = ctx;
             await tidy(page);
             await frontEnsembleView(page);
-            await page.getByTestId("pit-presets-button").click();
-            const popover = page.getByRole("dialog", { name: "Presets" });
-            await popover.waitFor();
-            await popover.getByTestId("pit-preset-medium").click();
+            const presets = page.getByTestId("pit-preset-start");
+            await presets.waitFor();
+            await presets.getByTestId("pit-preset-card-medium").click();
             await page.mouse.move(1596, 996);
             await ctx.wait(800);
-            // The panel's header and the chooser hanging from it; the empty panel below stays out
+            // The panel's header and both ways to start under it; the empty panel below stays out
             const panel = await sidebarPanelBox(page);
-            const pop = await ctx.around(popover, 16);
+            const body = await ctx.around(
+                page.getByRole("region", { name: "Or build it yourself" }),
+                16,
+            );
             return {
                 box: {
                     x: panel.x,
                     y: panel.y,
                     width: panel.width - 12,
-                    height: pop.y + pop.height - panel.y,
+                    height: body.y + body.height - panel.y,
                 },
             };
         },

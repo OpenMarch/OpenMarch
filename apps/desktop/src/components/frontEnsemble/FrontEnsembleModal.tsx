@@ -14,7 +14,7 @@ import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import { allItemsQueryOptions } from "@/hooks/queries/useItems";
 import { isPodiumFamily, pitVariant } from "@/view3d/core/pit/catalog";
 import FrontEnsemblePicker from "./FrontEnsemblePicker";
-import PitPresets from "./PitPresets";
+import PitPresets, { PitPresetStart } from "./PitPresets";
 import { runAction } from "@/shortcuts/registry";
 import { formatList } from "@/utilities/formatList";
 import { usePitVariantLabel } from "./usePitVariantLabel";
@@ -103,7 +103,8 @@ export function FrontEnsembleSummary() {
 /**
  * The front ensemble view (instruments.md §6), opened from the Marchers panel: the equipment and
  * podiums in the show, each with its edit view, and in its header Add (the catalog, its own view,
- * as the Marchers panel's Add is) and the presets. They're stored as items like props, but aren't
+ * as the Marchers panel's Add is) and, once there's a pit, the presets (an empty view shows them
+ * in its body, `PitPresetStart`). They're stored as items like props, but aren't
  * props to designers: they don't move and aren't part of the staging. `onBack` returns to the
  * Marchers panel.
  */
@@ -114,6 +115,7 @@ export function FrontEnsembleContents({ onBack }: { onBack?: () => void }) {
         () => splitFrontEnsemble(items),
         [items],
     );
+    const isEmpty = equipment.length + podiums.length === 0;
     const onEdit = (item: ItemWithMarcher) =>
         setContent(
             <FrontEnsembleEditContents itemId={item.id} onBack={onBack} />,
@@ -125,25 +127,26 @@ export function FrontEnsembleContents({ onBack }: { onBack?: () => void }) {
                 title={<T keyName="frontEnsemble.title" />}
                 onBack={onBack}
                 actions={
-                    <>
-                        <PitPresets />
-                        <Button
-                            size="compact"
-                            onClick={() =>
-                                runAction("addFrontEnsembleEquipment")
-                            }
-                        >
-                            <T keyName="frontEnsemble.add.button" />
-                        </Button>
-                    </>
+                    // An empty view offers both ways to start in its body instead
+                    !isEmpty && (
+                        <>
+                            <PitPresets />
+                            <Button
+                                size="compact"
+                                onClick={() =>
+                                    runAction("addFrontEnsembleEquipment")
+                                }
+                            >
+                                <T keyName="frontEnsemble.add.button" />
+                            </Button>
+                        </>
+                    )
                 }
             />
             <div className="flex w-[28rem] grow flex-col gap-16 overflow-y-auto">
                 <div>
-                    {equipment.length + podiums.length === 0 ? (
-                        <p className="text-text/50 py-16 text-center">
-                            <T keyName="frontEnsemble.empty" />
-                        </p>
+                    {isEmpty ? (
+                        <FrontEnsembleStart />
                     ) : (
                         <div className="flex flex-col gap-16">
                             <ShowNamesSwitch
@@ -163,6 +166,41 @@ export function FrontEnsembleContents({ onBack }: { onBack?: () => void }) {
                     )}
                 </div>
             </div>
+        </div>
+    );
+}
+
+/**
+ * The empty front ensemble view's body: the two ways to start, one under the other. A preset lays
+ * out a whole pit (`PitPresetStart`); "Build it yourself" opens the Add view to place equipment
+ * one piece at a time.
+ */
+function FrontEnsembleStart() {
+    const { t } = useTranslate();
+    return (
+        <div className="flex flex-col gap-24">
+            <PitPresetStart />
+            <section
+                className="flex flex-col gap-12"
+                aria-label={t("frontEnsemble.custom.title")}
+            >
+                <h4 className="text-body font-medium">
+                    <T keyName="frontEnsemble.custom.title" />
+                </h4>
+                <div className="border-stroke bg-fg-2 rounded-6 flex items-center gap-12 border p-8">
+                    <p className="text-sub text-text-subtitle grow">
+                        <T keyName="frontEnsemble.custom.description" />
+                    </p>
+                    <Button
+                        size="compact"
+                        variant="secondary"
+                        className="shrink-0"
+                        onClick={() => runAction("addFrontEnsembleEquipment")}
+                    >
+                        <T keyName="frontEnsemble.custom.button" />
+                    </Button>
+                </div>
+            </section>
         </div>
     );
 }

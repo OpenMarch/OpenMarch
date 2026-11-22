@@ -255,8 +255,10 @@ test("places a marimba from the Front ensemble panel with one click, locked, at 
     const { page } = show;
     await expect.poll(() => drawnItems(page)).toHaveLength(1);
     await openFrontEnsemble(page);
-    // Add is its own view: the pictures of every model
-    await page.getByRole("button", { name: "Add", exact: true }).click();
+    // An empty view's "Add equipment" opens the Add view: the pictures of every model
+    await page
+        .getByRole("button", { name: "Add equipment", exact: true })
+        .click();
     const ensemble = page.getByRole("region", { name: "Add equipment" });
     // Each model is a picture: pick the 5.0 rosewood marimba from the search
     await ensemble
@@ -309,8 +311,10 @@ test("places a podium behind the back sideline, turned to face the field", async
     const { page } = show;
     await expect.poll(() => drawnItems(page)).toHaveLength(1);
     await openFrontEnsemble(page);
-    // Add is its own view: the pictures of every model
-    await page.getByRole("button", { name: "Add", exact: true }).click();
+    // An empty view's "Add equipment" opens the Add view: the pictures of every model
+    await page
+        .getByRole("button", { name: "Add equipment", exact: true })
+        .click();
     const ensemble = page.getByRole("region", { name: "Add equipment" });
     await ensemble.getByRole("button", { name: /^Podium · Low/ }).click();
     await expect
@@ -357,14 +361,12 @@ test("applies a front ensemble preset with its performers in one undo step, and 
     const { page } = show;
     await expect.poll(() => drawnItems(page)).toHaveLength(1);
     await openFrontEnsemble(page);
-    // The presets sit behind a small button in the header, so adding equipment stays in front
-    const presetsButton = page.getByTestId("pit-presets-button");
-    await expect(presetsButton).toHaveText("Start from a preset");
-    await presetsButton.click();
-    const presets = page.getByRole("dialog", { name: "Presets" });
-    await presets.getByRole("radio", { name: "Medium" }).click();
-    await expect(presets.getByRole("checkbox")).toBeChecked();
-    await presets.getByRole("button", { name: "Apply" }).click();
+    // An empty front ensemble shows the presets in the view itself
+    await expect(page.getByTestId("pit-presets-button")).toHaveCount(0);
+    const start = page.getByRole("region", { name: "Presets" });
+    await start.getByRole("radio", { name: "Medium" }).click();
+    await expect(start.getByRole("checkbox")).toBeChecked();
+    await start.getByRole("button", { name: "Use this preset" }).click();
     await waitForIdle(page);
 
     // 4 marimbas, 3 vibes, xylophone, glockenspiel, rack, drum set, synth, 4 speakers, podium,
@@ -393,10 +395,13 @@ test("applies a front ensemble preset with its performers in one undo step, and 
     ]);
     await expectCanvasMatchesShow(show);
 
-    // Applying closes the popover; the button now resets to a preset.
-    // Small replaces Medium's equipment, keeps the riser and adds no performers it already has
-    await expect(presets).toBeHidden();
+    // Once there's a pit, the presets sit behind a small button in the header, so adding
+    // equipment stays in front. Small replaces Medium's equipment, keeps the riser and adds no
+    // performers it already has
+    await expect(start).toBeHidden();
+    const presetsButton = page.getByTestId("pit-presets-button");
     await expect(presetsButton).toHaveText("Reset to preset");
+    const presets = page.getByRole("dialog", { name: "Presets" });
     await presetsButton.click();
     await expect(
         presets.getByText("Replaces the equipment the last preset added", {
@@ -407,11 +412,13 @@ test("applies a front ensemble preset with its performers in one undo step, and 
     await presets.getByRole("button", { name: "Apply" }).click();
     await waitForIdle(page);
     await expect.poll(() => drawnItems(page)).toHaveLength(11);
+    // Medium's players move onto Small's instruments; those left without one (and no later
+    // moves) are removed: the two trumpets, 6 players and the drum major
     expect(
         await show.query(
             "SELECT count(*) AS n FROM marchers WHERE type = 'marcher'",
         ),
-    ).toEqual([{ n: 15 }]);
+    ).toEqual([{ n: 9 }]);
 
     // One undo brings Medium back
     await page.keyboard.press("ControlOrMeta+z");
