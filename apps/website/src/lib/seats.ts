@@ -17,7 +17,7 @@ export const CURRENT_SEASON = {
     /** Public year label, e.g. "2026–27 seats". */
     yearLabel: "2026–27",
     /** Last day seats are valid (ISO date). */
-    endsOn: "2027-06-30",
+    endsOn: "2027-07-31",
 } as const;
 
 /** The season before it, which existing ensembles may still be on. */
@@ -29,7 +29,7 @@ export const PREVIOUS_SEASON = {
 
 export const SALES_EMAIL = "sales@openmarch.com";
 
-/** Formats an ISO date ("2027-06-30") as "June 30, 2027", independent of time zone. */
+/** Formats an ISO date ("2027-07-31") as "July 31, 2027", independent of time zone. */
 export function formatSeatDate(isoDate: string): string {
     const [year, month, day] = isoDate.split("-").map(Number);
     if (!year || !month || !day) {
@@ -45,7 +45,7 @@ export function formatSeatDate(isoDate: string): string {
 
 /** "$5" */
 export const SEAT_PRICE_LABEL = `$${SEAT_PRICE_USD}`;
-/** "June 30, 2027" */
+/** "July 31, 2027" */
 export const CURRENT_SEASON_ENDS = formatSeatDate(CURRENT_SEASON.endsOn);
 /** "December 31, 2026" */
 export const PREVIOUS_SEASON_ENDS = formatSeatDate(PREVIOUS_SEASON.endsOn);
