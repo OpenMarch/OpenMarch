@@ -1,5 +1,19 @@
 import * as Accordion from "@radix-ui/react-accordion";
 import { CaretDownIcon } from "@phosphor-icons/react";
+import {
+    CURRENT_SEASON_ENDS,
+    FREE_SEATS_PER_ENSEMBLE,
+    NEW_ENSEMBLES_FROM,
+    PREVIOUS_SEASON_ENDS,
+    SALES_EMAIL,
+    SEAT_PRICE_LABEL,
+} from "@/lib/seats";
+
+const salesLink = (
+    <a href={`mailto:${SALES_EMAIL}`} className="text-accent underline">
+        {SALES_EMAIL}
+    </a>
+);
 
 const faqs = [
     {
@@ -107,9 +121,11 @@ const faqs = [
                 <p>
                     <em>OpenMarch: On The Move</em> uses a per-seat licensing
                     model for ensembles, but performers do not pay individually
-                    to use the app. Each ensemble receives 5 free seats in 2026.
-                    Subsequent seats are purchased by the ensemble or program
-                    for $5 per seat.
+                    to use the app. Each ensemble receives{" "}
+                    {FREE_SEATS_PER_ENSEMBLE} free seats. Subsequent seats are
+                    purchased by the ensemble or program for {SEAT_PRICE_LABEL}{" "}
+                    per seat. New ensembles&apos; seats are valid through{" "}
+                    {CURRENT_SEASON_ENDS}.
                 </p>
                 <p>
                     Students simply download the app on iOS or Android, open the
@@ -139,17 +155,13 @@ const faqs = [
                     seasons. Licenses do not automatically renew.
                 </p>
                 <p>
-                    Seats purchased for the 2026 season are valid through
-                    December 31, 2026 to align with the typical U.S. marching
-                    band season. If your program needs a different timeline, you
-                    can reach out to us at{" "}
-                    <a
-                        href="mailto:sales@openmarch.com"
-                        className="text-accent underline"
-                    >
-                        sales@openmarch.com
-                    </a>{" "}
-                    and we'll be happy to help.
+                    Ensembles created before {NEW_ENSEMBLES_FROM} have seats
+                    valid through {PREVIOUS_SEASON_ENDS}. New ensembles have
+                    seats valid through {CURRENT_SEASON_ENDS}.
+                </p>
+                <p>
+                    Need a different date? Contact {salesLink} and we&apos;ll be
+                    happy to help.
                 </p>
             </>
         ),

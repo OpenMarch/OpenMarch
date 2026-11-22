@@ -7,6 +7,11 @@ sidebar:
 
 import { Steps } from "@astrojs/starlight/components";
 import { Aside } from "@astrojs/starlight/components";
+import {
+  CURRENT_SEASON_ENDS,
+  FREE_SEATS_PER_ENSEMBLE,
+  SEAT_PRICE_LABEL,
+} from "@/lib/seats";
 
 _OpenMarch - On the Move_ is a mobile companion app that allows you to instantly distribute your show to mobile devices for performers and staff.
 
@@ -29,5 +34,11 @@ Each **Ensemble** can have one or many **Productions** based on how you would li
 ## Next Steps
 
 Create an account in the [Ensemble Management Dashboard](https://app.openmarch.com/) to get started.
+
+<Aside type="tip">
+  New ensembles get {FREE_SEATS_PER_ENSEMBLE} free seats, valid through{" "}
+  {CURRENT_SEASON_ENDS}. Extra seats are {SEAT_PRICE_LABEL} per seat. See
+  [Seats](/otm/ensemble-management/#seats) for details.
+</Aside>
 
 Then, check out [Ensemble Management](/otm/ensemble-management) to learn how to manage your ensemble and [Uploading Shows](/otm/uploading-shows) to learn how to upload your shows from the desktop app to OTM.
