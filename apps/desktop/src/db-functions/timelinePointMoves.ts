@@ -727,6 +727,12 @@ export interface SplitMovesResult {
     split: number[];
     /** Marchers with a move across the beat that isn't simple on the box, left alone, by id */
     leftAlone: number[];
+    /**
+     * Members of a shape whose move the split re-cut that it no longer lists: they arrive at its
+     * count in another move than the one it followed, as `TimelineMoveResult.droppedFromShapes`.
+     * By id, for the toast
+     */
+    droppedFromShapes?: number[];
 }
 
 /**
@@ -816,6 +822,12 @@ export async function splitMovesAtBeatInTransaction({
         );
         split.push(marcherId);
     }
-    await writePlan(tx, plan);
-    return { split, leftAlone: [...state.locked].sort((x, y) => x - y) };
+    const written = await writePlan(tx, plan);
+    return {
+        split,
+        leftAlone: [...state.locked].sort((x, y) => x - y),
+        ...(written.droppedFromShapes
+            ? { droppedFromShapes: written.droppedFromShapes }
+            : {}),
+    };
 }
