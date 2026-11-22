@@ -193,6 +193,16 @@
                         "label": "Enable analytics"
                     }
                 ]
+            },
+            {
+                "key": "settings.privacy.discord",
+                "label": "Discord status",
+                "options": [
+                    {
+                        "key": "settings.privacy.discord.toggle",
+                        "label": "Show OpenMarch in my Discord status"
+                    }
+                ]
             }
         ]
     },

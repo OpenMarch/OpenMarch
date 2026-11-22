@@ -8,6 +8,8 @@ import { applyAnalyticsConsent } from "@/utilities/analyticsConsent";
 import SettingRow from "@/settings/SettingRow";
 import SettingsPanel from "@/settings/SettingsPanel";
 import { siteUrl } from "@/global/siteUrl";
+import { isWebBuild } from "@/utilities/webBuild";
+import DiscordPresenceSettings from "@/components/launchpage/settings/DiscordPresenceSettings";
 
 export default function PrivacySettings() {
     const posthog = usePostHog();
@@ -75,6 +77,9 @@ export default function PrivacySettings() {
             </SettingsPanel>
 
             <AnalyticsMessage hasOptedOut={hasOptedOut} />
+
+            {/* A browser page can't reach the Discord app */}
+            {!isWebBuild && <DiscordPresenceSettings />}
         </div>
     );
 }

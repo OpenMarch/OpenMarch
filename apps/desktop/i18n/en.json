@@ -1913,6 +1913,9 @@
         "privacy.analytics.disabled": "You are not sharing analytics. If you experience issues or bugs, we will not be aware of them. If you have an issue, please <a>submit feedback</a> so that we can address it.",
         "privacy.analytics.enabled": "You're sharing usage analytics. Thank you for helping us improve OpenMarch for everyone.",
         "privacy.analytics.toggle": "Enable analytics",
+        "privacy.discord": "Discord status",
+        "privacy.discord.description": "While Discord is open on this computer, your Discord status says you're designing a show in OpenMarch, and for how long. It never shows the show's name. Your friends and the people in your servers can see it.",
+        "privacy.discord.toggle": "Show OpenMarch in my Discord status",
         "privacy.description": "Choose what OpenMarch shares to help improve the app.",
         "repairDotsFile": "Repair DOTS file",
         "repairDotsFile.cancel": "Cancel",
@@ -2002,6 +2005,12 @@
         "shortcuts.recordingHint": "Press keys… (<keys></keys> to cancel)",
         "shortcuts.category.field": "Field",
         "shortcuts.category.path": "Paths"
+    },
+    "discord": {
+        "presence.designing": "Designing a show",
+        "presence.getOpenMarch": "Get OpenMarch",
+        "presence.launchPage": "Choosing a show",
+        "presence.newShow": "Starting a new show"
     },
     "shapes": {
         "box": {
