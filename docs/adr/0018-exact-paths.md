@@ -210,6 +210,11 @@ store.
   - Step 6 imports.
 - **Two lengths for cubics.** OpenMarch's own routes keep R-14's 64-chord length table.
   Exact paths use true length. The converter bridges the two with extra keys, so neither changes.
+  Step 2 measured the cost: lines, arc moves and follow the leader take two keys, and a cubic a
+  median of 2 at a real move's size, but up to a few hundred on curves 160 steps across (spec
+  Appendix M, "Measured"). Timing OpenMarch's own curves by true length too would remove those
+  keys. It would move existing curved paths by well under 1/100 of a step, and it is a separate
+  decision.
 
 ## Verification
 

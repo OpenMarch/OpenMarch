@@ -148,6 +148,44 @@ export type {
     WalkResolver,
 } from "./walkedPath";
 
+// Exact paths (ADR 0018, spec Appendix M). The types are a temporary copy until the `schema`
+// package owns them (DE-6).
+export {
+    TICKS_PER_BEAT,
+    EXACT_MIN_LENGTH,
+    arcCircle,
+    checkExactPath,
+    dropCollidingKeys,
+    exactPieceCount,
+    exactPieces,
+    exactPlayer,
+    exactPointAt,
+    followExactEnds,
+    measureCubic,
+    retimeExactPath,
+    splitExactPath,
+} from "./exactPath";
+export type {
+    ArcCircle,
+    CubicMeasure,
+    ExactArc,
+    ExactCubic,
+    ExactKey,
+    ExactPath,
+    ExactPathProblem,
+    ExactPiece,
+    ExactPlayer,
+    ExactPoints,
+    ExactShape,
+} from "./exactPath";
+export {
+    EXACT_DEFAULT_TOLERANCE,
+    bendOfWalkedArc,
+    exactPathOfSegments,
+    exactPathsOf,
+} from "./exactPathConvert";
+export type { ExactMove, ExactPathsOptions } from "./exactPathConvert";
+
 /** The uncached reference oracle (spec section 8), for tests and debug checks only. */
 export function createTimelineOracleForTesting(host: TimelineSnapshot): Oracle {
     return createOracle(host);
