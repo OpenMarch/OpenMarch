@@ -22,7 +22,7 @@ import Ui from "@/components/docs/Ui.astro";
 import InShort from "@/components/docs/InShort.astro";
 import { Steps } from "@astrojs/starlight/components";
 
-<InShort>In the <Ui k="sidebar.marchers" /> panel, select <Ui k="frontEnsemble.summary.setUp" /> next to <Ui k="frontEnsemble.summary.title" plain />, choose a size and select <Ui k="frontEnsemble.presets.addPit" />.</InShort>
+<InShort>In the <Ui k="sidebar.marchers" /> panel, select <Ui k="frontEnsemble.summary.setUp" /> next to <Ui k="frontEnsemble.summary.title" plain />, choose a size and select <Ui k="frontEnsemble.presets.use" />.</InShort>
 
 The front ensemble, or pit, is the equipment that stands in front of the field all show: marimbas, vibraphones, synths, racks, a drum set, speakers, and the drum major's podium. You set it up once and it stays put on every page. On the field each piece is drawn from above; in the 3D View it's the real instrument, with its player standing at it.
 
@@ -50,15 +50,15 @@ The front ensemble view lists the show's equipment and its podiums. The command 
 
 <Steps>
 
-1. While the show has no pit, the front ensemble view shows the presets: <Ui k="frontEnsemble.presets.small" plain />, <Ui k="frontEnsemble.presets.medium" plain /> and <Ui k="frontEnsemble.presets.large" plain />, each pictured from above with what it holds. Choose one.
+1. While the show has no pit, the front ensemble view offers two ways to start. Under <Ui k="frontEnsemble.presets.start" plain /> are <Ui k="frontEnsemble.presets.small" plain />, <Ui k="frontEnsemble.presets.medium" plain /> and <Ui k="frontEnsemble.presets.large" plain />, each pictured from above with what it holds. Choose one.
 
-2. Leave <Ui k="frontEnsemble.presets.addPerformers" plain /> on to get a player for each instrument and a drum major on the podium, then select <Ui k="frontEnsemble.presets.addPit" />.
+2. Leave <Ui k="frontEnsemble.presets.addPerformers" plain /> on to get a player for each instrument and a drum major on the podium, then select <Ui k="frontEnsemble.presets.use" />.
 
 </Steps>
 
 <Media
   id="3d-front-ensemble-presets"
-  alt="The front ensemble view of a show with no pit yet: Small, Medium and Large as cards, each with a picture of the pit from above and what it holds, Medium chosen, Also add performers on, and Add pit."
+  alt="The front ensemble view of a show with no pit yet: Small, Medium and Large as cards, each with a picture of the pit from above and what it holds, Medium chosen, Also add performers on and Use this preset; under them, Or build it yourself with an Add equipment button."
   maxWidth={480}
 />
 
@@ -75,7 +75,7 @@ Once the show has a pit, the presets move behind <Ui k="frontEnsemble.presets.re
 
 <Steps>
 
-1. In the front ensemble view, select <Ui k="frontEnsemble.add.button" />.
+1. In the front ensemble view, select <Ui k="frontEnsemble.add.button" /> in its header, or <Ui k="frontEnsemble.custom.button" /> under <Ui k="frontEnsemble.custom.title" plain /> while the show has no pit.
 
 2. Find the piece: the pictures are grouped under <Ui k="frontEnsemble.groups.keyboards" plain />, <Ui k="frontEnsemble.groups.percussion" plain />, <Ui k="frontEnsemble.groups.audio" plain /> and <Ui k="frontEnsemble.groups.podiums" plain />, or type in <Ui k="frontEnsemble.search" plain /> ("marimba black", "tower"). Each shows its size and footprint in meters; a dot marks the usual choice.
 

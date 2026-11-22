@@ -603,8 +603,10 @@ equipment and podiums in the show apart, each with its edit view; its header
 has Add, which opens the catalog as its own view (every model as a picture, by
 group: keyboards, percussion, audio and podiums, with a search box), and the
 Small, Medium and Large presets behind one button, "Reset to preset", once
-there is a pit. While the show has no pit, the view's body shows the presets
-instead, as pictured cards with "Add pit" (owner, 2026-11-22). Opening the view and opening Add are
+there is a pit. While the show has no pit, the header is empty and the view's
+body offers the two ways to start: "Start from a preset" (pictured cards and
+"Use this preset") and "Or build it yourself" ("Add equipment" opens the
+catalog) (owner, 2026-11-22). Opening the view and opening Add are
 registered actions. The Props panel lists only props. Storage is unchanged:
 equipment stays `items` rows with `kind = 'equipment'`. A new show can start
 with a pit: the new-show dialog has a Front ensemble step after Performers

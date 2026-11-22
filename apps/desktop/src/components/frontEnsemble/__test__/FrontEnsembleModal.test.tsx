@@ -161,11 +161,13 @@ describeDbTests("Front ensemble panel", (it) => {
         const row = await screen.findByTestId("front-ensemble-summary");
         expect(within(row).getByText("No pit yet")).toBeTruthy();
         fireEvent.click(within(row).getByRole("button", { name: "Set up" }));
-        // An empty view shows the presets in its body (with Medium picked), Add in its header,
-        // and no presets button there
-        await screen.findByText(
-            "No front ensemble yet. Start from a preset, or add equipment yourself with Add.",
-        );
+        // An empty view offers both ways to start in its body: a preset (Medium picked) or
+        // equipment one piece at a time. Its header has neither Add nor the presets button
+        await screen.findByRole("heading", { name: "Start from a preset" });
+        expect(
+            screen.getByRole("heading", { name: "Or build it yourself" }),
+        ).toBeTruthy();
+        expect(screen.queryByRole("button", { name: "Add" })).toBeNull();
         const presets = screen.getByRole("region", { name: "Presets" });
         expect(
             within(presets)
@@ -176,7 +178,7 @@ describeDbTests("Front ensemble panel", (it) => {
             within(presets).queryByRole("radio", { name: "None" }),
         ).toBeNull();
         expect(
-            within(presets).getByRole("button", { name: "Add pit" }),
+            within(presets).getByRole("button", { name: "Use this preset" }),
         ).toBeTruthy();
         expect(screen.queryByTestId("pit-presets-button")).toBeNull();
         // Add is its own view (the pictures), with a way back to the list
@@ -184,12 +186,10 @@ describeDbTests("Front ensemble panel", (it) => {
             "addFrontEnsembleEquipment",
             { run: openFrontEnsembleAdd, isEnabled: () => true },
         );
-        fireEvent.click(screen.getByRole("button", { name: "Add" }));
+        fireEvent.click(screen.getByRole("button", { name: "Add equipment" }));
         await screen.findByRole("region", { name: "Add equipment" });
         fireEvent.click(screen.getByRole("button", { name: "Back" }));
-        await screen.findByText(
-            "No front ensemble yet. Start from a preset, or add equipment yourself with Add.",
-        );
+        await screen.findByRole("heading", { name: "Start from a preset" });
         unregisterAdd();
         // The Marchers button stays lit: the view is part of that panel
         expect(useSidebarModalStore.getState().contentId).toBe("marchers");

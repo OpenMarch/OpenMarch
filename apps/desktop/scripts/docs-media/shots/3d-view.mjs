@@ -359,7 +359,7 @@ async function applyPitPreset(page, size) {
     const start = page.getByTestId("pit-preset-start");
     if (await start.isVisible().catch(() => false)) {
         await start.getByTestId(`pit-preset-card-${size}`).click();
-        await start.getByRole("button", { name: "Add pit" }).click();
+        await start.getByRole("button", { name: "Use this preset" }).click();
     } else {
         await page.getByTestId("pit-presets-button").click();
         const popover = page.getByRole("dialog", { name: "Presets" });
@@ -1170,9 +1170,19 @@ const shots = [
         async setup(ctx) {
             const { page } = ctx;
             await frontEnsembleView(page);
+            // The header's Add once there's a pit; an empty view's Add equipment otherwise
             await page
                 .getByRole("button", { name: "Add", exact: true })
+                .or(
+                    page.getByRole("button", {
+                        name: "Add equipment",
+                        exact: true,
+                    }),
+                )
+                .first()
                 .click();
+            // Off the pictures, so none is hovered
+            await page.mouse.move(1596, 996);
             // Let the pictures load
             await ctx.wait(1500);
             return { box: await sidebarPanelBox(page) };
@@ -1249,7 +1259,8 @@ const shots = [
     {
         id: "3d-front-ensemble-presets",
         kind: "still",
-        // The front ensemble view of a show with no pit: the presets in its body, Medium chosen
+        // The front ensemble view of a show with no pit: the presets (Medium chosen) and Build it
+        // yourself in its body
         async setup(ctx) {
             const { page } = ctx;
             await tidy(page);
@@ -1259,9 +1270,12 @@ const shots = [
             await presets.getByTestId("pit-preset-card-medium").click();
             await page.mouse.move(1596, 996);
             await ctx.wait(800);
-            // The panel's header and the presets under it; the empty panel below stays out
+            // The panel's header and both ways to start under it; the empty panel below stays out
             const panel = await sidebarPanelBox(page);
-            const body = await ctx.around(presets, 16);
+            const body = await ctx.around(
+                page.getByRole("region", { name: "Or build it yourself" }),
+                16,
+            );
             return {
                 box: {
                     x: panel.x,

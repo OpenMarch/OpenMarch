@@ -73,10 +73,9 @@ function AddPerformersCheckbox({
 }
 
 /**
- * The empty front ensemble view's body (owner, 2026-11-22: a lone "Start from a preset" button
- * looked lost in an empty panel): Small, Medium and Large as pictured cards, "Also add
- * performers" and a button that adds the chosen pit. Adding equipment one piece at a time stays
- * in the header.
+ * The empty front ensemble view's first choice (owner, 2026-11-22: a lone "Start from a preset"
+ * button looked lost in an empty panel, and two Add buttons hid that there are two ways to
+ * start): Small, Medium and Large as pictured cards, "Also add performers" and "Use this preset".
  */
 export function PitPresetStart() {
     const { t } = useTranslate();
@@ -89,9 +88,9 @@ export function PitPresetStart() {
             aria-label={t("frontEnsemble.presets.title")}
             data-testid="pit-preset-start"
         >
-            <p className="text-body text-text-subtitle">
-                <T keyName="frontEnsemble.emptyStart" />
-            </p>
+            <h4 className="text-body font-medium">
+                <T keyName="frontEnsemble.presets.start" />
+            </h4>
             <PitPresetCards
                 value={size}
                 onChange={(next) => next && setSize(next)}
@@ -112,7 +111,7 @@ export function PitPresetStart() {
                     disabled={!canApply}
                     onClick={() => apply(size, addPerformers)}
                 >
-                    <T keyName="frontEnsemble.presets.addPit" />
+                    <T keyName="frontEnsemble.presets.use" />
                 </Button>
             </div>
         </section>

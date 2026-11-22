@@ -255,8 +255,10 @@ test("places a marimba from the Front ensemble panel with one click, locked, at 
     const { page } = show;
     await expect.poll(() => drawnItems(page)).toHaveLength(1);
     await openFrontEnsemble(page);
-    // Add is its own view: the pictures of every model
-    await page.getByRole("button", { name: "Add", exact: true }).click();
+    // An empty view's "Add equipment" opens the Add view: the pictures of every model
+    await page
+        .getByRole("button", { name: "Add equipment", exact: true })
+        .click();
     const ensemble = page.getByRole("region", { name: "Add equipment" });
     // Each model is a picture: pick the 5.0 rosewood marimba from the search
     await ensemble
@@ -309,8 +311,10 @@ test("places a podium behind the back sideline, turned to face the field", async
     const { page } = show;
     await expect.poll(() => drawnItems(page)).toHaveLength(1);
     await openFrontEnsemble(page);
-    // Add is its own view: the pictures of every model
-    await page.getByRole("button", { name: "Add", exact: true }).click();
+    // An empty view's "Add equipment" opens the Add view: the pictures of every model
+    await page
+        .getByRole("button", { name: "Add equipment", exact: true })
+        .click();
     const ensemble = page.getByRole("region", { name: "Add equipment" });
     await ensemble.getByRole("button", { name: /^Podium · Low/ }).click();
     await expect
@@ -362,7 +366,7 @@ test("applies a front ensemble preset with its performers in one undo step, and 
     const start = page.getByRole("region", { name: "Presets" });
     await start.getByRole("radio", { name: "Medium" }).click();
     await expect(start.getByRole("checkbox")).toBeChecked();
-    await start.getByRole("button", { name: "Add pit" }).click();
+    await start.getByRole("button", { name: "Use this preset" }).click();
     await waitForIdle(page);
 
     // 4 marimbas, 3 vibes, xylophone, glockenspiel, rack, drum set, synth, 4 speakers, podium,

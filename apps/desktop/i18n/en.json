@@ -1700,10 +1700,14 @@
             "title": "Add equipment",
             "button": "Add"
         },
-        "emptyStart": "No front ensemble yet. Start from a preset, or add equipment yourself with Add.",
         "list": {
             "equipment": "Equipment",
             "podiums": "Podiums"
+        },
+        "custom": {
+            "title": "Or build it yourself",
+            "description": "Pick instruments, speakers and podiums one at a time.",
+            "button": "Add equipment"
         },
         "placeInstructions": "Click the field to place the {name}. It is on the field from the playhead's count.",
         "equipment": {
@@ -1741,7 +1745,7 @@
             "always": "Each also adds a podium on the 50 and a mixer behind the pit.",
             "addPerformers": "Also add performers",
             "apply": "Apply",
-            "addPit": "Add pit",
+            "use": "Use this preset",
             "replaces": "Replaces the equipment the last preset added. Its players move to the new spots; those left without an instrument are removed, unless they have moves later in the show. Undo brings everything back. Equipment you added yourself stays.",
             "none": "None",
             "start": "Start from a preset",
