@@ -38,7 +38,7 @@ These commands change a marcher's state on a page, <Term id="defined">Defined</T
 1. Select the marchers. To clear the page for everyone, select nobody.
 2. Right-click the page's box and select <Ui k="actions.batchEdit.clearPage" values={{ page: 3 }} /> (with the page's number, and "(all marchers)" after it when nobody is selected), or press <Kbd action="setSelectedMarchersToPreviousPage" /> for the selected marchers or <Kbd action="setAllMarchersToPreviousPage" /> for everyone.
 
-The same command is in the inspector, as <Ui k="toolbar.alignment.placeSelectedMarchers" /> › <Ui k="toolbar.alignment.toPreviousPagePositions" />, and for every marcher in the toolbar's <Ui k="inspector.shape.alignmentTab" /> tab, under <Ui k="toolbar.alignment.placeAllMarchers" />.
+The same command is in the inspector, as <Ui k="toolbar.alignment.selectedMarchers" /> › <Ui k="actions.batchEdit.clearPage" values={{ page: "N" }} />, and for every marcher in the toolbar's <Ui k="inspector.shape.alignmentTab" /> tab, under <Ui k="toolbar.alignment.allMarchers" />.
 
 The first page has no page before it, so it can't be cleared: there the command is greyed out and says <Ui k="actions.batchEdit.noPageBefore" />.
 
