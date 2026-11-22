@@ -1,12 +1,26 @@
 ---
 import { Button } from "@openmarch/ui";
+import {
+    CURRENT_SEASON,
+    CURRENT_SEASON_ENDS,
+    FREE_SEATS_PER_ENSEMBLE,
+    SALES_EMAIL,
+    SEAT_PRICE_LABEL,
+} from "@/lib/seats";
+
+const seasonLine = `${CURRENT_SEASON.yearLabel} seats, valid through ${CURRENT_SEASON_ENDS}`;
 ---
 
 <section
     class="w-full flex flex-col items-center justify-center gap-12"
     id="pricing"
 >
-    <h1 class="text-h1 max-[580px]:text-h2">Pricing</h1>
+    <div class="flex flex-col items-center gap-8 text-center">
+        <h1 class="text-h1 max-[580px]:text-h2">Pricing</h1>
+        <p class="text-body text-text-subtitle">
+            {seasonLine}
+        </p>
+    </div>
     <div class="grid grid-cols-1 gap-16 min-[900px]:grid-cols-2">
         <div
             class="flex w-full max-w-sm flex-col items-start justify-center gap-8 rounded-[36px] border border-accent p-24 max-[480px]:rounded-24 max-[480px]:p-16"
@@ -15,7 +29,7 @@ import { Button } from "@openmarch/ui";
             <h2 class="text-h2 max-[480px]:text-h3">Free</h2>
             <ul class="list-disc pl-20">
                 <li class="text-body">
-                    5 free seats for your ensemble in 2026
+                    {FREE_SEATS_PER_ENSEMBLE} free seats for your ensemble
                 </li>
                 <li class="text-body">Enough for yourself and your staff</li>
                 <li class="text-body">No credit card required</li>
@@ -31,8 +45,11 @@ import { Button } from "@openmarch/ui";
             class="flex w-full max-w-sm flex-col items-start justify-center gap-8 rounded-[36px] border border-accent p-24 max-[480px]:rounded-24 max-[480px]:p-16"
         >
             <p class="text-sub font-mono">OPENMARCH: ON THE MOVE</p>
-            <h2 class="text-h2 max-[480px]:text-h3">$5 per seat</h2>
+            <h2 class="text-h2 max-[480px]:text-h3">
+                {SEAT_PRICE_LABEL} per seat
+            </h2>
             <ul class="list-disc pl-20">
+                <li class="text-body">Valid through {CURRENT_SEASON_ENDS}</li>
                 <li class="text-body">See your path and coordinates</li>
                 <li class="text-body">Visualize the big picture</li>
                 <li class="text-body">Upload changes instantly</li>
@@ -44,4 +61,10 @@ import { Button } from "@openmarch/ui";
             >
         </div>
     </div>
+    <p class="text-body text-text-subtitle max-w-xl text-center">
+        Need a different date? Contact <a
+            href={`mailto:${SALES_EMAIL}`}
+            class="text-accent underline">{SALES_EMAIL}</a
+        >.
+    </p>
 </section>
