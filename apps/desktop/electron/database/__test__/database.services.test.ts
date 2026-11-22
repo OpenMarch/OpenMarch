@@ -1,6 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { DatabaseSync } from "node:sqlite";
-import { existsSync, mkdtempSync, renameSync, rmSync } from "fs";
+import {
+    existsSync,
+    mkdtempSync,
+    readdirSync,
+    readlinkSync,
+    realpathSync,
+    renameSync,
+    rmSync,
+} from "fs";
 import { tmpdir } from "os";
 import { join } from "path";
 import { Worker } from "node:worker_threads";
@@ -126,6 +134,42 @@ describe("Database Services", () => {
             expect(existsSync(renamedPath)).toBe(true);
             expect(existsSync(dbPath)).toBe(false);
         });
+
+        /** The process's open handles to `path` (Linux only: read from /proc/self/fd). */
+        const openHandlesTo = (path: string) => {
+            const target = realpathSync(path);
+            return readdirSync("/proc/self/fd").filter((fd) => {
+                try {
+                    return readlinkSync(`/proc/self/fd/${fd}`) === target;
+                } catch {
+                    return false;
+                }
+            }).length;
+        };
+
+        it.skipIf(!existsSync("/proc/self/fd"))(
+            "closes the shared connection when the show closes, so Windows doesn't keep the file locked",
+            async () => {
+                await handleSqlProxy(null, "SELECT 1", [], "get");
+                expect(openHandlesTo(dbPath)).toBeGreaterThan(0);
+
+                // Exit File clears the path this way (closeCurrentFile).
+                setDbPath("", false);
+
+                expect(openHandlesTo(dbPath)).toBe(0);
+            },
+        );
+
+        it.skipIf(!existsSync("/proc/self/fd"))(
+            "closes the previous show's connection when another file fails to open",
+            async () => {
+                await handleSqlProxy(null, "SELECT 1", [], "get");
+
+                expect(setDbPath(join(tempDir, "missing.dots"))).toBe(404);
+
+                expect(openHandlesTo(dbPath)).toBe(0);
+            },
+        );
 
         describe("read-only proxy (3D View)", () => {
             it("reads through the shared connection", async () => {

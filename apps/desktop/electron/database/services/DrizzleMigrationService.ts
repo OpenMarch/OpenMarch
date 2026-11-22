@@ -234,6 +234,25 @@ export function applyPageMigrationsInTransaction(
     recreateChangeLogTriggers(rawDb);
 }
 
+/**
+ * Runs `work` in one transaction, so its statements commit (and sync to disk) once. Inside a
+ * transaction the caller already holds, it just runs `work`, which commits with that one.
+ */
+function inOneTransaction(db: DatabaseSync, work: () => void): void {
+    if (db.isTransaction) {
+        work();
+        return;
+    }
+    db.exec("BEGIN IMMEDIATE");
+    try {
+        work();
+        db.exec("COMMIT");
+    } catch (error) {
+        if (db.isTransaction) db.exec("ROLLBACK");
+        throw error;
+    }
+}
+
 /** The statements of `CONVERTER_SCHEMA_MIGRATION_TAGS`, without the rows that record them. */
 function converterSchemaQueries(folder: string): string[] {
     return readTaggedMigrations(folder)
@@ -306,15 +325,17 @@ export class DrizzleMigrationService {
                 userVersion === PAGE_MODEL_USER_VERSION ? "page" : "all",
             );
             // Like drizzle's own migrator, rebuild the triggers on every open, even with nothing
-            // pending, so they always match this build.
-            dropAllTriggers(this.rawDb);
+            // pending, so they always match this build. The drop and the rebuild each commit
+            // once: one statement at a time they were about 100 commits, each syncing the file
+            // and its journal, which took 12-15 s per open on a spinning disk or a Windows VM.
+            inOneTransaction(this.rawDb, () => dropAllTriggers(this.rawDb));
             if (userVersion === PAGE_MODEL_USER_VERSION)
                 queries.push(...converterSchemaQueries(folder));
             for (const query of queries) {
                 this.rawDb.exec("PRAGMA foreign_keys = OFF");
                 runMigrationQuery(this.rawDb, query);
             }
-            createAllTriggers(this.rawDb);
+            inOneTransaction(this.rawDb, () => createAllTriggers(this.rawDb));
             this.rawDb.prepare("PRAGMA foreign_keys = ON").run();
 
             // The rebuild above already covers every trigger in the `triggers` map; this check
