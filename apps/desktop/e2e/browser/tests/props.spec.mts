@@ -408,11 +408,13 @@ test("applies a front ensemble preset with its performers in one undo step, and 
     await presets.getByRole("button", { name: "Apply" }).click();
     await waitForIdle(page);
     await expect.poll(() => drawnItems(page)).toHaveLength(11);
+    // Medium's players move onto Small's instruments; those left without one (and no later
+    // moves) are removed: the two trumpets, 6 players and the drum major
     expect(
         await show.query(
             "SELECT count(*) AS n FROM marchers WHERE type = 'marcher'",
         ),
-    ).toEqual([{ n: 15 }]);
+    ).toEqual([{ n: 9 }]);
 
     // One undo brings Medium back
     await page.keyboard.press("ControlOrMeta+z");
