@@ -762,20 +762,22 @@ test.describe("Basic mode, a tick a Held hold starts at", () => {
             name: /Remove this count's position/,
         });
         await expect(remove).toHaveAttribute("aria-disabled", "true");
-        await expect(
-            page.getByTestId("basic-point-remove-reason"),
-        ).toHaveText(
+        await expect(page.getByTestId("basic-point-remove-reason")).toHaveText(
             "This marcher is held from this count, so its position here stays. Remove the hold first.",
         );
         // No dead click: the menu stays open with its reason, and nothing is written
         // (forced: Playwright won't click an item marked disabled, a user can)
         await remove.click({ force: true });
-        await expect(page.getByTestId("basic-point-remove-reason")).toBeVisible();
+        await expect(
+            page.getByTestId("basic-point-remove-reason"),
+        ).toBeVisible();
         await waitForIdle(page);
         expect(await moves(show, 3)).toEqual(["1-9", "9-13"]);
         expect(await undoSteps(show)).toBe(steps);
         await page.keyboard.press("Escape");
-        await expect(page.getByTestId("basic-point-remove-reason")).toBeHidden();
+        await expect(
+            page.getByTestId("basic-point-remove-reason"),
+        ).toBeHidden();
     });
 });
 
@@ -796,19 +798,17 @@ test.describe("Basic mode, a shape and mid-page positions", () => {
         await expect(page.getByTestId("timeline-readout")).toContainText("m5");
         await placeBox(show);
         await expect(
-            warningToast(page, "T1 is on its spot, but isn't part of the shape"),
+            warningToast(
+                page,
+                "T1 is on its spot, but isn't part of the shape",
+            ),
         ).toBeVisible();
         // Everyone is on the box: T1's spot at the flag changed too
         await expect
             .poll(async () => (await spots(show, 2)).T1)
             .not.toBe("400,380");
         // The mid-page position stays
-        expect(await moves(show, 1)).toEqual([
-            "1-9",
-            "9-13",
-            "13-17",
-            "17-25",
-        ]);
+        expect(await moves(show, 1)).toEqual(["1-9", "9-13", "13-17", "17-25"]);
     });
 
     test("mid-page positions at different counts after a shape name the members it can no longer hold", async ({
