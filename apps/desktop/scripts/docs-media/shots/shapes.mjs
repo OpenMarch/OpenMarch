@@ -462,7 +462,7 @@ const shots = [
                 .boundingBox();
             const place = await page
                 .locator("[role='tabpanel'][data-state='active']")
-                .getByText("Place all marchers", { exact: false })
+                .getByText("All marchers", { exact: true })
                 .first()
                 .boundingBox();
             const x = list.x - 8;

@@ -3203,13 +3203,12 @@
             "lockYCaption": "Lock Y",
             "snapCaption": "Snap to grid",
             "lockMarchersAriaLabel": "Cursor movement and marcher snap",
-            "placeAllMarchers": "Place all marchers",
-            "placeSelectedMarchers": "Place selected marchers",
+            "allMarchers": "All marchers",
+            "selectedMarchers": "Selected marchers",
             "clearThisPage": "{clearThisPage}",
             "snapToggleCaption": "Snap",
-            "toNextPageSpots": "...to next page's spots",
-            "setMarcherPositionsAriaLabel": "Set marcher positions",
-            "toPreviousPagePositions": "...to previous page positions"
+            "moveToNextPageSpots": "Move to next page's spots",
+            "setMarcherPositionsAriaLabel": "Set marcher positions"
         },
         "collisions": {
             "collisionsToolbar": "Collisions",

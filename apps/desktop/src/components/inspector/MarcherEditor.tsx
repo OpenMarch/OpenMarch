@@ -8,6 +8,7 @@ import {
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import { InspectorCollapsible } from "@/components/inspector/InspectorCollapsible";
 import ActionButton from "@/shortcuts/ActionButton";
+import MarcherPositionsMenu from "@/components/toolbar/MarcherPositionsMenu";
 import { Button, getButtonClassName, Input } from "@openmarch/ui";
 import StepSizeWarningBadge from "./StepSizeWarningBadge";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
@@ -30,9 +31,7 @@ import {
     AlignCenterVerticalSimpleIcon,
     DotsThreeOutlineIcon,
     DotsThreeOutlineVerticalIcon,
-    CaretDownIcon,
 } from "@phosphor-icons/react";
-import * as Dropdown from "@radix-ui/react-dropdown-menu";
 import { TagButtons } from "./marcher/TagEditor";
 import TimelineHoldLine, { TimelineHeldCount } from "./TimelineHoldLine";
 import TimelineHoldStyle from "./TimelineHoldStyle";
@@ -395,51 +394,22 @@ export function ArrangeButtons({ rotate }: { rotate: ReactNode }) {
     );
 }
 
-/** Puts the selected marchers where they stand on the page before or after */
+/** The "Selected marchers ▾" menu: the same actions as the Alignment toolbar's "All marchers ▾" */
 function PlaceMenu() {
-    const [placeMenuOpen, setPlaceMenuOpen] = useState(false);
-    const closePlaceMenu = () => setPlaceMenuOpen(false);
     return (
-        <>
-            {/* Set Marcher Positions Dropdowns */}
-            <div className="flex flex-col gap-8">
-                <Dropdown.Root
-                    open={placeMenuOpen}
-                    onOpenChange={setPlaceMenuOpen}
-                >
-                    <Dropdown.Trigger
-                        className={clsx(
-                            getButtonClassName({
-                                variant: "secondary",
-                                size: "compact",
-                            }),
-                            "flex items-center justify-center gap-6",
-                        )}
-                    >
-                        <T keyName="toolbar.alignment.placeSelectedMarchers" />{" "}
-                        <CaretDownIcon size={14} />
-                    </Dropdown.Trigger>
-                    <Dropdown.Portal>
-                        <Dropdown.Content className="bg-modal rounded-6 shadow-modal backdrop-blur-32 border-stroke flex flex-col items-start gap-0 border p-8">
-                            <ActionButton
-                                action="setSelectedMarchersToPreviousPage"
-                                onRun={closePlaceMenu}
-                                className="text-text px-6 py-4"
-                            >
-                                <T keyName="toolbar.alignment.toPreviousPagePositions" />
-                            </ActionButton>
-                            <ActionButton
-                                action="setSelectedMarchersToNextPage"
-                                onRun={closePlaceMenu}
-                                className="text-text px-6 py-4"
-                            >
-                                <T keyName="toolbar.alignment.toNextPageSpots" />
-                            </ActionButton>
-                        </Dropdown.Content>
-                    </Dropdown.Portal>
-                </Dropdown.Root>
-            </div>
-        </>
+        <div className="flex flex-col gap-8">
+            <MarcherPositionsMenu
+                scope="selected"
+                caretSize={14}
+                triggerClassName={clsx(
+                    getButtonClassName({
+                        variant: "secondary",
+                        size: "compact",
+                    }),
+                    "flex items-center justify-center gap-6",
+                )}
+            />
+        </div>
     );
 }
 
