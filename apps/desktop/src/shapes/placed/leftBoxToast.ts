@@ -9,6 +9,7 @@ import { toastTimelineError } from "@/timeline/timelineErrorMessages";
 import { currentShapeField, shapeContextFor } from "../field/shapeFieldContext";
 import { toolEnvFor } from "../tool/toolEnv";
 import type { BoxLeave } from "./boxMembership";
+import { nameOf } from "./leftOutToast";
 import { closeUp, isPlacedBox, resplit, type BoxRecipe } from "./placedBox";
 import { closedOf } from "../distribute/modes";
 
@@ -21,14 +22,6 @@ export type BoxRewrite = (
     moves: readonly { marcherId: number; x: number; y: number }[],
     afterWrite: (tx: DbTransaction, timelineId: number | null) => Promise<void>,
 ) => Promise<unknown>;
-
-/** A marcher's drill number, else its id */
-function nameOf(marcherId: number): string {
-    const m = currentShapeField()
-        ?.marchers()
-        .find((marcher) => marcher.id === marcherId);
-    return m?.drill_number ?? `#${marcherId}`;
-}
 
 /** The box's remaining members filled in again by `fill`, as one edit */
 async function refill(

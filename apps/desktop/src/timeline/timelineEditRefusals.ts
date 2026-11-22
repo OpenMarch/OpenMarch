@@ -61,16 +61,37 @@ export class TimelineEditRefusedError extends Error {
             marcherIds = [],
             message,
             params,
+            key,
         }: {
             marcherIds?: readonly number[];
             message?: string;
             params?: Record<string, TimelineTextArg>;
+            /** A more specific text than the refusal's own key (`basicLockedRefusal`) */
+            key?: string;
         } = {},
     ) {
         super(message ?? CANVAS_EDIT_REFUSALS[refusal].defaultMessage);
-        this.key = CANVAS_EDIT_REFUSALS[refusal].key;
+        this.key = key ?? CANVAS_EDIT_REFUSALS[refusal].key;
         this.marcherIds = marcherIds;
         this.params = params;
         this.name = "TimelineEditRefusedError";
     }
 }
+
+/**
+ * Basic's refusal of marchers locked on the page being edited (`notSimple`, UI-19), worded by
+ * how many there are, as the lock toast is (`timeline.basic.locked`, `toastLockedMarchers`):
+ * "One marcher uses Expert moves on this page…" for a single dragged marcher rather than the
+ * group's "Some of these marchers…". The toast still offers Switch to Expert. `message` is the
+ * developer's text (with names) for logs.
+ */
+export const basicLockedRefusal = (
+    marcherIds: readonly number[],
+    message?: string,
+): TimelineEditRefusedError =>
+    new TimelineEditRefusedError("notSimple", {
+        marcherIds,
+        message,
+        key: "timeline.basic.locked",
+        params: { count: marcherIds.length },
+    });

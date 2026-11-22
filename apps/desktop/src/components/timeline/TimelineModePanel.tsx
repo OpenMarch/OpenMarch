@@ -133,6 +133,7 @@ function useBasicTimelineExtras(pages: readonly Page[]) {
                 page:
                     names.get(`${point.box.start}:${point.box.end}`)?.name ??
                     "",
+                removeReason: point.removeReason,
             })),
             onRemoveBasicPoint: (beat: number) => {
                 const point = points.find((p) => p.beat === beat);

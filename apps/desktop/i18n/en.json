@@ -2159,6 +2159,15 @@
             "groupNeedsTwo": "Select 2 or more marchers to group them",
             "ungroupError": "Couldn't ungroup the shape",
             "ungroupIsolated": "Ungroup this shape outside isolation: it comes from an earlier page",
+            "droppedAtFlag": {
+                "many": "{count, plural, one {# marcher isn't part of the shape at this flag anymore} other {# marchers aren't part of the shape at this flag anymore}}",
+                "one": "{name} isn't part of the shape at this flag anymore"
+            },
+            "leftOut": {
+                "hint": "A shape holds only marchers whose last mid-page position on this page is at the same count. Remove the positions that differ, then place the shape again.",
+                "many": "{count, plural, one {# marcher is on its spot, but isn't part of the shape} other {# marchers are on their spots, but aren't part of the shape}}",
+                "one": "{name} is on its spot, but isn't part of the shape"
+            },
             "leftShape": {
                 "many": "{count, plural, one {# left the {shape, select, block {box} circle {circle} other {shape}}} other {# left the {shape, select, block {box} circle {circle} other {shape}}}}",
                 "one": "{name} left the {shape, select, block {box} circle {circle} other {shape}}"
@@ -2757,6 +2766,7 @@
             "point": {
                 "label": "Position at count {count} of page {page}",
                 "remove": "Remove this count's position",
+                "removeHeld": "{count, plural, =1 {This marcher is {heldLower} from this count, so its position here stays. Remove the hold first.} other {These marchers are {heldLower} from this count, so their positions here stay. Remove the holds first.}}",
                 "tooltip": "Position at count {count} of page {page}. Right-click to remove it."
             },
             "locked": "{count, plural, =1 {One marcher uses Expert moves on this page. Switch to Expert to edit it.} other {# marchers use Expert moves on this page. Switch to Expert to edit them.}}",

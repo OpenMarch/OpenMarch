@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNull, notInArray, sql } from "drizzle-orm";
+import { and, eq, inArray, isNull, notInArray, sql, ne } from "drizzle-orm";
 import * as schema from "@om-electron/database/migrations/schema";
 import type { DbConnection, DbTransaction } from "./types";
 
@@ -274,6 +274,47 @@ export async function moveHoldsAnyOf(
 /** The marchers with positions in move `timelineId`, or null for the homes, which hold everyone */
 const moveMembersOf = (tx: DbTransaction, timelineId: number | null) =>
     timelineId === null ? null : moveMembers(tx, timelineId);
+
+/**
+ * Of `marcherIds`, those a recipe of move `timelineId` can't list although they arrive where it
+ * is placed: not in the move, with a row ending at its end in a move over other counts. On a
+ * page in Basic that is a marcher whose last mid-page position is at another count than the
+ * others': its part of the page ends at the flag too, but is a move of its own (rule 1 of the
+ * 2026-10-29 revision keeps it out). A move over the same counts (split off, UI-25) isn't named.
+ * By id.
+ */
+export async function leftOutByOtherCounts(
+    tx: DbTransaction,
+    timelineId: number,
+    marcherIds: readonly number[],
+): Promise<number[]> {
+    const own = await moveMembers(tx, timelineId);
+    const out = [...new Set(marcherIds)].filter((id) => !own.has(id));
+    if (out.length === 0) return [];
+    const l = schema.timelines;
+    const move = await tx
+        .select({ start: l.start_beat, end: l.end_beat })
+        .from(l)
+        .where(eq(l.id, timelineId))
+        .get();
+    if (!move) return [];
+    const a = schema.timeline_assignments;
+    const t = schema.timeline_transitions;
+    const rows = await tx
+        .selectDistinct({ id: a.marcher_id })
+        .from(a)
+        .innerJoin(t, eq(t.id, a.transition_id))
+        .innerJoin(l, eq(l.id, t.timeline_id))
+        .where(
+            and(
+                inArray(a.marcher_id, out),
+                eq(a.end_beat, move.end),
+                ne(l.start_beat, move.start),
+            ),
+        )
+        .all();
+    return rows.map((r) => r.id).sort((x, y) => x - y);
+}
 
 /** The marchers with positions in move `timelineId` */
 async function moveMembers(
@@ -823,4 +864,132 @@ async function recipesById(
                     y: m.y,
                 })),
         }));
+}
+
+/** A recipe as stored, with the beat its move ends at, read before an edit that may delete it */
+export interface RecipeSnapshot {
+    readonly recipe: typeof recipes.$inferSelect;
+    readonly members: readonly (typeof members.$inferSelect)[];
+    /** Where its shape stands: its move's end */
+    readonly end: number;
+}
+
+/** The recipes of moves `timelineIds`, for `recipesFollowMembersInTransaction` after the edit */
+export async function snapshotRecipesInTransaction(
+    tx: DbTransaction,
+    timelineIds: readonly number[],
+): Promise<RecipeSnapshot[]> {
+    if (timelineIds.length === 0 || !(await hasShapeRecipes(tx))) return [];
+    const t = schema.timelines;
+    const rows = await tx
+        .select({ recipe: recipes, end: t.end_beat })
+        .from(recipes)
+        .innerJoin(t, eq(t.id, recipes.timeline_id))
+        .where(
+            and(
+                inArray(recipes.timeline_id, [...new Set(timelineIds)]),
+                // Ungroup and order marks keep their re-cut members (`dropUngroupedLeavers`)
+                shapeRecipesOnly(),
+            ),
+        )
+        .all();
+    if (rows.length === 0) return [];
+    const memberRows = await tx
+        .select()
+        .from(members)
+        .where(
+            inArray(
+                members.recipe_id,
+                rows.map((r) => r.recipe.id),
+            ),
+        )
+        .all();
+    return rows.map(({ recipe, end }) => ({
+        recipe,
+        end,
+        members: memberRows.filter((m) => m.recipe_id === recipe.id),
+    }));
+}
+
+/**
+ * After a Basic edit re-cut moves (a mid-page position, **+** / Split page, Remove this count's
+ * position): each recipe in `snapshots` whose move is gone, or no longer holds any of its
+ * members, follows its members to the move that now arrives at the same beat, so the shape
+ * placed there stays a shape. The positions didn't change; only the move holding them did.
+ * Members whose rows ending at that beat are in another move are left out, as a recipe lists
+ * only marchers in its move, and returned (by id) so the edit can name them. A recipe whose
+ * members no longer arrive at the beat is left as the edit left it.
+ */
+export async function recipesFollowMembersInTransaction(
+    tx: DbTransaction,
+    snapshots: readonly RecipeSnapshot[],
+): Promise<number[]> {
+    const a = schema.timeline_assignments;
+    const tr = schema.timeline_transitions;
+    const droppedAll = new Set<number>();
+    for (const snap of snapshots) {
+        const memberIds = snap.members.map((m) => m.marcher_id);
+        if (memberIds.length === 0) continue;
+        const now = await tx
+            .select({ timelineId: recipes.timeline_id })
+            .from(recipes)
+            .where(eq(recipes.id, snap.recipe.id))
+            .get();
+        if (
+            now?.timelineId != null &&
+            (await moveHoldsAnyOf(tx, now.timelineId, memberIds))
+        )
+            continue;
+        // Where each member's move ending at the beat is now
+        const arriving = await tx
+            .select({ marcherId: a.marcher_id, timelineId: tr.timeline_id })
+            .from(a)
+            .innerJoin(tr, eq(tr.id, a.transition_id))
+            .where(
+                and(inArray(a.marcher_id, memberIds), eq(a.end_beat, snap.end)),
+            )
+            .all();
+        const byMove = new Map<number, Set<number>>();
+        for (const r of arriving) {
+            if (r.timelineId === null) continue;
+            const set = byMove.get(r.timelineId) ?? new Set<number>();
+            set.add(r.marcherId);
+            byMove.set(r.timelineId, set);
+        }
+        let best: [number, Set<number>] | undefined;
+        for (const entry of [...byMove].sort((x, y) => x[0] - y[0]))
+            if (!best || entry[1].size > best[1].size) best = entry;
+        if (!best) continue;
+        const [to, kept] = best;
+        // Those still arriving at the beat, in another move: on their spots, but out of the shape
+        for (const set of byMove.values())
+            for (const id of set) if (!kept.has(id)) droppedAll.add(id);
+        if (now) {
+            await tx
+                .update(recipes)
+                .set({ timeline_id: to })
+                .where(eq(recipes.id, snap.recipe.id))
+                .run();
+            const dropped = memberIds.filter((id) => !kept.has(id));
+            if (dropped.length > 0)
+                await tx
+                    .delete(members)
+                    .where(
+                        and(
+                            eq(members.recipe_id, snap.recipe.id),
+                            inArray(members.marcher_id, dropped),
+                        ),
+                    )
+                    .run();
+        } else {
+            // Deleted with its move: back with the same ids, so undo and later edits find it
+            await tx
+                .insert(recipes)
+                .values({ ...snap.recipe, timeline_id: to })
+                .run();
+            const back = snap.members.filter((m) => kept.has(m.marcher_id));
+            if (back.length > 0) await tx.insert(members).values(back).run();
+        }
+    }
+    return [...droppedAll].sort((x, y) => x - y);
 }

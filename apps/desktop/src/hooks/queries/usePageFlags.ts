@@ -32,6 +32,7 @@ import { invalidatePageQueries } from "./usePages";
 import { workspaceSettingsQueryOptions } from "./useWorkspaceSettings";
 import { invalidateTagQueries } from "./tags/queries";
 import { isBasicMode } from "@/stores/EditorModeStore";
+import { showDroppedAtFlagToast } from "@/shapes/placed/leftOutToast";
 
 /**
  * Page flag writes in timeline mode (ui.md UI-9 **+** and Deleting a flag, P8.13). They change only
@@ -52,8 +53,12 @@ export const addPageFlagMutationOptions = (
         mutationFn: ({ beat, subset }: { beat: number; subset?: boolean }) =>
             addPageFlag({ db, beat, subset, splitMoves: isBasicMode() }),
         // Selects the new page in the frame that shows it
-        onSuccess: (added) =>
-            invalidatePageQueries(qc, onAdded && (() => onAdded(added))),
+        onSuccess: (added) => {
+            // Members of a shape the split's re-cut left in other moves (`droppedFromShapes`)
+            if (added.splitMoves?.droppedFromShapes)
+                showDroppedAtFlagToast(added.splitMoves.droppedFromShapes);
+            return invalidatePageQueries(qc, onAdded && (() => onAdded(added)));
+        },
         onError: (e) => toastTimelineError(e),
     });
 

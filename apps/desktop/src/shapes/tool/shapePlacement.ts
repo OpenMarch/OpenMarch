@@ -2,6 +2,7 @@ import type { QueryClient } from "@tanstack/react-query";
 import { db } from "@/global/database/db";
 import { transactionWithHistory } from "@/db-functions/history";
 import {
+    leftOutByOtherCounts,
     moveHoldsAnyOf,
     saveShapeRecipeInTransaction,
     type ShapeRecipeMember,
@@ -9,10 +10,13 @@ import {
 } from "@/db-functions/shapeRecipes";
 import { historyKeys } from "@/hooks/queries/useHistory";
 import {
+    planCanvasEdit,
     transformMarchersInSelection,
     type CanvasEditPlan,
 } from "@/timeline/timelineCoordinateWrites";
+import { withoutLockedMarchers } from "@/timeline/basicLocks";
 import { toastTimelineError } from "@/timeline/timelineErrorMessages";
+import { showLeftOutToast } from "../placed/leftOutToast";
 import { invalidatePlacedBoxes } from "../placed/placedBoxStore";
 import type { ShapeContext } from "../types";
 import { orderOf, targetsOf, type ToolState } from "./toolMachine";
@@ -73,6 +77,10 @@ export function placementOf(
  * or an edit of a placed one (`commitBox`). Its members move to their spots through the same path as a canvas drag (they
  * leave the start flag and arrive at the playhead), and the recipe is saved in the same edit, so
  * the two are one undo step. False when the write failed (a toast says why).
+ *
+ * In Basic, a marcher whose last mid-page position on the page is at another count than the
+ * others' arrives at the flag in a move of its own, so the recipe can't list it (ADR 0006): it
+ * is set on its spot, and a toast names it, since Basic shows no moves (`showLeftOutToast`).
  */
 export async function writePlacement(
     placement: ShapePlacement,
@@ -91,7 +99,19 @@ export async function writePlacement(
     const to = new Map(members.map((m) => [m.marcherId, m]));
     const marcherIds = members.map((m) => m.marcherId);
     let saved = false;
+    let leftOut: number[] = [];
     try {
+        const edit = plan ?? planCanvasEdit();
+        const basic = edit.ok && edit.target.kind === "point";
+        // Locked marchers aren't moved (V-203) and have their own toast, so aren't named as left out
+        const locked = new Set(
+            edit.ok
+                ? withoutLockedMarchers(
+                      edit.target,
+                      marcherIds.map((marcherId) => ({ marcherId })),
+                  ).locked
+                : [],
+        );
         await transformMarchersInSelection({
             db,
             marcherIds: members.map((m) => m.marcherId),
@@ -102,7 +122,7 @@ export async function writePlacement(
                         ? [{ marcher_id: c.marcher_id, x: spot.x, y: spot.y }]
                         : [];
                 }),
-            ...(plan ? { plan } : {}),
+            plan: edit,
             keepPlayhead,
             writesShapes: true,
             // Every member is set where the shape is, the one at its pivot included, so each
@@ -126,8 +146,15 @@ export async function writePlacement(
                             ? replaces.id
                             : undefined,
                 });
+                if (basic && timelineId !== null)
+                    leftOut = await leftOutByOtherCounts(
+                        tx,
+                        timelineId,
+                        marcherIds.filter((id) => !locked.has(id)),
+                    );
             },
         });
+        showLeftOutToast(leftOut);
         // Nobody moved and no move here holds the shape's members (a change without `setAll`):
         // the change goes to the recipe shown, in its own move
         if (!saved && replaces) {
