@@ -7,6 +7,7 @@ import {
     drawnMarchers,
     expectCanvasMatchesShow,
     goTo,
+    longPress,
     readField,
     selectPage,
     waitForField,
@@ -650,5 +651,244 @@ test.describe("switching modes", () => {
                 "SELECT marcher_id, start_beat, end_beat FROM timeline_assignments ORDER BY marcher_id, start_beat",
             ),
         ).toEqual(rows);
+    });
+});
+
+/** T3 out of page 1's shared move too, so it can have moves of its own there */
+const T3_OWN_MOVES = [
+    ...T3_HOLDS,
+    "DELETE FROM timeline_assignments WHERE transition_id = 1 AND marcher_id = 3",
+    "DELETE FROM timeline_slot_destinations WHERE transition_id = 1 AND slot_index = 2",
+    "UPDATE timeline_transitions SET slot_count = 2 WHERE id = 1",
+];
+
+/**
+ * T3 walks an Expert move across page 1's flag ([5, 13)) and is Held from there to page 3's
+ * flag: Basic locks it on page 3 too, where it has no move (`heldArrivalLock`)
+ */
+const T3_HELD_FROM_EXPERT_MOVE = [
+    ...T3_OWN_MOVES,
+    "INSERT INTO timelines (id, start_beat, end_beat) VALUES (10, 5, 13)",
+    `INSERT INTO timeline_transitions (id, timeline_id, slot_count, start_beat, end_beat)
+     VALUES (10, 10, 1, 5, 13)`,
+    "INSERT INTO timeline_slot_destinations (transition_id, slot_index, x, y) VALUES (10, 0, 600, 340)",
+    `INSERT INTO timeline_assignments (marcher_id, transition_id, slot_index, start_beat, end_beat)
+     VALUES (3, 10, 0, 5, 13)`,
+    "INSERT INTO timeline_held_marks (marcher_id, start_beat, end_beat) VALUES (3, 13, 25)",
+];
+
+/** T3 moves on page 2 to count 13 ([9, 13)), a tick, and is Held from that count to the flag */
+const T3_HELD_FROM_TICK = [
+    ...T3_HOLDS,
+    "INSERT INTO timelines (id, start_beat, end_beat) VALUES (10, 9, 13)",
+    `INSERT INTO timeline_transitions (id, timeline_id, slot_count, start_beat, end_beat)
+     VALUES (10, 10, 1, 9, 13)`,
+    "INSERT INTO timeline_slot_destinations (transition_id, slot_index, x, y) VALUES (10, 0, 650, 360)",
+    `INSERT INTO timeline_assignments (marcher_id, transition_id, slot_index, start_beat, end_beat)
+     VALUES (3, 10, 0, 9, 13)`,
+    "INSERT INTO timeline_held_marks (marcher_id, start_beat, end_beat) VALUES (3, 13, 17)",
+];
+
+/** A warning toast (`toast.warning`) with `text` */
+const warningToast = (page: Page, text: RegExp | string) =>
+    page.locator("[data-sonner-toast]", { hasText: text });
+
+test.describe("Basic mode, a marcher Held from an Expert move", () => {
+    test.use({
+        seedSql: [
+            ...seedShowSql(SHOW),
+            ...T3_HELD_FROM_EXPERT_MOVE,
+            "DELETE FROM timeline_change_log",
+        ],
+    });
+
+    test("is locked where it's held: a group drag there moves the others and leaves it, with the lock toast", async ({
+        show,
+    }) => {
+        const { page } = show;
+        // Page 3's flag, inside T3's hold: T3 has no move on page 3
+        await openAt(show, "m7");
+        // Pages 1 and 2 for the move across the flag, page 3 for the hold
+        await expect(page.getByTestId("basic-expert-mark")).toHaveCount(3);
+        const before = await allSpots(show);
+        const t3Moves = await moves(show, 3);
+        expect(t3Moves).toEqual(["5-13"]);
+
+        await clickMarcher(page, "T1");
+        await clickMarcher(page, "T3", { add: true });
+        await expect
+            .poll(async () => (await readField(page)).selection)
+            .toEqual([1, 3]);
+        await dragMarcher(page, "T1", { x: 40, y: -30 });
+        await expect
+            .poll(async () => (await spots(show, 3)).T1)
+            .not.toBe(before["page 3"].T1);
+        await expect(lockToast(page)).toContainText(
+            "One marcher uses Expert moves on this page, so it wasn't moved.",
+        );
+        await waitForIdle(page);
+        // T3 kept its move and hold; only T1 moved
+        expect(await moves(show, 3)).toEqual(t3Moves);
+        const after = await allSpots(show);
+        expect(after["page 3"].T3).toBe(before["page 3"].T3);
+        expect(after["page 2"]).toEqual(before["page 2"]);
+        await expectCanvasMatchesShow(show);
+    });
+});
+
+test.describe("Basic mode, a tick a Held hold starts at", () => {
+    test.use({
+        seedSql: [
+            ...seedShowSql(SHOW),
+            ...T3_HELD_FROM_TICK,
+            "DELETE FROM timeline_change_log",
+        ],
+    });
+
+    test("its Remove this count's position is dimmed with the reason, and a click on it keeps the menu and changes nothing", async ({
+        show,
+    }) => {
+        const { page } = show;
+        await openAt(show, "m5");
+        await clickMarcher(page, "T3");
+        await expect
+            .poll(async () => (await readField(page)).selection)
+            .toEqual([3]);
+        await expect(page.getByTestId("basic-point-tick")).toHaveCount(1);
+        const steps = await undoSteps(show);
+
+        await page.getByTestId("basic-point-tick").click({ button: "right" });
+        const remove = page.getByRole("menuitem", {
+            name: /Remove this count's position/,
+        });
+        await expect(remove).toHaveAttribute("aria-disabled", "true");
+        await expect(
+            page.getByTestId("basic-point-remove-reason"),
+        ).toHaveText(
+            "This marcher is held from this count, so its position here stays. Remove the hold first.",
+        );
+        // No dead click: the menu stays open with its reason, and nothing is written
+        // (forced: Playwright won't click an item marked disabled, a user can)
+        await remove.click({ force: true });
+        await expect(page.getByTestId("basic-point-remove-reason")).toBeVisible();
+        await waitForIdle(page);
+        expect(await moves(show, 3)).toEqual(["1-9", "9-13"]);
+        expect(await undoSteps(show)).toBe(steps);
+        await page.keyboard.press("Escape");
+        await expect(page.getByTestId("basic-point-remove-reason")).toBeHidden();
+    });
+});
+
+test.describe("Basic mode, a shape and mid-page positions", () => {
+    test("a shape placed at the flag names the member whose mid-page position is at another count", async ({
+        show,
+    }) => {
+        const { page } = show;
+        await openAt(show, "m4", { onFlag: false });
+        await clickMarcher(page, "T1");
+        await dragMarcher(page, "T1", { x: 40, y: -30 });
+        await expect
+            .poll(() => moves(show, 1))
+            .toEqual(["1-9", "9-13", "13-17", "17-25"]);
+        await waitForIdle(page);
+
+        await goTo(page, "m5");
+        await expect(page.getByTestId("timeline-readout")).toContainText("m5");
+        await placeBox(show);
+        await expect(
+            warningToast(page, "T1 is on its spot, but isn't part of the shape"),
+        ).toBeVisible();
+        // Everyone is on the box: T1's spot at the flag changed too
+        await expect
+            .poll(async () => (await spots(show, 2)).T1)
+            .not.toBe("400,380");
+        // The mid-page position stays
+        expect(await moves(show, 1)).toEqual([
+            "1-9",
+            "9-13",
+            "13-17",
+            "17-25",
+        ]);
+    });
+
+    test("mid-page positions at different counts after a shape name the members it can no longer hold", async ({
+        show,
+    }) => {
+        const { page } = show;
+        await openAt(show, "m5");
+        await selectPage(show, "Page 2");
+        await placeBox(show);
+        await waitForIdle(page);
+        const dropped = warningToast(
+            page,
+            /part of the shape at this flag anymore/,
+        );
+
+        // T1 at count 13, then T2 two counts later: the shape follows neither yet
+        await goTo(page, "m4");
+        await expect(page.getByTestId("timeline-readout")).toContainText("m4");
+        await waitForIdle(page);
+        await clickMarcher(page, "T1");
+        await dragMarcher(page, "T1", { x: 40, y: -30 });
+        await expect.poll(() => moves(show, 1)).toContain("13-17");
+        await waitForIdle(page);
+        await page.keyboard.press("Shift+E");
+        await page.keyboard.press("Shift+E");
+        await waitForIdle(page);
+        await clickMarcher(page, "T2");
+        await dragMarcher(page, "T2", { x: 40, y: -30 });
+        await expect.poll(async () => (await moves(show, 2)).length).toBe(4);
+        await waitForIdle(page);
+        await expect(dropped).toHaveCount(0);
+
+        // T3 at a third count: the page's move holds none of them now, so the shape follows one
+        // and names the other two
+        await page.keyboard.press("Shift+Q");
+        await waitForIdle(page);
+        await clickMarcher(page, "T3");
+        await dragMarcher(page, "T3", { x: 40, y: -30 });
+        await expect(dropped).toContainText(
+            "2 marchers aren't part of the shape at this flag anymore",
+        );
+    });
+});
+
+test.describe("Basic mode on a touch screen", () => {
+    test.use({
+        touchScreen: true,
+        initScript: "localStorage.setItem('openmarch:inputMode', 'touch');",
+    });
+
+    test("a long press on the playhead over a tick offers Remove this count's position", async ({
+        show,
+    }) => {
+        const { page } = show;
+        await openAt(show, "m4", { onFlag: false });
+        // The field isn't under test: a mouse sets the mid-page position
+        await clickMarcher(page, "T1");
+        await dragMarcher(page, "T1", { x: 40, y: -30 });
+        await expect
+            .poll(() => moves(show, 1))
+            .toEqual(["1-9", "9-13", "13-17", "17-25"]);
+        await expect(page.getByTestId("basic-point-tick")).toHaveCount(1);
+        await waitForIdle(page);
+
+        // The playhead sits on the tick's count and covers it
+        const tick = (await page
+            .getByTestId("basic-point-tick")
+            .boundingBox())!;
+        await longPress(page, {
+            x: tick.x + tick.width / 2,
+            y: tick.y + tick.height / 2,
+        });
+        const remove = page.getByRole("menuitem", {
+            name: "Remove this count's position",
+        });
+        await expect(remove).toBeVisible();
+        await remove.click();
+        await expect
+            .poll(() => moves(show, 1))
+            .toEqual(["1-9", "9-17", "17-25"]);
+        await expect(page.getByTestId("basic-point-tick")).toHaveCount(0);
     });
 });
