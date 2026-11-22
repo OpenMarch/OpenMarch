@@ -23,6 +23,14 @@
             {
                 "key": "settings.general.openView3dWithShow",
                 "label": "Open 3D View when a show opens"
+            },
+            {
+                "key": "settings.general.editorDisplay",
+                "label": "Open the editor on"
+            },
+            {
+                "key": "settings.general.view3dDisplay",
+                "label": "Open the 3D View on"
             }
         ]
     },

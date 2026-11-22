@@ -45,29 +45,48 @@ describe("ThemeProvider", () => {
         vi.clearAllMocks();
         mockSetTheme.mockClear();
         emit = () => {};
+        document.documentElement.classList.remove("dark");
+        localStorage.clear();
     });
 
-    // Skip this for now as it's hard to validate in actions
-    it("should load the default theme (system, light) if no theme is stored", async () => {
+    it("starts with the theme index.html set before the first paint", () => {
+        document.documentElement.classList.add("dark");
+        const { result } = renderHook(() => useTheme(), {
+            wrapper: ThemeProvider,
+        });
+        expect(result.current?.theme).toBe("dark");
+    });
+
+    it("falls back to the system theme (light) if no theme is stored, and saves it", async () => {
         const { result } = renderHook(() => useTheme(), {
             wrapper: ThemeProvider,
         });
 
         await waitFor(() => {
-            expect(result.current?.theme).toBe("dark");
+            expect(mockSetTheme).toHaveBeenCalledWith("light");
         });
+        expect(result.current?.theme).toBe("light");
     });
 
-    it("should switch the theme", async () => {
+    it("should switch the theme, and keep it for the next first paint", async () => {
         const { result } = renderHook(() => useTheme(), {
             wrapper: ThemeProvider,
         });
+        // The stored theme (none: the system's) has loaded
+        await waitFor(() => {
+            expect(mockSetTheme).toHaveBeenCalledWith("light");
+        });
 
-        result.current?.setTheme("dark");
+        act(() => {
+            result.current?.setTheme("dark");
+        });
 
         await waitFor(() => {
             expect(result.current?.theme).toBe("dark");
         });
+        expect(document.documentElement).toHaveClass("dark");
+        expect(localStorage.getItem("openmarch:theme")).toBe("dark");
+        expect(mockSetTheme).toHaveBeenLastCalledWith("dark");
     });
 
     it("applies a theme changed in another window without saving it again", async () => {

@@ -28,7 +28,16 @@ Type in <Ui k="settings.search" /> to find a setting by name. Changes apply as s
 | <Ui k="settings.general.language" plain /> | The language of the app. Some languages are translated with AI help; the note under the list says so and links to where you can help check it. |
 | <Ui k="settings.general.updates" plain /> | The installed version and what the updater is doing, with <Ui k="settings.general.checkForUpdates" plain /> to look for a new version now. Desktop app only; the Snap Store version is updated by the Snap Store. See [Update OpenMarch](/guides/start/install/#update-openmarch). |
 | <Ui k="settings.general.automaticDownload" plain /> | On (the default): a new version downloads by itself as soon as it's found. Off: the update button asks first. Either way it installs when you quit, or straight away with <Ui k="updates.action.updateNow" plain />. Desktop app only. |
-| <Ui k="settings.general.openView3dWithShow" plain /> | On: the 3D View opens in its own window whenever you open a show. The 3D View asks this the first time you open it, and has the same switch at the top of its own settings. Desktop app only. |
+
+### Windows
+
+The editor and 3D View windows. Desktop app only. On Linux under Wayland the system decides where windows open, so <Ui k="settings.general.editorDisplay" plain /> and <Ui k="settings.general.view3dDisplay" plain /> aren't shown there.
+
+| Setting | What it does |
+| --- | --- |
+| <Ui k="settings.general.openView3dWithShow" plain /> | On: the 3D View opens in its own window whenever you open a show. The 3D View asks this the first time you open it, and has the same switch at the top of its own settings. |
+| <Ui k="settings.general.editorDisplay" plain /> | Which monitor the editor opens on. <Ui k="settings.general.windowDisplay.last" plain /> (the default): it opens on the monitor you last left it on. Choose a monitor to open it there every time; an open window moves there straight away, unless it's full screen (then it moves the next time it opens). Either way it keeps the size you left it at, maximized or not. If the chosen monitor isn't plugged in, it opens where you left it. |
+| <Ui k="settings.general.view3dDisplay" plain /> | The same for the 3D View window, for example to always show it on a projector or second screen. |
 
 ## Appearance
 

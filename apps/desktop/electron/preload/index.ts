@@ -21,6 +21,7 @@ import type {
 } from "@om-electron/main/auth/types";
 import { AUTH_IPC_CHANNELS } from "../../src/global/auth/constants";
 import { MENU_ACTION_CHANNEL } from "../../src/global/menuActions";
+import { THEME_SYNC_CHANNEL } from "../../src/global/themeSync";
 import {
     UPDATE_IPC_CHANNELS,
     type UpdateState,
@@ -102,13 +103,13 @@ function useLoading() {
         background: #ECEBF0;
         z-index: 9;
     }
-    @media (prefers-color-scheme: dark) {
-        .loader > svg {
-            fill: white;
-        }
-        .app-loading-wrap {
-            background: #0F0E13;
-        }
+    /* The app's theme (index.html sets it before the first paint), not the system's: a dark
+       system with the light theme would otherwise show dark, then turn light */
+    .dark .loader > svg {
+        fill: white;
+    }
+    .dark .app-loading-wrap {
+        background: #0F0E13;
     }
     `;
     const oStyle = document.createElement("style");
@@ -150,6 +151,16 @@ setTimeout(removeLoading, 4999);
  *
  *  I.e. you must type `marchers:readAll` rather than `${table_name}:readAll` for the channel
  */
+/** The saved theme, from main; undefined in the web build, whose `ipcRenderer` has no `sendSync` */
+function readInitialTheme(): string | undefined {
+    if (typeof ipcRenderer.sendSync !== "function") return undefined;
+    try {
+        return ipcRenderer.sendSync(THEME_SYNC_CHANNEL) as string;
+    } catch {
+        return undefined;
+    }
+}
+
 const APP_API = {
     // Titlebar
     minimizeWindow: () => ipcRenderer.send("window:minimize"),
@@ -278,6 +289,9 @@ const APP_API = {
     },
 
     // Themes
+    /** The saved theme when this page loaded, read before any page script so index.html can
+     * set it before the first paint */
+    initialTheme: readInitialTheme(),
     getTheme: () => ipcRenderer.invoke("get-theme"),
     setTheme: (theme: string) => ipcRenderer.invoke("set-theme", theme),
 

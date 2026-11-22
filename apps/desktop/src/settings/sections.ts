@@ -82,6 +82,8 @@ export const ALL_SETTINGS_SECTIONS: readonly SettingsSection[] = [
                       "settings.general.checkForUpdates",
                       "settings.general.automaticDownload",
                       "settings.general.openView3dWithShow",
+                      "settings.general.editorDisplay",
+                      "settings.general.view3dDisplay",
                   ]),
         ],
     },
