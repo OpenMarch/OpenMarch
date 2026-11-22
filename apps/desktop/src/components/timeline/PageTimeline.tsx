@@ -444,7 +444,7 @@ export default function PageTimeline() {
             </button>
             {/* Deleting is set well apart from the Subset switch */}
             <div className="border-stroke touch:mt-8 touch:pt-12 touch:gap-4 flex w-full flex-col items-start gap-8 border-t pt-8">
-                <div className="text-text flex items-center gap-6 text-xs">
+                <div className="text-text text-sub flex items-center gap-6">
                     <TrashIcon size={16} />
                     <T keyName="timeline.page.contextMenu.delete" />
                 </div>

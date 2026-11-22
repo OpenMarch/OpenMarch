@@ -46,7 +46,9 @@ export function AudioClock() {
     return (
         <div className="text-text flex items-center gap-6">
             <ClockIcon size={14} />
-            <span className="font-mono text-xs">{formatTime(displayTime)}</span>
+            <span className="text-sub font-mono">
+                {formatTime(displayTime)}
+            </span>
         </div>
     );
 }

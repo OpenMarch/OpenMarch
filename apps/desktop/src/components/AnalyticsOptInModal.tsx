@@ -65,7 +65,7 @@ export default function AnalyticsOptInModal({
                     <T keyName="analyticsOptIn.title" />
                 </DialogTitle>
                 <div className="flex flex-col gap-16">
-                    <p className="text-text-subtitle text-sm">
+                    <p className="text-text-subtitle text-body">
                         <T
                             keyName="analyticsOptIn.description"
                             params={{
@@ -82,15 +82,15 @@ export default function AnalyticsOptInModal({
                             }}
                         />
                     </p>
-                    <p className="text-text-subtitle text-sm">
+                    <p className="text-text-subtitle text-body">
                         <T keyName="analyticsOptIn.settings" />
                     </p>
 
-                    <div className="flex flex-col gap-16 text-sm">
+                    <div className="text-body flex flex-col gap-16">
                         <T keyName="analyticsOptIn.whenYouOptIn" />
                         <AnalyticsMessage hasOptedOut={false} />
                     </div>
-                    <div className="flex flex-col gap-16 text-sm">
+                    <div className="text-body flex flex-col gap-16">
                         <T keyName="analyticsOptIn.whenYouOptOut" />
                         <AnalyticsMessage hasOptedOut={true} />
                     </div>

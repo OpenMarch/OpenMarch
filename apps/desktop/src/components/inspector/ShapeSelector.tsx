@@ -54,7 +54,7 @@ function ShapeSelector() {
                             <CircleIcon size={32} weight="regular" />
                         </ActionButton>
                     </div>
-                    <div className="text-text-subtitle text-xs">
+                    <div className="text-text-subtitle text-sub">
                         <T keyName="inspector.shapes.moreShapesComingSoon" />
                     </div>
                 </div>

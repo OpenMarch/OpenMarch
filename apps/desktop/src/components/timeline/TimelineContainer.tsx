@@ -290,7 +290,7 @@ function TimelineZoomControls({
             </button>
             <button
                 onClick={handleReset}
-                className="border-stroke text-text touch:text-sub flex flex-1 items-center justify-center border-y font-mono text-[11px] transition-colors duration-150 hover:bg-white/20 disabled:cursor-not-allowed"
+                className="border-stroke text-text text-sub flex flex-1 items-center justify-center border-y font-mono transition-colors duration-150 hover:bg-white/20 disabled:cursor-not-allowed"
                 disabled={currentPixels === TIMELINE_BASE_PX_PER_SEC}
                 title="Reset timeline zoom"
             >

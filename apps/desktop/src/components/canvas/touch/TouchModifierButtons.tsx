@@ -462,7 +462,7 @@ export default function TouchModifierButtons({
     const altOn = held.alt || latched.alt;
     const segment = (on: boolean) =>
         clsx(
-            "flex h-44 min-w-48 touch-none items-center justify-center gap-4 rounded-full px-8 text-sm font-medium whitespace-nowrap select-none",
+            "flex h-44 min-w-48 touch-none items-center justify-center gap-4 rounded-full px-8 text-body font-medium whitespace-nowrap select-none",
             on ? "bg-accent text-text-invert" : "text-text",
         );
     const mode = { ...DRAG_MODES[dragMode], ...dragModeText(dragMode, t) };
@@ -515,7 +515,7 @@ export default function TouchModifierButtons({
                     style={popupStyle}
                     className={clsx(
                         popupSide,
-                        "border-stroke bg-bg-1 text-text w-[240px] max-w-[calc(100vw-24px)] rounded-lg border p-12 text-sm leading-snug shadow-lg",
+                        "border-stroke bg-bg-1 text-text text-body w-[240px] max-w-[calc(100vw-24px)] rounded-lg border p-12 leading-snug shadow-lg",
                     )}
                     onClick={() => setPopup(null)}
                 >
@@ -575,7 +575,7 @@ export default function TouchModifierButtons({
                                 role="menuitemradio"
                                 aria-checked={key === dragMode}
                                 className={clsx(
-                                    "flex min-h-44 items-center gap-8 rounded-md px-8 text-left text-sm",
+                                    "text-body flex min-h-44 items-center gap-8 rounded-md px-8 text-left",
                                     key === dragMode && "bg-accent/15",
                                 )}
                                 onClick={() => {
@@ -586,7 +586,7 @@ export default function TouchModifierButtons({
                                 <option.Icon size={18} />
                                 <span>
                                     <b>{option.label}</b>
-                                    <span className="text-text-subtitle block text-xs">
+                                    <span className="text-text-subtitle text-sub block">
                                         {option.describe}
                                     </span>
                                 </span>
@@ -600,7 +600,7 @@ export default function TouchModifierButtons({
                     type="button"
                     className={clsx(
                         popupSide,
-                        "border-stroke bg-bg-1 text-text flex h-44 items-center gap-6 rounded-full border px-14 text-sm font-medium whitespace-nowrap shadow-lg",
+                        "border-stroke bg-bg-1 text-text text-body flex h-44 items-center gap-6 rounded-full border px-14 font-medium whitespace-nowrap shadow-lg",
                     )}
                     onClick={onClearLine}
                 >
@@ -639,7 +639,7 @@ export default function TouchModifierButtons({
                             label: mode.label,
                             describe: mode.describe,
                         })}
-                        className="border-stroke text-text flex h-36 items-center gap-4 rounded-full border px-8 text-sm whitespace-nowrap select-none"
+                        className="border-stroke text-text text-body flex h-36 items-center gap-4 rounded-full border px-8 whitespace-nowrap select-none"
                         data-testid="field-drag-mode"
                         {...modeLongPress}
                         onClick={() =>
@@ -648,7 +648,7 @@ export default function TouchModifierButtons({
                             )
                         }
                     >
-                        <span className="text-text-subtitle text-xs">
+                        <span className="text-text-subtitle text-sub">
                             {t("touch.dragMode.prefix")}
                         </span>
                         <mode.Icon size={16} />

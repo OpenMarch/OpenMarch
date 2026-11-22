@@ -65,6 +65,31 @@ module.exports = {
             },
         },
         {
+            // Desktop text sizes come from the OpenMarch scale only (text-sub, text-body,
+            // text-h5 ... text-h1). Tailwind's built-in sizes are removed in
+            // apps/desktop/src/styles/index.css, so they would silently do nothing.
+            // See docs/conventions/ui-polish.md.
+            files: ["apps/desktop/src/**/*.ts", "apps/desktop/src/**/*.tsx"],
+            excludedFiles: ["**/__test__/**"],
+            rules: {
+                "no-restricted-syntax": [
+                    "error",
+                    {
+                        selector:
+                            "Literal[value=/(^|[\\s:])text-(xs|sm|base|lg|[0-9]*xl|\\[[0-9.]+(px|rem|em)\\])($|\\s)/]",
+                        message:
+                            "Use an OpenMarch text size (text-sub, text-body, text-h5 ... text-h1), not a Tailwind or arbitrary size. See docs/conventions/ui-polish.md.",
+                    },
+                    {
+                        selector:
+                            "TemplateElement[value.raw=/(^|[\\s:])text-(xs|sm|base|lg|[0-9]*xl|\\[[0-9.]+(px|rem|em)\\])($|\\s)/]",
+                        message:
+                            "Use an OpenMarch text size (text-sub, text-body, text-h5 ... text-h1), not a Tailwind or arbitrary size. See docs/conventions/ui-polish.md.",
+                    },
+                ],
+            },
+        },
+        {
             // Define the configuration for `.astro` file.
             files: ["*.astro"],
             // Allows Astro components to be parsed.

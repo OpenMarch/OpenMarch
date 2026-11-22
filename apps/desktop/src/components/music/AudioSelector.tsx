@@ -116,7 +116,7 @@ export default function AudioSelector() {
                                 {audioFiles.map((audioFile) => (
                                     <div
                                         key={audioFile.id}
-                                        className="grid grid-cols-2 text-xs text-wrap"
+                                        className="text-sub grid grid-cols-2 text-wrap"
                                     >
                                         <SelectItem value={`${audioFile.id}`}>
                                             {audioFile.nickname}

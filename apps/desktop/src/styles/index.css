@@ -2,6 +2,23 @@
 @import "@openmarch/ui/src/tailwind.css";
 @source "../../../../packages/ui/src/components";
 
+/*
+ * Text sizes: only the OpenMarch sizes exist. "--text-*: initial" removes Tailwind's
+ * built-in sizes (text-xs, text-sm, text-lg, ...), which @openmarch/ui brings back with its
+ * own "tailwindcss" import, so the OpenMarch sizes are declared again here. Keep these
+ * values the same as packages/ui/src/tailwind.css. See docs/conventions/ui-polish.md.
+ */
+@theme {
+    --text-*: initial;
+    --text-sub: 0.6875rem;
+    --text-body: 0.875rem;
+    --text-h5: 1.125rem;
+    --text-h4: 1.25rem;
+    --text-h3: 1.75rem;
+    --text-h2: 2.25rem;
+    --text-h1: 3rem;
+}
+
 :root {
     --keycap-bg: rgb(255, 255, 255);
     --keycap-border: rgba(0, 0, 0, 0.14);

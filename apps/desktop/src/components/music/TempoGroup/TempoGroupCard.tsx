@@ -103,7 +103,7 @@ function StaticTempoGroupCard({
                         <div>
                             <h3 className="text-h3">
                                 {tempoGroup.tempo}{" "}
-                                <span className="text-text-subtitle text-sm">
+                                <span className="text-text-subtitle text-body">
                                     {isMixedMeter ? "♩ " : ""}
                                     bpm
                                 </span>
@@ -111,7 +111,7 @@ function StaticTempoGroupCard({
                         </div>
                     )}
                     {tempoGroup.measureRangeString && (
-                        <p className="text-text-subtitle text-sm">
+                        <p className="text-text-subtitle text-body">
                             {tempoGroup.measureRangeString}
                             {tempoGroup.numOfRepeats > 1 &&
                                 ` (${tempoGroup.numOfRepeats}x)`}
@@ -121,7 +121,7 @@ function StaticTempoGroupCard({
                 <div className="flex flex-col items-end justify-between gap-4">
                     <h4 className="text-h4 flex items-center gap-8">
                         <div
-                            className="bg-fg-1 rounded-6 border-stroke h-fit border px-6 text-sm"
+                            className="bg-fg-1 rounded-6 border-stroke text-body h-fit border px-6"
                             hidden={!isMixedMeter}
                         >
                             {Array.from({

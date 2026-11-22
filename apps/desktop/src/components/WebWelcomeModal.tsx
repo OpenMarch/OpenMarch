@@ -16,7 +16,7 @@ export default function WebWelcomeModal() {
         <Dialog open={open} onOpenChange={setOpen}>
             <DialogContent className="w-[40rem]">
                 <DialogTitle>{t("welcome.title")}</DialogTitle>
-                <div className="text-text-subtitle flex flex-col gap-16 text-sm">
+                <div className="text-text-subtitle text-body flex flex-col gap-16">
                     <DialogDescription asChild>
                         <p className="text-text">{t("web.welcome.intro")}</p>
                     </DialogDescription>

@@ -1124,7 +1124,7 @@ function DrillChartExport() {
                         <p className="text-body max-w-md text-center text-gray-600">
                             <T keyName="exportCoordinates.exportNotAvailableDescription" />
                         </p>
-                        <div className="text-center text-xs text-gray-500">
+                        <div className="text-sub text-center text-gray-500">
                             <div>
                                 {t("exportCoordinates.fieldProperties", {
                                     status: fieldProperties ? "✓" : "✗",

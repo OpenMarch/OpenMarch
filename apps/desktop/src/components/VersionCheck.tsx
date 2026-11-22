@@ -146,7 +146,7 @@ export default function VersionChecker() {
 
                     {/* Displays the changelog if available */}
                     {changelog ? (
-                        <div className="bg-fg-1 border-stroke rounded-6 mt-4 max-h-[400px] overflow-auto border p-12 text-sm">
+                        <div className="bg-fg-1 border-stroke rounded-6 text-body mt-4 max-h-[400px] overflow-auto border p-12">
                             <StyledMarkdown>{changelog}</StyledMarkdown>
                         </div>
                     ) : (

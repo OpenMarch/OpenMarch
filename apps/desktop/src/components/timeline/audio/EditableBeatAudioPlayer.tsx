@@ -149,7 +149,7 @@ export default function EditableBeatAudioPlayer() {
 
     return (
         <div className="bg-red pl-[40px]">
-            <div className="text-text/70 mb-2 text-sm">
+            <div className="text-text/70 text-body mb-2">
                 <T keyName="audio.editableBeatPlayer.description" />
             </div>
             {audioFileUrl && (

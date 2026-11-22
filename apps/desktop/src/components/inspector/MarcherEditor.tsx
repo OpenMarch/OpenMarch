@@ -351,7 +351,7 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
                             setHorizontalStepInterval(e.target.value)
                         }
                         compact
-                        className="w-8 flex-1 rounded border text-center text-xs"
+                        className="text-sub w-8 flex-1 rounded border text-center"
                         disabled={editingDisabled}
                     />
                 </div>
@@ -383,7 +383,7 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
                         onChange={(e) =>
                             setVerticalStepInterval(e.target.value)
                         }
-                        className="w-8 flex-1 rounded border text-center text-xs"
+                        className="text-sub w-8 flex-1 rounded border text-center"
                         disabled={editingDisabled}
                     />
                 </div>

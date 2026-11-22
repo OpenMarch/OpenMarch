@@ -120,7 +120,7 @@ export default function EditableTempoGroup({
                               : "col-span-3",
                     )}
                 >
-                    <Label className="text-sm select-all">
+                    <Label className="text-body select-all">
                         <T keyName="music.name" />
                     </Label>
                     <Input
@@ -145,7 +145,7 @@ export default function EditableTempoGroup({
                                 isMixedMeter ? "col-span-2" : "col-span-3",
                             )}
                         >
-                            <Label className="text-sm">
+                            <Label className="text-body">
                                 <T keyName="music.tempo" />
                             </Label>
                             <Input
@@ -167,7 +167,7 @@ export default function EditableTempoGroup({
                                 name="beatPattern"
                                 className="col-span-2 flex flex-col gap-2"
                             >
-                                <Label className="text-sm">
+                                <Label className="text-body">
                                     <T keyName="music.beatPattern" />
                                 </Label>
                                 <select
@@ -209,7 +209,7 @@ export default function EditableTempoGroup({
                             name="beatsPerMeasure"
                             className={clsx("col-span-3 flex flex-col gap-2")}
                         >
-                            <Label className={clsx("text-sm")}>
+                            <Label className={clsx("text-body")}>
                                 <T keyName="music.beatsPerMeasure" />
                             </Label>
                             <Input
@@ -231,7 +231,7 @@ export default function EditableTempoGroup({
                             name="repeats"
                             className={clsx("col-span-3 flex flex-col gap-2")}
                         >
-                            <Label className="text-sm">
+                            <Label className="text-body">
                                 <T keyName="music.numberOfMeasures" />
                             </Label>
                             <Input
@@ -245,7 +245,7 @@ export default function EditableTempoGroup({
                     </>
                 ) : (
                     <div className="col-span-6 flex flex-col gap-8">
-                        <p className="mb-4 text-sm">
+                        <p className="text-body mb-4">
                             <T keyName="music.individualBeatTempos" />
                         </p>
                         <div className="col-span-6 flex list-decimal flex-col gap-8">

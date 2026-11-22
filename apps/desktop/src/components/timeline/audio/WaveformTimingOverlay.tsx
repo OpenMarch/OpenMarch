@@ -225,8 +225,8 @@ export default function WaveformTimingOverlay({
                                     className={clsx(
                                         "border-stroke bg-modal rounded-4 border px-3",
                                         isRehearsalMark
-                                            ? "text-accent text-lg"
-                                            : "text-text-subtitle text-sm",
+                                            ? "text-accent text-h5"
+                                            : "text-text-subtitle text-body",
                                     )}
                                 >
                                     {label}

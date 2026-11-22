@@ -79,12 +79,12 @@ function CollisionsToolbar({ collisionInfo }: { collisionInfo: any[] }) {
                                                 {collision.marcher1Label} ↔{" "}
                                                 {collision.marcher2Label}
                                             </div>
-                                            <div className="text-text-subtitle font-mono text-sm">
+                                            <div className="text-text-subtitle text-body font-mono">
                                                 {collision.distance.toFixed(1)}{" "}
                                                 steps
                                             </div>
                                         </div>
-                                        <div className="text-text-subtitle text-sm">
+                                        <div className="text-text-subtitle text-body">
                                             Position: ({collision.x.toFixed(1)},{" "}
                                             {collision.y.toFixed(1)})
                                         </div>

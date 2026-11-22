@@ -136,7 +136,7 @@ export default function CanvasZoomControls({
 
     // Tooltip for the hamburger icon (placeholder)
     // const NavigationTooltip = () => (
-    //     <div className="bg-bg-1 pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 transform rounded-md px-3 py-1.5 text-sm whitespace-nowrap opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
+    //     <div className="bg-bg-1 pointer-events-none absolute bottom-full left-1/2 mb-2 -translate-x-1/2 transform rounded-md px-3 py-1.5 text-body whitespace-nowrap opacity-0 shadow-lg transition-opacity group-hover:opacity-100">
     //         Zoom and navigation
     //         <div className="border-t-bg-1 absolute top-full left-1/2 -translate-x-1/2 transform border-x-4 border-t-4 border-x-transparent" />
     //     </div>
@@ -172,7 +172,7 @@ export default function CanvasZoomControls({
             {/* Zoom Percentage Display and Reset Button */}
             <button
                 onClick={handleResetZoomAndCenter}
-                className="border-stroke bg-fg-2 text-text touch:min-h-48 touch:min-w-72 flex h-full w-full items-center justify-center border-r border-l px-3 py-4 font-mono text-sm transition-colors duration-150 hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50"
+                className="border-stroke bg-fg-2 text-text touch:min-h-48 touch:min-w-72 text-body flex h-full w-full items-center justify-center border-r border-l px-3 py-4 font-mono transition-colors duration-150 hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={!canvas}
                 title="Reset Zoom and Center"
                 aria-label={t("canvas.zoom.reset", { zoom: currentZoom })}

@@ -41,12 +41,12 @@ export default class ErrorBoundary extends React.Component<
                         <div className="text-h3 font-bold">
                             Something went wrong :(
                         </div>
-                        <div className="flex w-full flex-col items-center gap-16 text-center text-base">
+                        <div className="text-body flex w-full flex-col items-center gap-16 text-center">
                             <div className="text-text-subtitle">
                                 OpenMarch stopped due to the following error
                             </div>
 
-                            <div className="border-stroke bg-bg-1 group relative my-4 flex w-full rounded border p-8 font-mono text-xs">
+                            <div className="border-stroke bg-bg-1 group text-sub relative my-4 flex w-full rounded border p-8 font-mono">
                                 <div className="flex-grow text-center">
                                     {this.state.error?.message}
                                 </div>
@@ -77,7 +77,7 @@ export default class ErrorBoundary extends React.Component<
                                             className="text-text-subtitle hover:text-text"
                                         />
                                         {this.state.copied && (
-                                            <span className="text-green bg-bg-1 absolute right-0 mr-8 rounded p-2 text-xs">
+                                            <span className="text-green bg-bg-1 text-sub absolute right-0 mr-8 rounded p-2">
                                                 Error copied
                                             </span>
                                         )}
@@ -92,7 +92,7 @@ export default class ErrorBoundary extends React.Component<
                                 Please reach out to us so we can fix this.
                                 Hearing from you is what makes OpenMarch great!
                             </div>
-                            <div className="grid w-full grid-cols-3 gap-8 text-sm">
+                            <div className="text-body grid w-full grid-cols-3 gap-8">
                                 <Button
                                     variant="secondary"
                                     className="flex h-full w-full items-center justify-center gap-4"
