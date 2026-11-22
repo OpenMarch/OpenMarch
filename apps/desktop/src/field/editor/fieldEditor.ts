@@ -454,6 +454,11 @@ export type FieldModeDrawing = {
      */
     gaps?: readonly FieldPoint[];
     /**
+     * Spots nobody will take (loose dots pasted onto fewer marchers, #961), drawn as dashed rings
+     * at full strength: they're part of what's pasted, not a control
+     */
+    emptySpots?: readonly FieldPoint[];
+    /**
      * The shape's look at this stage (docs/timeline/research/shapes/08-shape-system-ux.md,
      * "Marcher styling"): while it's drawn, a dashed outline and solid spots; once open, a solid
      * outline with a faint fill. Dashed rings when absent.

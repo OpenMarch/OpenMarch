@@ -1608,6 +1608,122 @@
         "category": "shape",
         "bindings": []
     },
+    "copyFormation": {
+        "label": "Copy",
+        "category": "edit",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⌘",
+                        "C"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "C"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⌃",
+                        "C"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "C"
+                    ]
+                }
+            }
+        ]
+    },
+    "pasteFormation": {
+        "label": "Paste",
+        "category": "edit",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⌘",
+                        "V"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "V"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⌃",
+                        "V"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "V"
+                    ]
+                }
+            }
+        ]
+    },
+    "pasteAsPositions": {
+        "label": "Paste a copied shape as its positions",
+        "category": "edit",
+        "bindings": []
+    },
+    "clearClipboard": {
+        "label": "Clear the clipboard",
+        "category": "edit",
+        "bindings": []
+    },
+    "pasteFormationInPlace": {
+        "label": "Paste exactly",
+        "category": "edit",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "⌘",
+                        "V"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "Shift",
+                        "V"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⌃",
+                        "⇧",
+                        "V"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "Shift",
+                        "V"
+                    ]
+                }
+            }
+        ]
+    },
     "cancelAlignmentUpdates": {
         "label": "Cancel or deselect",
         "category": "cursor",

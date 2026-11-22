@@ -104,6 +104,7 @@ import {
 } from "../tool/toolKind";
 import { useShapeHidden, useShapeToolStore } from "../tool/shapeToolStore";
 import { ShapeAwayChip } from "./ShapeAwayChip";
+import { PasteFitNotice } from "../clipboard/PasteFitNotice";
 import { GlyphText } from "./GlyphText";
 import { useShapePointerOver } from "../tool/shapeToolMode";
 import "./ShapeEditorSurface.css";
@@ -690,6 +691,8 @@ function ShapeEditorBar({
                 keepOffered={target.order?.keepOffered}
                 testId={testId}
             />
+            {/* An open paste that doesn't fit says so here, beside Place (#961) */}
+            {testId === "shape-tool-readout" && <PasteFitNotice />}
         </animated.div>
     );
 }

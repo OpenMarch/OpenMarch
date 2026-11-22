@@ -89,6 +89,8 @@ const SUBTRACT_LASSO_DASH = "2 4";
  */
 const SHAPE_OUTLINE_WIDTH = 1;
 const SHAPE_OUTLINE_DASH = "6 4";
+/** A spot a paste leaves empty (#961): dashes in field units round a marcher-sized ring */
+const EMPTY_SPOT_DASH = "2 1.5";
 /** How far an angle line runs from its circle's center, in field units: past any field */
 const GUIDE_REACH = 100_000;
 const SPOT_RADIUS = 4;
@@ -1168,6 +1170,24 @@ const ShapeBody = memo(function ShapeBody({
                 looks={looks}
                 scale={scale}
             />
+            {/* Spots a paste leaves empty (#961): a dashed ring the size of a marcher, so the whole
+                copy reads, at full strength however calm the shape is */}
+            {drawing.emptySpots?.map((p, i) => (
+                <MarkerSvg
+                    key={`empty-${i}`}
+                    // An X is drawn in its fill, so an empty one is a ring
+                    shape={spotShape === "cross" ? "circle" : spotShape}
+                    x={p.x}
+                    y={p.y}
+                    r={DOT_RADIUS * scale}
+                    fill="none"
+                    stroke={shape}
+                    strokeWidth={SHAPE_OUTLINE_WIDTH}
+                    strokeDasharray={EMPTY_SPOT_DASH}
+                    vectorEffect="non-scaling-stroke"
+                    data-testid="fieldShapeEmptySpot"
+                />
+            ))}
             {drawing.memberRings?.map((ring, i) => (
                 // In the marcher's shape, as its selection ring is
                 <MarkerSvg

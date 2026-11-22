@@ -1,0 +1,98 @@
+---
+title: Copy a formation onto other marchers
+description: Copy where a group of marchers stands, or a whole shape, and paste it onto the marchers you select.
+type: how-to
+covers:
+  - apps/desktop/src/shapes/clipboard
+  - action:copyFormation
+  - action:pasteFormation
+  - action:pasteFormationInPlace
+  - i18n:shapes.clipboard
+sidebar:
+  order: 6
+---
+
+import Media from "@/components/docs/Media.astro";
+import Kbd from "@/components/docs/Kbd.astro";
+import Ui from "@/components/docs/Ui.astro";
+import InShort from "@/components/docs/InShort.astro";
+import { Steps } from "@astrojs/starlight/components";
+
+<InShort>Select the marchers, right-click the field and select <Ui k="actions.edit.copy" /> (<Kbd action="copyFormation" />), then select the marchers who should take the formation, right-click and select <Ui k="actions.edit.paste" /> (<Kbd action="pasteFormation" />), and select <Ui k="shapes.edit.place" /> (<Kbd action="applyShape" />).</InShort>
+
+Copy and paste reuses a formation: the places a group of marchers stands in, or a whole shape. Pasting never adds marchers. It moves the marchers you have selected into the copied formation, and they can be different marchers from the ones you copied.
+
+## Copy and paste
+
+<Steps>
+
+1. Select the marchers whose formation you want. To copy a placed shape as a shape, click any marcher in it, which selects the whole shape.
+
+2. Right-click the field and select <Ui k="actions.edit.copy" /> (<Kbd action="copyFormation" />). The clipboard chip in the field's bottom-left corner shows what was copied. Nothing on the field changes.
+
+3. Put the playhead on the count where the formation should be used, and select the marchers who should take it.
+
+4. Right-click the field and select <Ui k="actions.edit.paste" /> (<Kbd action="pasteFormation" />). The formation appears centered on the selected marchers, as an open shape. Nobody has moved yet.
+
+5. Drag inside it to put it where it belongs. You can also turn and flip it with its knob and its floating editor.
+
+6. Select <Ui k="shapes.edit.place" />, or press <Kbd action="applyShape" />. Press <Kbd action="cancelAlignmentUpdates" /> instead to discard it.
+
+</Steps>
+
+<Media
+  id="shapes-paste"
+  alt="A box of twelve marchers, three rows of four, has been copied. A row of eight other marchers is selected. Paste shows the box laid out for eight, two rows of four, as an open shape centered on the row, and selecting Place moves the eight onto its spots."
+/>
+
+Placing is one step you can undo. Each marcher takes a spot by least travel, as with any shape; see [Place marchers in a shape](/guides/shapes/place-marchers/).
+
+## See what's copied
+
+Once you copy, a small clipboard chip appears in the bottom-left corner of the field, across from the zoom controls. It shows a small picture of the formation, what it is (a shape's name, or <Ui k="shapes.clipboard.positions" plain /> for marchers copied where they stand) and how many marchers it has. On a tablet it also has a <Ui k="actions.edit.paste" /> button. Its second line says how the copy fits the marchers you have selected now, including a warning when some copied spots would stay empty, or why you can't paste yet. The same warning shows under the paste's floating editor while the paste is open. Right after you copy, it says <Ui k="shapes.clipboard.chipCopied" plain /> for a moment. A copied shape is drawn laid out for the marchers you have selected. A few seconds after you last use it, the chip shrinks to its picture, so it stays out of the way while you still know something is copied; point at it to see what (on a tablet, tap it). It shows whole again when you select other marchers, copy or paste. While you drag near it, it fades. To empty the clipboard, point at the chip and select <Ui k="actions.edit.clearClipboard" /> on its corner (on a tablet, it's in the chip itself, at the far end from Paste), or choose <Ui k="actions.edit.clearClipboard" plain /> in the command palette; the chip then goes away until you copy again.
+
+Select the chip, or its picture once it has shrunk, to open the <Ui k="shapes.clipboard.title" /> card. On a tablet, tapping the picture shows the whole chip first. With no marchers selected, the card says whether you can paste onto any number of marchers or need to select a certain number. It has <Ui k="actions.edit.paste" /> and <Ui k="actions.edit.pasteInPlace" /> buttons that do the same as the menu. Select the card's caret, or press <Kbd keys="Escape" /> while you're in it, to fold it back into the chip. It also folds when a paste opens, and it always starts folded.
+
+<Media
+  id="shapes-clipboard-card"
+  alt="The Clipboard card opened from the chip in the field's bottom-left corner: a picture of a gently curved row of dots, Positions, 12 marchers and the caret that folds it, Paste and Paste exactly buttons, and a warning that with 2 selected 10 spots stay empty."
+/>
+
+## Paste a shape as its positions
+
+When you copy a whole shape, the <Ui k="shapes.clipboard.title" /> card shows <Ui k="shapes.clipboard.pasteAs" plain /> with two choices:
+
+- <Ui k="shapes.clipboard.asShape" />, the default: the shape is laid out again for however many marchers you select, and stays a shape you can change.
+- <Ui k="shapes.clipboard.positions" />: the marchers go onto the shape's exact copied spots and are plain marchers, with no shape. Use it when the coordinates must match the copy exactly, even onto a different number of marchers.
+
+The card then names it with both, such as "Box positions". Every new copy starts as <Ui k="shapes.clipboard.asShape" plain />. The command palette has the same switch, <Ui k="actions.edit.pasteAsPositions" plain />.
+
+## Paste exactly
+
+<Ui k="actions.edit.pasteInPlace" /> (<Kbd action="pasteFormationInPlace" />) starts the formation at the exact place on the field it was copied from, not centered on the selected marchers. Use it to bring a formation back on a later page, or to put other marchers exactly where the first group stood. Onto the same number of marchers, a shape pasted this way lands on exactly the spots it was copied from. It brings back the spots, not who stood on each: the selected marchers take them by shortest walk, as with any paste, and marchers already standing on them stay where they are.
+
+## When the numbers differ
+
+You can paste onto more or fewer marchers than you copied.
+
+- A shape copied whole (a box, circle, line, curve or arc) is laid out again for the marchers you paste onto, keeping its spacing and its other settings, as if you had drawn it with them selected. A 4 × 4 box pasted onto 12 marchers becomes 4 × 3. Pasted as <Ui k="shapes.clipboard.positions" plain />, it keeps its 16 spots instead and fills them as below.
+- Marchers copied where they stand, and a group, have only the spots that were copied. With fewer marchers than spots, the marchers take the spots that give the shortest walks, and the other spots stay empty: they're drawn as dashed rings while the paste is open, so you see the whole formation, and are gone once you place it. Marchers already standing on some of the spots stay on them, so pasting again onto the same marchers doesn't move them. With more marchers than spots, the marchers with the shortest walks take the spots; the others stay where they are. The clipboard chip warns how many before you paste.
+
+You can't yet choose in the pasted formation which spots stay empty. To leave certain spots out, copy only the marchers standing on the spots you want.
+
+## What is kept
+
+- A shape copied whole is a shape again once you place it: you can select it and change it like any placed shape. Marchers copied where they stand are pasted as plain marchers, with no shape.
+- The copied formation stays until you copy another one or clear it. OpenMarch keeps it on this computer, so you can open another show and paste it there, and it is still there after you restart.
+- It is not on your system's clipboard. Copying text doesn't replace it, and it can't be pasted into another app. In a text box, the same keys copy and paste text as usual.
+- On a field with a different step size, the formation keeps its size in steps, and a shape is pasted as plain marchers.
+
+## On a tablet
+
+Touch and hold the field, then lift, to open the same menu with <Ui k="actions.edit.copy" />, <Ui k="actions.edit.paste" /> and <Ui k="actions.edit.pasteInPlace" />. Once something is copied, the clipboard chip also has a <Ui k="actions.edit.paste" /> button, for pasting in one tap, and its own <Ui k="actions.edit.clearClipboard" /> button. When the chip has shrunk to its picture, tap it first to show them.
+
+## Related
+
+- [Place marchers in a shape](/guides/shapes/place-marchers/): who stands where, and changing a placed shape.
+- [How shapes work](/guides/shapes/): open shapes, spots and intervals.
+- [Select marchers](/guides/marchers/select-marchers/): choose who receives the formation.

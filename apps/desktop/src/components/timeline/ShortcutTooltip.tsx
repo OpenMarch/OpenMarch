@@ -126,7 +126,8 @@ export function ShortcutTooltip({
                             </span>
                         )}
                         {typeof hint === "string" ? (
-                            <span className="text-text-subtitle text-sub block">
+                            // A long hint wraps at a readable width rather than running across the screen
+                            <span className="text-text-subtitle text-sub block max-w-320">
                                 {hint}
                             </span>
                         ) : (

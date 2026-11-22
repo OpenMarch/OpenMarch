@@ -9,6 +9,7 @@ import { useNudgeActionHandlers } from "./handlers/useNudgeActionHandlers";
 import { useTimelineActionEffects } from "./handlers/useTimelineActionEffects";
 import { useUiActionHandlers } from "./handlers/useUiActionHandlers";
 import { useShapeToolActions } from "@/shapes/tool/useShapeToolActions";
+import { useClipboardActions } from "@/shapes/clipboard/useClipboardActions";
 import { DiscardedShapeKeys, ShapeToolKeys } from "@/shapes/tool/ShapeToolKeys";
 import {
     useShapeHidden,
@@ -51,6 +52,7 @@ export function EditorActionHandlers() {
     useUiActionHandlers();
     useCursorActionHandlers();
     useShapeToolActions();
+    useClipboardActions();
     useUnsetActionHandlers();
     useHoldActionHandlers();
     useFieldEditActionHandlers();

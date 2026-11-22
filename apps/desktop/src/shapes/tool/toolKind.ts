@@ -694,6 +694,18 @@ export interface ToolKind<P> {
      * offers no Recalculate, and it isn't saved to the library, which keeps no spots
      */
     readonly asIs?: boolean;
+    /**
+     * Placing it saves no recipe: its marchers go to its spots and stay plain marchers (loose dots
+     * pasted from the clipboard, #961). It isn't read back from recipes or offered by a picker.
+     */
+    readonly loose?: boolean;
+    /**
+     * Spots nobody takes (loose dots pasted onto fewer marchers, #961): drawn as empty rings
+     * while it's open
+     */
+    emptySpots?(params: P, n: number): readonly XY[];
+    /** The params as placing saves them, when the open shape holds more than a recipe keeps */
+    forPlacing?(params: P): P;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

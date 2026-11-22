@@ -1143,6 +1143,128 @@ const shots = [
             await film.hold(1.4);
         },
     },
+    {
+        id: "shapes-paste",
+        kind: "clip",
+        covers: ["apps/desktop/src/shapes/clipboard"],
+        // A placed box copied, another section selected: Paste shows the box on them as an open
+        // shape, and Place moves them onto its spots (#961)
+        async setup({ page }) {
+            const { bounds, prefix } = await start(page);
+            const [a, b] = boxCorners(bounds);
+            await page.keyboard.press("KeyB");
+            await page.waitForTimeout(300);
+            await quickDrag(page, a, b);
+            await page.keyboard.press("Enter");
+            await page.waitForTimeout(1200);
+            // Placed, the box is selected whole: copy it
+            await page.keyboard.press("Control+KeyC");
+            await page.waitForTimeout(400);
+            // The nearest other section that stands close together receives it
+            const groups = new Map();
+            for (const m of await marchers(page)) {
+                const p = m.label.replace(/\d+$/, "");
+                if (p !== prefix) groups.set(p, [...(groups.get(p) ?? []), m]);
+            }
+            const from = {
+                x: bounds.x + bounds.width / 2,
+                y: bounds.y + bounds.height / 2,
+            };
+            // A row of eight or more, clear of the box to its side: pasted, the row becomes a box
+            const others = [...groups.entries()]
+                .map(([p, ms]) => ({ prefix: p, ms, bounds: unionOf(...ms) }))
+                .filter(
+                    (g) =>
+                        g.ms.length >= 8 &&
+                        g.bounds.width <= 360 &&
+                        g.bounds.height <= 20 &&
+                        (g.bounds.x + g.bounds.width < bounds.x - 40 ||
+                            g.bounds.x > bounds.x + bounds.width + 40),
+                )
+                .sort(
+                    (g, h) =>
+                        Math.hypot(
+                            g.bounds.x + g.bounds.width / 2 - from.x,
+                            g.bounds.y + g.bounds.height / 2 - from.y,
+                        ) -
+                        Math.hypot(
+                            h.bounds.x + h.bounds.width / 2 - from.x,
+                            h.bounds.y + h.bounds.height / 2 - from.y,
+                        ),
+                );
+            if (!others.length)
+                throw new Error("no second section to paste onto");
+            const other = others[0];
+            await selectSection(page, other.prefix);
+            await tidy(page);
+            const middle = {
+                x: other.bounds.x + other.bounds.width / 2,
+                y: other.bounds.y + other.bounds.height / 2,
+            };
+            this.rest = { x: middle.x + 40, y: middle.y - 150 };
+            // Room for the pasted box around the row it lands on, and its floating editor under it
+            const landing = {
+                x: middle.x - 340,
+                y: middle.y - 90,
+                width: 680,
+                height: 250,
+            };
+            return {
+                box: inside(
+                    grow(unionOf(bounds, a, b, other.bounds, landing), 50),
+                    await fieldBox(page),
+                ),
+            };
+        },
+        async perform({ page, film, overlay }) {
+            await film.release();
+            await overlay.enable();
+            const rest = this.rest;
+            await page.mouse.move(rest.x, rest.y);
+            await film.hold(0.8);
+            await page.keyboard.down("Control");
+            await page.keyboard.press("KeyV");
+            await film.hold(0.5);
+            await page.keyboard.up("Control");
+            await page.waitForTimeout(600);
+            await tidy(page);
+            await film.hold(1.6);
+            await filmPlace(page, film, rest);
+            await page.waitForTimeout(700);
+            await film.hold(1.8);
+        },
+    },
+    {
+        id: "shapes-clipboard-card",
+        kind: "still",
+        covers: ["apps/desktop/src/shapes/clipboard"],
+        // A section's positions copied, two of its marchers selected: the Clipboard card, opened
+        // from the chip in the field's corner, says that with two selected the other spots stay
+        // empty (#961)
+        async setup({ page, around }) {
+            const { prefix } = await start(page);
+            await page.keyboard.press("Control+KeyC");
+            await page.waitForTimeout(400);
+            const ms = (await marchers(page)).filter(
+                (m) => m.label.replace(/\d+$/, "") === prefix,
+            );
+            await page.mouse.click(ms[0].x, ms[0].y);
+            await page.keyboard.down("Shift");
+            await page.mouse.click(ms[1].x, ms[1].y);
+            await page.keyboard.up("Shift");
+            await page.waitForTimeout(500);
+            await tidy(page);
+            // Choosing the two showed the whole chip; a rested one opens the card itself
+            const rested = page.getByTestId("clipboard-chip-rested");
+            if (await rested.isVisible()) await rested.click();
+            else await page.getByTestId("clipboard-chip-toggle").click();
+            const card = page.getByTestId("clipboard-chip");
+            await card.getByTestId("clipboard-section").waitFor();
+            await page.mouse.move(5, 500);
+            await page.waitForTimeout(300);
+            return { box: await around(card, 10) };
+        },
+    },
 ];
 
 export default shots;

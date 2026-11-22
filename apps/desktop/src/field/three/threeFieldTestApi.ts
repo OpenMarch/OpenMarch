@@ -233,6 +233,7 @@ function shapeOverlayOf(field: ThreeFieldState): FieldTestShapeOverlay | null {
             label: r.label,
         })),
         gaps: (drawing.gaps ?? []).map(copy),
+        emptySpots: (drawing.emptySpots ?? []).map(copy),
         construction: constructionOf(drawing, copy),
         stage: drawing.stage ?? null,
         knob: drawing.knob ? screen(drawing.knob.at) : null,

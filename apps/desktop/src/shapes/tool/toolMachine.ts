@@ -149,6 +149,22 @@ export function openTool(
     };
 }
 
+/**
+ * A tool opened with a shape already drawn (#961): a copied picture pasted onto `marchers`, shown
+ * as the open shape so it can be moved, turned and placed like one drawn here. Who goes where is
+ * worked out on its spots; nothing is in its history, so undo has nothing to step back to.
+ */
+export function openDrawn(
+    kind: AnyToolKind,
+    marchers: readonly AssignMarcher[],
+    params: unknown,
+    ctx: ShapeContext,
+    /** Whether its pivot was moved by hand, so it stays where it is */
+    pivotMoved = false,
+): ToolState {
+    return reassign({ ...openTool(kind, marchers), params, pivotMoved }, ctx);
+}
+
 const snapshot = (s: ToolState): ToolSnapshot => ({
     kind: s.kind,
     params: s.params,

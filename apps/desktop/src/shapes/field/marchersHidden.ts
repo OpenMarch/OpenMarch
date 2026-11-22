@@ -219,6 +219,7 @@ export function shapeAlone(drawing: FieldModeDrawing): FieldModeDrawing {
         spots: [],
         walks: [],
         gaps: undefined,
+        emptySpots: undefined,
         labels: undefined,
         onGuides: undefined,
         // The interval groups ring the spots, so they go with them

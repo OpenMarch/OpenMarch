@@ -227,6 +227,7 @@ const drawingOf = memoDrawing(
             // the keyboard is in its editor
             calm,
             gaps: gap ? [gap] : [],
+            emptySpots: tool.kind.emptySpots?.(tool.params, n) ?? [],
             labels:
                 n <= SPOT_LABEL_LIMIT
                     ? targets.map((t) => ({

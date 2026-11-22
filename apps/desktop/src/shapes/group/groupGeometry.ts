@@ -27,12 +27,22 @@ export interface GroupParams {
      * `i` is `points[i]`. (`spots` is the host's spot count in a recipe, so not this.)
      */
     readonly points: readonly XY[];
+    /**
+     * Spots nobody takes, in the same axes as `points` (#961): loose dots pasted onto fewer
+     * marchers than dots. They're part of its frame and drawn while it's open, but never placed
+     * (`groupForPlacing`); spots that stay empty once placed are #358.
+     */
+    readonly empty?: readonly XY[];
 }
+
+/** Every point of the group, its empty spots after its spots */
+const allPoints = (p: GroupParams): readonly XY[] =>
+    p.empty?.length ? [...p.points, ...p.empty] : p.points;
 
 export function groupFrame(p: GroupParams): ShapeFrame {
     let halfWidth = 0;
     let halfDepth = 0;
-    for (const pt of p.points) {
+    for (const pt of allPoints(p)) {
         halfWidth = Math.max(halfWidth, Math.abs(pt.x));
         halfDepth = Math.max(halfDepth, Math.abs(pt.y));
     }
@@ -56,15 +66,45 @@ export function withGroupFrame(p: GroupParams, frame: ShapeFrame): GroupParams {
     };
 }
 
+/** A point in the frame's own axes before any flip, as shown on the field */
+const onField = (frame: ShapeFrame, pt: XY): XY =>
+    frameToField(frame, {
+        x: frame.flipX ? -pt.x : pt.x,
+        y: frame.flipY ? -pt.y : pt.y,
+    });
+
 /** The group's spots on the field, in slot order */
 export function groupSpots(p: GroupParams): Slot[] {
     const frame = groupFrame(p);
-    return p.points.map((pt) =>
-        frameToField(frame, {
-            x: frame.flipX ? -pt.x : pt.x,
-            y: frame.flipY ? -pt.y : pt.y,
-        }),
-    );
+    return p.points.map((pt) => onField(frame, pt));
+}
+
+/** The group's empty spots on the field (#961) */
+export function groupEmptySpots(p: GroupParams): XY[] {
+    if (!p.empty?.length) return [];
+    const frame = groupFrame(p);
+    return p.empty.map((pt) => onField(frame, pt));
+}
+
+/**
+ * The group as placing saves it (#961): without its empty spots, its frame fitted to its spots
+ * again. Every spot stays where it is.
+ */
+export function groupForPlacing(p: GroupParams): GroupParams {
+    if (p.empty === undefined) return p;
+    const { empty: _empty, ...rest } = p;
+    if (p.points.length === 0) return rest;
+    const xs = p.points.map((pt) => pt.x);
+    const ys = p.points.map((pt) => pt.y);
+    const mid = {
+        x: (Math.min(...xs) + Math.max(...xs)) / 2,
+        y: (Math.min(...ys) + Math.max(...ys)) / 2,
+    };
+    return {
+        ...rest,
+        center: onField(groupFrame(p), mid),
+        points: p.points.map((pt) => ({ x: pt.x - mid.x, y: pt.y - mid.y })),
+    };
 }
 
 /** A group of marchers standing at `positions`, square to the field, its center their middle */
@@ -142,6 +182,9 @@ export function groupInterval(p: Pick<GroupParams, "points">): number | null {
 const scaled = (p: GroupParams, k: number): GroupParams => ({
     ...p,
     points: p.points.map((pt) => ({ x: pt.x * k, y: pt.y * k })),
+    ...(p.empty && {
+        empty: p.empty.map((pt) => ({ x: pt.x * k, y: pt.y * k })),
+    }),
 });
 
 /**
@@ -258,7 +301,7 @@ const facing = (key: GroupHandleKey): XY => ({
 export function groupHandles(
     p: GroupParams,
 ): { key: GroupHandleKey; at: XY; facing: XY }[] {
-    if (p.points.length < 2) return [];
+    if (allPoints(p).length < 2) return [];
     const frame = groupFrame(p);
     const wide = frame.halfWidth > FLAT;
     const deep = frame.halfDepth > FLAT;
@@ -326,23 +369,28 @@ export function stretchGroup(
         y: frame.flipY ? -pt.y : pt.y,
     });
     // Each spot as shown, stretched about the anchor
-    const shown = base.points.map((pt) => {
+    const stretched = (pt: XY): XY => {
         const s = flip(pt);
         return {
             x: anchor.x + (s.x - anchor.x) * sx,
             y: anchor.y + (s.y - anchor.y) * sy,
         };
-    });
-    // The new frame's center is the middle of the stretched spots
-    const xs = shown.map((s) => s.x);
-    const ys = shown.map((s) => s.y);
+    };
+    const shown = base.points.map(stretched);
+    const shownEmpty = base.empty?.map(stretched);
+    // The new frame's center is the middle of the stretched spots, empty ones included
+    const all = shownEmpty ? [...shown, ...shownEmpty] : shown;
+    const xs = all.map((s) => s.x);
+    const ys = all.map((s) => s.y);
     const mid = {
         x: (Math.min(...xs) + Math.max(...xs)) / 2,
         y: (Math.min(...ys) + Math.max(...ys)) / 2,
     };
+    const local = (s: XY): XY => flip({ x: s.x - mid.x, y: s.y - mid.y });
     return {
         ...base,
         center: frameToField(frame, mid),
-        points: shown.map((s) => flip({ x: s.x - mid.x, y: s.y - mid.y })),
+        points: shown.map(local),
+        ...(shownEmpty && { empty: shownEmpty.map(local) }),
     };
 }

@@ -49,6 +49,15 @@ ordinary positions it writes.
 - `placed/`: placed shapes read back from recipes, their membership (a marcher that moves away
   leaves the shape), selecting and editing them (`commitBox.ts`), grouping marchers
   (`groupMarchers.ts`) and ungrouping them (`ungroupShape.ts`), and their overlay.
+- `clipboard/`: copy and paste of a formation (#961). `picture.ts` is what a selection copies and
+  what pasting it onto other marchers opens (pure); `pictureStore.ts` keeps it in localStorage,
+  never the system clipboard; `copyPaste.ts` opens the paste as the host's open shape, so it's moved
+  and placed like one drawn; `ClipboardChip.tsx` is the chip in the field's bottom-left corner that
+  shows what's copied (resting to its picture when idle, with a Clear X on its corner), and opens
+  `ClipboardCard.tsx` (`pictureSummary`, `pictureFit`); its live region announces copies, clears and
+  paste previews (`announceClipboard`). `PasteFitNotice.tsx` shows a paste's misfit under its
+  floating editor (`usePasteNoticeStore`). Loose dots open as `dotsTool`, the group kind placed with
+  no recipe (`ToolKind.loose`).
 - `command/`: the command bar's shape steps.
   `preview/`: a shape's small picture, drawn from its own geometry. `transform/`: turning and
   flipping a plain selection, with no recipe. `draw/`: conversions between fills.

@@ -156,6 +156,7 @@ import { FieldUnavailable, useFieldQualityNotice } from "./FieldQualityNotice";
 import { CanvasErrorBoundary, ContextLossGuard } from "./fieldRecovery";
 import FieldBenchmark from "@/field/benchmark/FieldBenchmark";
 import PropDrawingNotice from "@/components/items/PropDrawingNotice";
+import { ClipboardChip } from "@/shapes/clipboard/ClipboardChip";
 import { threeFieldView } from "@/field/benchmark/fieldScenarios";
 import { r3fFrames } from "./benchmarkFrames";
 import { makeFloorSampler } from "@/pathways/floorSampler";
@@ -691,6 +692,8 @@ function ThreeFieldView() {
                     <TimelineIsolationBar />
                     <TimelineFromStartBadge />
                     <PropDrawingNotice />
+                    {/* What's copied, in the bottom-left corner across from the zoom box (#961) */}
+                    <ClipboardChip />
                 </>
             )}
             <FieldBenchmark
