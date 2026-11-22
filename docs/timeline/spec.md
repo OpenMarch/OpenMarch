@@ -88,6 +88,7 @@ The design replaces the current model, which stores one coordinate per (marcher,
 | **Order-sensitive**        | A path style that reads marcher ordering as well as positions. Only `follow_the_leader` is order-sensitive.                                                                                                                                                                                                                                                                                                                                                                                |
 | **Trail**                  | For follow-the-leader: the line every member walks along (R-9): the line-up through the members' starts, then the waypoints or the **drawn part** (a trail route's points, R-9′, plan step 4), then the destination path.                                                                                                                                                                                                                                                                  |
 | **FTL**                    | Short for follow-the-leader.                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| **Exact path** | One marcher's walk during one move, stored as fixed shapes (points, arcs, cubics) plus timing keys in ticks, and changed only by redrawing it (Appendix M, ADR 0018). Not to be confused with a shape's path in R-9, which some rows also call its exact path. |
 
 ---
 
@@ -1702,6 +1703,8 @@ Keyframe data (timestamps plus coordinates, with linear interpolation between th
 It MUST NOT be read back into the editor as state (D-2).
 
 The **drawable walked path** (R-20, §8.12) is the second export form: exact lines, arcs and cubics per marcher with a beat on every end, for apps that draw the path rather than play it. It follows the same rule: produced from the resolver, never read back.
+
+An **exact path** (Appendix M, ADR 0018) is the one exception to never reading motion back. It is authored data: one marcher's walk as fixed shapes plus timing keys, stored as given and walked by the resolver. The converter (EP-C) still produces exact paths from the resolver and never reads them back, and keyframe data and drawable walked paths stay export-only.
 
 ---
 
@@ -3863,3 +3866,113 @@ the connector (step 6).
 | QA-RP-11 | An ungrouped mark beside a Line recipe in the move | The Line's rows are dealt again; the mark's rows are untouched |
 | QA-RP-12 | The Ends commands from the palette; Ripple in with no form, then with no end spots | Each sets its choice; greyed out, Ripple in gives the form's reason, then the end-spots hint |
 | QA-UNDO-RP | Each write above | One undo step restores every row (transition, assignments, destinations, route, recipe rows) and id; redo restores the same rows |
+
+## Appendix M: Design change: exact paths (exact-path plan steps 1 and 2)
+
+**Change (owner grill, 2026-11-22; [ADR 0018](../adr/0018-exact-paths.md), proposed, for the owner
+to confirm before any code):** an **exact path** stores one marcher's walk during one move as
+fixed shapes plus timing keys. It's authored data, not a cache. You change it by redrawing it.
+This appendix gives the format's rules (EP), what a reader does with it (EP-R) and the converter
+that turns resolved motion into exact paths (EP-C, step 2). Storage, the editor and the `schema`
+file are steps 3 to 5 and are not here.
+
+### M.1 Decisions (owner, 2026-11-22)
+
+| ID | Decision |
+| --- | --- |
+| DE-1 | Three shapes: **points** (straight lines through points), **arc** and **cubic**. Adjust and handoffs on curves have no exact form; they become points within 1/100 of a step. Fitting cubics to them is parked. |
+| DE-2 | Timing is a separate list of keys: a tick and how far along the path. Ticks are counted from the move's start at 480 per beat. Steady speed between keys. |
+| DE-3 | Speed on a curve is measured along the real curve: equal distance per tick, not the Bézier parameter and not R-14's 64-chord table. |
+| DE-4 | The first and last points follow the move's start and end spots, as current paths do (EP-F). The middle stays put. Moving the whole path with the marcher is parked. |
+| DE-5 | Allowed edits: redraw, delete, split at the playhead, shift in time, retime, and the ends following their spots. Refused, each with a reason: dragging points or handles, Corner/Smooth, Adjust, group path, follow the leader, merge. Mirror and paste come later. |
+| DE-6 | The `schema` package owns the type. `packages/core` keeps a temporary copy until step 5. |
+| DE-7 | One format, fully importable. There is no export-only subset. |
+| DE-8 | The type has no units: field units (y down) inside OpenMarch, steps (y up from the front sideline, x from center) in `schema` files. Facing is parked. |
+| DE-9 | Exact paths go into `.om` as an optional field in its next version. Whether `.ompb` (schema#1) is still needed is parked until step 5. |
+
+### M.2 The format
+
+```ts
+type XY = [x: number, y: number];
+
+type ExactShape =
+    | { kind: "points"; points: XY[] }          // at least one; the last is the shape's end
+    | { kind: "arc"; to: XY; bend: number }     // 0 < |bend| ≤ 1/2
+    | { kind: "cubic"; c1: XY; c2: XY; to: XY };
+
+interface ExactKey {
+    tick: number; // whole ticks from the move's start, 480 per beat
+    at: number;   // how far along: a share of the path's length, 0 to 1
+}
+
+interface ExactPath {
+    v: 1;
+    from: XY;              // where the walk starts
+    shapes: ExactShape[];  // at least one, each starting where the last ended
+    keys: ExactKey[];      // at least two
+}
+```
+
+`at` is a share of the length rather than a distance, so a reader's own measure of a cubic never
+moves a key off the end, and the end-following rule (EP-F) keeps the keys as they are.
+
+| ID | Rule |
+| --- | --- |
+| EP-1 | Every coordinate, `bend`, `tick` and `at` is a finite number. `v` is 1. |
+| EP-2 | **Points.** Each point is a corner: the walk goes in a straight line to it from the one before (from the shape's start for the first). Its length is the sum of those lines. |
+| EP-3 | **Arc.** From its start `P` to `to` with chord `c = abs(to − P) > 0` and midpoint `M`. With `n` the chord direction turned +90° in the path's own axes (`(dx, dy)/c → (−dy, dx)/c`), the arc is the circle through `P`, `to` and the apex `M + bend·c·n`: the minor arc (at most a half turn at `abs(bend) = 1/2`). Radius `r = c·(1/4 + bend²) / (2·abs(bend))`, sweep `θ = 4·atan(2·abs(bend))`, length `r·θ`. Same as R-8 and R-14″. A reader whose y axis points the other way negates `bend`. |
+| EP-4 | **Cubic.** The Bézier curve from its start through `c1`, `c2` to `to`. Its length is its true arc length `∫₀¹ abs(B′(t)) dt`, computed to a relative error of at most 10⁻⁶. |
+| EP-5 | **Keys.** The first key is `{tick: 0, at: 0}`. Ticks are whole numbers and strictly increase. `at` never decreases, and the last key's `at` is 1. Two keys with the same `at` are a hold. The last key's tick is the move's length in ticks. |
+| EP-6 | A path whose length is under `ε_geom` is refused: a move that goes nowhere has no exact path (R-20 item 6). |
+
+### M.3 Reading a path (EP-R)
+
+`exactPointAt(path, tick)`, for `0 ≤ tick ≤ lastKey.tick`:
+
+1. Find the keys `k_i ≤ tick ≤ k_{i+1}`, and take `f = lerp(k_i.at, k_{i+1}.at, (tick − k_i.tick) / (k_{i+1}.tick − k_i.tick))`. The tick may be fractional, so a reader plays between ticks.
+2. With `L` the path's length (EP-2 to EP-4), the walk is at distance `d = f·L`.
+3. Walk the shapes to `d`. On a line, the point that far along. On an arc, the angle `d_local / r` from its start toward the apex. On a cubic, the point at the `t` whose length from the start is `d_local`, found to within 10⁻⁶ of the cubic's length.
+
+Before tick 0 and after the last tick the path says nothing: the marcher is wherever the rest of the
+show puts it.
+
+### M.4 Ends follow their spots (EP-F)
+
+When a move's start or end spot no longer matches the path's first or last point (by more than
+`ε_geom`):
+
+| Shape at that end | What moves |
+| --- | --- |
+| Points | The first or last point. |
+| Cubic | The end, and its nearer control point by the same amount. |
+| Arc | The end. `bend` is kept, so the arc keeps its shape and scales with the chord. |
+
+The keys are unchanged: the ticks are the same and `at` is a share of the new length, so the
+marcher still arrives on the same count. Applies once storage lands (step 3); the format is
+the same either way.
+
+### M.5 The converter (EP-C, step 2)
+
+`exactPathsOf(host, resolver, options)` in `packages/core/src/timeline/exactPath.ts`, pure, built on
+R-20's `createWalkedPaths`.
+
+| ID | Rule |
+| --- | --- |
+| EP-C1 | **What it gives.** One exact path per marcher per span (R-2) that is not a hold and moves at least `ε_geom`, with the span's marcher, transition, start beat and end beat. Tick 0 is the span's start. A move a higher layer cuts in two gives two exact paths. |
+| EP-C2 | **Shapes.** From R-20's segments, in order: consecutive lines and polylines are one points shape (a polyline's points kept); an arc segment is an arc with `bend = sign·tan(abs(sweep) / 4) / 2`, the sign putting the apex on the side the arc bows; a cubic is a cubic with the same controls (a cut cubic's `measured` table is not kept: the keys carry its timing). |
+| EP-C3 | **Keys.** A key at every segment end, at its beat × 480 rounded to the nearest whole tick, with `at` the distance there (EP-2 to EP-4) over `L`. Two segment ends that round to the same tick keep the later one. Then, inside each segment, keys are added where EP-R's position would be more than `tolerance` from R-20's `walkedPathPointAt`, which agrees with the resolver within `tol` (R-20 item 7). Two reasons: R-20 times a cubic by the 64-chord table (DE-3 measures true length), and a polyline's points each carry a beat. Keys on a polyline land on its points. |
+| EP-C4 | **Tolerance.** `options.tolerance`, default 1/100 of `S_MIN` (0.1125 field units, 1/100 of an 8-to-5 step on the default field). EP-C3 checks it at every tick and at the midpoints between ticks. |
+| EP-C5 | **Not yet.** Pins, handoffs, the entry rule and trail lanes come in through R-20 as the resolver gains them (R-20's "Not in R-20 yet"). The converter adds nothing of its own for them. |
+
+### M.6 QA
+
+| ID | Case | Expected |
+| --- | --- | --- |
+| QA-EP-1 | One shape of each kind: 3 points, a quarter arc with `bend = (√2 − 1)/2`, a cubic | Lengths exact for points and arc; the cubic's within 10⁻⁶ of a 10⁶-chord measure; `exactPointAt` at the ends hits the shape ends |
+| QA-EP-2 | A cubic with a sharp peak, two keys | Equal ticks walk equal distances along the curve (within 10⁻⁶ of `L`), not equal steps of `t` |
+| QA-EP-3 | Keys `{0,0} {960,0} {1920,1}` | Holds at `from` for two beats, then a steady walk |
+| QA-EP-4 | Paths breaking EP-1, EP-3 (`bend = 0`, `abs(bend) > 1/2`, chord 0), EP-5 (first key not 0, ticks not increasing, `at` going back, last `at` ≠ 1) and EP-6 | Each refused with its rule's id |
+| QA-EP-5 | EP-F: move the end of a points, a cubic and an arc path | Only the named points move; keys unchanged; the arc's `bend` unchanged |
+| QA-EP-6 | The converter on QA-WP-1 to QA-WP-12's shows | Shapes as EP-C2; positions within `tolerance` at every tick |
+| QA-EP-7 | The converter on every move of every marcher in the parity shows (`/mnt/ssd/pathways-beta6-tests/`) and the v0.1.7 fixtures (`apps/desktop/electron/database/__test__/v017-files/`) | Worst gap to `positionAt` per show within 1/100 of a step; the report lists the worst gap and the cost of tick rounding alone |
+| QA-EP-8 | 300 seeded random shows (QA-WP-15's generator) | As QA-EP-6, with the seed in the failure |
