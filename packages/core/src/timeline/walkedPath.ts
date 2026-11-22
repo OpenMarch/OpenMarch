@@ -1143,6 +1143,28 @@ function cubicTable(seg: WalkedCubic): number[] {
     return e;
 }
 
+/**
+ * The parameter on a cubic segment's own controls where its marcher is at fraction `f` of the
+ * segment's beats (R-20 item 7): R-14's 64-chord table, of the whole piece or, for a cut, of the
+ * whole curve mapped into the cut. null for a cut of no parameter width, which is walked as a
+ * line. For the exact-path converter (spec EP-C3), which measures this place by true length.
+ */
+export function walkedCubicParamAt(seg: WalkedCubic, f: number): number | null {
+    if (f <= 0) return 0;
+    if (f >= 1) return 1;
+    const cut = seg.measured;
+    if (!cut) {
+        const e = cubicTable(seg);
+        return cubicParamAt(e, f * e[e.length - 1]!);
+    }
+    // the whole curve's parameter at this distance, as R-14 finds it, then this cut's
+    const t0 = cubicParamAt(cut.lengths, cut.from);
+    const t1 = cubicParamAt(cut.lengths, cut.to);
+    if (!(t1 > t0)) return null;
+    const t = cubicParamAt(cut.lengths, cut.from + f * (cut.to - cut.from));
+    return Math.max(0, Math.min(1, (t - t0) / (t1 - t0)));
+}
+
 /** Where a segment's marcher is at fraction `f` of the segment's beats. */
 function segmentPoint(seg: WalkedSegment, f: number): XY {
     if (f <= 0) return seg.from;
@@ -1157,27 +1179,10 @@ function segmentPoint(seg: WalkedSegment, f: number): XY {
                 seg.startAngle + seg.sweep * f,
             );
         case "cubic": {
-            const cut = seg.measured;
-            if (!cut) {
-                const e = cubicTable(seg);
-                const t = cubicParamAt(e, f * e[e.length - 1]!);
-                return cubicPoint(seg.from, seg.c1, seg.c2, seg.to, t);
-            }
-            // the whole curve's parameter at this distance, as R-14 finds it, then this cut's
-            const t0 = cubicParamAt(cut.lengths, cut.from);
-            const t1 = cubicParamAt(cut.lengths, cut.to);
-            if (!(t1 > t0)) return lerp(seg.from, seg.to, f);
-            const t = cubicParamAt(
-                cut.lengths,
-                cut.from + f * (cut.to - cut.from),
-            );
-            return cubicPoint(
-                seg.from,
-                seg.c1,
-                seg.c2,
-                seg.to,
-                Math.max(0, Math.min(1, (t - t0) / (t1 - t0))),
-            );
+            const t = walkedCubicParamAt(seg, f);
+            return t === null
+                ? lerp(seg.from, seg.to, f)
+                : cubicPoint(seg.from, seg.c1, seg.c2, seg.to, t);
         }
         case "polyline": {
             const beat = seg.start + f * (seg.end - seg.start);
