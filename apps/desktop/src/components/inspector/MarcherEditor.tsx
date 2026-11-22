@@ -8,6 +8,7 @@ import {
 import { ReadableCoords } from "@/global/classes/ReadableCoords";
 import { InspectorCollapsible } from "@/components/inspector/InspectorCollapsible";
 import ActionButton from "@/shortcuts/ActionButton";
+import ClearPageMenuItems from "@/components/toolbar/ClearPageMenuItems";
 import { Button, getButtonClassName, Input } from "@openmarch/ui";
 import StepSizeWarningBadge from "./StepSizeWarningBadge";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
@@ -416,24 +417,22 @@ function PlaceMenu() {
                             "flex items-center justify-center gap-6",
                         )}
                     >
-                        <T keyName="toolbar.alignment.placeSelectedMarchers" />{" "}
+                        <T keyName="toolbar.alignment.selectedMarchers" />{" "}
                         <CaretDownIcon size={14} />
                     </Dropdown.Trigger>
                     <Dropdown.Portal>
                         <Dropdown.Content className="bg-modal rounded-6 shadow-modal backdrop-blur-32 border-stroke flex flex-col items-start gap-0 border p-8">
-                            <ActionButton
-                                action="setSelectedMarchersToPreviousPage"
+                            <ClearPageMenuItems
+                                scope="selected"
                                 onRun={closePlaceMenu}
                                 className="text-text px-6 py-4"
-                            >
-                                <T keyName="toolbar.alignment.toPreviousPagePositions" />
-                            </ActionButton>
+                            />
                             <ActionButton
                                 action="setSelectedMarchersToNextPage"
                                 onRun={closePlaceMenu}
                                 className="text-text px-6 py-4"
                             >
-                                <T keyName="toolbar.alignment.toNextPageSpots" />
+                                <T keyName="toolbar.alignment.moveToNextPageSpots" />
                             </ActionButton>
                         </Dropdown.Content>
                     </Dropdown.Portal>

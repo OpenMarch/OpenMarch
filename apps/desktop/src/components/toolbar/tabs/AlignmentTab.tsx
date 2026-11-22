@@ -88,7 +88,7 @@ function SetMarcherPositionsDropdown() {
         >
             <Dropdown.Root open={open} onOpenChange={setOpen}>
                 <Dropdown.Trigger className="hover:text-accent touch:min-h-44 flex items-center gap-6 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:opacity-50">
-                    <T keyName="toolbar.alignment.placeAllMarchers" />{" "}
+                    <T keyName="toolbar.alignment.allMarchers" />{" "}
                     <CaretDownIcon size={18} />
                 </Dropdown.Trigger>
                 <Dropdown.Portal>
@@ -103,7 +103,7 @@ function SetMarcherPositionsDropdown() {
                             onRun={close}
                             className="text-text touch:min-h-44 px-6 py-4"
                         >
-                            <T keyName="toolbar.alignment.toNextPageSpots" />
+                            <T keyName="toolbar.alignment.moveToNextPageSpots" />
                         </ActionButton>
                     </Dropdown.Content>
                 </Dropdown.Portal>
