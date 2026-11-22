@@ -22,7 +22,10 @@ import { deleteTimelinesInTransaction, timelinesWithRange } from "./timelines";
 import { readPageGrid, type PageGrid } from "./timelineRipple";
 import { readBasicRows } from "./basicRows";
 import { heldArrivalLock } from "@/timeline/basicSimple";
-import { TimelineEditRefusedError } from "@/timeline/timelineEditRefusals";
+import {
+    basicLockedRefusal,
+    TimelineEditRefusedError,
+} from "@/timeline/timelineEditRefusals";
 import {
     beatWhere,
     moveInSentence,
@@ -129,6 +132,12 @@ export interface TimelineMoveResult {
      * it (Clear this page)
      */
     cleared?: number[];
+    /**
+     * A Basic edit that re-cut a page's moves: members of the shape placed at its flag whose
+     * positions there ended up in another move than the one the shape followed
+     * (`recipesFollowMembersInTransaction`), so it no longer lists them. By id, for the toast
+     */
+    droppedFromShapes?: number[];
     /**
      * Clear this page on the first page of a Held hold that runs on, or on the page a Held hold
      * arrives from: the marchers whose hold on the later pages went too (its arrival went), and
@@ -1149,13 +1158,12 @@ async function refuseLockedArrivals(
     locked.sort((x, y) => x - y);
     const labels: string[] = [];
     for (const id of locked) labels.push(await marcherLabel(tx, id));
-    throw new TimelineEditRefusedError("notSimple", {
-        marcherIds: locked,
-        message:
-            labels.length === 1
-                ? `Marcher ${labels[0]} is Held from an Expert move. Switch to Expert to edit it.`
-                : `Marchers ${labels.join(", ")} are Held from Expert moves. Switch to Expert to edit them.`,
-    });
+    throw basicLockedRefusal(
+        locked,
+        labels.length === 1
+            ? `Marcher ${labels[0]} is Held from an Expert move. Switch to Expert to edit it.`
+            : `Marchers ${labels.join(", ")} are Held from Expert moves. Switch to Expert to edit them.`,
+    );
 }
 
 /** The value occurring most often in `ids` (the smallest of a tie), or null when empty. */

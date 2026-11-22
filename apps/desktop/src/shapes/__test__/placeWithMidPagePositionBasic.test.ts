@@ -18,6 +18,8 @@ import {
     type ShapeRecipeMember,
     type ShapeRecipeRecord,
 } from "@/db-functions/shapeRecipes";
+import { useBasicLocksStore } from "@/timeline/basicLocks";
+import type { PageBox } from "@/stores/TimelineSelectionStore";
 import { writePlacement } from "../tool/shapePlacement";
 
 /**
@@ -36,7 +38,10 @@ const warning = vi.spyOn(toast, "warning");
 beforeEach(() => {
     warning.mockClear();
 });
-afterEach(() => stopTimelineResolver());
+afterEach(() => {
+    stopTimelineResolver();
+    useBasicLocksStore.getState().set(null, []);
+});
 
 const BOX: ShapeRecipeRecord = {
     kind: "box",
@@ -184,6 +189,26 @@ describeDbTests(
             expect(await shapes()).toEqual([{ move, members: [b, c] }]);
             expect(warning).toHaveBeenCalledTimes(1);
             expect(warning.mock.calls[0]![0]).toContain(`#${a}`);
+        });
+
+        // Review finding (2026-11-19): a locked marcher isn't moved (V-203) and has the lock toast;
+        // it was named as left out too, as if it stood on its spot
+        it("doesn't name a locked member as left out", async ({
+            db,
+            marchersAndPages: _,
+        }) => {
+            const { a, place } = await setup(db);
+            useBasicLocksStore.setState({
+                boxes: [{ id: 2, ...PAGE2 } as PageBox],
+                locked: new Map([[0, new Map([[a, "crossesFlag" as const]])]]),
+            });
+            await place(BASIC);
+            const ids = warning.mock.calls.map(
+                (call) => (call[1] as { id?: string } | undefined)?.id,
+            );
+            expect(ids).toContain("basic-locked-marchers");
+            expect(ids).not.toContain("shape-left-out");
+            expect(resolver().positionAt(a, 17)).not.toEqual(SPOTS[0]);
         });
 
         it("says nothing in Expert, where the moves show who a shape holds", async ({

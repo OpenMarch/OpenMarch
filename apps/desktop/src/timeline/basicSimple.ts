@@ -135,9 +135,10 @@ export function heldArrivalLock(
  * once and each row visits only the boxes it overlaps (found by binary search when the boxes don't
  * overlap each other, as page boxes don't).
  *
- * A marcher is also locked on every box a hold of its covers when that hold grows out of a move
- * Basic can't edit (`heldArrivalLock`), with that move's reason: it has no row there, but an edit
- * there edits the move.
+ * A marcher is also locked on every box whose end flag a hold of its covers when that hold grows
+ * out of a move Basic can't edit (`heldArrivalLock`), with that move's reason: it has no row
+ * there, but an edit at that flag edits the move. A box the hold ends partway through isn't
+ * locked by it: its flag edit is after the hold.
  *
  * @param rows every row of the show (`readBasicRows`)
  * @param holds every Held hold of the show (`readHeldMarks`)
@@ -210,6 +211,10 @@ export function lockedMarchersByPage(
             const reason = heldArrivalLock(own, hold, boxes);
             if (reason === null) continue;
             for (const b of boxesOver(hold)) {
+                // Only where its flag edit lands inside the hold (`isInsideHeldMark`): a page
+                // the hold ends partway through is edited at a flag after it
+                const flag = boxes[b]!.end;
+                if (!(hold.start < flag && flag <= hold.end)) continue;
                 const locked = out.get(b)!;
                 if (!locked.has(marcherId)) locked.set(marcherId, reason);
             }

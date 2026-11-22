@@ -885,7 +885,13 @@ export async function snapshotRecipesInTransaction(
         .select({ recipe: recipes, end: t.end_beat })
         .from(recipes)
         .innerJoin(t, eq(t.id, recipes.timeline_id))
-        .where(inArray(recipes.timeline_id, [...new Set(timelineIds)]))
+        .where(
+            and(
+                inArray(recipes.timeline_id, [...new Set(timelineIds)]),
+                // Ungroup and order marks keep their re-cut members (`dropUngroupedLeavers`)
+                shapeRecipesOnly(),
+            ),
+        )
         .all();
     if (rows.length === 0) return [];
     const memberRows = await tx
@@ -911,15 +917,16 @@ export async function snapshotRecipesInTransaction(
  * members, follows its members to the move that now arrives at the same beat, so the shape
  * placed there stays a shape. The positions didn't change; only the move holding them did.
  * Members whose rows ending at that beat are in another move are left out, as a recipe lists
- * only marchers in its move. A recipe whose members no longer arrive at the beat is left as
- * the edit left it.
+ * only marchers in its move, and returned (by id) so the edit can name them. A recipe whose
+ * members no longer arrive at the beat is left as the edit left it.
  */
 export async function recipesFollowMembersInTransaction(
     tx: DbTransaction,
     snapshots: readonly RecipeSnapshot[],
-): Promise<void> {
+): Promise<number[]> {
     const a = schema.timeline_assignments;
     const tr = schema.timeline_transitions;
+    const droppedAll = new Set<number>();
     for (const snap of snapshots) {
         const memberIds = snap.members.map((m) => m.marcher_id);
         if (memberIds.length === 0) continue;
@@ -954,6 +961,9 @@ export async function recipesFollowMembersInTransaction(
             if (!best || entry[1].size > best[1].size) best = entry;
         if (!best) continue;
         const [to, kept] = best;
+        // Those still arriving at the beat, in another move: on their spots, but out of the shape
+        for (const set of byMove.values())
+            for (const id of set) if (!kept.has(id)) droppedAll.add(id);
         if (now) {
             await tx
                 .update(recipes)
@@ -981,4 +991,5 @@ export async function recipesFollowMembersInTransaction(
             if (back.length > 0) await tx.insert(members).values(back).run();
         }
     }
+    return [...droppedAll].sort((x, y) => x - y);
 }

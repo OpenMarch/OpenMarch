@@ -14,6 +14,7 @@ import {
     transformMarchersInSelection,
     type CanvasEditPlan,
 } from "@/timeline/timelineCoordinateWrites";
+import { withoutLockedMarchers } from "@/timeline/basicLocks";
 import { toastTimelineError } from "@/timeline/timelineErrorMessages";
 import { showLeftOutToast } from "../placed/leftOutToast";
 import { invalidatePlacedBoxes } from "../placed/placedBoxStore";
@@ -102,6 +103,15 @@ export async function writePlacement(
     try {
         const edit = plan ?? planCanvasEdit();
         const basic = edit.ok && edit.target.kind === "point";
+        // Locked marchers aren't moved (V-203) and have their own toast, so aren't named as left out
+        const locked = new Set(
+            edit.ok
+                ? withoutLockedMarchers(
+                      edit.target,
+                      marcherIds.map((marcherId) => ({ marcherId })),
+                  ).locked
+                : [],
+        );
         await transformMarchersInSelection({
             db,
             marcherIds: members.map((m) => m.marcherId),
@@ -140,7 +150,7 @@ export async function writePlacement(
                     leftOut = await leftOutByOtherCounts(
                         tx,
                         timelineId,
-                        marcherIds,
+                        marcherIds.filter((id) => !locked.has(id)),
                     );
             },
         });

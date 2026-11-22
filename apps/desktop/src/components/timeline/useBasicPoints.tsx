@@ -6,6 +6,7 @@ import { pointsInBox } from "@/timeline/basicSimple";
 import { useHeldMarksStore } from "@/timeline/useHeldMarks";
 import { holdTerms } from "@/timeline/holdTerms";
 import tolgee from "@/global/singletons/Tolgee";
+import { useTolgee } from "@tolgee/react";
 import { removePositionAtBeatMutationOptions } from "@/hooks/queries/useMarcherPages";
 
 /** A mid-page position on the counts strip: its beat, its page box, and whose it is. */
@@ -37,6 +38,8 @@ export function useBasicPoints(): {
     const locked = useBasicLocksStore((s) => s.locked);
     const marks = useHeldMarksStore((s) => s.marks);
     const idsKey = (selected ?? []).map((m) => m.id).join(",");
+    // The disabled reasons are worded in the current language
+    const language = useTolgee(["language"]).getLanguage();
     const points = useMemo(() => {
         if (!rows || idsKey === "") return [];
         const ids = idsKey.split(",").map(Number);
@@ -68,7 +71,7 @@ export function useBasicPoints(): {
             }
         }
         return out.sort((a, b) => a.beat - b.beat);
-    }, [rows, boxes, locked, marks, idsKey]);
+    }, [rows, boxes, locked, marks, idsKey, language]);
     const { mutate } = useMutation(removePositionAtBeatMutationOptions());
     // Stable, so the timeline's memoized layers don't rebuild on every render
     const removePoint = useCallback(

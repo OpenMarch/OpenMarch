@@ -42,3 +42,33 @@ export function showLeftOutToast(marcherIds: readonly number[]): void {
         ),
     });
 }
+
+/**
+ * After a Basic edit re-cut a page's moves (a mid-page position, Remove this count's position)
+ * and the shape placed at the flag followed the move its members now arrive in
+ * (`recipesFollowMembersInTransaction`): the members whose positions at the flag are in another
+ * move, which the recipe can no longer list (ADR 0006, revision of 2026-10-29, rule 1).
+ */
+export function showDroppedAtFlagToast(marcherIds: readonly number[]): void {
+    if (marcherIds.length === 0) return;
+    const message =
+        marcherIds.length === 1
+            ? tolgee.t(
+                  "shapes.placed.droppedAtFlag.one",
+                  "{name} isn't part of the shape at this flag anymore",
+                  { name: nameOf(marcherIds[0]!) },
+              )
+            : tolgee.t(
+                  "shapes.placed.droppedAtFlag.many",
+                  "{count, plural, one {# marcher isn't part of the shape at this flag anymore} other {# marchers aren't part of the shape at this flag anymore}}",
+                  { count: marcherIds.length },
+              );
+    toast.warning(message, {
+        id: LEFT_OUT_TOAST_ID,
+        duration: LEFT_OUT_TOAST_MS,
+        description: tolgee.t(
+            "shapes.placed.leftOut.hint",
+            "A shape holds only marchers whose last mid-page position on this page is at the same count. Remove the positions that differ, then place the shape again.",
+        ),
+    });
+}

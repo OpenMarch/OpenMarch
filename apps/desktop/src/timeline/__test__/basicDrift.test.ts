@@ -15,6 +15,7 @@ import { addPageFlag, movePageFlag } from "@/db-functions/pageFlags";
 import {
     readAllShapeRecipes,
     saveShapeRecipeInTransaction,
+    UNGROUPED_RECIPE_KIND,
     type ShapeRecipeRecord,
 } from "@/db-functions/shapeRecipes";
 import { readHeldMarks } from "@/db-functions/timelineHeldMarks";
@@ -48,7 +49,8 @@ keepFixturesInPageMode(
  * A test marked `it.fails` proves a bug that is still in the code: it asserts what should happen
  * and fails today. When the bug is fixed the test passes, vitest reports it, and the `.fails` goes.
  * Each sets its show up inside `arranged`, which returns `null` on a setup error, so a broken setup
- * can't make an `it.fails` test look right.
+ * can't make an `it.fails` test look right. Every other test runs its setup directly, so a broken
+ * setup fails it.
  *
  * The show: home, page 1 [1, 9), page 2 [9, 17), page 3 [17, 25), page 4 [25, 33); nobody has a
  * move until a test writes one.
@@ -168,6 +170,7 @@ const placeLine = async (
     db: DbConnection,
     ids: number[],
     target: TimelineEditTarget,
+    recipe: ShapeRecipeRecord = LINE,
 ) => {
     const members = ids.map((marcherId, i) => ({
         marcherId,
@@ -184,7 +187,7 @@ const placeLine = async (
             await saveShapeRecipeInTransaction({
                 tx,
                 timelineId,
-                recipe: LINE,
+                recipe,
                 members,
             });
         },
@@ -225,8 +228,7 @@ describeDbTests("Basic and placed shapes (shape recipes, #363)", (it) => {
         db,
         marchersAndPages: _,
     }) => {
-        const ids = await arranged(() => lineOnPage2(db));
-        if (!ids) return;
+        const ids = await lineOnPage2(db);
         const at17 = [ids.a, ids.b, ids.c].map((id) =>
             resolver().positionAt(id, 17),
         );
@@ -245,8 +247,7 @@ describeDbTests("Basic and placed shapes (shape recipes, #363)", (it) => {
         db,
         marchersAndPages: _,
     }) => {
-        const ids = await arranged(() => lineOnPage2(db));
-        if (!ids) return;
+        const ids = await lineOnPage2(db);
         const all = [ids.a, ids.b, ids.c];
         await addPageFlag({ db, beat: 13, splitMoves: true });
         await performUndo(db);
@@ -262,14 +263,90 @@ describeDbTests("Basic and placed shapes (shape recipes, #363)", (it) => {
         ]);
     });
 
+    // Members given mid-page positions one by one at the same count end up in one move, which the
+    // shape follows with all of them
+    it("mid-page positions given one member at a time at one count keep the whole shape", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const ids = await lineOnPage2(db);
+        const all = [ids.a, ids.b, ids.c];
+        for (const id of all) {
+            const result = await point(db, 13, PAGE2, id, FAR);
+            expect(result.droppedFromShapes).toBeUndefined();
+        }
+        expect(await shapes(db)).toEqual([{ at: 17, members: all }]);
+    });
+
+    // Review finding (2026-11-19): at different counts each member's flag position is in a move of
+    // its own, so the shape can follow only one of them (ADR 0006, rule 1). The others were
+    // dropped silently; the edit now names them (`droppedFromShapes`, a toast)
+    it("mid-page positions at different counts name the members the shape can't keep", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const ids = await lineOnPage2(db);
+        const all = [ids.a, ids.b, ids.c];
+        expect(
+            (await point(db, 13, PAGE2, ids.a, FAR)).droppedFromShapes,
+        ).toBeUndefined();
+        expect(
+            (await point(db, 11, PAGE2, ids.b, FAR)).droppedFromShapes,
+        ).toBeUndefined();
+        const last = await point(db, 15, PAGE2, ids.c, FAR);
+        const placed = await shapes(db);
+        expect(placed).toHaveLength(1);
+        expect(placed[0]!.at).toBe(17);
+        const kept = placed[0]!.members;
+        expect(kept).toHaveLength(1);
+        expect(last.droppedFromShapes).toEqual(
+            all.filter((id) => !kept.includes(id)),
+        );
+        // Everyone still stands on their spot
+        expect(all.map((id) => resolver().positionAt(id, 17))).toEqual([
+            [100, 50],
+            [120, 50],
+            [140, 50],
+        ]);
+    });
+
+    // Review finding (2026-11-19), a regression of the bug 1 fix: an Ungroup mark followed its
+    // members too and lost one, so that marcher fell back into the earlier shape. Marks keep their
+    // re-cut members where they are (`dropUngroupedLeavers`)
+    it("mid-page positions leave an Ungroup mark with its members", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const ids = await show(db);
+        await placeLine(
+            db,
+            [ids.a, ids.b],
+            { kind: "point", beat: PAGE2.end, box: PAGE2 },
+            { ...LINE, kind: UNGROUPED_RECIPE_KIND },
+        );
+        await point(db, PAGE2.end, PAGE2, ids.c, FAR);
+        const markOf = async () =>
+            (await readAllShapeRecipes(db))
+                .filter((r) => r.kind === UNGROUPED_RECIPE_KIND)
+                .map((r) => ({
+                    timelineId: r.timelineId,
+                    members: r.members.map((m) => m.marcherId).sort(),
+                }));
+        const before = await markOf();
+        expect(before).toHaveLength(1);
+        expect(before[0]!.members).toEqual([ids.a, ids.b].sort());
+        await point(db, 13, PAGE2, ids.a, UP);
+        await point(db, 11, PAGE2, ids.b, UP2);
+        expect(await markOf()).toEqual(before);
+    });
+
     // BUG 1 (same cause, the point writer): a mid-page position for every member re-cuts their
     // rows into [9, 13) and [13, 17), the page's move is left empty and deleted with its recipe.
     it("a mid-page position for every member keeps the shape at the page's flag", async ({
         db,
         marchersAndPages: _,
     }) => {
-        const ids = await arranged(() => lineOnPage2(db));
-        if (!ids) return;
+        const ids = await lineOnPage2(db);
         await edit(
             db,
             { kind: "point", beat: 13, box: PAGE2 },
@@ -291,7 +368,7 @@ describeDbTests("Basic and placed shapes (shape recipes, #363)", (it) => {
         db,
         marchersAndPages: _,
     }) => {
-        const ids = await arranged(async () => {
+        const ids = await (async () => {
             const made = await show(db);
             const all = [made.a, made.b, made.c];
             await edit(
@@ -306,8 +383,7 @@ describeDbTests("Basic and placed shapes (shape recipes, #363)", (it) => {
             });
             expect(await shapes(db)).toEqual([{ at: 17, members: all }]);
             return made;
-        });
-        if (!ids) return;
+        })();
         await removePositionAtBeat({
             db,
             beat: 13,
@@ -321,14 +397,14 @@ describeDbTests("Basic and placed shapes (shape recipes, #363)", (it) => {
         ]);
     });
 
-    // #485 in Basic, the part Expert's range writer keeps too (`ownPageMoves`): a member whose
-    // only move over the page is its own page move still goes back onto the page's start by
-    // losing it, so the page follows the one before, where the shape is already placed.
-    it("a shape placed again where the page starts takes members' own page moves, and the earlier page's shape carries", async ({
+    // #485 in Basic: a shape placed where its members stood at the page's start sets each of them
+    // there, as a stay in its own page move, so the page's shape lists them all. Before, a member
+    // whose own page move went back onto its start lost it, and the shape lost that member.
+    it("a shape placed again where the page starts keeps every member, own page moves included", async ({
         db,
         marchersAndPages: _,
     }) => {
-        const ids = await arranged(async () => {
+        const ids = await (async () => {
             const made = await show(db);
             const all = [made.a, made.b, made.c];
             await placeLine(db, all, {
@@ -346,21 +422,26 @@ describeDbTests("Basic and placed shapes (shape recipes, #363)", (it) => {
                 [17, 25],
             ]);
             return made;
-        });
-        if (!ids) return;
+        })();
         const all = [ids.a, ids.b, ids.c];
         await placeLine(db, all, {
             kind: "point",
             beat: PAGE3.end,
             box: PAGE3,
         });
-        expect(await spansOf(db, ids.a)).toEqual([[9, 17]]);
+        expect(await spansOf(db, ids.a)).toEqual([
+            [9, 17],
+            [17, 25],
+        ]);
         expect(all.map((id) => resolver().positionAt(id, 25))).toEqual([
             [100, 50],
             [120, 50],
             [140, 50],
         ]);
-        expect(await shapes(db)).toEqual([{ at: 17, members: all }]);
+        expect(await shapes(db)).toEqual([
+            { at: 17, members: all },
+            { at: 25, members: all },
+        ]);
     });
 
     // BUG 2 (still open, owner decision): a recipe lists only marchers whose rows are in its move
@@ -429,9 +510,13 @@ describeDbTests("Basic's locks and Held holds (#472, #474)", (it) => {
         marchersAndPages: _,
     }) => {
         const { a } = await heldFromExpertMove(db);
-        await expect(point(db, 29, PAGE4, a, UP2)).rejects.toThrow(
-            /Held from an Expert move/,
-        );
+        const refused = point(db, 29, PAGE4, a, UP2);
+        await expect(refused).rejects.toThrow(/Held from an Expert move/);
+        // Worded by count, as the lock toast is (`basicLockedRefusal`)
+        await expect(refused).rejects.toMatchObject({
+            key: "timeline.basic.locked",
+            params: { count: 1 },
+        });
     });
 
     // BUG 3 (fixed): the locks read only rows over the page (`lockedMarchersByPage`), and a Held
@@ -443,7 +528,7 @@ describeDbTests("Basic's locks and Held holds (#472, #474)", (it) => {
         db,
         marchersAndPages: _,
     }) => {
-        const ids = await arranged(async () => {
+        const ids = await (async () => {
             const made = await heldFromExpertMove(db);
             useBasicLocksStore
                 .getState()
@@ -453,8 +538,7 @@ describeDbTests("Basic's locks and Held holds (#472, #474)", (it) => {
                     await readHeldMarks(db),
                 );
             return made;
-        });
-        if (!ids) return;
+        })();
         const target: TimelineEditTarget = {
             kind: "point",
             beat: 29,
@@ -468,6 +552,47 @@ describeDbTests("Basic's locks and Held holds (#472, #474)", (it) => {
         await moveMarchersInTarget({ db, target, moves });
         await timelineResolverSettled();
         expect(resolver().positionAt(ids.b, 29)).toEqual(UP2);
+    });
+
+    // Review finding (2026-11-19): a Held hold that ends partway through a page locked the whole
+    // page, though the page is edited at its flag, after the hold. Only counts inside the hold
+    // are locked there now, as the writer refuses (`isInsideHeldMark`)
+    it("a hold ending partway through a page locks only the counts inside it there", () => {
+        const row = (start: number, end: number, assignmentId: number) => ({
+            assignmentId,
+            marcherId: 1,
+            transitionId: assignmentId,
+            slotIndex: 0,
+            timelineId: assignmentId,
+            start,
+            end,
+            layer: 0,
+            slotCount: 1,
+            shapeId: null,
+            pathStyle: "direct",
+        });
+        // An Expert move across page 2's flag [13, 21), Held to 29, then a simple move [29, 33)
+        const rows = [row(13, 21, 1), row(29, 33, 2)];
+        const holds = [{ marcherId: 1, start: 21, end: 29 }];
+        const boxes = [
+            { id: 2, ...PAGE2 },
+            { id: 3, ...PAGE3 },
+            { id: 4, ...PAGE4 },
+        ] as PageBox[];
+        const locked = lockedMarchersByPage(rows, boxes, holds);
+        expect(locked.get(0)!.has(1)).toBe(true);
+        expect(locked.get(1)!.has(1)).toBe(true);
+        expect(locked.get(2)!.has(1)).toBe(false);
+        useBasicLocksStore.getState().set(rows, boxes, holds);
+        const drop = (beat: number) =>
+            withoutLockedMarchers({ kind: "point", beat, box: PAGE4 }, [
+                { marcherId: 1 },
+                { marcherId: 2 },
+            ]).locked;
+        expect(drop(27)).toEqual([1]);
+        expect(drop(29)).toEqual([1]);
+        expect(drop(31)).toEqual([]);
+        expect(drop(33)).toEqual([]);
     });
 
     it("a marcher Held from a simple move isn't locked on the held page, and moves with the others", async ({
