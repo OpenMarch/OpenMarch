@@ -94,7 +94,7 @@ export default function DetailChoice({
             className="flex flex-col gap-8"
             data-testid="model-import-detail"
         >
-            <h5 className="text-text/70 text-sm font-medium">
+            <h5 className="text-text/70 text-body font-medium">
                 <T keyName="props.import.detail.title" />
             </h5>
             <SegmentedTextSwitch

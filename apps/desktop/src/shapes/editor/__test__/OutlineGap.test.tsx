@@ -166,7 +166,7 @@ describe("the outline gap", () => {
             expect(note()).not.toHaveAttribute("tabindex");
             expect(note()).toHaveAttribute("aria-hidden");
             expect(note().className).toContain("text-text/70");
-            expect(note().className).toContain("text-xs");
+            expect(note().className).toContain("text-sub");
             expect(menu).toHaveAccessibleDescription(
                 "The back has one fewer marcher, so its marchers are 4 steps apart.",
             );

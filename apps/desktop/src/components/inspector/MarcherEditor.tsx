@@ -318,7 +318,7 @@ export function ArrangeButtons({ rotate }: { rotate: ReactNode }) {
                 <h5 className="text-h5">
                     <T keyName="inspector.marcher.distributeHeading" />
                 </h5>
-                <div className="flex flex-1 items-center justify-center gap-4">
+                <div className="text-sub flex flex-1 items-center justify-center gap-4">
                     <Button
                         aria-label={t(
                             "actions.alignment.distributeHorizontally",
@@ -353,10 +353,10 @@ export function ArrangeButtons({ rotate }: { rotate: ReactNode }) {
                             setHorizontalStepInterval(e.target.value)
                         }
                         compact
-                        className="rounded-4 w-8 flex-1 border text-center text-xs"
+                        className="rounded-4 w-8 flex-1 border text-center"
                     />
                 </div>
-                <div className="flex flex-1 items-center justify-center gap-4">
+                <div className="text-sub flex flex-1 items-center justify-center gap-4">
                     <Button
                         aria-label={t("actions.alignment.distributeVertically")}
                         disabled={distributionDisabled}
@@ -387,7 +387,7 @@ export function ArrangeButtons({ rotate }: { rotate: ReactNode }) {
                         onChange={(e) =>
                             setVerticalStepInterval(e.target.value)
                         }
-                        className="rounded-4 w-8 flex-1 border text-center text-xs"
+                        className="rounded-4 w-8 flex-1 border text-center"
                     />
                 </div>
             </div>

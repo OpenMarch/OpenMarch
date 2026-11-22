@@ -309,7 +309,7 @@ function LayoutMenuBody({
                                     </span>
                                     <span className="grow">{row.label}</span>
                                     {missing && row.hint && (
-                                        <span className="text-xs">
+                                        <span className="text-sub">
                                             {hintText(row.hint)}
                                         </span>
                                     )}
@@ -397,7 +397,7 @@ function VersionButton({
             >
                 <Thumbnail version={version} />
                 {caption && (
-                    <span className={clsx("text-xs", !on && "text-text/60")}>
+                    <span className={clsx("text-sub", !on && "text-text/60")}>
                         {caption}
                     </span>
                 )}

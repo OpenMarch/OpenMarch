@@ -33,7 +33,7 @@ export default function EquipmentModelControl({
     if (!variant || !family) return null;
     const variants = pitVariantsOf(family.id);
     return (
-        <label className="flex flex-col gap-4 text-sm">
+        <label className="text-body flex flex-col gap-4">
             <span className="text-text/70">
                 <T
                     keyName="frontEnsemble.equipment.model"

@@ -24,12 +24,12 @@ export default function View3dButton({
             action="openView3d"
             data-testid="open-view3d"
             className={clsx(
-                "bg-fg-1 border-stroke text-text-subtitle hover:text-accent focus-visible:ring-accent flex items-center gap-4 rounded-full border px-10 py-4 text-xs outline-hidden duration-150 ease-out focus-visible:ring-2 disabled:opacity-50",
+                "bg-fg-1 border-stroke text-text-subtitle hover:text-accent focus-visible:ring-accent flex items-center gap-4 rounded-full border px-10 py-4 outline-hidden duration-150 ease-out focus-visible:ring-2 disabled:opacity-50",
                 className,
             )}
         >
             <CubeIcon size={14} />
-            <span className={labelClassName}>
+            <span className={clsx("text-sub", labelClassName)}>
                 <T keyName="view3d.open" />
             </span>
         </ActionButton>

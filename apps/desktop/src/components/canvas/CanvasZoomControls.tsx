@@ -278,7 +278,7 @@ export default function CanvasZoomControls({
                 {/* Zoom Percentage Display and Reset Button */}
                 <button
                     onClick={handleResetZoomAndCenter}
-                    className="border-stroke bg-fg-2 text-text touch:min-h-48 touch:min-w-72 flex h-full w-full items-center justify-center border-r border-l px-3 py-4 font-mono text-sm transition-colors duration-150 hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50"
+                    className="border-stroke bg-fg-2 text-text touch:min-h-48 touch:min-w-72 text-body flex h-full w-full items-center justify-center border-r border-l px-3 py-4 font-mono transition-colors duration-150 hover:bg-white/20 disabled:cursor-not-allowed disabled:opacity-50"
                     disabled={!canvas}
                     title={t("canvas.zoom.resetAndCenter")}
                     aria-label={t("canvas.zoom.reset", { zoom: currentZoom })}

@@ -164,7 +164,7 @@ export function OutlineGap({
                         <span
                             aria-hidden
                             data-testid="outline-gap-spacing"
-                            className="text-text/70 flex items-center gap-2 text-xs whitespace-nowrap select-none"
+                            className="text-text/70 text-sub flex items-center gap-2 whitespace-nowrap select-none"
                         >
                             · <GlyphText text={glyph} size={12} /> {spacingText}
                         </span>
@@ -254,7 +254,7 @@ export function OutlineGap({
                         </div>
                         {clickToMove && (
                             <p
-                                className="text-text/60 max-w-[18rem] text-xs"
+                                className="text-text/60 text-sub max-w-[18rem]"
                                 data-testid="outline-gap-tip"
                             >
                                 {gap.style === "gap"

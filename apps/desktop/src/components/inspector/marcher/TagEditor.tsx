@@ -80,7 +80,7 @@ const SelectedMarcherTags = ({
     if (!tagsLoaded) return <></>;
 
     return (
-        <div className="flex flex-wrap gap-4 text-xs">
+        <div className="text-sub flex flex-wrap gap-4">
             {selectedTags?.map((tag) => (
                 <TagContextMenu key={tag.id} tag={tag} />
             ))}
@@ -203,7 +203,7 @@ const TagContextMenu = ({ tag }: { tag: DatabaseTag }) => {
                 >
                     {isRenaming ? (
                         <div className="flex flex-col gap-4">
-                            <label className="text-text-subtitle text-sm">
+                            <label className="text-text-subtitle text-body">
                                 {t("tags.rename")}
                             </label>
                             <Input
@@ -225,20 +225,20 @@ const TagContextMenu = ({ tag }: { tag: DatabaseTag }) => {
                                 className="text-text hover:text-accent flex cursor-pointer items-center gap-8 transition-all duration-150 ease-out"
                                 onClick={() => setIsRenaming(true)}
                             >
-                                <span className="text-sm">
+                                <span className="text-body">
                                     {t("tags.rename")}
                                 </span>
                             </div>
                             <div
                                 onClick={handleEditAppearance}
-                                className="text-text-subtitle hover:text-accent flex cursor-pointer items-center justify-between gap-8 text-xs transition-all duration-150 ease-out"
+                                className="text-text-subtitle hover:text-accent text-sub flex cursor-pointer items-center justify-between gap-8 transition-all duration-150 ease-out"
                             >
                                 {t("tags.editAppearance")}
                                 <PaletteIcon size={16} />
                             </div>
                             <div
                                 onClick={handleDelete}
-                                className="text-text-subtitle hover:text-red flex cursor-pointer items-center justify-between gap-8 text-xs transition-all duration-150 ease-out"
+                                className="text-text-subtitle hover:text-red text-sub flex cursor-pointer items-center justify-between gap-8 transition-all duration-150 ease-out"
                             >
                                 {t("tags.delete")}
                                 <TrashIcon size={16} />
@@ -326,7 +326,7 @@ const NewTagButton = ({
                     <div className="flex flex-col gap-4">
                         <label
                             htmlFor="tag-name-input"
-                            className="text-text-subtitle text-sm"
+                            className="text-text-subtitle text-body"
                         >
                             {t("tags.newTagNameLabel")}
                         </label>
@@ -421,7 +421,7 @@ const AddToTagButton = ({
                     }}
                 >
                     <div className="flex flex-col gap-4">
-                        <div className="text-text-subtitle text-sm">
+                        <div className="text-text-subtitle text-body">
                             {t("tags.addSelectedTo")}
                         </div>
                         {allTags.map((tag) => (
@@ -523,7 +523,7 @@ const DeleteFromTagButton = ({
                         e.preventDefault();
                     }}
                 >
-                    <div className="text-text-subtitle text-sm">
+                    <div className="text-text-subtitle text-body">
                         {t("tags.removeSelectedFrom")}
                     </div>
                     <div className="wrap flex flex-col gap-4">

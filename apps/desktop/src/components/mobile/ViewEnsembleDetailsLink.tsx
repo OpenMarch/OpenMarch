@@ -17,7 +17,7 @@ const ViewEnsembleDetailsLink = ({ ensembleId }: { ensembleId: number }) => (
             e.stopPropagation();
             openExternalUrl(`${OPENMARCH_APP_BASE_URL}ensembles/${ensembleId}`);
         }}
-        className="text-text-subtitle hover:text-accent flex items-center gap-4 text-xs transition-colors duration-150 ease-out"
+        className="text-text-subtitle hover:text-accent text-sub flex items-center gap-4 transition-colors duration-150 ease-out"
     >
         <T keyName="ensembles.viewDetails" /> <ArrowSquareOutIcon />
     </button>
