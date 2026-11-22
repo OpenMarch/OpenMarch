@@ -3,6 +3,24 @@
 
 @source "../../../../packages/ui/src/components";
 
+/*
+ * Text sizes: only the theme's sizes exist (docs/conventions/ui-styling.md). "--text-*: initial"
+ * removes Tailwind's built-in sizes (text-xs, text-sm, text-lg, ...), which @openmarch/ui brings
+ * back with its own "tailwindcss" import, so the theme's sizes are declared again here. Keep
+ * these values the same as packages/ui/src/tailwind.css.
+ */
+@theme {
+    --text-*: initial;
+    --text-micro: 0.625rem;
+    --text-sub: 0.6875rem;
+    --text-body: 0.875rem;
+    --text-h5: 1.125rem;
+    --text-h4: 1.25rem;
+    --text-h3: 1.75rem;
+    --text-h2: 2.25rem;
+    --text-h1: 3rem;
+}
+
 /* A clicked control keeps focus without a ring until the keyboard works it (utilities/clickFocus.ts) */
 @custom-variant focus-visible (&:focus-visible:not(:where([data-click-focus])));
 

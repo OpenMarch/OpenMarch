@@ -43,9 +43,12 @@ defaults (`rounded-md`, `text-xs`, `p-2` meaning 8 px) do not describe this app.
 | Labels inside timeline and tempo lanes (counts, clip names, lane headings) only   | `text-micro`   |
 | Headings and large readouts (Tap tempo's BPM is `text-h3`)                        | `text-h5`–`h1` |
 
-- No `text-[11px]`: lint rejects arbitrary pixel font sizes. 12 px and 13 px are not
-  sizes in this app; pick `text-body` or `text-sub`. Tailwind's `text-xs`/`text-sm`
-  aren't either, though lint doesn't catch those.
+- These are the only sizes. Tailwind's `text-xs`, `text-sm`, `text-base`, `text-lg` and
+  `text-xl` are removed in `apps/desktop/src/styles/index.css`, and lint rejects them
+  and arbitrary sizes like `text-[11px]`. 12 px and 13 px are not sizes in this app;
+  pick `text-body` or `text-sub`.
+- `text-sub` is for secondary detail beside larger text. A panel, popup or list whose
+  main text is `text-sub` reads as too small next to the rest of the app.
 - Show emphasis with weight (`font-medium`, `font-bold`) or color
   (`text-text-subtitle`, `text-accent`), not with another size.
 - A tiny picture drawn with text (a time signature in a 16 px icon slot) may keep
@@ -80,7 +83,13 @@ hand:
   `` `${getButtonClassName({ ... })} text-body` ``.
 - Inputs use `Input`/`Select` from `@openmarch/ui`, or their look:
   `rounded-6 border-stroke bg-fg-2 text-body`, 26 px tall when compact.
-- Icons come from `@phosphor-icons/react`.
+- Icons come from `@phosphor-icons/react`, at three sizes: 24 for standalone icons and
+  icon buttons (tool and shape pickers included, so they are easy to see), 18 inside
+  controls (select arrows, steppers), 16 inline with `text-body`.
+- Choices people pick from (option cards, presets, 3D View settings, tiles) share one
+  look: `bg-fg-2 border border-stroke` when not selected, `border-accent` when
+  selected.
+- Keyboard shortcuts always render through `components/ui/Shortcut.tsx`.
 
 ## Colors
 
@@ -89,12 +98,49 @@ Use the theme's colors (`text-text`, `text-text-subtitle`, `bg-fg-1`, `bg-fg-2`,
 mode both work. Don't use Tailwind palette colors (`bg-white`, `border-gray-200`,
 `text-zinc-500`).
 
+## Layout and reuse
+
+- A new page or panel extends the layout of its neighbors. Settings keeps the launch
+  page's layout; a new dialog looks like the existing dialogs.
+- Lists of things are lists (`ListItem`): each item's name is the main text, not a
+  subtitle under a heading.
+- Popups and dialogs fit their content: no horizontal scroll bars and no large empty
+  areas.
+
+## Motion
+
+Things snap to where they go. A popup that follows the selection, marchers after an
+edit, and panels that resize all move to their new place in one frame, so people can
+predict where they land. Motion is for showing time (playback) and for appearing and
+disappearing (a short fade or `animate-scale-in`, 150 ms or less). Hover and focus
+changes use `duration-150` on color only.
+
+## Words
+
+Write UI text like a label on a tool, not like a pitch.
+
+- A button names its action: "Done", "Export", "Add marcher".
+- Add a description only when it tells people something the label does not. "Read the
+  user guide" needs no subtitle; "Exports coordinate sheets as PDF" earns one.
+- One action, one control. When "Edit music" and "Done" would both close a panel,
+  keep "Done".
+- Help lives in the Get Help popup in the title bar and the user guide. Features stay
+  free of their own help panels and tutorials.
+
+## Discoverable and where people look
+
+- Anything that can be clicked or right-clicked has a hover state (a background or
+  border change), so people can tell it responds before they try.
+- Actions live in the menu people expect: exporting is under File → Export. A sidebar
+  or launch page can promote a feature by linking to that menu item.
+- Search results show why they matched: highlight the matching text in each result.
+
 ## Checking
 
 - `pnpm lint:check` (the `no-restricted-syntax` rule in `.eslintrc.cjs`) rejects
-  `text-[<number>...]`, `rounded-[...]` and Tailwind's default radius names in
-  `apps/desktop/src` and `packages/ui/src`. It doesn't check spacing, bare `rounded`
-  or `text-xs`/`text-sm`; those are on you.
+  `text-[<number>...]`, Tailwind's font sizes (`text-xs`, `text-sm`, ...),
+  `rounded-[...]` and Tailwind's default radius names in `apps/desktop/src` and
+  `packages/ui/src`. It doesn't check spacing or bare `rounded`; those are on you.
 - Put a new surface next to an existing one in a screenshot and compare corners,
-  text size and padding. The Inspector, the music file menu and the shape editor bar
+  text size, icon size, padding and the selected state. The Inspector, the music file menu and the shape editor bar
   follow this style.

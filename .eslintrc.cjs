@@ -13,6 +13,12 @@ function uiStyleRestrictions() {
                 "Use a theme font size (text-sub, text-body, text-h5..h1; text-micro only for timeline/tempo lane labels), not text-[Npx]. See docs/conventions/ui-styling.md.",
         },
         {
+            // text-xs, text-sm, text-lg: Tailwind's sizes are removed in apps/desktop/src/styles/index.css
+            pattern: String.raw`(^|[\s:"'\x60])text-(xs|sm|base|lg|\d*xl)($|[\s"'\x60])`,
+            message:
+                "Use a theme font size (text-sub, text-body, text-h5..h1; text-micro only for timeline/tempo lane labels). Tailwind's text-xs/sm/base/lg/xl don't exist in this app. See docs/conventions/ui-styling.md.",
+        },
+        {
             // rounded-[3px], rounded-t-[5px]; rounded-2 / rounded-sm etc. aren't the theme's radii
             pattern: String.raw`(^|[\s:"'\x60])rounded(-(t|b|l|r|s|e|tl|tr|bl|br|ss|se|es|ee))?-(\[|(2|xs|sm|md|lg|xl|2xl|3xl)($|[\s"'\x60]))`,
             message:

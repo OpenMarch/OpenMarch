@@ -124,7 +124,7 @@ export function AuthButton() {
                                 className="size-full object-cover"
                             />
                         ) : (
-                            <span className="text-sm font-medium">
+                            <span className="text-body font-medium">
                                 {initials}
                             </span>
                         )}
@@ -150,11 +150,11 @@ export function AuthButton() {
                             </div>
                         )}
                         <div className="flex flex-col">
-                            <span className="text-text text-sm font-medium">
+                            <span className="text-text text-body font-medium">
                                 {displayName}
                             </span>
                             {user?.email && (
-                                <span className="text-text-subtitle text-xs">
+                                <span className="text-text-subtitle text-sub">
                                     {user.email}
                                 </span>
                             )}
@@ -167,7 +167,7 @@ export function AuthButton() {
                 {/* Sign out option */}
                 <DropdownMenuItem
                     onClick={logout}
-                    className="rounded-4 text-text hover:bg-fg-1 focus:bg-fg-1 flex cursor-pointer items-center gap-8 px-12 py-8 text-sm transition-colors outline-none"
+                    className="rounded-4 text-text hover:bg-fg-1 focus:bg-fg-1 text-body flex cursor-pointer items-center gap-8 px-12 py-8 transition-colors outline-none"
                 >
                     <SignOutIcon size={16} />
                     <span>{t("auth.signOut")}</span>

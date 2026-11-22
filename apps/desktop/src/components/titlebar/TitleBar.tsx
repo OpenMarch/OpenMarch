@@ -231,7 +231,7 @@ function EditorTitleBar({
                                 {isWebBuild && (
                                     <button
                                         type="button"
-                                        className="touch:hidden bg-accent hover:bg-accent/80 focus-visible:ring-accent cursor-pointer rounded-full px-8 py-2 text-xs leading-none font-medium text-white outline-hidden duration-150 ease-out focus-visible:ring-2"
+                                        className="touch:hidden bg-accent hover:bg-accent/80 focus-visible:ring-accent text-sub cursor-pointer rounded-full px-8 py-2 leading-none font-medium text-white outline-hidden duration-150 ease-out focus-visible:ring-2"
                                         onClick={() => openWebWelcome(true)}
                                     >
                                         {t("titlebar.webBadge")}

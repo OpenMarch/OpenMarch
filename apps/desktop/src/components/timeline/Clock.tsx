@@ -57,7 +57,7 @@ export function AudioClock({ pausedSeconds }: { pausedSeconds?: number }) {
     return (
         <div className="text-text flex items-center gap-6">
             <ClockIcon size={14} />
-            <span ref={textRef} className="font-mono text-xs" />
+            <span ref={textRef} className="text-sub font-mono" />
         </div>
     );
 }

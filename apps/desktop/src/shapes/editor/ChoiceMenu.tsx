@@ -169,7 +169,7 @@ function ChoiceMenu({
                                     {option.disabled && (
                                         <span
                                             id={`shape-choice-${choice.key}-${option.value}-reason`}
-                                            className="text-text/60 text-xs"
+                                            className="text-text/60 text-sub"
                                         >
                                             {option.disabled}
                                         </span>

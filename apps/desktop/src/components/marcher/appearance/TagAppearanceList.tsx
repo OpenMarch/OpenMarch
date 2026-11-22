@@ -307,7 +307,7 @@ const SinglePageTagAppearanceList = React.forwardRef<
             className="text-body text-text flex w-[28rem] flex-col gap-8 overflow-y-auto"
         >
             <div className="flex flex-col gap-16">
-                <h3 className="text-text-subtitle text-lg leading-none">
+                <h3 className="text-text-subtitle text-h5 leading-none">
                     {t("marchers.tagAppearances.pageHeading", {
                         page: page.name,
                     })}

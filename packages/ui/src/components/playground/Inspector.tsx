@@ -65,7 +65,7 @@ const Inspector: React.FC = () => {
                         </button>
                     </>
                 ) : (
-                    <p className="text-sm text-neutral-400">
+                    <p className="text-body text-neutral-400">
                         No variants available for this component
                     </p>
                 )}

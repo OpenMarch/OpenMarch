@@ -47,7 +47,7 @@ export default function ImportedModels({
             aria-label={t("props.imported.title")}
             data-testid="imported-models"
         >
-            <h5 className="text-text/70 text-sm font-medium">
+            <h5 className="text-text/70 text-body font-medium">
                 <T keyName="props.imported.title" />
             </h5>
             <div className="grid grid-cols-4 gap-6">

@@ -87,7 +87,7 @@ function PropToolSelector() {
     const { toggleOpen } = useSidebarModalStore();
     return (
         <div className="flex flex-col gap-12">
-            <h5 className="text-text/70 text-sm font-medium">
+            <h5 className="text-text/70 text-body font-medium">
                 <T keyName="props.draw.title" />
             </h5>
             <div className="grid grid-cols-5 gap-8">
@@ -103,7 +103,7 @@ function PropToolSelector() {
                         title={t(`props.outline.${tool.id}`)}
                     >
                         {tool.icon}
-                        <span className="text-xs">
+                        <span className="text-sub">
                             {t(`props.outline.${tool.id}`)}
                         </span>
                     </button>
@@ -134,7 +134,7 @@ function PropList({ onEdit }: { onEdit: (item: ItemWithMarcher) => void }) {
         <div className="flex flex-col gap-8">
             <ShowNamesSwitch items={propItems} />
             {selectedProps.length > 1 && (
-                <div className="flex items-center justify-between px-4 pb-4 text-sm">
+                <div className="text-body flex items-center justify-between px-4 pb-4">
                     <span className="text-text/70">
                         <T
                             keyName="props.selectedCount"

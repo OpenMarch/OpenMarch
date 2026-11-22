@@ -445,7 +445,7 @@ export function AudioFileSettings({
                                     <span className="truncate font-medium">
                                         {file.nickname ?? file.name}
                                     </span>
-                                    <div className="text-text-subtitle flex flex-wrap gap-12 text-sm">
+                                    <div className="text-text-subtitle text-body flex flex-wrap gap-12">
                                         <span>
                                             {formatDuration(
                                                 Number(
@@ -474,7 +474,7 @@ export function AudioFileSettings({
 
                                 <div className="flex shrink-0 items-center gap-8">
                                     {isActive && (
-                                        <span className="text-accent text-sm font-medium">
+                                        <span className="text-accent text-body font-medium">
                                             {t("mobileExport.audio.active")}
                                         </span>
                                     )}
@@ -499,7 +499,7 @@ export function AudioFileSettings({
                                                     handleSetActive(file.id)
                                                 }
                                                 hidden={isActive}
-                                                className="rounded-4 text-text hover:bg-fg-1 focus:bg-fg-1 flex cursor-pointer items-center gap-8 px-12 py-8 text-sm transition-colors outline-none"
+                                                className="rounded-4 text-text hover:bg-fg-1 focus:bg-fg-1 text-body flex cursor-pointer items-center gap-8 px-12 py-8 transition-colors outline-none"
                                             >
                                                 <CheckCircleIcon size={16} />
                                                 <span>
@@ -512,7 +512,7 @@ export function AudioFileSettings({
                                                 onClick={() =>
                                                     openEditNickname(file)
                                                 }
-                                                className="rounded-4 text-text hover:text-accent flex cursor-pointer items-center gap-8 px-12 py-8 text-sm transition-colors outline-none"
+                                                className="rounded-4 text-text hover:text-accent text-body flex cursor-pointer items-center gap-8 px-12 py-8 transition-colors outline-none"
                                             >
                                                 <PencilIcon size={16} />
                                                 <span>
@@ -525,7 +525,7 @@ export function AudioFileSettings({
                                                 onClick={() =>
                                                     handleDelete(file.id)
                                                 }
-                                                className="rounded-4 text-text hover:text-red flex cursor-pointer items-center gap-8 px-12 py-8 text-sm transition-colors outline-none"
+                                                className="rounded-4 text-text hover:text-red text-body flex cursor-pointer items-center gap-8 px-12 py-8 transition-colors outline-none"
                                             >
                                                 <TrashIcon size={16} />
                                                 <span>

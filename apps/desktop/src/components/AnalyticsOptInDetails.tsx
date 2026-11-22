@@ -6,7 +6,7 @@ import { siteUrl } from "@/global/siteUrl";
 export default function AnalyticsOptInDetails() {
     return (
         <>
-            <p className="text-text-subtitle text-sm">
+            <p className="text-text-subtitle text-body">
                 <T
                     keyName="analyticsOptIn.description"
                     params={{
@@ -23,15 +23,15 @@ export default function AnalyticsOptInDetails() {
                     }}
                 />
             </p>
-            <p className="text-text-subtitle text-sm">
+            <p className="text-text-subtitle text-body">
                 <T keyName="analyticsOptIn.settings" />
             </p>
 
-            <div className="flex flex-col gap-16 text-sm">
+            <div className="text-body flex flex-col gap-16">
                 <T keyName="analyticsOptIn.whenYouOptIn" />
                 <AnalyticsMessage hasOptedOut={false} />
             </div>
-            <div className="flex flex-col gap-16 text-sm">
+            <div className="text-body flex flex-col gap-16">
                 <T keyName="analyticsOptIn.whenYouOptOut" />
                 <AnalyticsMessage hasOptedOut={true} />
             </div>

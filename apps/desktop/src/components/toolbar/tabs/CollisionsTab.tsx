@@ -85,7 +85,7 @@ function CollisionsToolbar({ collisionInfo }: { collisionInfo: any[] }) {
                                                 {collision.marcher1Label} ↔{" "}
                                                 {collision.marcher2Label}
                                             </div>
-                                            <div className="text-text-subtitle font-mono text-sm">
+                                            <div className="text-text-subtitle text-body font-mono">
                                                 {t(
                                                     "toolbar.collisions.distance",
                                                     {
@@ -95,7 +95,7 @@ function CollisionsToolbar({ collisionInfo }: { collisionInfo: any[] }) {
                                                 )}
                                             </div>
                                         </div>
-                                        <div className="text-text-subtitle text-sm">
+                                        <div className="text-text-subtitle text-body">
                                             {t("toolbar.collisions.position", {
                                                 x: collision.x,
                                                 y: collision.y,

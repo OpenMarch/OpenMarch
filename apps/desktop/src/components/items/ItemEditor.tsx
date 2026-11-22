@@ -111,7 +111,7 @@ function CommitNumber({
             onCommit(parsed);
     };
     return (
-        <label className="flex flex-col gap-4 text-sm">
+        <label className="text-body flex flex-col gap-4">
             <span className="text-text/70">{label}</span>
             <UnitInput
                 compact
@@ -226,7 +226,7 @@ export function ItemEditor({ itemId }: { itemId: number }) {
 
     return (
         <div className="flex flex-col gap-16">
-            <label className="flex flex-col gap-4 text-sm">
+            <label className="text-body flex flex-col gap-4">
                 <span className="text-text/70">
                     <T keyName="props.name" />
                 </span>
@@ -242,7 +242,7 @@ export function ItemEditor({ itemId }: { itemId: number }) {
                 />
             </label>
             <EquipmentModelControl item={item} />
-            <label className="flex items-center justify-between gap-12 text-sm">
+            <label className="text-body flex items-center justify-between gap-12">
                 <span className="flex flex-col gap-2">
                     <span className="text-text/70 flex items-center gap-4">
                         <LockSimpleIcon size={12} aria-hidden />
@@ -270,7 +270,7 @@ export function ItemEditor({ itemId }: { itemId: number }) {
                 />
             </label>
             {item.kind === "prop" && (
-                <div className="flex flex-col gap-4 text-sm">
+                <div className="text-body flex flex-col gap-4">
                     <span className="text-text/70">
                         <T keyName="props.color" />
                     </span>
@@ -278,7 +278,7 @@ export function ItemEditor({ itemId }: { itemId: number }) {
                 </div>
             )}
             {item.kind === "prop" && (
-                <label className="flex flex-col gap-4 text-sm">
+                <label className="text-body flex flex-col gap-4">
                     <span className="text-text/70">
                         <T keyName="props.surfaceLabel" />
                     </span>
@@ -309,7 +309,7 @@ export function ItemEditor({ itemId }: { itemId: number }) {
                 </label>
             )}
             <div className="border-stroke flex flex-col gap-12 border-t pt-12">
-                <h5 className="text-text/70 text-sm font-medium">
+                <h5 className="text-text/70 text-body font-medium">
                     {writeBeat ? (
                         <T
                             keyName="props.outlineFrom"
@@ -384,12 +384,12 @@ export function ItemEditor({ itemId }: { itemId: number }) {
                         )}
                     </div>
                 ) : (
-                    <p className="text-text/50 text-sm">
+                    <p className="text-text/50 text-body">
                         <T keyName="props.offField" />
                     </p>
                 )}
                 {shown && item.surface_type === "floor" && (
-                    <label className="flex flex-col gap-4 text-sm">
+                    <label className="text-body flex flex-col gap-4">
                         <span className="text-text/70">
                             <T keyName="props.rollOut.label" />
                         </span>

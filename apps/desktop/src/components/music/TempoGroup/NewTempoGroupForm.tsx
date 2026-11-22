@@ -128,7 +128,7 @@ const NewTempoGroupForm = React.forwardRef<
                     name="name"
                     className="col-span-2 flex flex-col gap-2"
                 >
-                    <Label className="text-sm select-all">
+                    <Label className="text-body select-all">
                         <T keyName="music.name" />
                     </Label>
                     <Input
@@ -151,7 +151,7 @@ const NewTempoGroupForm = React.forwardRef<
                     name="tempo"
                     className="col-span-2 flex flex-col gap-2"
                 >
-                    <Label className="text-sm">
+                    <Label className="text-body">
                         <T keyName="music.startTempo" />
                     </Label>
                     <UnitInput
@@ -171,7 +171,7 @@ const NewTempoGroupForm = React.forwardRef<
                         name="beatPattern"
                         className="col-span-2 flex flex-col gap-2"
                     >
-                        <Label className="text-sm">
+                        <Label className="text-body">
                             <T keyName="music.beatPattern" />
                         </Label>
                         <select
@@ -203,7 +203,7 @@ const NewTempoGroupForm = React.forwardRef<
                         className="col-span-2 flex flex-col gap-2"
                         hidden={isMixedMeter}
                     >
-                        <Label className="text-sm">
+                        <Label className="text-body">
                             <T keyName="music.endTempo" />
                             <InfoTip
                                 side="top"
@@ -228,7 +228,7 @@ const NewTempoGroupForm = React.forwardRef<
                 >
                     <Label
                         className={clsx(
-                            "text-sm",
+                            "text-body",
                             tooManyMixedMeterBeats ? "text-red" : "",
                         )}
                     >
@@ -266,7 +266,7 @@ const NewTempoGroupForm = React.forwardRef<
                     name="repeats"
                     className={clsx("col-span-3 flex flex-col gap-2")}
                 >
-                    <Label className="text-sm">
+                    <Label className="text-body">
                         <T keyName="music.numberOfMeasures" />
                     </Label>
                     <Input
