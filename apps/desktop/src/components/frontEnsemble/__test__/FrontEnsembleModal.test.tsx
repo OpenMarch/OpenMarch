@@ -161,13 +161,24 @@ describeDbTests("Front ensemble panel", (it) => {
         const row = await screen.findByTestId("front-ensemble-summary");
         expect(within(row).getByText("No pit yet")).toBeTruthy();
         fireEvent.click(within(row).getByRole("button", { name: "Set up" }));
-        // The list of what the show has, with Add and the presets in its header
+        // An empty view shows the presets in its body (with Medium picked), Add in its header,
+        // and no presets button there
         await screen.findByText(
-            "No front ensemble yet. Add equipment and podiums, or start from a preset.",
+            "No front ensemble yet. Start from a preset, or add equipment yourself with Add.",
         );
+        const presets = screen.getByRole("region", { name: "Presets" });
         expect(
-            screen.getByRole("button", { name: "Start from a preset" }),
+            within(presets)
+                .getByRole("radio", { name: "Medium" })
+                .getAttribute("aria-checked"),
+        ).toBe("true");
+        expect(
+            within(presets).queryByRole("radio", { name: "None" }),
+        ).toBeNull();
+        expect(
+            within(presets).getByRole("button", { name: "Add pit" }),
         ).toBeTruthy();
+        expect(screen.queryByTestId("pit-presets-button")).toBeNull();
         // Add is its own view (the pictures), with a way back to the list
         const unregisterAdd = registerActionHandler(
             "addFrontEnsembleEquipment",
@@ -177,7 +188,7 @@ describeDbTests("Front ensemble panel", (it) => {
         await screen.findByRole("region", { name: "Add equipment" });
         fireEvent.click(screen.getByRole("button", { name: "Back" }));
         await screen.findByText(
-            "No front ensemble yet. Add equipment and podiums, or start from a preset.",
+            "No front ensemble yet. Start from a preset, or add equipment yourself with Add.",
         );
         unregisterAdd();
         // The Marchers button stays lit: the view is part of that panel

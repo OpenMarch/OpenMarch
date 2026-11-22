@@ -357,14 +357,12 @@ test("applies a front ensemble preset with its performers in one undo step, and 
     const { page } = show;
     await expect.poll(() => drawnItems(page)).toHaveLength(1);
     await openFrontEnsemble(page);
-    // The presets sit behind a small button in the header, so adding equipment stays in front
-    const presetsButton = page.getByTestId("pit-presets-button");
-    await expect(presetsButton).toHaveText("Start from a preset");
-    await presetsButton.click();
-    const presets = page.getByRole("dialog", { name: "Presets" });
-    await presets.getByRole("radio", { name: "Medium" }).click();
-    await expect(presets.getByRole("checkbox")).toBeChecked();
-    await presets.getByRole("button", { name: "Apply" }).click();
+    // An empty front ensemble shows the presets in the view itself
+    await expect(page.getByTestId("pit-presets-button")).toHaveCount(0);
+    const start = page.getByRole("region", { name: "Presets" });
+    await start.getByRole("radio", { name: "Medium" }).click();
+    await expect(start.getByRole("checkbox")).toBeChecked();
+    await start.getByRole("button", { name: "Add pit" }).click();
     await waitForIdle(page);
 
     // 4 marimbas, 3 vibes, xylophone, glockenspiel, rack, drum set, synth, 4 speakers, podium,
@@ -393,10 +391,13 @@ test("applies a front ensemble preset with its performers in one undo step, and 
     ]);
     await expectCanvasMatchesShow(show);
 
-    // Applying closes the popover; the button now resets to a preset.
-    // Small replaces Medium's equipment, keeps the riser and adds no performers it already has
-    await expect(presets).toBeHidden();
+    // Once there's a pit, the presets sit behind a small button in the header, so adding
+    // equipment stays in front. Small replaces Medium's equipment, keeps the riser and adds no
+    // performers it already has
+    await expect(start).toBeHidden();
+    const presetsButton = page.getByTestId("pit-presets-button");
     await expect(presetsButton).toHaveText("Reset to preset");
+    const presets = page.getByRole("dialog", { name: "Presets" });
     await presetsButton.click();
     await expect(
         presets.getByText("Replaces the equipment the last preset added", {

@@ -15,32 +15,28 @@ import {
     type PitPresetSize,
 } from "@/view3d/core/pit/presets";
 import { pitPresetApplyArgs } from "./pitPresetArgs";
+import PitPresetCards from "./PitPresetCards";
 
 /**
- * The Front ensemble's Small, Medium and Large presets (instruments.md section 6), behind one
- * small button so they don't crowd out adding equipment (owner, 2026-11-15): "Start from a
- * preset" in a show with no pit, "Reset to preset" once it has one. Its popover picks a size and
- * applies it, in front of the front sideline at the 50, as one undo step. It replaces the
- * equipment the previous preset added, and with "Also add performers" adds a player for each
- * instrument and a drum major on the podium, skipping performers the show already has.
+ * Applies a preset in front of the front sideline at the 50, as one undo step. It replaces the
+ * equipment the previous preset added, and with `addPerformers` adds a player for each instrument
+ * and a drum major on the podium, skipping performers the show already has. `canApply` is false
+ * until the field and the first beat have loaded, or while a preset is being applied.
  */
-export default function PitPresets() {
+function usePitPresetApply() {
     const { t } = useTranslate();
     const queryClient = useQueryClient();
-    const [open, setOpen] = useState(false);
-    const [size, setSize] = useState<PitPresetSize>("medium");
-    const [addPerformers, setAddPerformers] = useState(true);
     const { data: field } = useQuery(fieldPropertiesQueryOptions());
-    const { data: items } = useQuery(allItemsQueryOptions());
     const { beats } = useTimingObjects()!;
-    const apply = useMutation(applyPitPresetMutationOptions(queryClient));
-    const hasPit = items?.some((item) => item.kind === "equipment") ?? false;
-    const hasPreset = items?.some((item) => item.from_preset) ?? false;
+    const mutation = useMutation(applyPitPresetMutationOptions(queryClient));
     const firstBeat = beats[0];
-
-    const onApply = () => {
+    const apply = (
+        size: PitPresetSize,
+        addPerformers: boolean,
+        onSuccess?: () => void,
+    ) => {
         if (!field || !firstBeat) return;
-        apply.mutate(
+        mutation.mutate(
             pitPresetApplyArgs({
                 size,
                 field,
@@ -48,9 +44,98 @@ export default function PitPresets() {
                 addPerformers,
                 familyName: (family) => t(`pit.family.${family}`),
             }),
-            { onSuccess: () => setOpen(false) },
+            { onSuccess },
         );
     };
+    return {
+        apply,
+        canApply: !!field && !!firstBeat && !mutation.isPending,
+    };
+}
+
+/** "Also add performers", checked by default */
+function AddPerformersCheckbox({
+    checked,
+    onChange,
+}: {
+    checked: boolean;
+    onChange: (checked: boolean) => void;
+}) {
+    return (
+        <label className="text-body flex items-center gap-8">
+            <Checkbox
+                checked={checked}
+                onCheckedChange={(next) => onChange(next === true)}
+            />
+            <T keyName="frontEnsemble.presets.addPerformers" />
+        </label>
+    );
+}
+
+/**
+ * The empty front ensemble view's body (owner, 2026-11-22: a lone "Start from a preset" button
+ * looked lost in an empty panel): Small, Medium and Large as pictured cards, "Also add
+ * performers" and a button that adds the chosen pit. Adding equipment one piece at a time stays
+ * in the header.
+ */
+export function PitPresetStart() {
+    const { t } = useTranslate();
+    const [size, setSize] = useState<PitPresetSize>("medium");
+    const [addPerformers, setAddPerformers] = useState(true);
+    const { apply, canApply } = usePitPresetApply();
+    return (
+        <section
+            className="flex flex-col gap-12"
+            aria-label={t("frontEnsemble.presets.title")}
+            data-testid="pit-preset-start"
+        >
+            <p className="text-body text-text-subtitle">
+                <T keyName="frontEnsemble.emptyStart" />
+            </p>
+            <PitPresetCards
+                value={size}
+                onChange={(next) => next && setSize(next)}
+                includeNone={false}
+                layout="list"
+                aria-label={t("frontEnsemble.presets.size")}
+            />
+            <p className="text-sub text-text-subtitle">
+                <T keyName="frontEnsemble.presets.always" />
+            </p>
+            <div className="flex items-center justify-between gap-12">
+                <AddPerformersCheckbox
+                    checked={addPerformers}
+                    onChange={setAddPerformers}
+                />
+                <Button
+                    size="compact"
+                    disabled={!canApply}
+                    onClick={() => apply(size, addPerformers)}
+                >
+                    <T keyName="frontEnsemble.presets.addPit" />
+                </Button>
+            </div>
+        </section>
+    );
+}
+
+/**
+ * The Front ensemble's Small, Medium and Large presets (instruments.md section 6), behind one
+ * small "Reset to preset" button in the header once the show has a pit, so they don't crowd out
+ * adding equipment (owner, 2026-11-15). An empty show shows them in the view itself
+ * (`PitPresetStart`). Its popover picks a size and applies it (`usePitPresetApply`).
+ */
+export default function PitPresets() {
+    const { t } = useTranslate();
+    const [open, setOpen] = useState(false);
+    const [size, setSize] = useState<PitPresetSize>("medium");
+    const [addPerformers, setAddPerformers] = useState(true);
+    const { data: items } = useQuery(allItemsQueryOptions());
+    const { apply, canApply } = usePitPresetApply();
+    const hasPit = items?.some((item) => item.kind === "equipment") ?? false;
+    const hasPreset = items?.some((item) => item.from_preset) ?? false;
+
+    const onApply = () => apply(size, addPerformers, () => setOpen(false));
 
     return (
         <Popover.Root open={open} onOpenChange={setOpen}>
@@ -89,15 +174,10 @@ export default function PitPresets() {
                             <T keyName="frontEnsemble.presets.always" />
                         </p>
                     </div>
-                    <label className="text-body flex items-center gap-8">
-                        <Checkbox
-                            checked={addPerformers}
-                            onCheckedChange={(checked) =>
-                                setAddPerformers(checked === true)
-                            }
-                        />
-                        <T keyName="frontEnsemble.presets.addPerformers" />
-                    </label>
+                    <AddPerformersCheckbox
+                        checked={addPerformers}
+                        onChange={setAddPerformers}
+                    />
                     {hasPreset && (
                         <p className="text-sub text-text-subtitle">
                             <T keyName="frontEnsemble.presets.replaces" />
@@ -106,7 +186,7 @@ export default function PitPresets() {
                     <Button
                         size="compact"
                         className="self-end"
-                        disabled={!field || !firstBeat || apply.isPending}
+                        disabled={!canApply}
                         onClick={onApply}
                     >
                         <T keyName="frontEnsemble.presets.apply" />
