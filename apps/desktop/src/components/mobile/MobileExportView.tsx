@@ -22,6 +22,7 @@ import {
 } from "./queries/useProductions";
 import { getGetApiEditorV1ProductionsIdQueryKey } from "@/api/generated/productions/productions";
 import { twMerge } from "tailwind-merge";
+import { clsx } from "clsx";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { animated, useTransition } from "@react-spring/web";
 import { MobileExportSettingsDialog } from "./settings/MobileExportSettings";
@@ -54,6 +55,11 @@ import {
 import { T, useTranslate } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
 import { formatLocale } from "@/utilities/formatLocale";
+import { getGetApiEditorV1EnsemblesQueryKey } from "@/api/generated/ensembles/ensembles";
+import { useProductionEnsemble } from "./queries/useProductionEnsemble";
+import { editorApiStatus } from "@/api/editor-client";
+import { ExpiryNotice } from "./EnsembleExpiry";
+import { formatExpiryDate } from "./utilities/ensembleExpiry";
 
 type UploadStatus = "idle" | "loading" | "error";
 
@@ -65,13 +71,22 @@ export default function MobileExportView({
 }: {
     currentProduction: Production;
 }) {
+    const ensemble = useProductionEnsemble(currentProduction);
     return (
         <section className="animate-scale-in flex h-full w-full flex-col">
             <div className="flex grow flex-col gap-16 overflow-y-auto">
+                {ensemble && !ensemble.expired && (
+                    <ExpiryNotice ensemble={ensemble} />
+                )}
                 <SubmitRevisionForm
                     isFirstRevision={currentProduction.revisions.length === 0}
                     productionId={currentProduction.id}
                     currentProduction={currentProduction}
+                    expiredOn={
+                        ensemble?.expired
+                            ? (ensemble.expires_on ?? undefined)
+                            : undefined
+                    }
                 />
                 <PageLinesNote />
                 <RevisionsList
@@ -141,12 +156,25 @@ export const SubmitRevisionForm = ({
     isFirstRevision,
     productionId,
     currentProduction,
+    expiredOn,
 }: {
     isFirstRevision: boolean;
     productionId: number;
     currentProduction?: Production;
+    /**
+     * Set when the production's ensemble has expired: the ensemble's last
+     * valid day (ISO date). The server refuses new revisions, so pushing is off.
+     */
+    expiredOn?: string;
 }) => {
     const { t } = useTranslate();
+    const expiredBannerId = useId();
+    const [flashExpiredBanner, setFlashExpiredBanner] = useState(false);
+    useEffect(() => {
+        if (!flashExpiredBanner) return;
+        const timer = setTimeout(() => setFlashExpiredBanner(false), 2000);
+        return () => clearTimeout(timer);
+    }, [flashExpiredBanner]);
     const [uploadStatus, setUploadStatus] = useState<UploadStatus>("idle");
     const [uploadError, setUploadError] = useState<string>("");
     const [revisionTitle, setRevisionTitle] = useState<string>(
@@ -355,6 +383,13 @@ export const SubmitRevisionForm = ({
                 const errorMessage =
                     error instanceof Error ? error.message : String(error);
                 console.error("Upload error:", error);
+                // 403: the ensemble expired since it was loaded. Refetch so
+                // the expired banner replaces the push button's normal state.
+                if (editorApiStatus(error) === 403) {
+                    void queryClient.invalidateQueries({
+                        queryKey: getGetApiEditorV1EnsemblesQueryKey(),
+                    });
+                }
                 const display = toDisplayError(errorMessage);
                 setUploadStatus("error");
                 setUploadError(display);
@@ -389,8 +424,20 @@ export const SubmitRevisionForm = ({
         backgroundImageUploadLoading ||
         backgroundSyncLoading;
 
+    const isExpired = expiredOn !== undefined;
+    const expiredReason = isExpired
+        ? t("mobileExport.expired.pushDisabled", {
+              date: formatExpiryDate(expiredOn),
+          })
+        : undefined;
+
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        // The button stays clickable so a click can point at the reason
+        if (isExpired) {
+            setFlashExpiredBanner(true);
+            return;
+        }
         if (isFirstRevision) {
             setConfirmPublishOpen(true);
             return;
@@ -412,6 +459,28 @@ export const SubmitRevisionForm = ({
 
     return (
         <>
+            {isExpired && (
+                <div
+                    id={expiredBannerId}
+                    role="status"
+                    data-testid="expired-push-banner"
+                    className={clsx(
+                        "rounded-6 bg-red/10 text-body text-red flex items-start gap-8 p-12 transition-shadow duration-300",
+                        flashExpiredBanner && "ring-red ring-2",
+                    )}
+                >
+                    <WarningCircleIcon
+                        size={16}
+                        className="mt-2 shrink-0"
+                        aria-hidden
+                    />
+                    <span>
+                        {t("mobileExport.expired.banner", {
+                            date: formatExpiryDate(expiredOn),
+                        })}
+                    </span>
+                </div>
+            )}
             {/* New Revision Section */}
             <form onSubmit={handleSubmit} className="flex flex-col gap-12">
                 <div className="flex flex-col gap-6" hidden={isFirstRevision}>
@@ -423,7 +492,7 @@ export const SubmitRevisionForm = ({
                             "mobileExport.revision.titlePlaceholder",
                         )}
                         value={revisionTitle}
-                        disabled={isUploading}
+                        disabled={isUploading || isExpired}
                         onChange={handleTitleChange}
                         className={twMerge(
                             "w-full",
@@ -438,7 +507,18 @@ export const SubmitRevisionForm = ({
                     <Button
                         type="submit"
                         disabled={disableUpload}
-                        className="flex-1"
+                        // Not `disabled` when expired: a click flashes the
+                        // banner that says why, and the tooltip repeats it
+                        aria-disabled={isExpired || undefined}
+                        aria-describedby={
+                            isExpired ? expiredBannerId : undefined
+                        }
+                        tooltipText={expiredReason}
+                        data-testid="push-revision-button"
+                        className={twMerge(
+                            "flex-1",
+                            isExpired && "cursor-not-allowed opacity-50",
+                        )}
                     >
                         {isUploading ? (
                             <span className="flex items-center gap-8">
@@ -481,8 +561,8 @@ export const SubmitRevisionForm = ({
                 </div>
             </form>
 
-            {/* Error Display */}
-            {hasError && uploadError && (
+            {/* Error Display; the expired banner already says why a push failed */}
+            {hasError && uploadError && !isExpired && (
                 <div className="rounded-6 bg-red/10 text-body text-red flex items-center gap-8 p-12">
                     <WarningCircleIcon size={16} />
                     <span>{uploadError}</span>

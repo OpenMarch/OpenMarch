@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { uploadDatabaseToServer } from "../upload-service";
 import type { DB } from "../../../../global/database/db";
+import { EditorApiError, editorApiStatus } from "@/api/editor-client";
 
 const fieldPropertiesJson = () =>
     JSON.stringify({
@@ -154,6 +155,44 @@ describe("upload-service", () => {
                     canvas_performer_text_color: "rgba(49, 50, 51, 0.52)",
                 }),
             );
+        });
+
+        it("keeps the server's 403 status and message when the ensemble has expired", async () => {
+            const message =
+                "This ensemble expired on Dec 31, 2026. Contact sales@openmarch.com to extend it.";
+            mockCreateRevision.mockRejectedValue(
+                new EditorApiError(message, 403),
+            );
+            const db = fakeDb({
+                workspaceFindFirst: async () => ({
+                    json_data: workspaceJson(123),
+                }),
+                marchersFindMany: async () => [],
+            });
+
+            const error = await uploadDatabaseToServer(db, "Title").catch(
+                (e: unknown) => e,
+            );
+
+            expect(editorApiStatus(error)).toBe(403);
+            expect((error as Error).message).toContain(message);
+        });
+
+        it("has no status when the server never answered", async () => {
+            mockCreateRevision.mockRejectedValue(new Error("Network Error"));
+            const db = fakeDb({
+                workspaceFindFirst: async () => ({
+                    json_data: workspaceJson(123),
+                }),
+                marchersFindMany: async () => [],
+            });
+
+            const error = await uploadDatabaseToServer(db, "Title").catch(
+                (e: unknown) => e,
+            );
+
+            expect(editorApiStatus(error)).toBeUndefined();
+            expect((error as Error).message).toContain("Network Error");
         });
 
         it("includes most common section per prefix in prefix_map", async () => {

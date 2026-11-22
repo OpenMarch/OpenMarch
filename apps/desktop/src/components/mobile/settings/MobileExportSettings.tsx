@@ -8,6 +8,7 @@ import {
 import { GearSixIcon } from "@phosphor-icons/react";
 import { useQueryClient } from "@tanstack/react-query";
 import { useCurrentProduction } from "../queries/useProductions";
+import { useProductionEnsemble } from "../queries/useProductionEnsemble";
 import DetachButton from "../DetachButton";
 import { AudioFileSettings } from "./AudioFileSettings";
 import { getGetApiEditorV1ProductionsIdQueryKey } from "@/api/generated/productions/productions";
@@ -58,6 +59,7 @@ const MobileExportSettingsContent = () => {
     const detachHeadingId = useId();
     const queryClient = useQueryClient();
     const { data: production } = useCurrentProduction();
+    const ensemble = useProductionEnsemble(production);
 
     if (!production)
         return <div>{t("mobileExport.settings.noProduction")}</div>;
@@ -66,6 +68,11 @@ const MobileExportSettingsContent = () => {
         <div className="flex flex-col gap-16">
             <AudioFileSettings
                 production={production}
+                expiredOn={
+                    ensemble?.expired
+                        ? (ensemble.expires_on ?? undefined)
+                        : undefined
+                }
                 setDefaultAudioFileId={() => {
                     void queryClient.invalidateQueries({
                         queryKey: getGetApiEditorV1ProductionsIdQueryKey(

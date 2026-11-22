@@ -1,4 +1,10 @@
-import { useState, type FormEvent, type MouseEvent } from "react";
+import {
+    useId,
+    useMemo,
+    useState,
+    type FormEvent,
+    type MouseEvent,
+} from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import {
     workspaceSettingsQueryOptions,
@@ -6,9 +12,13 @@ import {
 } from "@/hooks/queries/useWorkspaceSettings";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
-import { useGetApiEditorV1Ensembles } from "@/api/generated/ensembles/ensembles";
+import {
+    getGetApiEditorV1EnsemblesQueryKey,
+    useGetApiEditorV1Ensembles,
+} from "@/api/generated/ensembles/ensembles";
+import { editorApiStatus } from "@/api/editor-client";
 import { usePostApiEditorV1Productions } from "@/api/generated/productions/productions";
-import type { ProductionPreview } from "@/api/generated/model";
+import type { Ensemble, ProductionPreview } from "@/api/generated/model";
 import {
     AlertDialog,
     AlertDialogContent,
@@ -22,8 +32,15 @@ import {
     DialogTitle,
     Input,
 } from "@openmarch/ui";
-import { CircleNotchIcon, PlusIcon } from "@phosphor-icons/react";
+import {
+    CaretDownIcon,
+    CaretRightIcon,
+    CircleNotchIcon,
+    PlusIcon,
+} from "@phosphor-icons/react";
 import ViewEnsembleDetailsLink from "./ViewEnsembleDetailsLink";
+import { ExpiredBadge, ExpiryNotice } from "./EnsembleExpiry";
+import { partitionByExpiry } from "./utilities/ensembleExpiry";
 import { formatLocale } from "@/utilities/formatLocale";
 
 type CreateProductionTarget = {
@@ -67,6 +84,13 @@ export default function EnsembleList() {
             },
             onError: (error) => {
                 console.error("Failed to create production", error);
+                // 403: the ensemble expired since the list loaded. Refetch so
+                // it moves to the expired list; the message says why.
+                if (editorApiStatus(error) === 403) {
+                    void queryClient.invalidateQueries({
+                        queryKey: getGetApiEditorV1EnsemblesQueryKey(),
+                    });
+                }
                 setCreateProductionError(
                     error instanceof Error
                         ? error.message
@@ -80,6 +104,17 @@ export default function EnsembleList() {
     const { data: workspaceSettings } = useQuery(
         workspaceSettingsQueryOptions(),
     );
+
+    const ensembles = useMemo(
+        () => ensemblesResponse?.ensembles ?? [],
+        [ensemblesResponse],
+    );
+    const { active: activeEnsembles, expired: expiredEnsembles } = useMemo(
+        () => partitionByExpiry(ensembles),
+        [ensembles],
+    );
+    const [showExpired, setShowExpired] = useState(false);
+    const expiredListId = useId();
 
     const formatDate = (dateString: string) => {
         return new Date(dateString).toLocaleDateString(formatLocale(), {
@@ -158,6 +193,66 @@ export default function EnsembleList() {
         }
     };
 
+    const renderEnsemble = (ensemble: Ensemble) => (
+        <div
+            key={ensemble.id}
+            className="space-y-2"
+            data-testid="ensemble-item"
+            data-expired={ensemble.expired || undefined}
+        >
+            <div className="text-sub text-text-subtitle flex w-full items-center justify-between gap-8">
+                <div className="flex min-w-0 items-center gap-8">
+                    <span className="truncate">{ensemble.name}</span>
+                    {ensemble.expired && (
+                        <ExpiredBadge expiresOn={ensemble.expires_on} />
+                    )}
+                </div>
+                <div className="shrink-0">
+                    {formatDate(ensemble.created_at)}
+                </div>
+            </div>
+            <ExpiryNotice ensemble={ensemble} />
+            {/* Productions list */}
+            <div className="flex flex-col gap-8">
+                {ensemble.productions?.map((production) => (
+                    <button
+                        type="button"
+                        key={production.id}
+                        onClick={(e) => handleProductionClick(e, production)}
+                        className="group hover hover:border-accent hover:text-accent border-stroke bg-fg-2 flex w-full cursor-pointer items-center justify-between gap-4 rounded border px-16 py-12 text-left transition-colors"
+                    >
+                        <div>{production.name}</div>
+                        <div className="text-text-subtitle text-sub transition-colors duration-150 ease-out group-hover:text-inherit">
+                            {t("ensembles.attachToProduction")}
+                        </div>
+                    </button>
+                ))}
+                <div className="flex w-full justify-between">
+                    <ViewEnsembleDetailsLink ensembleId={ensemble.id} />
+                    {/* An expired ensemble takes no new productions; the
+                        explanation above the expired list says why */}
+                    {!ensemble.expired && (
+                        <Button
+                            type="button"
+                            variant="secondary"
+                            size="compact"
+                            onClick={() =>
+                                handleCreateProductionClick({
+                                    id: ensemble.id,
+                                    name: ensemble.name,
+                                })
+                            }
+                            className="gap-8"
+                        >
+                            <PlusIcon size={16} />
+                            {t("ensembles.createProduction")}
+                        </Button>
+                    )}
+                </div>
+            </div>
+        </div>
+    );
+
     return (
         <div className="flex h-full flex-col gap-16">
             {/* List of ensembles */}
@@ -181,94 +276,67 @@ export default function EnsembleList() {
                     </div>
                 )}
 
-                {!isLoading &&
-                    !error &&
-                    ensemblesResponse?.ensembles &&
-                    ensemblesResponse.ensembles.length === 0 && (
-                        <div className="text-body text-text/80">
-                            {t("ensembles.empty", {
-                                defaultValue:
-                                    "No ensembles found. Create one above!",
-                            })}
-                        </div>
-                    )}
+                {!isLoading && !error && ensembles.length === 0 && (
+                    <div className="text-body text-text/80">
+                        {t("ensembles.empty", {
+                            defaultValue:
+                                "No ensembles found. Create one above!",
+                        })}
+                    </div>
+                )}
 
-                {!isLoading &&
-                    !error &&
-                    ensemblesResponse?.ensembles &&
-                    ensemblesResponse.ensembles.length > 0 && (
-                        <div className="flex min-h-0 flex-col gap-16 overflow-y-auto">
-                            {/* Ensemble items */}
-                            {ensemblesResponse.ensembles.map((ensemble) => {
-                                return (
+                {!isLoading && !error && ensembles.length > 0 && (
+                    <div className="flex min-h-0 flex-col gap-16 overflow-y-auto">
+                        {activeEnsembles.length === 0 && (
+                            <div className="text-body text-text/80">
+                                {t("ensembles.expiry.noActive")}
+                            </div>
+                        )}
+                        {activeEnsembles.map((ensemble) =>
+                            renderEnsemble(ensemble),
+                        )}
+
+                        {expiredEnsembles.length > 0 && (
+                            <div className="flex flex-col gap-16">
+                                <button
+                                    type="button"
+                                    aria-expanded={showExpired}
+                                    aria-controls={expiredListId}
+                                    onClick={() => setShowExpired((v) => !v)}
+                                    className="text-sub text-text-subtitle hover:text-accent flex w-fit items-center gap-4 transition-colors duration-150 ease-out"
+                                    data-testid="toggle-expired-ensembles"
+                                >
+                                    {showExpired ? (
+                                        <CaretDownIcon size={12} aria-hidden />
+                                    ) : (
+                                        <CaretRightIcon size={12} aria-hidden />
+                                    )}
+                                    {showExpired
+                                        ? t("ensembles.expiry.hideExpired")
+                                        : t("ensembles.expiry.showExpired", {
+                                              count: expiredEnsembles.length,
+                                          })}
+                                </button>
+                                {showExpired && (
                                     <div
-                                        key={ensemble.id}
-                                        className="space-y-2"
+                                        id={expiredListId}
+                                        className="flex flex-col gap-16"
+                                        data-testid="expired-ensembles"
                                     >
-                                        <div className="text-sub text-text-subtitle flex w-full justify-between">
-                                            <div>{ensemble.name}</div>
-                                            <div>
-                                                {formatDate(
-                                                    ensemble.created_at,
-                                                )}
-                                            </div>
-                                        </div>
-                                        {/* Productions list */}
-                                        <div className="flex flex-col gap-8">
-                                            {ensemble.productions?.map(
-                                                (production) => (
-                                                    <button
-                                                        type="button"
-                                                        key={production.id}
-                                                        onClick={(e) =>
-                                                            handleProductionClick(
-                                                                e,
-                                                                production,
-                                                            )
-                                                        }
-                                                        className="group hover hover:border-accent hover:text-accent border-stroke bg-fg-2 flex w-full cursor-pointer items-center justify-between gap-4 rounded border px-16 py-12 text-left transition-colors"
-                                                    >
-                                                        <div>
-                                                            {production.name}
-                                                        </div>
-                                                        <div className="text-text-subtitle text-sub transition-colors duration-150 ease-out group-hover:text-inherit">
-                                                            {t(
-                                                                "ensembles.attachToProduction",
-                                                            )}
-                                                        </div>
-                                                    </button>
-                                                ),
+                                        <p className="text-sub text-text-subtitle">
+                                            {t(
+                                                "ensembles.expiry.expiredExplanation",
                                             )}
-                                            <div className="flex w-full justify-between">
-                                                <ViewEnsembleDetailsLink
-                                                    ensembleId={ensemble.id}
-                                                />
-                                                <Button
-                                                    type="button"
-                                                    variant="secondary"
-                                                    size="compact"
-                                                    onClick={() =>
-                                                        handleCreateProductionClick(
-                                                            {
-                                                                id: ensemble.id,
-                                                                name: ensemble.name,
-                                                            },
-                                                        )
-                                                    }
-                                                    className="gap-8"
-                                                >
-                                                    <PlusIcon size={16} />
-                                                    {t(
-                                                        "ensembles.createProduction",
-                                                    )}
-                                                </Button>
-                                            </div>
-                                        </div>
+                                        </p>
+                                        {expiredEnsembles.map((ensemble) =>
+                                            renderEnsemble(ensemble),
+                                        )}
                                     </div>
-                                );
-                            })}
-                        </div>
-                    )}
+                                )}
+                            </div>
+                        )}
+                    </div>
+                )}
             </div>
 
             {/* Attach Production Dialog */}
