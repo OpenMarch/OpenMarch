@@ -19,9 +19,6 @@ export type Tilt = readonly number[];
 
 export const UPRIGHT: Tilt = [1, 0, 0, 0, 1, 0, 0, 0, 1];
 
-/** A Z-up file stood up: a quarter turn about X, so the file's +Z becomes +Y */
-export const Z_UP_TILT: Tilt = [1, 0, 0, 0, 0, 1, 0, -1, 0];
-
 /** The axis a tip turns the model about, as the picture shows it: left-right or front-back */
 export type TipAxis = "x" | "z";
 

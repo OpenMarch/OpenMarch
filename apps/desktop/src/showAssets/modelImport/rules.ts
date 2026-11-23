@@ -9,7 +9,7 @@
 export const MODEL_ASSET_KIND = "model";
 
 /** Bump when the stored output changes for the same input and choices. */
-export const MODEL_IMPORT_VERSION = 4;
+export const MODEL_IMPORT_VERSION = 5;
 
 /**
  * The Light level: what a prop model is simplified to by default (props-spec section 3), and
@@ -113,12 +113,3 @@ export const UNIT_FIXES = [
     { unit: "in", factor: 0.0254 },
     { unit: "ft", factor: 0.3048 },
 ] as const;
-
-/**
- * Z-up is suspected when Z is strictly the largest side and more than this times Y (owner
- * decision Q37, 2026-10-11). A flat model (a sign, a tarp) gets no guess either way.
- */
-export const Z_UP_FACTOR = 1.25;
-
-/** A model is flat when its thinnest side is under this share of its longest. */
-export const FLAT_RATIO = 0.05;

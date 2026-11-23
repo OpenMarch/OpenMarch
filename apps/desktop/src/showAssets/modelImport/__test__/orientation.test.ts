@@ -5,7 +5,6 @@ import {
     tiltQuaternion,
     tipped,
     UPRIGHT,
-    Z_UP_TILT,
     type Tilt,
 } from "../orientation";
 import type { Turn } from "../types";
@@ -91,10 +90,6 @@ describe("tipping a model on the review", () => {
 });
 
 describe("tilt values", () => {
-    it("stands a Z-up file up", () => {
-        expect(placed(Z_UP_TILT, 0, FRONT)).toEqual([0, 1, 0]);
-    });
-
     it("refuses what isn't a quarter-turn rotation", () => {
         expect(isTilt(UPRIGHT)).toBe(true);
         expect(isTilt([1, 0, 0, 0, 1, 0, 0, 0, -1])).toBe(false); // mirrored

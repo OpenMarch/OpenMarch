@@ -1617,15 +1617,10 @@
             },
             "groups": {
                 "cantImport": "Can't import",
-                "needsChoice": "Needs your choice",
                 "fixed": "Fixed for you",
                 "notes": "Notes"
             },
             "tryAgain": "Try again",
-            "rotate": {
-                "title": "Stand it up (Z-up file)",
-                "detail": "Some programs export with Z as up, so the model lies on its back."
-            },
             "name": "Name",
             "saveFailed": "Couldn't add the model to the show.",
             "cancel": "Cancel",

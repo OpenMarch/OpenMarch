@@ -1530,15 +1530,10 @@
             },
             "groups": {
                 "cantImport": "Tidak dapat diimpor",
-                "needsChoice": "Perlu dipilih",
                 "fixed": "Diperbaiki otomatis",
                 "notes": "Catatan"
             },
             "tryAgain": "Coba lagi",
-            "rotate": {
-                "title": "Berdirikan (file Z-up)",
-                "detail": "Beberapa program mengekspor dengan sumbu Z ke atas, sehingga model terbaring telentang."
-            },
             "name": "Nama",
             "saveFailed": "Gagal menambahkan model ke pertunjukan.",
             "cancel": "Batal",

@@ -37,7 +37,9 @@ import { ALL_EXTENSIONS } from "@gltf-transform/extensions";
 import {
     cloneDocument,
     dedup,
+    flatten,
     getBounds,
+    join,
     prune,
     simplifyPrimitive,
     uninstance,
@@ -47,7 +49,7 @@ import { MeshoptDecoder, MeshoptSimplifier } from "meshoptimizer";
 import { planFromAbove } from "@/view3d/core/pit/planFromAbove";
 import { creditsOf, titleOf } from "./credits";
 import { openPickedFiles, RefusedError, type OpenedModel } from "./files";
-import { isTilt, tiltQuaternion, UPRIGHT, Z_UP_TILT } from "./orientation";
+import { isTilt, tiltQuaternion, UPRIGHT } from "./orientation";
 import type { ImageCodec } from "./imageCodec";
 import { precheck } from "./precheck";
 import {
@@ -57,7 +59,6 @@ import {
     DISTANT_SIMPLIFY_ERRORS,
     DISTANT_TRIANGLE_CAP,
     DISTANT_TRIANGLE_RATIO,
-    FLAT_RATIO,
     IMAGE_TYPES,
     MAX_IMPORT_BYTES,
     MODEL_IMPORT_VERSION,
@@ -67,7 +68,6 @@ import {
     TRIANGLE_CAP,
     TRIANGLE_HARD_LIMIT,
     UNIT_FIXES,
-    Z_UP_FACTOR,
 } from "./rules";
 import {
     primitiveTriangles,
@@ -141,11 +141,10 @@ export async function importModel(
             prune({ keepAttributes: true, keepSolidTextures: true }),
         );
 
-        const model = await io.writeBinary(doc);
         // A level heavier than Light keeps a Light copy beside it, for devices that can't draw it
         const light =
             detail.row && detail.level !== "light"
-                ? await makeLight(io, doc)
+                ? await makeLight(doc)
                 : null;
         if (detail.row) detail.row.lightTriangles = light?.triangles ?? null;
         // From the Light copy when there is one: the same shapes, without building a record per
@@ -153,6 +152,9 @@ export async function importModel(
         const lighter = light?.doc ?? doc;
         const distant = await makeDistant(io, lighter, env.images);
         const derived = await derive(lighter, env.images, doc);
+        // Each copy's parts are merged last, once nothing simplifies from it any more
+        const model = await writeMerged(io, doc);
+        const lightBytes = light ? await writeMerged(io, light.doc) : null;
         const sidecar: ModelSidecar = {
             format: "openmarch-model/1",
             importVersion: MODEL_IMPORT_VERSION,
@@ -181,7 +183,7 @@ export async function importModel(
                     model,
                     distant: distant.bytes,
                     thumbnail: derived.thumbnail,
-                    ...(light ? { light: light.bytes } : {}),
+                    ...(lightBytes ? { light: lightBytes } : {}),
                 },
                 sidecar,
                 credits: creditsOf(opened.json),
@@ -468,19 +470,15 @@ function normalize(
             maxM: PLAUSIBLE_SIZE_M.max,
         });
 
-    // Z-up: suspected when the model stands tallest along Z; a flat one gets no guess. Tipping
-    // is always offered: a file can lie on any side, and a long one (a car) is never suspected
-    const [x, y, z] = size;
-    const flat = Math.min(...size) < FLAT_RATIO * largest;
-    const zUpSuspected = !flat && z > x && z > y && z > y * Z_UP_FACTOR;
-    const preselectedTilt = zUpSuspected ? Z_UP_TILT : UPRIGHT;
-    const tilt =
-        choices.tilt && isTilt(choices.tilt) ? choices.tilt : preselectedTilt;
+    // Upright as the file has it: glTF is Y-up by its spec, and the exporters people use (Blender,
+    // Sketchfab) convert to it. No guess from the model's shape: a car facing glTF's +Z front is
+    // longest along Z, just as a tall Z-up post is. Tipping is always offered for a file that lies
+    // on a side anyway
+    const tilt = choices.tilt && isTilt(choices.tilt) ? choices.tilt : UPRIGHT;
     report.needsChoice.push({
         code: "tilt",
-        preselected: preselectedTilt,
+        preselected: UPRIGHT,
         applied: tilt,
-        zUpSuspected,
     });
 
     // The front: glTF's +Z unless the user turns it; always offered, since no file says
@@ -594,9 +592,8 @@ async function fitTriangles(
  * foot), so the fallback's swap doesn't make it float.
  */
 async function makeLight(
-    io: WebIO,
     doc: Document,
-): Promise<{ bytes: Uint8Array; triangles: number; doc: Document }> {
+): Promise<{ triangles: number; doc: Document }> {
     const light = cloneDocument(doc);
     const scene = sceneOf(light);
     await simplifyTo(light, scene, TRIANGLE_CAP);
@@ -612,11 +609,7 @@ async function makeLight(
     await light.transform(
         prune({ keepAttributes: true, keepSolidTextures: true }),
     );
-    return {
-        bytes: await io.writeBinary(light),
-        triangles: sceneTriangles(scene),
-        doc: light,
-    };
+    return { triangles: sceneTriangles(scene), doc: light };
 }
 
 /**
@@ -733,6 +726,25 @@ function simplifyKeeping(prim: Primitive, ratio: number, error: number) {
  */
 export const PART_TRIANGLE_FLOOR = 12;
 
+/**
+ * A finished copy, written with one part per material (#1201). The 3D View draws each part of a model as its own instanced
+ * mesh, once a frame and again for shadows, whatever its size, so a car of 109 parts and 29
+ * materials drew 218 times a frame however few triangles it had. Flattening bakes every part's
+ * place into its vertices (a mirrored part's winding is turned back), and parts with the same
+ * material and attributes then join. Run on each finished copy: simplifying goes part by part,
+ * so a thin part keeps its floor (#1169). The cleanup is ours, as the worker can't look for
+ * solid-color textures.
+ */
+async function writeMerged(io: WebIO, doc: Document): Promise<Uint8Array> {
+    await doc.transform(
+        dedup({ propertyTypes: [PropertyType.MATERIAL] }),
+        flatten({ cleanup: false }),
+        join({ cleanup: false }),
+        prune({ keepAttributes: true, keepSolidTextures: true }),
+    );
+    return io.writeBinary(doc);
+}
+
 function stripExtras(doc: Document): void {
     const root = doc.getRoot();
     root.setExtras({});
@@ -810,11 +822,8 @@ async function makeDistant(
         await simplifyTo(distant, scene, target, DISTANT_SIMPLIFY_ERRORS, true);
     }
     await shrinkTextures(distant, DISTANT_TEXTURE_CAP, images, null);
-    await distant.transform(
-        prune({ keepAttributes: true, keepSolidTextures: true }),
-    );
     return {
-        bytes: await io.writeBinary(distant),
+        bytes: await writeMerged(io, distant),
         triangles: sceneTriangles(scene),
     };
 }
