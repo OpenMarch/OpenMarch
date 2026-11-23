@@ -1530,15 +1530,10 @@
             },
             "groups": {
                 "cantImport": "No se puede importar",
-                "needsChoice": "Necesita tu elección",
                 "fixed": "Corregido automáticamente",
                 "notes": "Notas"
             },
             "tryAgain": "Reintentar",
-            "rotate": {
-                "title": "Ponerlo de pie (archivo Z-up)",
-                "detail": "Algunos programas exportan con Z hacia arriba, así que el modelo queda acostado de espaldas."
-            },
             "name": "Nombre",
             "saveFailed": "No se pudo agregar el modelo al show.",
             "cancel": "Cancelar",

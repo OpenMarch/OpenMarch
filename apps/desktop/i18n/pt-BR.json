@@ -1530,15 +1530,10 @@
             },
             "groups": {
                 "cantImport": "Não é possível importar",
-                "needsChoice": "Precisa da sua escolha",
                 "fixed": "Corrigido automaticamente",
                 "notes": "Observações"
             },
             "tryAgain": "Tentar novamente",
-            "rotate": {
-                "title": "Colocar em pé (arquivo Z-up)",
-                "detail": "Alguns programas exportam com Z para cima, então o modelo fica deitado de costas."
-            },
             "name": "Nome",
             "saveFailed": "Não foi possível adicionar o modelo ao show.",
             "cancel": "Cancelar",

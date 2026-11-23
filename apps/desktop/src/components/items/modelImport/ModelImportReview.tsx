@@ -5,14 +5,12 @@ import {
     InfoIcon,
     ProhibitIcon,
     SpinnerGapIcon,
-    WarningIcon,
     WrenchIcon,
 } from "@phosphor-icons/react";
 import { T, useTranslate } from "@tolgee/react";
 import clsx from "clsx";
 import {
     Button,
-    Checkbox,
     Input,
     SegmentedTextSwitch,
     Select,
@@ -23,11 +21,7 @@ import {
 import ItemPanelHeader from "@/components/items/ItemPanelHeader";
 import AxisPreview, { AXIS_COLORS, type Axis } from "./AxisPreview";
 import DetailChoice from "./DetailChoice";
-import {
-    sameTilt,
-    tipped,
-    UPRIGHT,
-} from "@/showAssets/modelImport/orientation";
+import { tipped, UPRIGHT } from "@/showAssets/modelImport/orientation";
 import { useModelImportSession } from "@/showAssets/modelImport/review/modelImportSession";
 import {
     canRetry,
@@ -137,8 +131,6 @@ export default function ModelImportReview({
     useEffect(() => {
         if (running) setPointed(null);
     }, [running]);
-    // Stood up from Z-up on its own: said in Needs your choice, with a way back
-    const zUp = tilt?.zUpSuspected ? tilt : undefined;
     const detail = choiceOf(needs, "detail");
     const picture = useBytesUrl(model?.parts.thumbnail, "image/png");
 
@@ -283,30 +275,6 @@ export default function ModelImportReview({
                         model={model}
                         running={running}
                     />
-                )}
-
-                {model && zUp && (
-                    <ReportGroup
-                        tone="accent"
-                        icon={<WarningIcon size={16} />}
-                        title={t("props.import.groups.needsChoice")}
-                        testId="model-import-choices"
-                    >
-                        {zUp && (
-                            <ChoiceCheck
-                                id="model-import-rotate"
-                                checked={sameTilt(appliedTilt, zUp.preselected)}
-                                disabled={running}
-                                onChange={(on) =>
-                                    session.choose({
-                                        tilt: on ? zUp.preselected : UPRIGHT,
-                                    })
-                                }
-                                title={t("props.import.rotate.title")}
-                                detail={t("props.import.rotate.detail")}
-                            />
-                        )}
-                    </ReportGroup>
                 )}
 
                 {report && report.fixedForYou.length > 0 && (
@@ -649,37 +617,6 @@ function Line({ title, detail, muted }: ReportLine & { muted?: boolean }) {
                     {detail}
                 </span>
             )}
-        </div>
-    );
-}
-
-function ChoiceCheck({
-    id,
-    checked,
-    disabled,
-    onChange,
-    title,
-    detail,
-}: {
-    id: string;
-    checked: boolean;
-    disabled: boolean;
-    onChange: (checked: boolean) => void;
-    title: string;
-    detail?: string;
-}) {
-    return (
-        <div className="flex items-start gap-8">
-            <Checkbox
-                id={id}
-                data-testid={id}
-                checked={checked}
-                disabled={disabled}
-                onCheckedChange={(value) => onChange(value === true)}
-            />
-            <label htmlFor={id} className="min-w-0 cursor-pointer">
-                <Line title={title} detail={detail} />
-            </label>
         </div>
     );
 }

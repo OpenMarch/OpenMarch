@@ -11,7 +11,7 @@ import { getBounds } from "@gltf-transform/functions";
 import { validateBytes } from "gltf-validator";
 import { importModel } from "../pipeline";
 import { readImageHeader } from "../imageSize";
-import { tipped, UPRIGHT, Z_UP_TILT } from "../orientation";
+import { tipped, UPRIGHT } from "../orientation";
 import { DETAILED_TRIANGLE_CAP, TRIANGLE_CAP } from "../rules";
 import type {
     ModelImportChoices,
@@ -227,19 +227,35 @@ describe("importModel", () => {
         );
     });
 
-    it("turns a Z-up model upright, pre-selected", async () => {
+    it("keeps a car facing glTF's front upright, though it's longest along Z", async () => {
+        // A car 4 m long facing +Z, 1.4 m tall: the shape of a Z-up post, so no guess (#1200)
+        const result = await run([
+            picked("car.glb", await postGlb([1.8, 1.4, 4])),
+        ]);
+        expect(choiceOf(result, "tilt")).toEqual({
+            code: "tilt",
+            preselected: UPRIGHT,
+            applied: UPRIGHT,
+        });
+        expect(imported(result).sidecar.sizeM.height).toBeCloseTo(1.4, 3);
+    });
+
+    it("leaves a Z-up file as it is until tipped", async () => {
+        // A post saved Z-up lies on its back; Rotate X stands it up
         const glb = await postGlb(
             [0.3, 1.8, 0.3],
             [Math.SQRT1_2, 0, 0, Math.SQRT1_2],
         );
         const result = await run([picked("post-z-up.glb", glb)]);
-        expect(choiceOf(result, "tilt")).toEqual({
-            code: "tilt",
-            preselected: Z_UP_TILT,
-            applied: Z_UP_TILT,
-            zUpSuspected: true,
+        expect(choiceOf(result, "tilt")).toMatchObject({
+            preselected: UPRIGHT,
         });
-        const model = imported(result);
+        expect(imported(result).sidecar.sizeM.height).toBeCloseTo(0.3, 3);
+        const model = imported(
+            await run([picked("post-z-up.glb", glb)], {
+                tilt: tipped(UPRIGHT, 0, "x"),
+            }),
+        );
         expect(model.sidecar.sizeM.height).toBeCloseTo(1.8, 3);
         await checkStored(model.parts.model);
     });
@@ -252,17 +268,18 @@ describe("importModel", () => {
             code: "tilt",
             preselected: UPRIGHT,
             applied: UPRIGHT,
-            zUpSuspected: false,
         });
         expect(imported(result).sidecar.sizeM.height).toBeCloseTo(1.8, 3);
     });
 
     it("stands up a long model lying on its side when tipped", async () => {
-        // A car 4 m long, 1.4 m tall and 1.8 m wide, lying on its side facing right: nothing
-        // to suspect, so it stays as it is until tipped
+        // A car 4 m long, 1.4 m tall and 1.8 m wide, lying on its side facing right: it stays
+        // as it is until tipped
         const glb = await postGlb([4, 1.8, 1.4]);
         const result = await run([picked("car-on-side.glb", glb)]);
-        expect(choiceOf(result, "tilt")).toMatchObject({ zUpSuspected: false });
+        expect(choiceOf(result, "tilt")).toMatchObject({
+            preselected: UPRIGHT,
+        });
         expect(imported(result).sidecar.sizeM.height).toBeCloseTo(1.8, 3);
 
         const tilt = tipped(UPRIGHT, 0, "x");

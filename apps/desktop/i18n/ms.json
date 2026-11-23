@@ -1530,15 +1530,10 @@
             },
             "groups": {
                 "cantImport": "Tidak dapat diimport",
-                "needsChoice": "Perlu pilihan anda",
                 "fixed": "Dibaiki secara automatik",
                 "notes": "Catatan"
             },
             "tryAgain": "Cuba lagi",
-            "rotate": {
-                "title": "Tegakkan (fail Z-up)",
-                "detail": "Sesetengah program mengeksport dengan Z sebagai arah atas, jadi model terbaring telentang."
-            },
             "name": "Nama",
             "saveFailed": "Tidak dapat menambah model pada persembahan.",
             "cancel": "Batal",

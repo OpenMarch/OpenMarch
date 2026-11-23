@@ -155,7 +155,10 @@ phases [26.24].
   applied before the turn). A small X/Y/Z drawing in the picture's corner,
   drawn from the picture's own viewpoint, lights the button's axis and shows
   which way it swings while the button is pointed at, focused or just tapped.
-  The Z-up guess pre-selects the tilt and keeps its "Stand it up" check.
+  Since #1200 (owner, 2026-11-23) nothing is guessed: glTF is Y-up by its
+  spec, and a car facing glTF's +Z front is longest along Z, so the Z-up
+  guess stood correct cars on their nose. A model comes in as the file has
+  it, and the "Stand it up" check and the Needs your choice group are gone.
 - **Kind** (Prop, Equipment, Garment, Floor prop, Base floor): a picker sets
   it; a plain Library import asks for it as a required choice, pre-selected
   only from the Starter kit stamp, never from a guess. Size range, caps and
@@ -380,9 +383,10 @@ aliases, never shown as labels [owner, 2026-10-12, Q39–Q41, Q44].
   38 m and back inside 30 m, as the built-in equipment does.
 - A missing `OM_grip_R` pre-selects a grip a quarter of the way along the
   longest side; grips live in the sidecar, never re-centering the model. A
-  model is guessed Z-up when Z is its largest side and over 1.25× Y (floors
-  get the rotation offered but unchecked). A Garment with any unrigged mesh
-  is rejected [Q37].
+  model was guessed Z-up when Z was its largest side and over 1.25× Y; since
+  #1200 (owner, 2026-11-23) there is no guess, and Rotate X, Y and Z cover a
+  file that lies on a side. A Garment with any unrigged mesh is rejected
+  [Q37].
 
 ## 4. Items and Placement
 

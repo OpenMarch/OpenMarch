@@ -1530,15 +1530,10 @@
             },
             "groups": {
                 "cantImport": "Import impossible",
-                "needsChoice": "À vous de choisir",
                 "fixed": "Corrigé automatiquement",
                 "notes": "Remarques"
             },
             "tryAgain": "Réessayer",
-            "rotate": {
-                "title": "Le redresser (fichier Z-up)",
-                "detail": "Certains logiciels exportent avec Z vers le haut, et le modèle se retrouve couché sur le dos."
-            },
             "name": "Nom",
             "saveFailed": "Impossible d’ajouter le modèle au spectacle.",
             "cancel": "Annuler",

@@ -1530,15 +1530,10 @@
             },
             "groups": {
                 "cantImport": "Hindi ma-import",
-                "needsChoice": "Kailangan mong pumili",
                 "fixed": "Inayos na para sa iyo",
                 "notes": "Mga tala"
             },
             "tryAgain": "Subukang muli",
-            "rotate": {
-                "title": "Itayo ito (Z-up na file)",
-                "detail": "May mga program na nag-e-export nang Z ang pataas, kaya nakahiga nang patihaya ang model."
-            },
             "name": "Pangalan",
             "saveFailed": "Hindi naidagdag ang model sa palabas.",
             "cancel": "Kanselahin",
