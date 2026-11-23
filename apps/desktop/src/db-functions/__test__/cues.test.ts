@@ -24,6 +24,7 @@ import { performRedo, performUndo, transactionWithHistory } from "../history";
 import {
     editedPerformers,
     planEquipmentCues,
+    planCueChange,
     planEquipmentSet,
 } from "@/cues/equipment";
 
@@ -565,6 +566,66 @@ describeDbTests("cues", (it) => {
                 expect(await values()).toEqual(
                     [`${rifle}:${b!.id}`, `${flag}:${a!.id}`].sort(),
                 );
+            },
+        );
+    });
+
+    describe("moving a cue onto a count (#992)", () => {
+        testWithHistory(
+            "its performers win there, and one undo puts both cues back",
+            async ({ db, marchersAndPages }) => {
+                const [a, b] = marchersAndPages.expectedMarchers;
+                const beats = await beatIds(db);
+                const ab = [a!.id, b!.id].sort((x, y) => x - y);
+                // Rifles on one count (older), flags on a later one (newer)
+                await createCues({
+                    db,
+                    newCues: [
+                        {
+                            type: "equipment",
+                            beatId: beats[1]!,
+                            value: "builtin:equipment.rifle",
+                            marcherIds: ab,
+                        },
+                    ],
+                });
+                await createCues({
+                    db,
+                    newCues: [
+                        {
+                            type: "equipment",
+                            beatId: beats[4]!,
+                            value: "builtin:equipment.flag",
+                            marcherIds: ab,
+                        },
+                    ],
+                });
+                const values = async () =>
+                    (await getCues({ db }))
+                        .map((c) => `${c.value}@${c.beatId}`)
+                        .sort();
+                const before = await values();
+                const rifles = (await getCues({ db })).find((c) =>
+                    c.value.endsWith("rifle"),
+                )!;
+                const plan = planCueChange({
+                    cues: await getCues({ db }),
+                    cueId: rifles.id,
+                    change: { beatId: beats[4]! },
+                    relabelFor: () => null,
+                });
+                await editCues({
+                    db,
+                    cueIds: new Set(plan.deletedCueIds),
+                    modifiedCues: plan.modifiedCues,
+                    newCues: plan.newCues,
+                });
+                expect(await values()).toEqual([
+                    `builtin:equipment.rifle@${beats[4]}`,
+                ]);
+
+                await performUndo(db);
+                expect(await values()).toEqual(before);
             },
         );
     });

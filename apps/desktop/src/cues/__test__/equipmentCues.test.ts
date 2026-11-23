@@ -6,6 +6,7 @@ import {
     editedPerformers,
     equipmentTagsAt,
     planEquipmentCues,
+    planCueChange,
     planEquipmentSet,
     equipmentSetIsEmpty,
     withRecent,
@@ -311,6 +312,129 @@ describe("equipment cues (#992)", () => {
                 modifiedCues: [{ id: 2, marcherIds: [1, 2], label: "1+2" }],
                 deletedCueIds: [1],
             });
+        });
+    });
+
+    describe("planCueChange (#992: a moved cue wins where it lands)", () => {
+        const stored = (
+            id: number,
+            value: string,
+            beatId: number,
+            marcherIds: number[],
+            length: number | null = null,
+        ) => ({
+            id,
+            type: "equipment",
+            beatId,
+            value: `builtin:equipment.${value}`,
+            settings: {},
+            length,
+            transition: null,
+            marcherIds,
+            label: "old",
+            notes: null,
+            createdAt: "",
+            updatedAt: "",
+        });
+        const relabelFor = (ids: readonly number[]) => `now ${ids.join("+")}`;
+        const none = { modifiedCues: [], deletedCueIds: [], newCues: [] };
+
+        // The review's case: a Rifle cue (lower id) dragged onto the count where the same
+        // performers have a Flag cue (higher id) used to lose to it and vanish
+        it("moving a cue (a drag or Move cue to playhead) takes its performers out of the cues on the new count", () => {
+            const cues = [
+                stored(1, "rifle", 5, [1, 2]),
+                stored(2, "flag", 9, [1, 2]),
+                stored(3, "sabre", 9, [2, 3]),
+                // Another kind on that count is left alone
+                stored(4, "tuba", 9, [1], 8),
+            ];
+            expect(
+                planCueChange({
+                    cues,
+                    cueId: 1,
+                    change: { beatId: 9 },
+                    relabelFor,
+                }),
+            ).toEqual({
+                ...none,
+                modifiedCues: [
+                    { id: 3, marcherIds: [3], label: "now 3" },
+                    { id: 1, beatId: 9 },
+                ],
+                deletedCueIds: [2],
+            });
+        });
+
+        it("merges a cue of the same item on the new count into the moved one", () => {
+            const cues = [
+                stored(1, "rifle", 5, [1, 2]),
+                stored(2, "rifle", 9, [2, 3]),
+            ];
+            expect(
+                planCueChange({
+                    cues,
+                    cueId: 1,
+                    change: { beatId: 9 },
+                    relabelFor,
+                }),
+            ).toEqual({
+                ...none,
+                deletedCueIds: [2],
+                modifiedCues: [
+                    {
+                        id: 1,
+                        beatId: 9,
+                        marcherIds: [1, 2, 3],
+                        label: "now 1+2+3",
+                    },
+                ],
+            });
+        });
+
+        it("a length change makes it the kind it becomes on its count", () => {
+            const cues = [
+                stored(1, "rifle", 5, [1, 2], 4),
+                stored(2, "flag", 5, [1], 8),
+                stored(3, "flag", 5, [2]),
+            ];
+            expect(
+                planCueChange({
+                    cues,
+                    cueId: 1,
+                    change: { length: 8 },
+                    relabelFor,
+                }),
+            ).toEqual({
+                ...none,
+                modifiedCues: [{ id: 1, length: 8 }],
+                deletedCueIds: [2],
+            });
+            // Made lasting, it wins over the lasting Flag cue instead
+            expect(
+                planCueChange({
+                    cues,
+                    cueId: 1,
+                    change: { length: null },
+                    relabelFor,
+                }),
+            ).toEqual({
+                ...none,
+                modifiedCues: [{ id: 1, length: null }],
+                deletedCueIds: [3],
+            });
+        });
+
+        it("changes nothing when nothing moves, or the cue isn't there", () => {
+            const cues = [stored(1, "rifle", 5, [1])];
+            for (const [cueId, change] of [
+                [1, { beatId: 5 }],
+                [1, { length: null }],
+                [7, { beatId: 9 }],
+            ] as const)
+                expect(
+                    planCueChange({ cues, cueId, change, relabelFor }),
+                ).toEqual(none);
         });
     });
 
