@@ -40,6 +40,8 @@ async function visibleMarcher(page: Page) {
 
 test("dragging a marcher saves its new position", async ({ show }) => {
     const { page } = show;
+    // Snapping off: a free drop lands where it's dragged, not on a checkpoint near it (#585)
+    await page.keyboard.press("Shift+M");
     await createMarchers(page, { quantity: 8, section: "Baritone" });
     await expectCanvasMatchesShow(show);
     const marcher = await visibleMarcher(page);

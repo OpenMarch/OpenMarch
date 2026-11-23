@@ -34,6 +34,8 @@ function setup({
     positions = [100, 100, 200, 100, 300, 100, 400, 100],
     selectionCovers = undefined as FieldEditorPorts["selectionCovers"],
     onScreen = undefined as FieldOnScreen | undefined,
+    snap = undefined as FieldEditorPorts["snap"],
+    snapOn = undefined as (() => boolean) | undefined,
 } = {}) {
     const clock = { now: 1000 };
     const state = {
@@ -70,6 +72,7 @@ function setup({
         marcherHidden,
         selectionBoxPadding: () => 10,
         selectionCovers,
+        snap,
         openMenu: vi.fn(),
         showPositions: vi.fn((positions) => {
             state.shown = positions;
@@ -86,6 +89,7 @@ function setup({
         moveTransform,
         now: () => clock.now,
         onScreen,
+        snap: snapOn,
     });
     return { editor, state, ports, clock };
 }
@@ -2142,6 +2146,34 @@ describe("FieldEditor scale and rotate handles (#198)", () => {
             { id: 3, x: 400, y: 100 },
             { id: 4, x: 550, y: 100 },
         ]);
+    });
+
+    describe("snapping the dragged side to the grid (#585)", () => {
+        const tens = (p: FieldPoint) => ({
+            x: Math.round(p.x / 10) * 10,
+            y: Math.round(p.y / 10) * 10,
+        });
+        const dragEastTo = (x: number, snapOn?: () => boolean) => {
+            const { editor, state } = setup({
+                selected: ALL,
+                snap: tens,
+                snapOn,
+            });
+            editor.pointerDown(at(HANDLE.e.x, HANDLE.e.y));
+            editor.pointerMove(at(485, 130));
+            editor.pointerMove(at(x, 160));
+            editor.pointerUp(at(x, 160));
+            return state.drops[0].positions.map((p) => p.x);
+        };
+
+        it("lands the dragged side on the grid, the marchers inside in proportion", () => {
+            // The side would reach 547: it lands on 550
+            expect(dragEastTo(557)).toEqual([100, 250, 400, 550]);
+        });
+
+        it("scales freely with the Snap toggle off", () => {
+            expect(dragEastTo(557, () => false)).toEqual([100, 249, 398, 547]);
+        });
     });
 
     describe("a formation with height", () => {

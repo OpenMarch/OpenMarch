@@ -171,10 +171,14 @@ const backFrom = (from: number, interval: number) => {
 /**
  * The field's lines a shape's edge can be pulled onto (#425), in field units: x for lines side to
  * side, y for front to back. The checkpoints used as references, visible or not (a front
- * sideline is invisible but still a line), and the half lines where the field has them. Not the
- * step grid.
+ * sideline is invisible but still a line), and the half lines where the field has them unless
+ * `halfLines` is false (a selection of marchers lands on checkpoints only, #585). Not the step
+ * grid.
  */
-export function fieldReferenceLines(fp: FieldProperties): {
+export function fieldReferenceLines(
+    fp: FieldProperties,
+    { halfLines = true }: { halfLines?: boolean } = {},
+): {
     x: number[];
     y: number[];
 } {
@@ -185,7 +189,7 @@ export function fieldReferenceLines(fp: FieldProperties): {
         .filter((c) => c.useAsReference)
         .map((c) => checkpointY(fp, c));
     // The half lines where the 2D plan draws them
-    if (fp.halfLineXInterval)
+    if (halfLines && fp.halfLineXInterval)
         x.push(
             ...linesFrom(
                 fp.centerFrontPoint.xPixels,
@@ -193,7 +197,7 @@ export function fieldReferenceLines(fp: FieldProperties): {
                 fp.width,
             ),
         );
-    if (fp.halfLineYInterval) {
+    if (halfLines && fp.halfLineYInterval) {
         const interval = fp.pixelsPerStep * fp.halfLineYInterval;
         y.push(...backFrom(gridStartY(fp) - interval, interval));
     }

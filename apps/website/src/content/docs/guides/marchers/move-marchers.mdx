@@ -43,7 +43,8 @@ Drag a marcher to move it. To move several together, [select them](/guides/march
 
 While you drag:
 
-- Hold <Kbd keys="Shift" gesture="drag" /> for fine control. The marchers move at a quarter of the pointer's speed and ignore [coordinate rounding](#snap-to-a-grid-of-steps). You can press and release Shift in the middle of a drag; the marchers don't jump.
+- With [coordinate rounding](#snap-to-a-grid-of-steps) off, the marchers land on a yard line, hash or sideline when their edge or center comes within a few pixels of one, and an orange guide names the line, such as "On 50". With rounding on, the grid decides instead.
+- Hold <Kbd keys="Shift" gesture="drag" /> for fine control. The marchers move at a quarter of the pointer's speed and ignore [coordinate rounding](#snap-to-a-grid-of-steps), though they still catch yard lines and hashes. You can press and release Shift in the middle of a drag; the marchers don't jump.
 - Hold <Kbd keys="Mod" gesture="drag" /> to keep the move straight: across the field or front to back, whichever way you've dragged further.
 
 Where the marchers are <Term id="held">Held</Term>, a drag moves the whole hold; see [Drag marchers that are Held](/guides/timeline/defined-held-not-defined/#drag-marchers-that-are-held).
@@ -92,13 +93,13 @@ In a new show nothing snaps: a dragged marcher goes exactly where the pointer pu
 
 The X and Y buttons next to the menu show the current sizes. Click one to step to the next size, or right-click it to go back one.
 
-With rounding on, one marcher snaps onto the grid as you drag it. Several marchers move in whole grid steps together, so each keeps its distance from the others, even if they started off the grid. The menu's note "<Ui k="coordinateRoundingSettings.groupNotice" plain />" is out of date: groups round this way.
+With rounding on, one marcher snaps onto the grid as you drag it. Several marchers move in whole grid steps together, so each keeps its distance from the others, even if they started off the grid. The menu's note "<Ui k="coordinateRoundingSettings.groupNotice" plain />" is out of date: groups round this way. Resizing a group with its frame's handles lands the side you drag on the grid ([Turn and resize a group](/guides/marchers/align-and-space/#turn-and-resize-a-group)).
 
 To put marchers that are off the grid onto it, select them and select <Ui k="toolbar.alignment.snapCaption" /> in the <Ui k="inspector.shape.alignmentTab" /> tab, or press <Kbd action="snapToNearestCustomFraction" />. Each one moves to the nearest grid point.
 
 ## Turn snapping off
 
-To drag without snapping for a moment, hold <Kbd keys="Shift" gesture="drag" />. To turn it off for a while, select <Ui k="toolbar.alignment.snapToggleCaption" /> (the magnet) in the <Ui k="inspector.shape.alignmentTab" /> tab, or press <Kbd action="toggleSnap" />; [Snapping and modifier keys](/guides/shapes/snapping-and-modifier-keys/#turn-snapping-off) says what it turns off and when it comes back on.
+To drag without rounding for a moment, hold <Kbd keys="Shift" gesture="drag" />. To turn all snapping off for a while, yard lines and hashes included, select <Ui k="toolbar.alignment.snapToggleCaption" /> (the magnet) in the <Ui k="inspector.shape.alignmentTab" /> tab, or press <Kbd action="toggleSnap" />; [Snapping and modifier keys](/guides/shapes/snapping-and-modifier-keys/#turn-snapping-off) says what it turns off and when it comes back on.
 
 ## Move in one direction only
 

@@ -50,24 +50,24 @@ describe("what each field drag honors", () => {
             { fine: "fine", constrain: "oneAxis", snaps: true },
         ],
         [
-            "a scale corner: fine, a kept ratio, from center, no snapping",
+            "a scale corner: fine, a kept ratio, from center, snapping",
             () =>
                 new ScaleGesture(at(10, 10), marchers, host, "se", box, keys()),
             {
                 fine: "fine",
                 constrain: "keepRatio",
                 fromCenter: "fromCenter",
-                snaps: false,
+                snaps: true,
             },
         ],
         [
-            "a scale side: fine, a kept ratio, from center, no snapping",
+            "a scale side: fine, a kept ratio, from center, snapping",
             () => new ScaleGesture(at(10, 5), marchers, host, "e", box, keys()),
             {
                 fine: "fine",
                 constrain: "keepRatio",
                 fromCenter: "fromCenter",
-                snaps: false,
+                snaps: true,
             },
         ],
         [

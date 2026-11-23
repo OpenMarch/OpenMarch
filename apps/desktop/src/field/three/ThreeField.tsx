@@ -546,8 +546,18 @@ function ThreeFieldView() {
                     onScreen: onScreenToggles,
                     // #197: snapping, the Snap toggle and Lock X/Y, read as they are on each
                     // move; off, the Snap toggle frees a rotate handle too
+                    // #585: and lands a dragged or resized selection on the field's lines
                     ...settingsMoveOptions(
                         () => latest.current.fieldProperties ?? null,
+                        () => {
+                            const properties = latest.current.fieldProperties;
+                            return properties
+                                ? {
+                                      properties,
+                                      zoom: useFieldViewStore.getState().zoom,
+                                  }
+                                : null;
+                        },
                     ),
                 },
             ),

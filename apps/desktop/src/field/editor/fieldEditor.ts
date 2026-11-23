@@ -61,6 +61,8 @@ import {
     type PivotTarget,
 } from "./selectionPivot";
 import { RotateGesture, ScaleGesture } from "./transformGestures";
+import { linesUnder, type LinePull } from "./linePull";
+import { lineCoordinate } from "@/shapes/field/lineCoordinate";
 import { isPanButton } from "./view";
 
 /**
@@ -242,6 +244,12 @@ export type FieldEditorOptions = {
     moveTransform?: MoveTransform;
     /** The Snap toggle, read on every pointer event; off, a rotation turns freely. On when omitted. */
     snap?: () => boolean;
+    /**
+     * The field's lines a resized selection's side lands on (#585), read on every pointer event;
+     * while a move or a resize has the selection on one, a guide is drawn along it. None when
+     * omitted. A move's own landing is the {@link moveTransform}'s.
+     */
+    pull?: () => LinePull | null;
     /**
      * The touch pill's toggles (`onScreenToggles` in `TouchModifierStore`): its held roles count
      * as held keys for every drag, a toggle changed mid-drag re-runs it as a key does, and the
@@ -744,6 +752,11 @@ export class FieldEditor {
     private readonly itemTransforms = new Map<number, object>();
     /** Where the marchers being dragged are drawn, or null with no drag. */
     private live: readonly MarcherPosition[] | null = null;
+    /**
+     * While a move or a resize has the selection's edge or center on one of the field's lines
+     * (#585): a guide along each, drawn as a shape's are. Null otherwise.
+     */
+    private lineGuides: FieldModeDrawing | null = null;
     private typed: TypedRotation | null = null;
     private ownPivot: OwnPivot | null = null;
     /** Where the pivot is drawn while its crosshair is dragged */
@@ -1405,7 +1418,7 @@ export class FieldEditor {
 
     /** What the mode draws over the field, or null with no mode or nothing drawn. */
     modeDrawing(): FieldModeDrawing | null {
-        return this.mode?.drawing() ?? null;
+        return this.mode?.drawing() ?? this.lineGuides;
     }
 
     /** Whether a mode (the open shape) keeps the field's menu shut (#315). */
@@ -1949,6 +1962,9 @@ export class FieldEditor {
                   press.handle,
                   box,
                   keys,
+                  (point) => this.ports.snap?.(point) ?? point,
+                  this.options.snap,
+                  () => this.options.pull?.() ?? null,
               );
     }
 
@@ -2323,12 +2339,51 @@ export class FieldEditor {
     private showLive(positions: readonly MarcherPosition[]) {
         this.live = positions;
         this.ports.showPositions(withPositions(this.pending, positions));
+        this.setLineGuides(positions);
     }
 
     /** The drag is over with nothing dropped: only drops still saving are drawn. */
     private endLive() {
         this.live = null;
         this.ports.showPositions(this.pending);
+        this.setLineGuides(null);
+    }
+
+    /**
+     * The guides for marchers drawn at `positions` while they're moved or resized: along each of
+     * the field's lines their edges or center lie on, named as the coordinate sheet writes a spot
+     * on it ("On 50"). None with the Snap toggle off, as a shape's (#425), or with `null`.
+     */
+    private setLineGuides(positions: readonly MarcherPosition[] | null) {
+        const pull =
+            positions &&
+            (this.gesture instanceof MoveGesture ||
+                this.gesture instanceof ScaleGesture) &&
+            (this.options.snap?.() ?? true)
+                ? this.options.pull?.()
+                : null;
+        const on = pull && positions ? linesUnder(positions, pull.lines) : null;
+        const guides = on
+            ? [
+                  ...on.x.map((at) => ({
+                      from: { x: at, y: 0 },
+                      to: { x: at, y: 1 },
+                      label: lineCoordinate("x", at) ?? undefined,
+                  })),
+                  ...on.y.map((at) => ({
+                      from: { x: 0, y: at },
+                      to: { x: 1, y: at },
+                      label: lineCoordinate("y", at) ?? undefined,
+                  })),
+              ]
+            : [];
+        const before = JSON.stringify(this.lineGuides?.guides ?? []);
+        if (JSON.stringify(guides) === before) return;
+        this.lineGuides =
+            guides.length > 0
+                ? { outline: null, spots: [], walks: [], handles: [], guides }
+                : null;
+        this.emit();
     }
 
     /**
@@ -2349,6 +2404,7 @@ export class FieldEditor {
             return;
         }
         this.live = null;
+        this.setLineGuides(null);
         const pending = withPositions(this.pending, positions);
         this.pending = pending;
         const drop = ++this.drops;

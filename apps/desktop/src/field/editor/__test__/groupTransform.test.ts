@@ -13,6 +13,7 @@ import {
     scaleFor,
     scalePositions,
     snapRotation,
+    snapScaleDelta,
     turnBetween,
 } from "../groupTransform";
 import type { MarcherPosition } from "../moveGesture";
@@ -709,5 +710,199 @@ describe("RotateGesture", () => {
         gesture.end(round(90));
         expect(heading(last(h.drop)) - home).toBeCloseTo(90);
         expect(gesture.center).toEqual({ x: 150, y: 225 });
+    });
+});
+
+describe("snapping the dragged side to the grid (#585)", () => {
+    /** A grid every 10 units on both axes. */
+    const tens = (p: { x: number; y: number }) => ({
+        x: Math.round(p.x / 10) * 10,
+        y: Math.round(p.y / 10) * 10,
+    });
+    const snapped = (
+        handle: Parameters<typeof scaleFor>[0],
+        delta: { x: number; y: number },
+        keepRatio = false,
+        fromCenter = false,
+    ) =>
+        scaleFor(
+            handle,
+            BOX,
+            snapScaleDelta(handle, BOX, delta, keepRatio, fromCenter, tens),
+            keepRatio,
+            fromCenter,
+        );
+
+    it("lands a middle handle's side on the grid, leaving the other axis", () => {
+        // The right side would reach 247: it lands on 250
+        expect(snapped("e", { x: 47, y: 13 })).toEqual({
+            anchor: { x: 100, y: 200 },
+            x: 1.5,
+            y: 1,
+        });
+    });
+
+    it("lands both of a free corner's sides on the grid", () => {
+        // (247, 273) lands on (250, 270)
+        expect(snapped("se", { x: 47, y: 23 })).toEqual({
+            anchor: { x: 100, y: 200 },
+            x: 1.5,
+            y: 1.4,
+        });
+    });
+
+    it("keeps a constrained corner's ratio, landing the side nearest the pointer's scale", () => {
+        // Free, the corner scales by 1.468; on the grid across is 1.5, down 1.4
+        expect(snapped("se", { x: 47, y: 23 }, true)).toEqual({
+            anchor: { x: 100, y: 200 },
+            x: 1.5,
+            y: 1.5,
+        });
+    });
+
+    it("lands the dragged side on the grid from center, the other mirroring it", () => {
+        // About x = 150 the right side would reach 223: it lands on 220, the left on 80
+        const scale = snapped("e", { x: 23, y: 0 }, false, true);
+        expect(scalePositions(FORMATION, scale).map((p) => p.x)).toEqual([
+            80, 220, 150,
+        ]);
+    });
+
+    it("leaves an axis with no rounding free", () => {
+        const acrossOnly = (p: { x: number; y: number }) => ({
+            x: Math.round(p.x / 10) * 10,
+            y: p.y,
+        });
+        expect(
+            snapScaleDelta(
+                "se",
+                BOX,
+                { x: 47, y: 23 },
+                false,
+                false,
+                acrossOnly,
+            ),
+        ).toEqual({ x: 50, y: 23 });
+    });
+
+    it("lands a constrained corner on the one axis that has rounding", () => {
+        const acrossOnly = (p: { x: number; y: number }) => ({
+            x: Math.round(p.x / 10) * 10,
+            y: p.y,
+        });
+        // Free, the corner scales by 1.468: the right side at 246.8 lands on 250, so 1.5
+        const delta = snapScaleDelta(
+            "se",
+            BOX,
+            { x: 47, y: 23 },
+            true,
+            false,
+            acrossOnly,
+        );
+        expect(scaleFor("se", BOX, delta, true, false).x).toBe(1.5);
+    });
+
+    it("doesn't flip the formation when the nearest grid line is past the anchor", () => {
+        // The right side dragged to 103 would land on 100, the left side: it stops at the smallest
+        expect(snapped("e", { x: -97, y: 0 }).x).toBe(MIN_SCALE);
+    });
+
+    describe("ScaleGesture", () => {
+        const start = (snap?: () => boolean) => {
+            const h = host();
+            const gesture = new ScaleGesture(
+                pointer(200, 250),
+                FORMATION,
+                h,
+                "e",
+                BOX,
+                keysAt(pointer(200, 250)),
+                tens,
+                snap,
+            );
+            return { h, gesture };
+        };
+
+        it("draws and drops the side on the grid", () => {
+            const { h, gesture } = start();
+            gesture.move(pointer(247, 250));
+            expect(last(h.show).map((p) => p.x)).toEqual([100, 250, 175]);
+            gesture.end(pointer(247, 250));
+            expect(last(h.drop).map((p) => p.x)).toEqual([100, 250, 175]);
+        });
+
+        it("scales freely with the Snap toggle off", () => {
+            const { h, gesture } = start(() => false);
+            gesture.move(pointer(247, 250));
+            expect(last(h.show).map((p) => p.x)).toEqual([100, 247, 173.5]);
+        });
+
+        it("goes on slowly from the grid when fine turns on", () => {
+            const { h, gesture } = start();
+            gesture.move(pointer(247, 250));
+            // 4 more at a quarter speed: from the side on 250, to 251
+            gesture.move(pointer(251, 250, { shift: true }));
+            expect(last(h.show).map((p) => p.x)).toEqual([100, 251, 175.5]);
+        });
+    });
+});
+
+describe("landing the dragged side on the field's lines (#585)", () => {
+    const tens = (p: { x: number; y: number }) => ({
+        x: Math.round(p.x / 10) * 10,
+        y: Math.round(p.y / 10) * 10,
+    });
+    /** Lines at these x and y, reached for within 3 field units. */
+    const lines = (x: number[], y: number[] = []) => ({
+        lines: { x, y },
+        radius: { x: 3, y: 3 },
+    });
+    const scaled = (
+        handle: Parameters<typeof scaleFor>[0],
+        delta: { x: number; y: number },
+        pull: ReturnType<typeof lines>,
+        keepRatio = false,
+    ) =>
+        scaleFor(
+            handle,
+            BOX,
+            snapScaleDelta(handle, BOX, delta, keepRatio, false, tens, pull),
+            keepRatio,
+        );
+
+    it("lands the side on a line within reach, over the grid", () => {
+        // The right side would reach 247: the line at 246 wins over the grid's 250
+        expect(scaled("e", { x: 47, y: 0 }, lines([246])).x).toBe(1.46);
+    });
+
+    it("lands on the grid with no line within reach", () => {
+        expect(scaled("e", { x: 47, y: 0 }, lines([260])).x).toBe(1.5);
+    });
+
+    it("keeps a constrained corner's ratio, landing the side that reaches a line", () => {
+        // The corner would reach (246.8, 273.4): the line at y = 274 wins over the grid's 1.5
+        expect(scaled("se", { x: 47, y: 23 }, lines([], [274]), true)).toEqual({
+            anchor: { x: 100, y: 200 },
+            x: 1.48,
+            y: 1.48,
+        });
+    });
+
+    it("still lands on a line with fine, off the grid", () => {
+        const h = host();
+        const gesture = new ScaleGesture(
+            pointer(200, 250),
+            FORMATION,
+            h,
+            "e",
+            BOX,
+            keysAt(pointer(200, 250)),
+            tens,
+            undefined,
+            () => lines([212]),
+        );
+        // 47 at a quarter speed takes the side to 211.75: it lands on the line at 212
+        gesture.move(pointer(247, 250, { shift: true }));
+        expect(last(h.show).map((p) => p.x)).toEqual([100, 212, 156]);
     });
 });

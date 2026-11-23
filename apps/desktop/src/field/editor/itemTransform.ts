@@ -114,6 +114,9 @@ abstract class ItemHandleGesture implements FieldGesture {
     protected abstract sizeAt(at: FieldPoint, roles: Roles): ItemSize;
 }
 
+/** A marcher selection's scale roles, without the snapping an item's resize doesn't do */
+const ITEM_SCALE_HONORS: HonoredRoles = { ...SCALE_HONORS, snaps: false };
+
 /**
  * A side or corner, by the selection box's rule (`scaleFor`) in the Outline's
  * own frame, unturned about its center: the sides it pulls follow the pointer
@@ -135,7 +138,7 @@ export class ItemResizeGesture extends ItemHandleGesture {
         private readonly handle: Exclude<HandleId, "rot">,
         keys: FieldKeys,
     ) {
-        super(frame, host, keys, SCALE_HONORS);
+        super(frame, host, keys, ITEM_SCALE_HONORS);
     }
 
     protected sizeAt(at: FieldPoint, roles: Roles): ItemSize {
