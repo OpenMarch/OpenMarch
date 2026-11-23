@@ -20,6 +20,7 @@ import {
     useMemo,
     useRef,
     useState,
+    type MouseEvent as ReactMouseEvent,
     type PointerEvent as ReactPointerEvent,
 } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
@@ -29,7 +30,7 @@ import {
     EyeSlashIcon,
 } from "@phosphor-icons/react";
 import { useTranslate } from "@tolgee/react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import clsx from "clsx";
 import type { PerformerCarry } from "@openmarch/core";
 import type {
@@ -53,7 +54,7 @@ import {
     MENU_SEPARATOR_CLASS,
 } from "@/components/ui/popupClasses";
 import { useTimingObjects } from "@/hooks/useTimingObjects";
-import { cueKeys } from "@/hooks/queries/useCues";
+import { editCuesMutationOptions } from "@/hooks/queries/useCues";
 import { createTimelineBeatAxis } from "@/timeline/timelineViewModel";
 import { activeFieldEditor } from "@/field/editor/activeFieldEditor";
 import {
@@ -64,12 +65,14 @@ import {
 } from "@/shortcuts/registry";
 import type { ActionId } from "@/shortcuts/definitions";
 import { getActionLabel } from "@/shortcuts/labels";
-import { conToastError } from "@/utilities/utils";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useShowCues, type EditorCues } from "@/cues/useShowCues";
-import { useCueSelectionStore } from "@/cues/cueSelectionStore";
+import { pickedCueIn, useCueSelectionStore } from "@/cues/cueSelectionStore";
 import { describePerformers } from "@/cues/cueLabel";
-import { writeCueDrag } from "@/cues/useCueCommands";
+import { cueChangeEdit } from "@/cues/useCueCommands";
+import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
+import { beatWhere } from "@/timeline/timelineRangeWords";
+import { translateTimelineText } from "@/timeline/translateTimelineText";
 import { itemKeyOf } from "@/cues/equipmentItems";
 import {
     setLaneFolded,
@@ -191,8 +194,22 @@ function EquipmentLaneView({
     const queryClient = useQueryClient();
     // Like move clips, cues don't drag or resize while the show plays
     const isPlaying = useIsPlaying()?.isPlaying ?? false;
-    const picked = useCueSelectionStore((s) => s.cueId);
-    const pick = useCueSelectionStore((s) => s.pick);
+    const { mutate: edit } = useMutation(editCuesMutationOptions(queryClient));
+    // The picked cue, if it's one of this show's (ids are per file)
+    const pickedCueId = useCueSelectionStore((s) => s.cueId);
+    const pickedAt = useCueSelectionStore((s) => s.createdAt);
+    const picked = show
+        ? (pickedCueIn(show.cues, { cueId: pickedCueId, createdAt: pickedAt })
+              ?.id ?? null)
+        : null;
+    const pickCue = useCueSelectionStore((s) => s.pick);
+    const pick = (cueId: number | null) =>
+        pickCue(
+            cueId === null
+                ? null
+                : (show?.cues.find((c) => c.id === cueId) ?? null),
+        );
+    const pageBoxes = useTimelineSelectionStore((s) => s.pageBoxes);
     const [menu, setMenu] = useState<CueMenu | null>(null);
     const [drag, setDrag] = useState<LaneDrag | null>(null);
     const rootRef = useRef<HTMLDivElement>(null);
@@ -215,15 +232,23 @@ function EquipmentLaneView({
             return t(`cues.value.${key}`);
         return key ? t(`cues.item.${key}`) : (value ?? "");
     };
+    const words = {
+        performers: (n: number) => t("cues.label.performers", { count: n }),
+    };
     const rowName = (ids: readonly number[], label: string | null) =>
         label ??
-        describePerformers({
-            ids,
-            marchers: show?.marchers ?? [],
-            words: {
-                performers: (n) => t("cues.label.performers", { count: n }),
-            },
+        describePerformers({ ids, marchers: show?.marchers ?? [], words });
+    /** A cue's name, what it sets and where, for a mark that only shows its color */
+    const cueWords = (cueId: number) => {
+        const cue = show?.cues.find((c) => c.id === cueId);
+        if (!cue || !show) return "";
+        const where = beatWhere(specOf.get(cue.beatId) ?? 0, pageBoxes);
+        return t("cues.lane.markLabel", {
+            name: rowName(cue.marcherIds, cue.label),
+            value: valueName(cue.value),
+            where: where ? translateTimelineText(where) : "",
         });
+    };
 
     const openMenu = (cueId: number, clientX: number, clientY: number) => {
         const rect = rootRef.current?.getBoundingClientRect();
@@ -286,13 +311,14 @@ function EquipmentLaneView({
                 mode === "move"
                     ? { beatId: beats[at + delta]!.id }
                     : { length: cue.length! + delta };
-            void writeCueDrag(cueId, change, (error) =>
-                conToastError(t("cues.errors.update"), error),
-            )
-                .then(() =>
-                    queryClient.invalidateQueries({ queryKey: cueKeys.all() }),
-                )
-                .finally(() => setDrag(null));
+            // Its performers win on the count it lands on, as setting equipment there would
+            const plan = show && cueChangeEdit(show, cueId, change, words);
+            if (!plan) {
+                setDrag(null);
+                return;
+            }
+            // The bar stays where it was dropped until the cues reload
+            edit(plan, { onSettled: () => setDrag(null) });
         };
         const onUp = (ev: PointerEvent) => {
             if (ev.pointerId === e.pointerId) done(true);
@@ -335,8 +361,16 @@ function EquipmentLaneView({
                 <button
                     type="button"
                     data-testid="equipment-lane-fold"
+                    // The same words as the lane name's menu
                     aria-label={t(
-                        folded ? "cues.lane.unfold" : "cues.lane.fold",
+                        folded
+                            ? "cues.lane.expandRows"
+                            : "cues.lane.collapseRows",
+                    )}
+                    title={t(
+                        folded
+                            ? "cues.lane.expandRows"
+                            : "cues.lane.collapseRows",
                     )}
                     aria-expanded={!folded}
                     className="hover:text-text touch:size-44 flex size-16 items-center justify-center rounded-full"
@@ -378,7 +412,14 @@ function EquipmentLaneView({
                     {t("cues.lane.empty")}
                 </div>
             ) : folded ? (
-                <Summary lane={lane!} xOf={xOf} picked={picked} pick={pick} />
+                <Summary
+                    lane={lane!}
+                    xOf={xOf}
+                    picked={picked}
+                    pick={pick}
+                    nameOf={cueWords}
+                    onMenu={openMenu}
+                />
             ) : (
                 rows.map((row) => (
                     <div
@@ -466,6 +507,56 @@ const LONG_PRESS_MS = 500;
 /** How far a finger may drift during a long press. */
 const LONG_PRESS_SLOP = 10;
 
+/**
+ * A finger held still on a cue (a bar or a mark) opens its menu, as a right-click does. `start`
+ * goes in the press handler, the rest on the element.
+ */
+function useLongPressMenu(onMenu: (clientX: number, clientY: number) => void) {
+    const press = useRef<{
+        x: number;
+        y: number;
+        timer: ReturnType<typeof setTimeout>;
+    } | null>(null);
+    const end = () => {
+        if (press.current) clearTimeout(press.current.timer);
+        press.current = null;
+    };
+    return {
+        start: (e: ReactPointerEvent<HTMLElement>) => {
+            if (e.pointerType === "mouse") return;
+            const { clientX, clientY } = e;
+            end();
+            press.current = {
+                x: clientX,
+                y: clientY,
+                timer: setTimeout(() => {
+                    press.current = null;
+                    onMenu(clientX, clientY);
+                }, LONG_PRESS_MS),
+            };
+        },
+        handlers: {
+            onPointerMove: (e: ReactPointerEvent<HTMLElement>) => {
+                const p = press.current;
+                if (
+                    p &&
+                    Math.hypot(e.clientX - p.x, e.clientY - p.y) >
+                        LONG_PRESS_SLOP
+                )
+                    end();
+            },
+            onPointerUp: end,
+            onPointerCancel: end,
+            onContextMenu: (e: ReactMouseEvent<HTMLElement>) => {
+                e.preventDefault();
+                e.stopPropagation();
+                end();
+                onMenu(e.clientX, e.clientY);
+            },
+        },
+    };
+}
+
 /** One piece of a row: a cue's bar or pill, or the dashed default. */
 function Piece({
     piece,
@@ -500,17 +591,9 @@ function Piece({
     ) => void;
     onMenu: (clientX: number, clientY: number) => void;
 }) {
-    const press = useRef<{
-        x: number;
-        y: number;
-        timer: ReturnType<typeof setTimeout>;
-    } | null>(null);
     const isCue = piece.cueId !== null;
     const momentary = piece.kind === "momentary";
-    const end = () => {
-        if (press.current) clearTimeout(press.current.timer);
-        press.current = null;
-    };
+    const longPress = useLongPressMenu(onMenu);
     return (
         <div
             data-testid={
@@ -539,39 +622,19 @@ function Piece({
                 width: Math.max(width - 1 + extend, 4),
                 height: ROW - 4,
             }}
+            {...(isCue
+                ? longPress.handlers
+                : {
+                      onContextMenu: (e: ReactMouseEvent<HTMLElement>) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                      },
+                  })}
             onPointerDown={(e) => {
                 e.stopPropagation();
                 if (!isCue) return;
                 onPress(e, "move");
-                if (e.pointerType !== "mouse") {
-                    const { clientX, clientY } = e;
-                    end();
-                    press.current = {
-                        x: clientX,
-                        y: clientY,
-                        timer: setTimeout(() => {
-                            press.current = null;
-                            onMenu(clientX, clientY);
-                        }, LONG_PRESS_MS),
-                    };
-                }
-            }}
-            onPointerMove={(e) => {
-                const p = press.current;
-                if (
-                    p &&
-                    Math.hypot(e.clientX - p.x, e.clientY - p.y) >
-                        LONG_PRESS_SLOP
-                )
-                    end();
-            }}
-            onPointerUp={end}
-            onPointerCancel={end}
-            onContextMenu={(e) => {
-                e.preventDefault();
-                e.stopPropagation();
-                end();
-                if (isCue) onMenu(e.clientX, e.clientY);
+                longPress.start(e);
             }}
         >
             <span className="truncate">{name}</span>
@@ -603,11 +666,17 @@ function Summary({
     xOf,
     picked,
     pick,
+    nameOf,
+    onMenu,
 }: {
     lane: LaneData;
     xOf: (count: number) => number;
     picked: number | null;
     pick: (cueId: number | null) => void;
+    /** A cue's name, what it sets and where, for its mark's label */
+    nameOf: (cueId: number) => string;
+    /** Opens a cue's menu at a point (a right-click or a long press on its mark) */
+    onMenu: (cueId: number, clientX: number, clientY: number) => void;
 }) {
     const total = lane.marcherIds.length || 1;
     return (
@@ -636,25 +705,66 @@ function Summary({
                 </div>
             ))}
             {lane.marks.map((mark) => (
-                <button
+                <SummaryMarkButton
                     key={mark.cueId}
-                    type="button"
-                    data-testid="equipment-lane-mark"
-                    data-cue-id={mark.cueId}
-                    aria-label={String(mark.cueId)}
-                    className={clsx(
-                        "absolute top-0 size-8 -translate-x-1/2 rotate-45",
-                        FILL[mark.holds],
-                        mark.cueId === picked && "ring-accent ring-2",
-                    )}
-                    style={{ left: xOf(mark.count) }}
-                    onPointerDown={(e) => {
-                        e.stopPropagation();
-                        pick(mark.cueId);
-                    }}
+                    mark={mark}
+                    left={xOf(mark.count)}
+                    picked={mark.cueId === picked}
+                    label={nameOf(mark.cueId)}
+                    onPick={() => pick(mark.cueId)}
+                    onMenu={(x, y) => onMenu(mark.cueId, x, y)}
                 />
             ))}
         </div>
+    );
+}
+
+/**
+ * A cue's mark in the folded lane: a diamond in what it sets' color. A click picks the cue, and a
+ * right-click or a long press opens its menu, as on a bar. A finger gets the timeline's 44 px
+ * target around it.
+ */
+function SummaryMarkButton({
+    mark,
+    left,
+    picked,
+    label,
+    onPick,
+    onMenu,
+}: {
+    mark: LaneData["marks"][number];
+    left: number;
+    picked: boolean;
+    label: string;
+    onPick: () => void;
+    onMenu: (clientX: number, clientY: number) => void;
+}) {
+    const longPress = useLongPressMenu(onMenu);
+    return (
+        <button
+            type="button"
+            data-testid="equipment-lane-mark"
+            data-cue-id={mark.cueId}
+            data-timeline-interactive=""
+            aria-label={label}
+            title={label}
+            className="touch:size-44 absolute top-4 flex size-16 -translate-x-1/2 -translate-y-1/2 touch-none items-center justify-center"
+            style={{ left }}
+            {...longPress.handlers}
+            onPointerDown={(e) => {
+                e.stopPropagation();
+                onPick();
+                longPress.start(e);
+            }}
+        >
+            <span
+                className={clsx(
+                    "size-8 rotate-45",
+                    FILL[mark.holds],
+                    picked && "ring-accent ring-2",
+                )}
+            />
+        </button>
     );
 }
 

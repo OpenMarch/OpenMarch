@@ -62,7 +62,6 @@ import {
     MENU_CONTENT_CLASS,
     POINT_MENU_PLACEMENT,
     MENU_ITEM_CLASS,
-    MENU_LABEL_CLASS,
     MENU_SEPARATOR_CLASS,
 } from "@/components/ui/popupClasses";
 

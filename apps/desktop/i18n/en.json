@@ -4200,12 +4200,11 @@
         },
         "lane": {
             "equipment": "Equipment",
-            "fold": "Fold the Equipment lane",
-            "unfold": "Show the Equipment lane's rows",
             "foldedCount": "{groups, plural, one {# group} other {# groups}} · {count}",
             "empty": "No equipment cues yet. Select performers, then right-click › Equipment.",
             "selectRow": "Select these performers",
             "selectPerformers": "Select its performers",
+            "markLabel": "{name}: {value}, {where}",
             "forCounts": "{count, plural, one {For # count} other {For # counts}}",
             "resize": "Drag to change how many counts it lasts",
             "hide": "Hide this lane",
@@ -4285,6 +4284,7 @@
         },
         "reason": {
             "paused": "Pause to change equipment",
+            "pausedSelect": "Pause to select by equipment",
             "noCount": "Move the playhead onto a count",
             "noCue": "Pick a cue in the Equipment lane first",
             "allIn": "The selected performers are already in this cue",

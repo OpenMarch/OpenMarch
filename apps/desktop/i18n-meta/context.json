@@ -3759,12 +3759,11 @@
     "cues.value.battery": "What a performer holds, shown on a bar in the timeline's Equipment lane: their drum.",
     "cues.value.none": "What a performer holds, shown on a bar in the timeline's Equipment lane: empty hands.",
     "cues.lane.equipment": "Heading of the timeline's Equipment lane: what performers hold over the show.",
-    "cues.lane.fold": "Button that folds the Equipment lane's rows into one summary row.",
-    "cues.lane.unfold": "Button that opens the folded Equipment lane into a row per group of performers.",
     "cues.lane.foldedCount": "Beside the folded Equipment lane's heading: how many groups of performers it has and how many performers in all. ICU plural.",
     "cues.lane.empty": "Shown in the empty Equipment lane: how to add the first cue. '›' means 'then the submenu'.",
     "cues.lane.selectRow": "Tooltip on a row's name in the Equipment lane: clicking it selects the performers in that row.",
     "cues.lane.selectPerformers": "Entry in a cue's menu in the Equipment lane: selects the performers the cue applies to.",
+    "cues.lane.markLabel": "Label read out for a diamond in the folded Equipment lane, which marks where a cue starts. {name} is who the cue is for (such as 'Rifles' or 'G6–G10'), {value} what it gives them (such as 'Sabre'), {where} where it is (such as 'Page 3 count 4').",
     "cues.lane.forCounts": "Entries under 'Make cue momentary' in a cue's menu: how many counts the cue applies before the performers go back. ICU plural.",
     "cues.item.flag": "Name of a piece of equipment a performer can hold: a color guard flag (6 ft pole with a silk). Shown in the field menu's Equipment submenu, the timeline's Equipment lane and the command palette ('Equipment: Flag').",
     "cues.plural.flag": "Plural of 'Flag' (a color guard flag (6 ft pole with a silk)): everyone holding one. Used in 'Select Flags' and as a cue's name in the timeline's Equipment lane.",
@@ -4040,5 +4039,6 @@
     "assets.errors.remove": "Error toast when removing the unused imported files fails.",
     "assets.errors.credits": "Error toast when saving an imported file's license and author fails.",
     "props.modelMissing": "Note in a prop's edit panel when the imported 3D model it names isn't in the show any more (it was removed, then an undo brought the prop back). The prop draws as a plain block.",
-    "props.imported.manage": "Small link under the Props panel's Imported group that opens the Assets panel, where imported models' size, use and license are shown."
+    "props.imported.manage": "Small link under the Props panel's Imported group that opens the Assets panel, where imported models' size, use and license are shown.",
+    "cues.reason.pausedSelect": "Why the Select-by-equipment entries are greyed out while the show plays: they select whoever holds something at the playhead, which moves while playing."
 }

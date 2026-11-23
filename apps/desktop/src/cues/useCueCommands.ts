@@ -1,15 +1,9 @@
-import { useMemo } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useEffect, useMemo } from "react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { equipmentCatalog, whoHasValue } from "@openmarch/core";
-import { db } from "@/global/database/db";
-import {
-    editCues,
-    deleteCues,
-    updateCues,
-    type DatabaseCue,
-} from "@/db-functions/cues";
-import { cueKeys } from "@/hooks/queries/useCues";
+import type { DatabaseCue } from "@/db-functions/cues";
+import { editCuesMutationOptions, type CueEdit } from "@/hooks/queries/useCues";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { isPerformer } from "@/global/classes/Marcher";
 import { useTimingObjects } from "@/hooks/useTimingObjects";
@@ -17,9 +11,8 @@ import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import { setLaneShown, type TimelineLaneId } from "@/timeline/timelineLanes";
 import { activeFieldEditor } from "@/field/editor/activeFieldEditor";
-import { conToastError } from "@/utilities/utils";
 import { useShowCues, type EditorCues } from "./useShowCues";
-import { useCueSelectionStore } from "./cueSelectionStore";
+import { pickedCueIn, useCueSelectionStore } from "./cueSelectionStore";
 import {
     describePerformers,
     type LabelHolders,
@@ -30,8 +23,10 @@ import {
     equipmentCuesOn,
     equipmentValueOfChoice,
     heldValueAt,
+    planCueChange,
     planEquipmentSet,
     equipmentSetIsEmpty,
+    type CueChange,
     withRecent,
     type EquipmentChoice,
 } from "./equipment";
@@ -98,16 +93,29 @@ export interface CueCommands {
     readonly deleteCue: () => void;
 }
 
-/** Moves cue `cueId` to `beatId` and, when given, sets its length: one undo step (lane drags). */
-export function writeCueDrag(
+/** A cue's name for these performers, after its performers change: who they are. */
+export const relabelIn =
+    (show: EditorCues, words: LabelWords) => (ids: readonly number[]) =>
+        describePerformers({ ids, marchers: show.marchers, words });
+
+/**
+ * The one write that moves cue `cueId` or changes how long it lasts (lane drags, Move cue to
+ * playhead, Make cue lasting or momentary): its performers win on the count it lands on
+ * (`planCueChange`). Null when nothing changes.
+ */
+export function cueChangeEdit(
+    show: EditorCues,
     cueId: number,
-    change: { beatId?: number; length?: number },
-    onError: (error: unknown) => void,
-): Promise<void> {
-    return updateCues({ db, modifiedCues: [{ id: cueId, ...change }] }).then(
-        () => undefined,
-        onError,
-    );
+    change: CueChange,
+    words: LabelWords,
+): CueEdit | null {
+    const plan = planCueChange({
+        cues: show.cues,
+        cueId,
+        change,
+        relabelFor: relabelIn(show, words),
+    });
+    return equipmentSetIsEmpty(plan) ? null : plan;
 }
 
 /**
@@ -123,6 +131,18 @@ export function useCueCommands(): CueCommands {
     const beats = useTimingObjects()?.beats;
     const playheadBeat = useTimelineSelectionStore((s) => s.playheadBeat);
     const pickedId = useCueSelectionStore((s) => s.cueId);
+    const pickedAt = useCueSelectionStore((s) => s.createdAt);
+    const { mutate: edit } = useMutation(editCuesMutationOptions(queryClient));
+    // A pick that names no cue here (deleted, undone, or from another file: ids are per file) is
+    // dropped, so a command never acts on a cue nobody picked
+    const stalePick =
+        show !== null &&
+        pickedId !== null &&
+        pickedCueIn(show.cues, { cueId: pickedId, createdAt: pickedAt }) ===
+            null;
+    useEffect(() => {
+        if (stalePick) useCueSelectionStore.getState().pick(null);
+    }, [stalePick]);
     const marchers = useMemo(
         () => (selected ?? []).filter(isPerformer),
         [selected],
@@ -157,16 +177,11 @@ export function useCueCommands(): CueCommands {
                 name: t(`cues.plural.${itemKeyOf(item.id)}`),
                 ids: holders([item.id]),
             }));
-        const refresh = () =>
-            queryClient.invalidateQueries({ queryKey: cueKeys.all() });
-        const fail = (key: string) => (error: unknown) =>
-            conToastError(t(key), error);
 
         const onBeat = show && beat ? equipmentCuesOn(show.cues, beat.id) : [];
-        const picked =
-            pickedId !== null
-                ? (show?.cues.find((c) => c.id === pickedId) ?? null)
-                : null;
+        const picked = show
+            ? pickedCueIn(show.cues, { cueId: pickedId, createdAt: pickedAt })
+            : null;
         const cue = picked ?? (onBeat.length === 1 ? onBeat[0] : null);
         const edited = (edit: "add" | "remove") =>
             cue ? editedPerformers(cue, selectedIds, edit) : null;
@@ -203,26 +218,14 @@ export function useCueCommands(): CueCommands {
                             words,
                             holders: labelHolders(),
                         }),
-                    relabelFor: (ids) =>
-                        describePerformers({
-                            ids,
-                            marchers: show.marchers,
-                            words,
-                        }),
+                    relabelFor: relabelIn(show, words),
                 });
                 if (equipmentSetIsEmpty(plan)) return;
                 rememberChoice(choice);
                 // A first Equipment cue makes its lane appear, even one hidden before (#992)
                 if (!show.cues.some((c) => c.type === "equipment"))
                     revealLane("equipment");
-                void editCues({
-                    db,
-                    cueIds: new Set(plan.deletedCueIds),
-                    modifiedCues: plan.modifiedCues,
-                    newCues: plan.newCues,
-                })
-                    .then(refresh)
-                    .catch(fail("cues.errors.create"));
+                edit(plan);
             },
             holders,
             selectHolding: (values) => {
@@ -230,53 +233,56 @@ export function useCueCommands(): CueCommands {
             },
             cue,
             edited,
-            editPerformers: (edit) => {
-                const next = edited(edit);
+            editPerformers: (change) => {
+                const next = edited(change);
                 if (!cue || !next) return;
-                const write =
+                edit(
                     next.length === 0
-                        ? deleteCues({ db, cueIds: new Set([cue.id]) })
-                        : updateCues({
-                              db,
+                        ? {
+                              deletedCueIds: [cue.id],
+                              modifiedCues: [],
+                              newCues: [],
+                          }
+                        : {
+                              deletedCueIds: [],
                               modifiedCues: [
                                   {
                                       id: cue.id,
                                       marcherIds: next,
                                       // The old label named who was picked then
                                       label: show
-                                          ? describePerformers({
-                                                ids: next,
-                                                marchers: show.marchers,
-                                                words,
-                                            })
+                                          ? relabelIn(show, words)(next)
                                           : cue.label,
                                   },
                               ],
-                          });
-                void write.then(refresh).catch(fail("cues.errors.update"));
+                              newCues: [],
+                          },
+                );
             },
             setLength: (length) => {
-                if (!cue || cue.length === length) return;
-                void updateCues({ db, modifiedCues: [{ id: cue.id, length }] })
-                    .then(refresh)
-                    .catch(fail("cues.errors.update"));
+                if (!cue || !show) return;
+                const plan = cueChangeEdit(show, cue.id, { length }, words);
+                if (plan) edit(plan);
             },
             moveToPlayhead: () => {
-                if (!cue || !beat || cue.beatId === beat.id) return;
-                void updateCues({
-                    db,
-                    modifiedCues: [{ id: cue.id, beatId: beat.id }],
-                })
-                    .then(refresh)
-                    .catch(fail("cues.errors.update"));
+                if (!cue || !beat || !show) return;
+                const plan = cueChangeEdit(
+                    show,
+                    cue.id,
+                    { beatId: beat.id },
+                    words,
+                );
+                if (plan) edit(plan);
             },
             deleteCue: () => {
                 if (!cue) return;
                 useCueSelectionStore.getState().pick(null);
-                void deleteCues({ db, cueIds: new Set([cue.id]) })
-                    .then(refresh)
-                    .catch(fail("cues.errors.delete"));
+                edit({
+                    deletedCueIds: [cue.id],
+                    modifiedCues: [],
+                    newCues: [],
+                });
             },
         };
-    }, [show, idsKey, beats, playheadBeat, pickedId, queryClient, t]);
+    }, [show, idsKey, beats, playheadBeat, pickedId, pickedAt, edit, t]);
 }

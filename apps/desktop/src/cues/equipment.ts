@@ -142,6 +142,67 @@ export const equipmentSetIsEmpty = (plan: EquipmentSet): boolean =>
     plan.deletedCueIds.length === 0 &&
     plan.newCues.length === 0;
 
+/** A plan that changes nothing yet. */
+const emptyPlan = (): EquipmentSet => ({
+    modifiedCues: [],
+    deletedCueIds: [],
+    newCues: [],
+});
+
+/**
+ * Where `marcherIds` land on `beatId` with a cue of `value` and kind `length` (fork #992): a
+ * performer is in at most one Equipment cue of a kind on a beat, so they leave every other cue of
+ * that kind there (a cue left with nobody is deleted), written into `plan`. Returns the cue of that
+ * value they join, the newest when there are two (the compile's winner), or null when there's none.
+ * `except` (a cue being moved) is left out of the beat's cues.
+ */
+function landOn({
+    cues,
+    beatId,
+    length,
+    value,
+    marcherIds,
+    except,
+    relabelFor,
+    plan,
+}: {
+    cues: readonly DatabaseCue[];
+    beatId: number;
+    length: number | null;
+    value: string;
+    marcherIds: readonly number[];
+    except?: number;
+    relabelFor: (marcherIds: readonly number[]) => string | null;
+    plan: EquipmentSet;
+}): DatabaseCue | null {
+    const sameKind = cues.filter(
+        (c) =>
+            c.id !== except &&
+            c.type === "equipment" &&
+            c.beatId === beatId &&
+            c.length === length,
+    );
+    const target = sameKind
+        .filter((c) => c.value === value)
+        .reduce<DatabaseCue | null>(
+            (newest, c) => (newest === null || c.id > newest.id ? c : newest),
+            null,
+        );
+    for (const cue of sameKind) {
+        if (cue === target) continue;
+        const rest = editedPerformers(cue, marcherIds, "remove");
+        if (rest === null) continue;
+        if (rest.length === 0) plan.deletedCueIds.push(cue.id);
+        else
+            plan.modifiedCues.push({
+                id: cue.id,
+                marcherIds: rest,
+                label: relabelFor(rest),
+            });
+    }
+    return target;
+}
+
 /**
  * Setting `choice` for `marcherIds` on `beatId` replaces what they hold there (fork #992): a
  * performer is in at most one Equipment cue of a kind (lasting, or momentary of one length) on a
@@ -170,40 +231,18 @@ export function planEquipmentSet({
     /** Null for a lasting cue (what the Equipment commands make) */
     length?: number | null;
 }): EquipmentSet {
-    const plan: EquipmentSet = {
-        modifiedCues: [],
-        deletedCueIds: [],
-        newCues: [],
-    };
+    const plan = emptyPlan();
     if (marcherIds.length === 0) return plan;
     const value = equipmentValueOfChoice(choice);
-    const sameKind = cues.filter(
-        (c) =>
-            c.type === "equipment" &&
-            c.beatId === beatId &&
-            c.length === length,
-    );
-    // The newest wins when two cues on a count cover one performer (compile), so join that one
-    const target = sameKind
-        .filter((c) => c.value === value)
-        .reduce<DatabaseCue | null>(
-            (newest, c) => (newest === null || c.id > newest.id ? c : newest),
-            null,
-        );
-
-    for (const cue of sameKind) {
-        if (cue === target) continue;
-        const rest = editedPerformers(cue, marcherIds, "remove");
-        if (rest === null) continue;
-        if (rest.length === 0) plan.deletedCueIds.push(cue.id);
-        else
-            plan.modifiedCues.push({
-                id: cue.id,
-                marcherIds: rest,
-                label: relabelFor(rest),
-            });
-    }
-
+    const target = landOn({
+        cues,
+        beatId,
+        length,
+        value,
+        marcherIds,
+        relabelFor,
+        plan,
+    });
     if (target) {
         const joined = editedPerformers(target, marcherIds, "add");
         if (joined)
@@ -222,5 +261,67 @@ export function planEquipmentSet({
             }).map((c) => (length === null ? c : { ...c, length })),
         );
     }
+    return plan;
+}
+
+/** What moving a cue changes: the beat it's on, and how long it lasts (null: lasting). */
+export interface CueChange {
+    readonly beatId?: number;
+    readonly length?: number | null;
+}
+
+/**
+ * Moving cue `cueId` to another count, or changing how long it lasts (fork #992): its performers
+ * win where it lands, as setting equipment there would. They leave the other Equipment cues of the
+ * new kind on that count (a cue left with nobody is deleted), and a cue of the same value there is
+ * merged into this one, which keeps its id. One write, so one undo step. Nothing when nothing
+ * changes or the cue isn't there. Other types of cue only move.
+ */
+export function planCueChange({
+    cues,
+    cueId,
+    change,
+    relabelFor,
+}: {
+    cues: readonly DatabaseCue[];
+    cueId: number;
+    change: CueChange;
+    /** The label for a cue now holding these performers */
+    relabelFor: (marcherIds: readonly number[]) => string | null;
+}): EquipmentSet {
+    const plan = emptyPlan();
+    const cue = cues.find((c) => c.id === cueId);
+    if (!cue) return plan;
+    const beatId = change.beatId ?? cue.beatId;
+    const length = change.length === undefined ? cue.length : change.length;
+    if (beatId === cue.beatId && length === cue.length) return plan;
+    const fields: ModifiedCueArgs = {
+        id: cue.id,
+        ...(beatId !== cue.beatId && { beatId }),
+        ...(length !== cue.length && { length }),
+    };
+    if (cue.type !== "equipment") {
+        plan.modifiedCues.push(fields);
+        return plan;
+    }
+    const target = landOn({
+        cues,
+        beatId,
+        length,
+        value: cue.value,
+        marcherIds: cue.marcherIds,
+        except: cue.id,
+        relabelFor,
+        plan,
+    });
+    if (target) {
+        const merged = editedPerformers(cue, target.marcherIds, "add");
+        plan.deletedCueIds.push(target.id);
+        plan.modifiedCues.push(
+            merged
+                ? { ...fields, marcherIds: merged, label: relabelFor(merged) }
+                : fields,
+        );
+    } else plan.modifiedCues.push(fields);
     return plan;
 }

@@ -45,13 +45,20 @@ function useSetEquipment(
     );
 }
 
-/** Why setting equipment (or selecting by it) can't run now, or undefined when it can. */
+/**
+ * Why setting equipment (or, with `select`, selecting by it) can't run now, or undefined when it
+ * can. Selecting changes nothing, so it has its own reason while playing.
+ */
 function setReason(
     commands: CueCommands,
     isPlaying: boolean,
-    needsSelection = true,
+    select = false,
 ): string | undefined {
-    if (isPlaying) return tolgee.t("cues.reason.paused");
+    if (isPlaying)
+        return tolgee.t(
+            select ? "cues.reason.pausedSelect" : "cues.reason.paused",
+        );
+    const needsSelection = !select;
     if (needsSelection && commands.selectedIds.length === 0)
         return tolgee.t("actions.shape.noMarchersSelected");
     if (commands.count === null) return tolgee.t("cues.reason.noCount");
@@ -118,7 +125,7 @@ export function useCueActionHandlers() {
         (id) => commands.selectHolding(SELECT_VALUES.get(id) ?? []),
         {
             enabled: !isPlaying && commands.count !== null,
-            disabledReason: setReason(commands, isPlaying, false),
+            disabledReason: setReason(commands, isPlaying, true),
         },
     );
     const cueWhy = cueReason(commands, isPlaying);

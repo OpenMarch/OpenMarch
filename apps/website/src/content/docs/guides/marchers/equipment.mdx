@@ -102,14 +102,14 @@ The Equipment lane appears under the moves as soon as the show has an equipment 
 - Performers who share the same changes share a row, named after who they are ("Rifles", "Color Guard", "G6–G10"). When everyone changes together the lane is one row; it gets a row for each group that differs. Performers who never change aren't in the lane.
 - A change that lasts is a bar up to that performer's next change. A change for a few counts is a rounded bar. A dashed bar is their own instrument before any change.
 - Click a row's name to select its performers.
-- Click the arrow by <Ui k="cues.lane.equipment" plain /> to fold the lane into one row that shows how many performers hold each thing over the show, with a diamond where each change happens. Click it again to open the rows.
+- Click the arrow by <Ui k="cues.lane.equipment" plain /> (<Ui k="cues.lane.collapseRows" plain />) to collapse the lane into one row that shows how many performers hold each thing over the show, with a diamond where each change happens. Click a diamond to pick its change, or right-click it (press and hold on a tablet) for the same menu as its bar. Click the arrow again (<Ui k="cues.lane.expandRows" plain />) to see the rows.
 - Click the eye-slash button by the lane's name to hide it, or right-click the name and choose <Ui k="cues.lane.hideNamed" values={{ lane: "Equipment" }} plain />. Tick it in the <Ui k="cues.lane.lanes" plain /> list to bring it back.
 
 ## Move a change, or change how long it lasts
 
-- **Move it:** drag its bar sideways. It moves in whole counts, and near a page line it snaps to it; hold <Kbd keys="Alt" gesture="drag" /> to drag it freely. A change made for performers in several rows moves in all of them, since it's one cue.
+- **Move it:** drag its bar sideways. It moves in whole counts, and near a page's flag or a measure it snaps to it; hold <Kbd keys="Alt" gesture="drag" /> to turn that snapping off (it still moves in whole counts). A change made for performers in several rows moves in all of them, since it's one cue. On its new count it replaces any other change made the same way for those performers, and a change to the same item there becomes part of it.
 - **Change how long it lasts:** a change for a few counts (a rounded bar) has an end you can drag. A change that lasts until the next one has no end to drag.
-- **Without dragging:** move the playhead to the new count, then choose <Ui k="actions.cues.moveToPlayhead" /> from the bar's menu or the command palette. That's also the way on a tablet when a drag is fiddly.
+- **Without dragging:** move the playhead to the new count, then choose <Ui k="actions.cues.moveToPlayhead" /> from the bar's menu or the command palette. It replaces and joins changes on that count the same way. That's also the way on a tablet when a drag is fiddly.
 
 <Media
   id="marchers-equipment-drag"
