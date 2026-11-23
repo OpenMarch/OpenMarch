@@ -671,6 +671,12 @@ export interface ToolKind<P> {
      */
     fromFrame(frame: ShapeFrame, n: number, env: ToolEnv): P;
     /**
+     * The shape laid out for `n` marchers in the space it takes with `from` (a paste onto another
+     * number of marchers, #961; owner 2026-11-22): its settings, center, turn and flip kept, its
+     * spacing whatever that takes. Absent: its own params are laid out for the count.
+     */
+    atCount?(params: P, from: number, n: number, env: ToolEnv): P;
+    /**
      * The shape its picture shows (`shapePreview`), when filling a square with {@link fromFrame}
      * wouldn't read as the kind: the Line's zigzag and the Curve's wave (owner, 2026-10-31)
      */

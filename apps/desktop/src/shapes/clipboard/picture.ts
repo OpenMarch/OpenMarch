@@ -4,7 +4,7 @@ import { groupTool } from "../group/groupTool";
 import { pivotByHand } from "../frame/gestures";
 import { leastTravelOnto } from "../leastTravel";
 import { PLACED_KINDS, placedOf, type PlacedBox } from "../placed/placedBox";
-import type { AnyToolKind, ToolKind } from "../tool/toolKind";
+import type { AnyToolKind, ToolEnv, ToolKind } from "../tool/toolKind";
 import type { GroupParams } from "../group/groupGeometry";
 import type { ShapeContext, XY } from "../types";
 
@@ -333,19 +333,42 @@ export function standingOnSpots(
     return kept;
 }
 
+/** What a kind lays a pasted shape out with: the field's half-step grid, snapping on */
+function pasteEnv(stepPx: number, ctx: ShapeContext | undefined): ToolEnv {
+    const half = stepPx / 2;
+    return {
+        stepPx,
+        snap: true,
+        constrain: false,
+        gridSnap:
+            ctx?.snapPoint ??
+            (({ x, y }) => ({
+                x: Math.round(x / half) * half,
+                y: Math.round(y / half) * half,
+            })),
+        hitRadius: 0,
+    };
+}
+
 /**
- * A copied shape laid out for `marchers`: centered on them by the middle of its spots where it has
- * them, since a frame's center can sit off them (7 on a circle) and pasting again onto marchers
- * standing in it would move it; where it was copied for a paste `inPlace`
+ * A copied shape laid out for `marchers`: in the space it took for the `copied` marchers where
+ * its kind can (a box or a circle, owner 2026-11-22), from its own numbers otherwise. Centered on them
+ * by the middle of its spots where it has them, since a frame's center can sit off them (7 on a
+ * circle) and pasting again onto marchers standing in it would move it; where it was copied for
+ * a paste `inPlace`.
  */
 function planShape(
-    { kind, params }: { kind: AnyToolKind; params: unknown },
+    { kind, params: copiedParams }: { kind: AnyToolKind; params: unknown },
+    copied: number,
     marchers: readonly AssignMarcher[],
     stepPx: number,
     inPlace: boolean,
     ctx: ShapeContext | undefined,
 ): PastePlan {
     const n = marchers.length;
+    const params =
+        kind.atCount?.(copiedParams, copied, n, pasteEnv(stepPx, ctx)) ??
+        copiedParams;
     const frame = kind.frameOf(params, n);
     const spots = ctx ? kind.shape.generate(params, n, ctx) : [];
     const by = shift(
@@ -377,8 +400,9 @@ function planShape(
  * What pasting `picture` onto `marchers` opens (#961, owner 2026-11-15). The preview starts
  * centered on the receiving marchers, or where it was copied for a paste `inPlace`.
  *
- * - A **shape** keeps its kind, spacing and settings and is laid out for the receiving count, as
- *   if it had been drawn with that many selected.
+ * - A **shape** keeps its kind and settings and is laid out for the receiving count. A box or a
+ *   circle keeps the space it took, its spacing whatever that takes (owner 2026-11-22: a circle of
+ *   15 pasted onto 8 is as big). A line, arc or curve is laid out between its own ends.
  * - **Loose dots** (and a group, whose spots have no rule either) only fill spots. With fewer
  *   marchers than dots, the dots that give the shortest total walk are used; with more, the
  *   marchers with the shortest total walk take the dots and the rest are left where they are.
@@ -416,7 +440,14 @@ export function planPaste({
     const read = readShape(picture, stepPx, kinds, asPositions);
 
     if (read && read.kind !== groupTool)
-        return planShape(read, marchers, stepPx, inPlace, ctx);
+        return planShape(
+            read,
+            picture.dots.length,
+            marchers,
+            stepPx,
+            inPlace,
+            ctx,
+        );
 
     // Loose dots: the same spot in steps on a field with another step size
     const copied = sameStep

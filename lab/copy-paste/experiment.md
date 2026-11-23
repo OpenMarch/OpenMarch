@@ -26,8 +26,10 @@ marchers you have selected into the copied formation.
 - Select the same number of other marchers and paste (Ctrl/Cmd+V). The box
   appears centered on them and nobody moves yet. Drag it where you want it,
   turn or flip it, then press Enter. Escape throws it away.
-- Paste the box onto more or fewer marchers. It keeps its spacing and is
-  laid out for the new count: a 4 × 4 box pasted onto 12 marchers is 4 × 3.
+- Paste the box onto more or fewer marchers. It keeps the space it took up
+  exactly, and its spacing changes to fit, even off the half steps: a 4 × 4
+  box pasted onto 12 marchers is a box of 12 just as wide and deep. A circle
+  stays the same size too.
 - Select marchers who are not in a shape and copy them. Paste them onto the
   same number, then onto fewer, then onto more. With fewer, the nearest
   spots are used. With more, the nearest marchers take the spots and the

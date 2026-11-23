@@ -292,7 +292,7 @@ test("Copy right after Place copies the box, and pasting it again onto the same 
         .toEqual(asPositions(HOME.slice(0, 4)));
 });
 
-test("a box pasted onto fewer marchers is laid out for them with its spacing kept, and Escape discards the preview", async ({
+test("a box pasted onto fewer marchers is laid out for them as wide and deep as the copy, and Escape discards the preview", async ({
     show,
 }) => {
     const { page } = show;
@@ -305,16 +305,20 @@ test("a box pasted onto fewer marchers is laid out for them with its spacing kep
     await expect(preview(page)).toBeVisible();
     const spots = sorted((await shapeOverlay(page))!.spots);
     expect(spots).toHaveLength(3);
-    // The same interval between neighbors as the box copied
-    const gap = boxSpots[2].x - boxSpots[0].x;
-    expect(gap).toBeGreaterThan(0);
-    // Two files still, the same distance apart; the short rank's one marcher stands centered
-    const xs = spots.map((s) => s.x);
-    expect(Math.abs(xs[2] - xs[0] - gap)).toBeLessThan(CLOSE);
-    expect(Math.abs(xs[1] - (xs[0] + xs[2]) / 2)).toBeLessThan(CLOSE);
-    const ys = [...new Set(spots.map((s) => s.y))];
-    expect(ys).toHaveLength(2);
-    expect(Math.abs(Math.abs(ys[1] - ys[0]) - gap)).toBeLessThan(CLOSE);
+    // The same space as the box copied (owner 2026-11-22): as wide and as deep
+    const extent = (points: readonly Point[]) => ({
+        width:
+            Math.max(...points.map((p) => p.x)) -
+            Math.min(...points.map((p) => p.x)),
+        depth:
+            Math.max(...points.map((p) => p.y)) -
+            Math.min(...points.map((p) => p.y)),
+    });
+    const was = extent(boxSpots);
+    expect(was.width).toBeGreaterThan(0);
+    const now = extent(spots);
+    expect(Math.abs(now.width - was.width)).toBeLessThan(CLOSE);
+    expect(Math.abs(now.depth - was.depth)).toBeLessThan(CLOSE);
 
     await page.keyboard.press("Escape");
     await expect(preview(page)).toBeHidden();
@@ -517,7 +521,7 @@ test("the Clipboard card shows what is copied and how it fits the selection", as
     await blur(page);
     await page.keyboard.press("Escape");
     await expect(card.getByTestId("clipboard-fit")).toHaveText(
-        "Pastes onto any number of marchers, keeping its spacing",
+        "Pastes onto any number of marchers, keeping its size",
     );
     await select(page, [5, 6, 7]);
     await expect(card.getByTestId("clipboard-fit")).toHaveText(

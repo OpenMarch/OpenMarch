@@ -644,7 +644,10 @@ adds no table and changes no recipe: a paste is an ordinary placement.
    names a marcher. A stored value with another version, or that doesn't read, is ignored.
 3. **Pasting opens the shape host's open shape** on the marchers selected, so Enter places it
    through `writePlacement` as one undo step and Escape discards it. A shape is laid out for the
-   receiving count by its kind (`generate(params, n)`), which keeps its intervals. Dots have no
+   receiving count by its kind (`generate(params, n)`). A kind with `ToolKind.atCount` (box and
+   circle, owner 2026-11-22) first refits its params to keep the space it took for the copied
+   count, its intervals whatever that takes; other kinds keep their own numbers (a line its
+   points). Dots have no
    rule, so they only fill spots: they open as the group kind, and are placed as plain positions
    with **no recipe** (`ToolKind.loose`, `ShapePlacement.plain`). A copied group is placed as a
    group. With fewer marchers than dots the dots of least travel are used; with more, the

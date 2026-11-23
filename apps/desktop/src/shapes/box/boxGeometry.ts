@@ -715,6 +715,68 @@ function drawnLayout(
 }
 
 /**
+ * A box in Files laid out for `n` marchers in a frame `width` × `depth`, kept exactly (a paste
+ * onto another number of marchers, #961; owner 2026-11-22): the file count picked as a drag over
+ * that frame would pick it, starting from the box's own, its layout family, stagger and turn kept,
+ * and each interval its side's length over its gaps, even off the half steps. A frame with both
+ * width and depth keeps both: when that count would leave a single rank or file, the count whose
+ * block is two or more each way and whose intervals come nearest each other is used instead. An
+ * axis with no extent keeps its interval.
+ */
+export function filesAtCount(
+    p: BoxParams,
+    { width, depth }: FrameSize,
+    n: number,
+    env: ToolEnv,
+): BoxParams {
+    const d = boxDistribution(p);
+    if (d.mode !== "files") throw new Error("Not in Files");
+    const drawn = drawnLayout(width, depth, n, env, p);
+    // Short back keeps its own settings (by file or by rank) at the new file count
+    const withFiles = (files: number): BoxParams => ({
+        ...p,
+        files,
+        distribution: {
+            ...d,
+            layout:
+                d.layout.family === "shortBack" ||
+                d.layout.family !== drawn.distribution.layout.family
+                    ? { ...d.layout, files }
+                    : { ...drawn.distribution.layout, files },
+        },
+    });
+    let next = withFiles(drawn.distribution.layout.files);
+    const flat = (q: BoxParams) => {
+        const block = boxBlock(q, n);
+        return (width > 0 && block.across < 2) || (depth > 0 && block.deep < 2);
+    };
+    if (flat(next)) {
+        let best: { params: BoxParams; off: number } | null = null;
+        for (let files = 2; files <= n; files++) {
+            const q = withFiles(files);
+            if (flat(q)) continue;
+            const block = boxBlock(q, n);
+            const off = Math.abs(
+                Math.log(
+                    width / (block.across - 1) / (depth / (block.deep - 1)),
+                ),
+            );
+            if (!best || off < best.off - 1e-9) best = { params: q, off };
+        }
+        if (best) next = best.params;
+    }
+    const block = boxBlock(next, n);
+    return {
+        ...next,
+        across:
+            width > 0 && block.across > 1
+                ? width / (block.across - 1)
+                : p.across,
+        deep: depth > 0 && block.deep > 1 ? depth / (block.deep - 1) : p.deep,
+    };
+}
+
+/**
  * A box filling `frame`, as if drawn over it: the files suit the frame's proportions and the
  * intervals spread the marchers edge to edge in half steps, turned and flipped like the frame
  */
