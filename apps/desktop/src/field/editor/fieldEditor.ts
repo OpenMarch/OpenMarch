@@ -203,8 +203,10 @@ export type FieldEditorPorts = {
     /** Draws item `id` at this size and turn while a handle drags it; null draws it as stored. */
     previewItem?(id: number, size: ItemSize | null): void;
     /**
-     * Saves item `id`'s new size and turn at the playhead. Resolves "saved"
-     * once the field can draw it, or "refused" when nothing was saved.
+     * Saves item `id`'s new size and turn at the playhead, and its new center
+     * when the resize moved it (`size.center`), as a drop of the item there, in
+     * the same edit. Resolves "saved" once the field can draw it, or "refused"
+     * when nothing was saved.
      */
     saveItem?(id: number, size: ItemSize): Promise<DropResult>;
     /** A point snapped as a marcher's coordinates are (the prop tool's corners). */
@@ -717,6 +719,11 @@ export class FieldEditor {
      */
     private pending: ReadonlyMap<number, FieldPoint> | null = null;
     private drops = 0;
+    /**
+     * The last handle gesture started on each item: a save that settles after another one started
+     * on the same item leaves that one's size drawn.
+     */
+    private readonly itemTransforms = new Map<number, object>();
     /** Where the marchers being dragged are drawn, or null with no drag. */
     private live: readonly MarcherPosition[] | null = null;
     private typed: TypedRotation | null = null;
@@ -1984,15 +1991,21 @@ export class FieldEditor {
 
     /**
      * Resizing or turning the selected item from a handle. Drawn at the size
-     * given until its save settles, as a drop's marchers are.
+     * given, and at its new center when the resize moved it, until its save
+     * settles, as a drop's marchers are.
      */
     private startItemTransform(
         press: FieldPress,
         handle: HandleId,
         { id, frame }: { id: number; frame: ItemFrame },
     ): FieldGesture {
-        const preview = (size: ItemSize | null) =>
+        const transform = {};
+        this.itemTransforms.set(id, transform);
+        const preview = (size: ItemSize | null) => {
             this.ports.previewItem?.(id, size);
+            if (size?.center) this.showLive([{ id, ...size.center }]);
+            else if (this.live) this.endLive();
+        };
         const host = {
             show: (size: ItemSize) => preview(size),
             cancel: () => preview(null),
@@ -2000,16 +2013,36 @@ export class FieldEditor {
                 const unchanged =
                     size.width === frame.width &&
                     size.depth === frame.depth &&
-                    size.rotation === frame.rotation;
+                    size.rotation === frame.rotation &&
+                    !size.center;
                 if (unchanged || !this.ports.saveItem) {
                     preview(null);
                     return;
                 }
-                preview(size);
-                this.ports.saveItem(id, size).then(
-                    () => preview(null),
-                    () => preview(null),
-                );
+                this.ports.previewItem?.(id, size);
+                const center = size.center;
+                // A moved center is drawn as a drop's marchers are, till the save settles, and
+                // counts as a drop: only the last drop's answer clears what's pending
+                const drop = center ? ++this.drops : null;
+                if (center) {
+                    this.live = null;
+                    this.pending = withPositions(this.pending, [
+                        { id, ...center },
+                    ]);
+                    this.ports.showPositions(this.pending);
+                }
+                const settle = () => {
+                    if (this.itemTransforms.get(id) === transform) {
+                        this.itemTransforms.delete(id);
+                        this.ports.previewItem?.(id, null);
+                    }
+                    if (drop === null || drop !== this.drops) return;
+                    this.pending = null;
+                    this.ports.showPositions(
+                        this.live && withPositions(null, this.live),
+                    );
+                };
+                this.ports.saveItem(id, size).then(settle, settle);
             },
         };
         const keys = this.keysFor(press.start);

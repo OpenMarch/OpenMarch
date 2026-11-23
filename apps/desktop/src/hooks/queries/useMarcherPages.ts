@@ -14,6 +14,7 @@ import {
     type TimelineNeighborPageRequest,
 } from "@/timeline/timelineCoordinateWrites";
 import { removePositionAtBeat } from "@/db-functions/timelinePointMoves";
+import type { DbTransaction } from "@/db-functions/types";
 import { showDroppedAtFlagToast } from "@/shapes/placed/leftOutToast";
 
 /**
@@ -58,8 +59,14 @@ export const moveMarchersInTargetMutationOptions = () => {
     return mutationOptions({
         // A drag over a window that crosses pages says what it passed through (UI-10), and one
         // that left marchers' later moves behind offers to move them too
-        mutationFn: ({ target, moves }: TimelineEditRequest) =>
-            moveMarchersAndOfferFollowUp({ target, moves }),
+        // `afterWrite`: app data saved in the same edit (a prop's size, with the move a resize gave it)
+        mutationFn: ({
+            target,
+            moves,
+            afterWrite,
+        }: TimelineEditRequest & {
+            afterWrite?: (tx: DbTransaction) => Promise<void>;
+        }) => moveMarchersAndOfferFollowUp({ target, moves, afterWrite }),
         onError: (e, variables) => {
             toastTimelineError(
                 e,

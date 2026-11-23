@@ -518,8 +518,12 @@ deletes the change. It joins undo history and repair like the cue tables.
   wins, eases in over the transition, beat delete cascades; in history and
   repair.
 - A footprint is **width** and **depth**; vertical size is **height**.
-- Independent of moves: a resize never needs a move, and dragging a move
-  doesn't carry its resizes.
+- Independent of moves: an Outline change is stored apart from the moves,
+  and dragging a move doesn't carry its resizes. On the field, a handle resizes as the selection
+  box scales marchers: the opposite side stays put, so the item's center moves
+  and is saved as a drop of it, in the same undo step as the Outline change.
+  With from center (Alt) the center stays and nothing moves; constrain ($mod)
+  keeps the proportions (owner, 2026-11-22).
 - Edited on Visuals mode's Items tab. A drag of an Outline in the 2D editor
   writes a geometry change at the playhead's count, the same data [26.7].
 - **Floor props** get a **rolls out** flag: as the Outline grows over a

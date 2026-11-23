@@ -76,9 +76,14 @@ describe("what each field drag honors", () => {
             { fine: "wholeDegrees", snaps: true },
         ],
         [
-            "a prop's side or corner: fine only",
+            "a prop's side or corner: as a scale's, fine, a kept ratio, from center, no snapping",
             () => new ItemResizeGesture(at(10, 10), frame, host, "se", keys()),
-            { fine: "fine", snaps: false },
+            {
+                fine: "fine",
+                constrain: "keepRatio",
+                fromCenter: "fromCenter",
+                snaps: false,
+            },
         ],
         [
             "a prop's rotate: whole degrees, snapping",

@@ -75,9 +75,10 @@ abstract class HandleGesture implements FieldGesture {
 /**
  * A corner scales each axis with the pointer and a middle handle scales one axis, and constrain
  * keeps the ratio while it's held. A box shape's ratio lock is the box's own: a plain selection
- * never reads it (#1037). Either scales from the center with from center. Nothing snaps.
+ * never reads it (#1037). Either scales from the center with from center. Nothing snaps. An
+ * item's handles read the same (`itemTransform.ts`).
  */
-const SCALE_HONORS: HonoredRoles = {
+export const SCALE_HONORS: HonoredRoles = {
     context: "field",
     fine: "fine",
     constrain: "keepRatio",

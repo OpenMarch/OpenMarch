@@ -198,7 +198,13 @@ Before the prop's first count, the panel says the prop is off the field, and you
 
 ## Resize and turn a prop on the field
 
-Click inside a prop's outline to select it. Drag a side or a corner handle to resize it, or the round handle to turn it, about its center. Like the panel, a resize or turn is saved at the playhead's count. Dragging the handles never moves the prop.
+Click inside a prop's outline to select it. Drag a side or a corner handle to resize it, as you would a group of marchers: the opposite side stays where it is, so the prop's center moves with the resize. Drag the round handle to turn it about its center. Like the panel, a resize or turn is saved at the playhead's count. A resize that moves the prop is saved like a drag of the prop, in the same undo step: on a later page the prop moves there during that page's move, and where a drag would be refused the resize is too. Hold <Kbd keys="Alt" gesture="drag" /> to resize it without moving it.
+
+Hold these keys while you drag a side or corner handle:
+
+- <Kbd keys="Alt" gesture="drag" /> resizes the prop about its center, so it doesn't move and is saved at the playhead's count alone.
+- <Kbd keys="Mod" gesture="drag" /> keeps the prop's proportions.
+- <Kbd keys="Shift" gesture="drag" /> resizes it slowly, for fine changes.
 
 <Media
   id="3d-props-handles"

@@ -122,22 +122,60 @@ async function selectRiser(page: Page) {
     return (await page.evaluate(() => window.fieldTest!.handles()))!;
 }
 
-test("resizes a prop from its side handle at the playhead, without moving it", async ({
+/** The riser as drawn, its center and size rounded to tenths. */
+async function riserNow(page: Page) {
+    const [riser] = await drawnItems(page);
+    const tenths = (value: number) => Math.round(value * 10) / 10;
+    return {
+        x: tenths(riser.x),
+        y: tenths(riser.y),
+        width: tenths(riser.width),
+        depth: tenths(riser.depth),
+    };
+}
+
+test("resizes a prop from its side handle with the opposite side put, in one undo step", async ({
+    show,
+}) => {
+    const handles = await selectRiser(show.page);
+    const { zoom } = (await readField(show.page)).viewport;
+    // A meter further out on the east side: the west side stays, so the center goes half a
+    // meter east
+    await dragFrom(show.page, handles.e, { x: PIXELS_PER_METER * zoom, y: 0 });
+    await waitForIdle(show.page);
+    const moved = {
+        x: Math.round((700 + PIXELS_PER_METER / 2) * 10) / 10,
+        y: 300,
+        width: 5,
+        depth: 2,
+    };
+    await expect.poll(() => riserNow(show.page)).toEqual(moved);
+    const saved = await show.query(
+        "SELECT beat_id, round(width, 1) AS width, depth FROM item_geometry",
+    );
+    expect(saved).toEqual([{ beat_id: 0, width: 5, depth: 2 }]);
+    await expectCanvasMatchesShow(show);
+    // One undo puts back both the size and where it stood
+    await show.page.keyboard.press("ControlOrMeta+z");
+    await expect
+        .poll(() => riserNow(show.page))
+        .toEqual({ x: 700, y: 300, width: 4, depth: 2 });
+    await expectCanvasMatchesShow(show);
+});
+
+test("resizes a prop about its center with Alt held, without moving it", async ({
     show,
 }) => {
     const handles = await selectRiser(show.page);
     const { zoom } = (await readField(show.page)).viewport;
     // A meter further out on the east side: a meter more on each side
+    await show.page.keyboard.down("Alt");
     await dragFrom(show.page, handles.e, { x: PIXELS_PER_METER * zoom, y: 0 });
+    await show.page.keyboard.up("Alt");
     await waitForIdle(show.page);
     await expect
-        .poll(async () => {
-            const [riser] = await drawnItems(show.page);
-            return Math.round(riser.width * 10) / 10;
-        })
-        .toBe(6);
-    const [riser] = await drawnItems(show.page);
-    expect([riser.x, riser.y, riser.depth]).toEqual([700, 300, 2]);
+        .poll(() => riserNow(show.page))
+        .toEqual({ x: 700, y: 300, width: 6, depth: 2 });
     const saved = await show.query(
         "SELECT beat_id, round(width, 1) AS width, depth FROM item_geometry",
     );
