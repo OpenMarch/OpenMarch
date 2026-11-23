@@ -13,6 +13,8 @@ import { useMutation } from "@tanstack/react-query";
 import { queryClient } from "@/App";
 import { db } from "@/global/database/db";
 import { invalidateByPage } from "@/hooks/queries/sharedInvalidators";
+import { conToastError } from "@/utilities/utils";
+import tolgee from "@/global/singletons/Tolgee";
 
 /**
  * A MarcherShape is StaticMarcherShape that is stored in the database and updates the database as it is modified.
@@ -266,6 +268,13 @@ export const useCreateMarcherShape = () => {
                 queryKey: shapePageKeys.all(),
             });
             invalidateByPage(queryClient, new Set([pageId]));
+        },
+        onError: (e, variables) => {
+            conToastError(
+                tolgee.t("inspector.shape.errorCreating"),
+                e,
+                variables,
+            );
         },
     });
 };

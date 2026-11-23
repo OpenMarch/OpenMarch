@@ -235,11 +235,24 @@ export default function CoordinateRoundingSettings() {
             "coordinateRounding.offsetEnabled",
             JSON.stringify(showReferencePoint),
         );
-        if (!showReferencePoint) {
-            handleReferencePointChange("X", 0);
-            handleReferencePointChange("Y", 0);
+        const { referencePointX, referencePointY } =
+            uiSettings.coordinateRounding ?? {};
+        // Clear rather than zero the offsets: with no Y reference point, rounding snaps
+        // to the drawn grid lines. Clear both in one write so neither is lost.
+        if (
+            !showReferencePoint &&
+            (referencePointX !== undefined || referencePointY !== undefined)
+        ) {
+            setUiSettings({
+                ...uiSettings,
+                coordinateRounding: {
+                    ...uiSettings.coordinateRounding,
+                    referencePointX: undefined,
+                    referencePointY: undefined,
+                },
+            });
         }
-    }, [handleReferencePointChange, showReferencePoint]);
+    }, [setUiSettings, showReferencePoint, uiSettings]);
 
     return (
         <ToolbarSection>

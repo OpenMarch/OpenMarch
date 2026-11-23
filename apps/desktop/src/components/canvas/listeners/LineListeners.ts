@@ -2,7 +2,6 @@ import MarcherLine from "@/global/classes/canvasObjects/MarcherLine";
 import CanvasListeners from "./CanvasListeners";
 import DefaultListeners from "./DefaultListeners";
 import { fabric } from "fabric";
-import OpenMarchCanvas from "@/global/classes/canvasObjects/OpenMarchCanvas";
 import Pathway from "@/global/classes/canvasObjects/Pathway";
 import Midpoint from "@/global/classes/canvasObjects/Midpoint";
 import Endpoint from "@/global/classes/canvasObjects/Endpoint";
@@ -35,8 +34,9 @@ export default class LineListeners
     /** Where (client px) the press that started the active line went down */
     private _lineStartedAt: { x: number; y: number } | null = null;
 
-    constructor({ canvas }: { canvas: OpenMarchCanvas }) {
-        super({ canvas });
+    initiateListeners = () => {
+        // Set up here rather than in the constructor: the previous listeners clean up
+        // after this object is constructed, and ending their lasso restores the marchers
         this.canvas.setCursor("crosshair");
         this.canvas.staticGridRef.hoverCursor = "crosshair";
 
@@ -44,9 +44,7 @@ export default class LineListeners
         this.canvas.getCanvasMarchers().forEach((canvasMarcher) => {
             canvasMarcher.makeUnselectable();
         });
-    }
 
-    initiateListeners = () => {
         this.canvas.on("mouse:down", this.handleMouseDown);
         this.canvas.on("mouse:move", this.handleMouseMove);
         this.canvas.on("object:modified", this.handleObjectModified);
@@ -54,8 +52,15 @@ export default class LineListeners
     };
 
     cleanupListeners = () => {
+        // Ctrl+Shift-drag can start a lasso here; restore what it suspended first
+        this.endInterruptedLasso();
         this.clearLine();
         this.clearPathwaysAndStaticMarchers();
+        // Undo the constructor even when the line was cancelled before it was finished
+        this.canvas.getCanvasMarchers().forEach((canvasMarcher) => {
+            canvasMarcher.makeSelectable();
+        });
+        this.canvas.staticGridRef.hoverCursor = "default";
         this.canvas.selection = true;
         this.canvas.resetCursorsToDefault();
 

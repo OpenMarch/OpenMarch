@@ -38,6 +38,7 @@ import { CoordinateLike } from "@/utilities/CoordinateActions";
 import { getFieldPropertiesImage } from "@/global/classes/FieldProperties";
 import { ModifiedMarcherPageArgs, ShapePage } from "@/db-functions";
 import { MarcherVisualMap } from "@/hooks/queries";
+import { gridYAnchorSteps } from "@/utilities/fieldGrid";
 import { RgbaColor } from "@uiw/react-color";
 import {
     evaluatePathWarning,
@@ -242,6 +243,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         null;
     private boundHandleKeyDown: ((event: KeyboardEvent) => void) | null = null;
     private boundHandleKeyUp: ((event: KeyboardEvent) => void) | null = null;
+    private boundHandleWindowBlur: (() => void) | null = null;
 
     // Window/observer handles for cleanup
     private _onWindowResize: (() => void) | null = null;
@@ -948,8 +950,11 @@ export default class OpenMarchCanvas extends fabric.Canvas {
      * Fabric clears the selection as soon as empty field is pressed. For a
      * finger, wait: the press may become a pan or pinch. The touch gestures
      * clear it on a tap or a rubber band instead (see touchDeferredClear).
+     * Shift adds to the selection, so a Shift-click or Shift-drag lasso that
+     * misses keeps it.
      */
     _shouldClearSelection(e: Event, target?: fabric.Object): boolean {
+        if ((e as MouseEvent).shiftKey) return false;
         const shouldClear = Boolean(
             (fabric.Canvas.prototype as any)._shouldClearSelection.call(
                 this,
@@ -990,6 +995,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         if (event.pointerType !== "mouse") return;
         // Do not handle mouse buttons here; DefaultListeners owns mouse-button panning.
         // Only allow Alt-key forced panning (trackpad-like) to start a pan.
+        // Trust the event over the flag: Alt-Tab sends the Alt keyup to another
+        // window, which would otherwise leave forced panning stuck on.
+        if (!event.altKey) this.forceTrackpadPan = false;
         if (this.forceTrackpadPan) {
             event.preventDefault();
             this.isPanning = true;
@@ -1045,6 +1053,18 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             if (this.cssZoomWrapper && !this.isPanning) {
                 this.cssZoomWrapper.style.cursor = "default";
             }
+        }
+    }
+
+    /**
+     * Alt-Tab sends the Alt keyup to the other window, and a pan's mouseup can land there
+     * too, so forget both when focus leaves
+     */
+    private handleWindowBlur() {
+        this.forceTrackpadPan = false;
+        this.isPanning = false;
+        if (this.cssZoomWrapper) {
+            this.cssZoomWrapper.style.cursor = "default";
         }
     }
 
@@ -1226,6 +1246,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         this.boundHandleAdvancedMouseUp = this.handleAdvancedMouseUp.bind(this);
         this.boundHandleKeyDown = this.handleKeyDown.bind(this);
         this.boundHandleKeyUp = this.handleKeyUp.bind(this);
+        this.boundHandleWindowBlur = this.handleWindowBlur.bind(this);
 
         this.cssZoomWrapper.addEventListener(
             "wheel",
@@ -1259,6 +1280,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         );
         document.addEventListener("keydown", this.boundHandleKeyDown);
         document.addEventListener("keyup", this.boundHandleKeyUp);
+        window.addEventListener("blur", this.boundHandleWindowBlur);
     }
 
     private removeAdvancedEventListeners() {
@@ -1298,6 +1320,9 @@ export default class OpenMarchCanvas extends fabric.Canvas {
         }
         if (this.boundHandleKeyDown) {
             document.removeEventListener("keydown", this.boundHandleKeyDown);
+        }
+        if (this.boundHandleWindowBlur) {
+            window.removeEventListener("blur", this.boundHandleWindowBlur);
         }
         if (this.boundHandleKeyUp) {
             document.removeEventListener("keyup", this.boundHandleKeyUp);
@@ -1539,6 +1564,11 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 visual.getCanvasMarcher().setMarcherCoords(marcherPage);
             });
         });
+
+        // Selected marchers moved inside the active selection; refit its box around them
+        const activeObject = this.getActiveObject();
+        if (activeObject instanceof fabric.ActiveSelection)
+            activeObject.addWithUpdate();
 
         if (this._listeners && this._listeners.refreshMarchers)
             this._listeners?.refreshMarchers();
@@ -2018,29 +2048,8 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             fieldArray.push(this._backgroundImage);
         }
 
-        // Render the grid lines either from the first checkpoint, or the first visible checkpoint if i's not an integer amount of steps away from the front point
-        // This is to address when the front of the field isn't exactly with the grid
-        const sortedYCheckpoints = this.fieldProperties.yCheckpoints.sort(
-            (a: any, b: any) => b.stepsFromCenterFront - a.stepsFromCenterFront,
-        );
-        const firstVisibleYCheckpoint =
-            this.fieldProperties.yCheckpoints.reduce(
-                (prev: any, curr: any) => {
-                    if (
-                        curr.visible &&
-                        curr.stepsFromCenterFront > prev.stepsFromCenterFront
-                    )
-                        return curr;
-                    return prev;
-                },
-                sortedYCheckpoints[sortedYCheckpoints.length - 1],
-            );
-        let yCheckpointToStartGridFrom = sortedYCheckpoints[0];
-        if (
-            firstVisibleYCheckpoint.stepsFromCenterFront !== 0 &&
-            firstVisibleYCheckpoint.stepsFromCenterFront % 1 !== 0
-        )
-            yCheckpointToStartGridFrom = firstVisibleYCheckpoint;
+        // Render the grid lines from the same anchor that coordinate rounding snaps to
+        const gridYAnchor = gridYAnchorSteps(this.fieldProperties.yCheckpoints);
 
         // Grid lines
         if (gridLines) {
@@ -2070,10 +2079,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
             // Y
 
             for (
-                let i =
-                    centerFrontPoint.yPixels +
-                    yCheckpointToStartGridFrom.stepsFromCenterFront *
-                        pixelsPerStep;
+                let i = centerFrontPoint.yPixels + gridYAnchor * pixelsPerStep;
                 i > 0;
                 i -= pixelsPerStep
             )
@@ -2130,8 +2136,7 @@ export default class OpenMarchCanvas extends fabric.Canvas {
                 for (
                     let i =
                         centerFrontPoint.yPixels +
-                        yCheckpointToStartGridFrom.stepsFromCenterFront *
-                            pixelsPerStep -
+                        gridYAnchor * pixelsPerStep -
                         pixelsPerStep * this.fieldProperties.halfLineYInterval;
                     i > 0;
                     i -= pixelsPerStep * this.fieldProperties.halfLineYInterval

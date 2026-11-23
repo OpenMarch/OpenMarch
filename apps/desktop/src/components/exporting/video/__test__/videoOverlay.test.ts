@@ -101,6 +101,38 @@ describe("OverlayTimeline", () => {
         expect(counts).toEqual([1, 2, 3, 4, 1, 2]);
     });
 
+    it("counts on the page clock when beats before set 2 belong to no set", () => {
+        // Set 2 starts two beats into the music. Those beats (and measure 1) sit
+        // in no set, so beat timestamps run 2s ahead of the pages' clock.
+        const gapPages = [
+            page("1", 0, 0, [beat(0, 0)]),
+            page("2", 0, 4, [beat(2), beat(3), beat(4), beat(5)]),
+            page("3", 4, 2, [beat(6), beat(7)]),
+        ];
+        const gapMeasures = [
+            measure(1, 0, null),
+            measure(2, 2, "A"),
+            measure(3, 4, null),
+            measure(4, 6, null),
+        ];
+        const timeline = new OverlayTimeline(gapPages, gapMeasures);
+
+        const start = timeline.getState(0);
+        expect(start.setName).toBe("2");
+        expect(start.count).toBe(1);
+        expect(start.measureNumber).toBe(2);
+        expect(start.rehearsalMark).toBe("A");
+
+        const midway = timeline.getState(2.5);
+        expect(midway.count).toBe(3);
+        expect(midway.measureNumber).toBe(3);
+
+        const nextSet = timeline.getState(4);
+        expect(nextSet.setName).toBe("3");
+        expect(nextSet.count).toBe(1);
+        expect(nextSet.measureNumber).toBe(4);
+    });
+
     it("omits measure info when there are no measures", () => {
         const state = new OverlayTimeline(pages, []).getState(1);
 

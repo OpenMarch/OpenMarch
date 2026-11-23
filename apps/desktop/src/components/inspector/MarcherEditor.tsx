@@ -173,8 +173,6 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
     const { t } = useTolgee();
     const [horizontalStepInterval, setHorizontalStepInterval] = useState("");
     const [verticalStepInterval, setVerticalStepInterval] = useState("");
-    const [placeMenuOpen, setPlaceMenuOpen] = useState(false);
-    const closePlaceMenu = () => setPlaceMenuOpen(false);
     const { mutate: updateSelectedMarchers } =
         useUpdateSelectedMarchersOnSelectedPage();
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
@@ -390,45 +388,52 @@ function AlignmentButtons({ editingDisabled }: AlignmentButtonsProps) {
             </div>
 
             <hr className="border-stroke w-full border" />
-            {/* Set Marcher Positions Dropdowns */}
-            <div className="flex flex-col gap-8">
-                <Dropdown.Root
-                    open={placeMenuOpen}
-                    onOpenChange={setPlaceMenuOpen}
-                >
-                    <Dropdown.Trigger
-                        className={clsx(
-                            getButtonClassName({
-                                variant: "secondary",
-                                size: "compact",
-                            }),
-                            "flex items-center justify-center gap-6",
-                        )}
-                    >
-                        <T keyName="toolbar.alignment.placeSelectedMarchers" />{" "}
-                        <CaretDownIcon size={14} />
-                    </Dropdown.Trigger>
-                    <Dropdown.Portal>
-                        <Dropdown.Content className="bg-modal rounded-6 shadow-modal backdrop-blur-32 border-stroke flex flex-col items-start gap-0 border p-8">
-                            <ActionButton
-                                action="setSelectedMarchersToPreviousPage"
-                                onRun={closePlaceMenu}
-                                className="text-text px-6 py-4"
-                            >
-                                <T keyName="toolbar.alignment.toPreviousPagePositions" />
-                            </ActionButton>
-                            <ActionButton
-                                action="setSelectedMarchersToNextPage"
-                                onRun={closePlaceMenu}
-                                className="text-text px-6 py-4"
-                            >
-                                <T keyName="toolbar.alignment.toNextPagePositions" />
-                            </ActionButton>
-                        </Dropdown.Content>
-                    </Dropdown.Portal>
-                </Dropdown.Root>
-            </div>
+            <PlaceSelectedMarchersDropdown disabled={editingDisabled} />
         </>
+    );
+}
+
+/** Moves the selected marchers to where they stand on the previous or next page */
+function PlaceSelectedMarchersDropdown({ disabled }: { disabled: boolean }) {
+    const [open, setOpen] = useState(false);
+    const close = () => setOpen(false);
+
+    return (
+        <div className="flex flex-col gap-8">
+            <Dropdown.Root open={open} onOpenChange={setOpen}>
+                <Dropdown.Trigger
+                    disabled={disabled}
+                    className={clsx(
+                        getButtonClassName({
+                            variant: "secondary",
+                            size: "compact",
+                        }),
+                        "flex items-center justify-center gap-6",
+                    )}
+                >
+                    <T keyName="toolbar.alignment.placeSelectedMarchers" />{" "}
+                    <CaretDownIcon size={14} />
+                </Dropdown.Trigger>
+                <Dropdown.Portal>
+                    <Dropdown.Content className="bg-modal rounded-6 shadow-modal backdrop-blur-32 border-stroke flex flex-col items-start gap-0 border p-8">
+                        <ActionButton
+                            action="setSelectedMarchersToPreviousPage"
+                            onRun={close}
+                            className="text-text px-6 py-4"
+                        >
+                            <T keyName="toolbar.alignment.toPreviousPagePositions" />
+                        </ActionButton>
+                        <ActionButton
+                            action="setSelectedMarchersToNextPage"
+                            onRun={close}
+                            className="text-text px-6 py-4"
+                        >
+                            <T keyName="toolbar.alignment.toNextPagePositions" />
+                        </ActionButton>
+                    </Dropdown.Content>
+                </Dropdown.Portal>
+            </Dropdown.Root>
+        </div>
     );
 }
 
@@ -982,6 +987,11 @@ function MarcherEditor() {
                                     </button>
                                 </form>
                             )}
+                            <div className="px-6">
+                                <PlaceSelectedMarchersDropdown
+                                    disabled={editingDisabled}
+                                />
+                            </div>
                             <form
                                 className="marcher-details-editor flex flex-col gap-24"
                                 ref={detailsFormRef}

@@ -132,10 +132,18 @@ export class OverlayTimeline {
         }
         const page = this.pages[this.pageCursor];
 
+        // Beat and measure timestamps count every beat from the start of the music,
+        // but beats before set 2 can belong to no set, so pages run on a clock that
+        // is behind by those beats. Read beats and measures on the beat clock.
+        const beatTimeSeconds =
+            timeSeconds +
+            (page.beats.length > 0 ? page.beats[0].timestamp : page.timestamp) -
+            page.timestamp;
+
         // 1-based count within the page: the last beat that has started
         let count = 1;
         for (let i = page.beats.length - 1; i >= 0; i--) {
-            if (page.beats[i].timestamp <= timeSeconds) {
+            if (page.beats[i].timestamp <= beatTimeSeconds) {
                 count = i + 1;
                 break;
             }
@@ -143,7 +151,7 @@ export class OverlayTimeline {
 
         while (
             this.measureCursor < this.measures.length - 1 &&
-            timeSeconds >= this.measures[this.measureCursor + 1].timestamp
+            beatTimeSeconds >= this.measures[this.measureCursor + 1].timestamp
         ) {
             this.measureCursor++;
         }
@@ -153,7 +161,7 @@ export class OverlayTimeline {
         // The active rehearsal mark is the most recent one at or before the
         // current measure (marks denote the start of a section)
         let rehearsalMark: string | null = null;
-        if (measure && measure.timestamp <= timeSeconds) {
+        if (measure && measure.timestamp <= beatTimeSeconds) {
             for (let i = this.measureCursor; i >= 0; i--) {
                 if (this.measures[i].rehearsalMark) {
                     rehearsalMark = this.measures[i].rehearsalMark;
@@ -177,7 +185,7 @@ export class OverlayTimeline {
             count,
             totalCounts: Math.max(page.counts, page.beats.length),
             measureNumber:
-                measure && measure.timestamp <= timeSeconds
+                measure && measure.timestamp <= beatTimeSeconds
                     ? measure.number
                     : null,
             rehearsalMark,

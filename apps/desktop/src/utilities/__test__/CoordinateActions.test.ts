@@ -845,6 +845,7 @@ describe("CoordinateActions", () => {
         const fieldProperties = {
             centerFrontPoint: { xPixels: 100, yPixels: 100 },
             pixelsPerStep: 20,
+            yCheckpoints: [],
         };
         const uiSettings: Pick<UiSettings, "coordinateRounding"> = {
             coordinateRounding: {
