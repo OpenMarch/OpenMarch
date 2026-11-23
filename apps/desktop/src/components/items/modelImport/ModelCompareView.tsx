@@ -153,6 +153,7 @@ export default function ModelCompareView({
     return (
         <div className="flex flex-col gap-12" data-testid="model-compare">
             <SegmentedTextSwitch
+                className="self-start"
                 ariaLabel={t("props.import.compare.which")}
                 selected={shown}
                 setSelected={setShown}

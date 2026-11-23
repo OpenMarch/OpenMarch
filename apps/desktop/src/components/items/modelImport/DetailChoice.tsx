@@ -98,6 +98,7 @@ export default function DetailChoice({
                 <T keyName="props.import.detail.title" />
             </h5>
             <SegmentedTextSwitch
+                className="self-start"
                 ariaLabel={t("props.import.detail.title")}
                 selected={level}
                 setSelected={(value) =>

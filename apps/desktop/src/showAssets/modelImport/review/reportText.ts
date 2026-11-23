@@ -177,6 +177,8 @@ export function fixText(fix: Fix, t: Translate): ReportLine {
                     .join(" · "),
             };
         }
+        case "rigFrozen":
+            return { title: t(`${F}.rigFrozen`) };
         case "pivotMoved":
             return { title: t(`${F}.pivotMoved`) };
     }

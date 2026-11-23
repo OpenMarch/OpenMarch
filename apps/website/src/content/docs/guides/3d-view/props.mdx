@@ -74,7 +74,7 @@ On a tablet, tap the corners of an arc or a polygon. The note's <Ui k="props.dra
 
 ## Import a 3D model
 
-You can bring in a model of your own, such as a chair, a door frame or a sculpture, as a `.glb` file, or as a `.gltf` file with the files it names (its `.bin` and pictures).
+You can bring in a model of your own, such as a chair, a door frame or a sculpture, as a `.glb` file, as a `.gltf` file with the files it names (its `.bin` and pictures), or as the `.zip` a model site such as Sketchfab downloads. There's no need to unzip it.
 
 <Steps>
 
@@ -110,7 +110,7 @@ The model appears under <Ui k="props.imported.title" plain /> with its picture a
 />
 
 - <Ui k="props.import.groups.needsChoice" plain /> lists conversions the import chose for you, which you can turn off. <Ui k="props.import.rotate.title" plain /> appears when a model looks like it would lie on its back, and stands it up.
-- <Ui k="props.import.groups.fixed" plain /> lists what the import changed on its own, such as pictures made smaller. Select it to see the list.
+- <Ui k="props.import.groups.fixed" plain /> lists what the import changed on its own, such as pictures made smaller. Select it to see the list. An animated model, such as a character with a skeleton, comes in standing still: its animations and rig are removed.
 - <Ui k="props.import.name" plain /> is what the model is called. Props you place from it are numbered after it: Chair 1, Chair 2.
 - <Ui k="props.import.credits.title" plain /> holds the license, author, source and attribution, filled in from the file when it says. Leave them empty if you don't know; empty means unknown. Only import models you have the rights to use.
 

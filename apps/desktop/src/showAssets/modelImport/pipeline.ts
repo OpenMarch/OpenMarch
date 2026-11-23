@@ -28,6 +28,7 @@ import {
     type Document,
     type Material,
     type Node,
+    type Primitive,
     type Scene,
     type Texture,
 } from "@gltf-transform/core";
@@ -37,7 +38,7 @@ import {
     dedup,
     getBounds,
     prune,
-    simplify,
+    simplifyPrimitive,
     uninstance,
     weld,
 } from "@gltf-transform/functions";
@@ -68,7 +69,6 @@ import {
 } from "./rules";
 import {
     primitiveTriangles,
-    sceneNodes,
     sceneOf,
     sceneTriangles,
     topAt,
@@ -89,6 +89,8 @@ import type {
     Vec3,
 } from "./types";
 import { validateModel } from "./validate";
+import { freezeSkins } from "./skins";
+import { openZips } from "./zip";
 
 export interface ModelImportEnv {
     images: ImageCodec;
@@ -114,7 +116,8 @@ export async function importModel(
         notes: [],
     };
     try {
-        const opened = await openAndCheck(files, report);
+        const unzipped = openZips(files);
+        const opened = await openAndCheck(unzipped, report);
         if (!opened) return { ok: false, report };
         const read = await readClean(opened, env, report);
         if (!read) return { ok: false, report };
@@ -171,7 +174,7 @@ export async function importModel(
             model: {
                 name:
                     titleOf(opened.json) ??
-                    opened.name.replace(/\.(glb|gltf)$/i, ""),
+                    fileTitle(opened.name, unzipped.zipName),
                 parts: {
                     model,
                     distant: distant.bytes,
@@ -189,12 +192,28 @@ export async function importModel(
     }
 }
 
+/** Names model files get from exporters, which say nothing about the model */
+const GENERIC_NAMES = new Set(["scene", "model", "untitled", "object"]);
+
+/**
+ * A title from the model's file name, or from the zip it came in when the file is only called
+ * `scene` (Sketchfab's `scene.gltf`), as `scaffold stairs` for `scaffold_stairs.zip`.
+ */
+export function fileTitle(path: string, zipName: string | null): string {
+    const name = path
+        .slice(path.lastIndexOf("/") + 1)
+        .replace(/\.(glb|gltf)$/i, "");
+    if (zipName && GENERIC_NAMES.has(name.toLowerCase()))
+        return zipName.replace(/[_]+/g, " ").trim() || name;
+    return name;
+}
+
 /**
  * The checks before decoding, then the validator: the opened model, or null with the refusals
  * in `report`.
  */
 async function openAndCheck(
-    files: readonly PickedFile[],
+    { files, skipped }: { files: readonly PickedFile[]; skipped: string[] },
     report: ModelImportReport,
 ): Promise<OpenedModel | null> {
     const bytes = files.reduce((n, f) => n + f.bytes.byteLength, 0);
@@ -206,7 +225,7 @@ async function openAndCheck(
         });
         return null;
     }
-    const opened = openPickedFiles(files);
+    const opened = openPickedFiles(files, skipped);
     const checked = precheck(opened);
     if (checked.refusals.length) {
         report.cantImport.push(...checked.refusals);
@@ -255,10 +274,13 @@ async function readClean(
         return null;
     }
     const scene = keepOneScene(doc, report);
-    if (sceneNodes(scene).some((n) => n.getSkin() && n.getMesh())) {
+    // A rigged model stands still in the pose it has with no animation playing (#1168)
+    const frozen = freezeSkins(doc, scene);
+    if (frozen === null) {
         report.cantImport.push({ code: "rigged" });
         return null;
     }
+    if (frozen > 0) report.fixedForYou.push({ code: "rigFrozen" });
     await dropExtensions(doc, opened, report);
     if (sceneTriangles(scene) > limit) {
         report.cantImport.push({
@@ -605,21 +627,59 @@ async function simplifyTo(
     target: number,
 ): Promise<number> {
     await MeshoptSimplifier.ready;
+    await doc.transform(weld({ overwrite: false }));
+    // The floor never takes more than the target between all the parts: a model of hundreds of
+    // small parts still fits its copy's cap, keeping a few triangles of each
+    const parts = doc
+        .getRoot()
+        .listMeshes()
+        .reduce((n, mesh) => n + mesh.listPrimitives().length, 0);
+    const floor = Math.max(
+        1,
+        Math.min(PART_TRIANGLE_FLOOR, Math.floor(target / Math.max(1, parts))),
+    );
     const start = sceneTriangles(scene);
     let now = start;
     for (const error of [0.01, 0.05, 0.2, 1]) {
         if (now <= target) break;
-        await doc.transform(
-            simplify({
-                simplifier: MeshoptSimplifier,
-                ratio: Math.min(1, (target / now) * 0.95),
-                error,
-            }),
-        );
+        const ratio = Math.min(1, (target / now) * 0.95);
+        for (const mesh of doc.getRoot().listMeshes())
+            for (const prim of mesh.listPrimitives()) {
+                const triangles = primitiveTriangles(prim);
+                if (triangles <= floor) continue;
+                // The error is relative to the part's own size, so at a wide limit a thin
+                // part (a pole, a rail) would collapse to nothing (#1169): each part keeps
+                // at least the floor
+                simplifyKeeping(
+                    prim,
+                    Math.max(ratio, floor / triangles),
+                    error,
+                );
+            }
         now = sceneTriangles(scene);
     }
     return now;
 }
+
+/**
+ * Simplifies one part, or leaves it as it was when simplifying would leave nothing of it: the
+ * simplifier's count is a ceiling, so a part asked for a triangle or two can collapse to none,
+ * and an empty part is invalid glTF that won't load. That costs the cap only for models of
+ * hundreds of parts, which keep every part over fitting it.
+ */
+function simplifyKeeping(prim: Primitive, ratio: number, error: number) {
+    // Shares its accessors, so the simplifier keeps them for it
+    const before = prim.clone();
+    simplifyPrimitive(prim, { simplifier: MeshoptSimplifier, ratio, error });
+    if (primitiveTriangles(prim) === 0) prim.copy(before);
+    before.dispose();
+}
+
+/**
+ * The fewest triangles simplifying leaves a part, so no part disappears (#1169); less when a
+ * model has more parts than its copy's target allows this many each
+ */
+export const PART_TRIANGLE_FLOOR = 12;
 
 function stripExtras(doc: Document): void {
     const root = doc.getRoot();

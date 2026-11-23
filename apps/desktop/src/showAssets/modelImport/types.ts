@@ -134,6 +134,8 @@ export type Fix =
           morphTargets: number;
           scenes: number;
       }
+    /** A rigged model frozen in its pose with no animation playing, its rig removed (#1168) */
+    | { code: "rigFrozen" }
     /** The pivot moved to the bottom center of the footprint, by this much (m) */
     | { code: "pivotMoved"; offsetM: Vec3 };
 

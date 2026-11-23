@@ -106,6 +106,7 @@
         "drizzle-orm": "^0.43.1",
         "electron-store": "^8.2.0",
         "electron-updater": "^6.6.2",
+        "fflate": "0.8.3",
         "gltf-validator": "2.0.0-dev.3.10",
         "jszip": "^3.10.1",
         "mediabunny": "^1.46.0",

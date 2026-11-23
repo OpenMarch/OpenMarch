@@ -1,4 +1,4 @@
-// cspell:words draco IHDR IDAT IEND filechooser
+// cspell:words draco IHDR IDAT IEND filechooser fflate
 /**
  * The model import worker in real Chromium (fork #998): its own CSP (as the web build's
  * `_headers` sends it), the real image codecs and Draco's WebAssembly decoder. The pipeline's
@@ -10,6 +10,7 @@ import { fileURLToPath } from "node:url";
 import zlib from "node:zlib";
 import { Logger, WebIO } from "@gltf-transform/core";
 import { ALL_EXTENSIONS } from "@gltf-transform/extensions";
+import { zipSync } from "fflate";
 import { test, expect } from "../fixtures.mjs";
 import { waitForIdle } from "../app.mjs";
 import type { ModelImportTestResult } from "../../../src/showAssets/modelImport/modelImportTestApi";
@@ -122,6 +123,20 @@ test("runs the model import in its own worker, under its own CSP", async ({
             ],
         }),
     );
+
+    // A zip as Sketchfab hands one out, opened in the worker (#1168)
+    const zipped = await run([
+        file(
+            "chair.zip",
+            zipSync({
+                "source/SheenChair.glb": new Uint8Array(
+                    fs.readFileSync(path.join(FIXTURES, "SheenChair.glb")),
+                ),
+                "license.txt": new TextEncoder().encode("CC-BY-4.0"),
+            }),
+        ),
+    ]);
+    expect(zipped.ok).toBe(true);
 });
 
 // The designer's import (fork #999): Import… in the Props panel opens the review, Add stores the
@@ -144,9 +159,10 @@ test("imports a model from the Props panel and places it as a prop", async ({
     await expect(review.getByTestId("model-import-size")).toHaveText(
         /× .* m tall$/,
     );
-    await expect(review.getByTestId("model-import-choices")).toContainText(
-        "Simplify to 20,000 triangles",
-    );
+    // The chair is past the triangle cap, so the Detail choice shows with Light chosen
+    await expect(
+        review.getByTestId("model-import-detail-light"),
+    ).toHaveAttribute("data-state", "on");
     await review.getByTestId("model-import-name").fill("Chair");
     await review.getByTestId("model-import-add").click();
 

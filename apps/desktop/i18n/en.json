@@ -1558,7 +1558,7 @@
         "imported": {
             "title": "Imported",
             "import": "Import…",
-            "empty": "Import a .glb or .gltf model, or drop one on the window, to place it like any prop.",
+            "empty": "Import a .glb, .gltf or .zip model, or drop one on the window, to place it like any prop.",
             "place": "Place {name}",
             "manage": "Manage assets"
         },
@@ -1632,7 +1632,7 @@
             "cantImport": {
                 "noModelFile": {
                     "title": "No model in the files",
-                    "detail": "Pick a .glb file, or a .gltf with the files it names."
+                    "detail": "Pick a .glb file, a .zip from a model site, or a .gltf with the files it names."
                 },
                 "severalModelFiles": {
                     "title": "More than one model",
@@ -1676,7 +1676,7 @@
                     "detail": "{triangles} triangles; the most it can import is {limit}."
                 },
                 "rigged": {
-                    "title": "Rigged models aren't supported",
+                    "title": "This model's rig can't be read",
                     "detail": "Import a still version of it."
                 },
                 "noGeometry": {
@@ -1705,6 +1705,7 @@
                     "morphTargets": "{count, plural, one {# shape key} other {# shape keys}}",
                     "scenes": "{count, plural, one {# other scene} other {# other scenes}}"
                 },
+                "rigFrozen": "Removed its rig: it stands still, as posed without animation",
                 "pivotMoved": "Set it on the ground at its center"
             },
             "notes": {

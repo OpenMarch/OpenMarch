@@ -4,6 +4,7 @@ import {
     pickModelFiles,
     readPickedFiles,
 } from "@/showAssets/modelImport/review/modelFiles";
+import type { PickedFile } from "@/showAssets/modelImport/types";
 import { PropListContents } from "../PropsModal";
 import ModelImportReview from "./ModelImportReview";
 
@@ -29,7 +30,11 @@ export function showModelImportReview() {
 
 /** Starts an import of these files (picked, or dropped on the app) and shows its review */
 export async function importModelFiles(files: Iterable<File>) {
-    const picked = await readPickedFiles(files);
+    importPickedFiles(await readPickedFiles(files));
+}
+
+/** Starts an import of files already read and shows its review */
+export function importPickedFiles(picked: PickedFile[]) {
     useModelImportSession.getState().open(picked);
     showModelImportReview();
 }

@@ -5,14 +5,34 @@
  */
 import { touchSafeAccept } from "@/utilities/fileAccept";
 import type { PickedFile } from "../types";
+import { isZip, zipHasModel } from "../zip";
 
-/** What the picker offers: a model, and the buffers and pictures a `.gltf` names */
+/**
+ * What the picker offers: a model, the buffers and pictures a `.gltf` names, or a zip of them
+ * (#1168), as Sketchfab hands a glTF out
+ */
 export const MODEL_FILE_ACCEPT =
-    ".glb,.gltf,.bin,.png,.jpg,.jpeg,.webp,.ktx2,model/gltf-binary,model/gltf+json";
+    ".glb,.gltf,.zip,.bin,.png,.jpg,.jpeg,.webp,.ktx2,model/gltf-binary,model/gltf+json,application/zip";
 
-/** True when the files include a model, so a drop of them is an import */
+/** True when the files include a model or a zip, so a drop of them may be an import */
 export const hasModelFile = (names: readonly string[]): boolean =>
-    names.some((name) => /\.(glb|gltf)$/i.test(name));
+    names.some((name) => /\.(glb|gltf|zip)$/i.test(name));
+
+/**
+ * Dropped files, read, when they're an import: a model among them, or a zip with one inside.
+ * Null for anything else, a zip of pictures or backups included, which the drop ignores.
+ */
+export async function readDroppedModel(
+    files: readonly File[],
+): Promise<PickedFile[] | null> {
+    const names = files.map((file) => file.name);
+    if (!hasModelFile(names)) return null;
+    const picked = await readPickedFiles(files);
+    if (names.some((name) => /\.(glb|gltf)$/i.test(name))) return picked;
+    return picked.some((file) => isZip(file) && zipHasModel(file.bytes))
+        ? picked
+        : null;
+}
 
 export async function readPickedFiles(
     files: Iterable<File>,

@@ -560,8 +560,9 @@ describe("importModel", () => {
             });
         });
 
-        it("refuses a rigged model", async () => {
-            const glb = await chairWith((doc) => {
+        /** The chair with its first mesh skinned to one joint */
+        const riggedChair = () =>
+            chairWith((doc) => {
                 const node = doc
                     .getRoot()
                     .listNodes()
@@ -596,9 +597,85 @@ describe("importModel", () => {
                     );
                 }
             });
-            expect(refusal(await run([picked("rigged.glb", glb)]))).toEqual({
-                code: "rigged",
+
+        it("imports a model whose only checker errors are in its animations (#1168)", async () => {
+            // Sketchfab's converter strides animation data, which glTF forbids, in every
+            // animated model; the import drops animations anyway
+            const glb = editGlbJson(
+                await chairWith((doc) => {
+                    const node = doc.getRoot().listNodes()[0];
+                    const buffer = doc.getRoot().listBuffers()[0];
+                    const accessor = (
+                        type: "SCALAR" | "VEC3",
+                        array: number[],
+                    ) =>
+                        doc
+                            .createAccessor()
+                            .setType(type)
+                            .setArray(new Float32Array(array))
+                            .setBuffer(buffer);
+                    const sampler = doc
+                        .createAnimationSampler()
+                        .setInput(accessor("SCALAR", [0, 1]))
+                        .setOutput(accessor("VEC3", [0, 0, 0, 0, 1, 0]));
+                    doc.createAnimation("bob")
+                        .addSampler(sampler)
+                        .addChannel(
+                            doc
+                                .createAnimationChannel()
+                                .setTargetNode(node)
+                                .setTargetPath("translation")
+                                .setSampler(sampler),
+                        );
+                }),
+                (json) => {
+                    // The output gets a view of its own, with a stride
+                    const animations = json.animations as {
+                        samplers: { output: number }[];
+                    }[];
+                    const accessors = json.accessors as {
+                        bufferView: number;
+                        byteOffset?: number;
+                    }[];
+                    const views = json.bufferViews as {
+                        buffer: number;
+                        byteOffset?: number;
+                        byteLength: number;
+                        byteStride?: number;
+                    }[];
+                    const output = accessors[animations[0].samplers[0].output];
+                    const view = views[output.bufferView];
+                    views.push({
+                        buffer: view.buffer,
+                        byteOffset:
+                            (view.byteOffset ?? 0) + (output.byteOffset ?? 0),
+                        byteLength: 24,
+                        byteStride: 12,
+                    });
+                    output.bufferView = views.length - 1;
+                    output.byteOffset = 0;
+                },
+            );
+            const result = await run([picked("animated.glb", glb)]);
+            imported(result);
+            expect(result.report.notes).toContainEqual(
+                expect.objectContaining({ code: "validatorWarnings" }),
+            );
+        });
+
+        it("imports a rigged model standing still, without its rig (#1168)", async () => {
+            const result = await run([
+                picked("rigged.glb", await riggedChair()),
+            ]);
+            const model = imported(result);
+            expect(result.report.fixedForYou).toContainEqual({
+                code: "rigFrozen",
             });
+            const stored = await readGlb(model.parts.model);
+            expect(stored.getRoot().listSkins()).toEqual([]);
+            for (const mesh of stored.getRoot().listMeshes())
+                for (const prim of mesh.listPrimitives())
+                    expect(prim.listSemantics()).not.toContain("JOINTS_0");
         });
     });
 });
