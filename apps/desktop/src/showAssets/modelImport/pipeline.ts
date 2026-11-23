@@ -25,6 +25,7 @@ import {
     PropertyType,
     WebIO,
     GLB_BUFFER,
+    VertexLayout,
     type Document,
     type Material,
     type Mesh,
@@ -37,9 +38,7 @@ import { ALL_EXTENSIONS } from "@gltf-transform/extensions";
 import {
     cloneDocument,
     dedup,
-    flatten,
     getBounds,
-    join,
     prune,
     simplifyPrimitive,
     uninstance,
@@ -152,7 +151,7 @@ export async function importModel(
         const lighter = light?.doc ?? doc;
         const distant = await makeDistant(io, lighter, env.images);
         const derived = await derive(lighter, env.images, doc);
-        // Each copy's parts are merged last, once nothing simplifies from it any more
+        // Each copy's materials are merged last, once nothing simplifies from it any more
         const model = await writeMerged(io, doc);
         const lightBytes = light ? await writeMerged(io, light.doc) : null;
         const sidecar: ModelSidecar = {
@@ -327,7 +326,10 @@ async function readDocument(
     const io = new WebIO()
         .setLogger(new Logger(Logger.Verbosity.ERROR))
         .registerExtensions(ALL_EXTENSIONS)
-        .registerDependencies(dependencies);
+        .registerDependencies(dependencies)
+        // One buffer view per attribute: three reads interleaved ones as attributes the 3D View
+        // can't merge, so every part would be its own draw (#1201)
+        .setVertexLayout(VertexLayout.SEPARATE);
     // Never `read(uri)`: every resource comes from the picked files
     const resources: Record<string, Uint8Array<ArrayBuffer>> = {};
     for (const [uri, bytes] of Object.entries(opened.resources))
@@ -727,19 +729,16 @@ function simplifyKeeping(prim: Primitive, ratio: number, error: number) {
 export const PART_TRIANGLE_FLOOR = 12;
 
 /**
- * A finished copy, written with one part per material (#1201). The 3D View draws each part of a model as its own instanced
- * mesh, once a frame and again for shadows, whatever its size, so a car of 109 parts and 29
- * materials drew 218 times a frame however few triangles it had. Flattening bakes every part's
- * place into its vertices (a mirrored part's winding is turned back), and parts with the same
- * material and attributes then join. Run on each finished copy: simplifying goes part by part,
- * so a thin part keeps its floor (#1169). The cleanup is ours, as the worker can't look for
- * solid-color textures.
+ * A finished copy, written so the 3D View can draw it in few draws (#1201). The View merges the
+ * parts that share a material and a vertex layout when it loads a model (`mergeByMaterial`),
+ * each part placed by its own world matrix, so one material is one draw. That needs attributes
+ * written separately (the reader's vertex layout) and copies of one material made one here: the
+ * CarConcept's 109 parts drew 218 times a frame with shadows. Run on each finished copy, after
+ * simplifying. The cleanup is ours, as the worker can't look for solid-color textures.
  */
 async function writeMerged(io: WebIO, doc: Document): Promise<Uint8Array> {
     await doc.transform(
         dedup({ propertyTypes: [PropertyType.MATERIAL] }),
-        flatten({ cleanup: false }),
-        join({ cleanup: false }),
         prune({ keepAttributes: true, keepSolidTextures: true }),
     );
     return io.writeBinary(doc);

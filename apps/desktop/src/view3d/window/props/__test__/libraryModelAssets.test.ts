@@ -9,7 +9,12 @@ import {
     vi,
 } from "vitest";
 import { importModel } from "@/showAssets/modelImport/pipeline";
-import { env, picked } from "@/showAssets/modelImport/__test__/fixtures";
+import { Document } from "@gltf-transform/core";
+import {
+    env,
+    picked,
+    writeGlb,
+} from "@/showAssets/modelImport/__test__/fixtures";
 import {
     _heldLibraryModelCount,
     _setLibraryModelBytes,
@@ -138,6 +143,107 @@ describe("mergeByMaterial", () => {
             { geometry: plain, material: wood },
         ]);
         expect(parts).toHaveLength(2);
+    });
+});
+
+/**
+ * Twelve cubes, each its own mesh with its own copy of a red material, and one blue: as some
+ * exporters write a car's parts. The left six are mirrored, the rest turned.
+ */
+async function partsWithCopiedMaterials(): Promise<Uint8Array> {
+    const doc = new Document();
+    const buffer = doc.createBuffer();
+    const scene = doc.createScene();
+    const corners = [0, 1].flatMap((x) =>
+        [0, 1].flatMap((y) => [0, 1].map((z) => [x, y, z])),
+    );
+    const faces = [
+        [0, 1, 3, 2],
+        [4, 6, 7, 5],
+        [0, 4, 5, 1],
+        [2, 3, 7, 6],
+        [0, 2, 6, 4],
+        [1, 5, 7, 3],
+    ].flatMap(([a, b, c, d]) => [a, b, c, a, c, d]);
+    const cube = (color: [number, number, number, number]) =>
+        doc.createMesh().addPrimitive(
+            doc
+                .createPrimitive()
+                .setAttribute(
+                    "POSITION",
+                    doc
+                        .createAccessor()
+                        .setType("VEC3")
+                        .setArray(new Float32Array(corners.flat()))
+                        .setBuffer(buffer),
+                )
+                // Two attributes, so a writer that interleaves would interleave them
+                .setAttribute(
+                    "NORMAL",
+                    doc
+                        .createAccessor()
+                        .setType("VEC3")
+                        .setArray(
+                            new Float32Array(
+                                corners.flatMap(([x, y, z]) => {
+                                    const l = Math.hypot(
+                                        x - 0.5,
+                                        y - 0.5,
+                                        z - 0.5,
+                                    );
+                                    return [
+                                        (x - 0.5) / l,
+                                        (y - 0.5) / l,
+                                        (z - 0.5) / l,
+                                    ];
+                                }),
+                            ),
+                        )
+                        .setBuffer(buffer),
+                )
+                .setIndices(
+                    doc
+                        .createAccessor()
+                        .setType("SCALAR")
+                        .setArray(new Uint16Array(faces))
+                        .setBuffer(buffer),
+                )
+                .setMaterial(doc.createMaterial().setBaseColorFactor(color)),
+        );
+    for (let i = 0; i < 13; i++) {
+        const node = doc
+            .createNode()
+            .setMesh(cube(i < 12 ? [1, 0, 0, 1] : [0, 0, 1, 1]))
+            .setTranslation([i * 2 - 12, 0, 0]);
+        if (i < 6) node.setScale([-1, 1, 1]);
+        else node.setRotation([0, Math.SQRT1_2, 0, Math.SQRT1_2]);
+        scene.addChild(node);
+    }
+    return writeGlb(doc);
+}
+
+describe("an imported model's parts (#1201)", () => {
+    it("draws parts with copies of one material as one part, in every copy", async () => {
+        const result = await importModel(
+            [picked("cubes.glb", await partsWithCopiedMaterials())],
+            {},
+            env,
+        );
+        if (!result.ok) throw new Error("the cubes should import");
+        const { model, distant } = result.model.parts;
+        _setLibraryModelBytes(async (hash) =>
+            hash === "model" ? model : distant,
+        );
+        for (const hash of ["model", "distant"]) {
+            const parts = await acquireLibraryModel(hash);
+            // The red cubes in one draw, the blue one in another
+            expect(parts).toHaveLength(2);
+            const counts = parts
+                .map((p) => p.geometry.attributes.position.count)
+                .sort((a, b) => a - b);
+            expect(counts[1]).toBe(counts[0] * 12);
+            releaseLibraryModel(hash);
+        }
     });
 });
 

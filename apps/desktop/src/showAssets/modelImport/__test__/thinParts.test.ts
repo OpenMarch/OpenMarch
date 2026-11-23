@@ -177,80 +177,21 @@ async function balls(count: number): Promise<Uint8Array> {
     return writeGlb(doc);
 }
 
-/** Every triangle's center, in the model's own frame (parts are merged since #1201) */
-async function triangleCenters(glb: Uint8Array): Promise<[number, number][]> {
+/** Each mesh's triangles, by name */
+async function partTriangles(glb: Uint8Array): Promise<Map<string, number>> {
     const doc = await readGlb(glb);
-    const centers: [number, number][] = [];
-    for (const node of doc.getRoot().listNodes()) {
-        const mesh = node.getMesh();
-        if (!mesh) continue;
-        const m = node.getWorldMatrix();
-        for (const prim of mesh.listPrimitives()) {
-            const pos = prim.getAttribute("POSITION")!;
-            const idx = prim.getIndices();
-            const count = idx ? idx.getCount() : pos.getCount();
-            const v: number[] = [0, 0, 0];
-            for (let t = 0; t < count; t += 3) {
-                let x = 0;
-                let z = 0;
-                for (let k = 0; k < 3; k++) {
-                    pos.getElement(idx ? idx.getScalar(t + k) : t + k, v);
-                    x += m[0] * v[0] + m[4] * v[1] + m[8] * v[2] + m[12];
-                    z += m[2] * v[0] + m[6] * v[1] + m[10] * v[2] + m[14];
-                }
-                centers.push([x / 3, z / 3]);
-            }
-        }
-    }
-    return centers;
-}
-
-/**
- * The triangles of each part, found by where it stands: within `radius` of its spot, laid out as
- * the test file has it (the import centers the footprint on the origin)
- */
-async function trianglesAt(
-    glb: Uint8Array,
-    spots: [number, number][],
-    radius: number,
-): Promise<number[]> {
-    const centers = await triangleCenters(glb);
-    const xs = spots.map((s) => s[0]);
-    const zs = spots.map((s) => s[1]);
-    const cx = (Math.min(...xs) + Math.max(...xs)) / 2;
-    const cz = (Math.min(...zs) + Math.max(...zs)) / 2;
-    return spots.map(
-        ([x, z]) =>
-            centers.filter(
-                ([px, pz]) => Math.hypot(px - (x - cx), pz - (z - cz)) < radius,
-            ).length,
+    return new Map(
+        doc
+            .getRoot()
+            .listMeshes()
+            .map((mesh) => [
+                mesh.getName(),
+                mesh
+                    .listPrimitives()
+                    .reduce((n, prim) => n + primitiveTriangles(prim), 0),
+            ]),
     );
 }
-
-/** The parts the 3D View draws: primitives, across every mesh */
-async function partCount(glb: Uint8Array): Promise<number> {
-    const doc = await readGlb(glb);
-    return doc
-        .getRoot()
-        .listMeshes()
-        .reduce((n, mesh) => n + mesh.listPrimitives().length, 0);
-}
-
-const poleSpots = (): [number, number][] =>
-    Array.from({ length: POLES }, (_, i) => [
-        (i % 4) - 1.5,
-        Math.floor(i / 4) - 1.5,
-    ]);
-const fenceSpots = (count: number): [number, number][] =>
-    Array.from({ length: count }, (_, i) => [
-        (i % 20) * 0.2,
-        Math.floor(i / 20) * 0.2,
-    ]);
-const ballSpots = (count: number): [number, number][] =>
-    Array.from({ length: count }, (_, i) => [
-        (i % 20) * 0.5,
-        Math.floor(i / 20) * 0.5,
-    ]);
 
 describe("simplifying keeps every part", () => {
     it("keeps each thin pole in the Light model and in its distant copy", async () => {
@@ -265,14 +206,15 @@ describe("simplifying keeps every part", () => {
             result.model.parts.model,
             result.model.parts.distant,
         ]) {
-            // A pole's triangles sit within its 0.025 m radius; the deck's lie between poles
-            const poles = await trianglesAt(part, poleSpots(), 0.03);
-            for (const triangles of poles)
-                expect(triangles).toBeGreaterThanOrEqual(PART_TRIANGLE_FLOOR);
+            const parts = await partTriangles(part);
+            for (let i = 0; i < POLES; i++)
+                expect(parts.get(`pole ${i}`)).toBeGreaterThanOrEqual(
+                    PART_TRIANGLE_FLOOR,
+                );
         }
         // …and the deck, the one big part, did the simplifying
-        const distant = await triangleCenters(result.model.parts.distant);
-        expect(distant.length).toBeLessThan(2_000 + POLES * 64 * 2);
+        const distant = await partTriangles(result.model.parts.distant);
+        expect(distant.get("deck")).toBeLessThan(2_000);
     });
 
     it("still fits the distant copy's cap with more parts than it can give the floor each", async () => {
@@ -284,12 +226,10 @@ describe("simplifying keeps every part", () => {
         );
         if (!result.ok)
             throw new Error(JSON.stringify(result.report.cantImport));
-        const distant = result.model.parts.distant;
-        expect((await triangleCenters(distant)).length).toBeLessThanOrEqual(
-            DISTANT_TRIANGLE_CAP,
-        );
-        const posts = await trianglesAt(distant, fenceSpots(400), 0.06);
-        expect(Math.min(...posts)).toBeGreaterThan(0);
+        const parts = await partTriangles(result.model.parts.distant);
+        const total = [...parts.values()].reduce((n, t) => n + t, 0);
+        expect(total).toBeLessThanOrEqual(DISTANT_TRIANGLE_CAP);
+        expect(Math.min(...parts.values())).toBeGreaterThan(0);
     });
 
     it("simplifies a model of many small parts by the whole model's measure in its distant copy (#1180)", async () => {
@@ -302,12 +242,10 @@ describe("simplifying keeps every part", () => {
         );
         if (!result.ok)
             throw new Error(JSON.stringify(result.report.cantImport));
-        const distant = result.model.parts.distant;
-        expect((await triangleCenters(distant)).length).toBeLessThanOrEqual(
-            DISTANT_TRIANGLE_CAP * 1.5,
-        );
-        const each = await trianglesAt(distant, ballSpots(200), 0.15);
-        expect(Math.min(...each)).toBeGreaterThan(0);
+        const parts = await partTriangles(result.model.parts.distant);
+        const total = [...parts.values()].reduce((n, t) => n + t, 0);
+        expect(total).toBeLessThanOrEqual(DISTANT_TRIANGLE_CAP * 1.5);
+        expect(Math.min(...parts.values())).toBeGreaterThan(0);
     });
 
     it("never leaves a part empty, however many parts share the cap", async () => {
@@ -324,28 +262,9 @@ describe("simplifying keeps every part", () => {
             result.model.parts.model,
             result.model.parts.distant,
         ]) {
-            const posts = await trianglesAt(part, fenceSpots(1_500), 0.06);
-            expect(Math.min(...posts)).toBeGreaterThan(0);
+            const parts = await partTriangles(part);
+            expect(parts.size).toBe(1_500);
+            expect(Math.min(...parts.values())).toBeGreaterThan(0);
         }
-    }, 60_000);
-});
-
-describe("merging parts (#1201)", () => {
-    it("draws a model of many parts and one material as one part, in every copy", async () => {
-        const result = await importModel(
-            [picked("scaffold.glb", await scaffold())],
-            { detail: "original" },
-            env,
-        );
-        if (!result.ok)
-            throw new Error(JSON.stringify(result.report.cantImport));
-        const { model, light, distant } = result.model.parts;
-        for (const part of [model, light!, distant])
-            expect(await partCount(part)).toBe(1);
-        // Merging moves no triangle: each pole's 128 still stand where it did (with a few of the
-        // deck's above it)
-        const poles = await trianglesAt(model, poleSpots(), 0.03);
-        for (const triangles of poles)
-            expect(triangles).toBeGreaterThanOrEqual(128);
-    });
+    }, 30_000);
 });
