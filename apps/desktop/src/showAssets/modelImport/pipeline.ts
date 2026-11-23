@@ -27,6 +27,7 @@ import {
     GLB_BUFFER,
     type Document,
     type Material,
+    type Mesh,
     type Node,
     type Primitive,
     type Scene,
@@ -53,6 +54,7 @@ import {
     DETAILED_TRIANGLE_CAP,
     DISTANT_SIMPLIFY_FROM,
     DISTANT_TEXTURE_CAP,
+    DISTANT_SIMPLIFY_ERRORS,
     DISTANT_TRIANGLE_CAP,
     DISTANT_TRIANGLE_RATIO,
     FLAT_RATIO,
@@ -619,12 +621,15 @@ async function makeLight(
 
 /**
  * meshoptimizer's simplifier toward `target` triangles: the ratio first, then a wider error
- * limit until it gets there (spike #995). Returns the triangles left.
+ * limit until it gets there (spike #995), up to the last of `errors`. Each limit is a share of a
+ * part's own size, or with `ofModel` of the whole model's (#1180). Returns the triangles left.
  */
 async function simplifyTo(
     doc: Document,
     scene: Scene,
     target: number,
+    errors: readonly number[] = [0.01, 0.05, 0.2, 1],
+    ofModel = false,
 ): Promise<number> {
     await MeshoptSimplifier.ready;
     await doc.transform(weld({ overwrite: false }));
@@ -638,9 +643,12 @@ async function simplifyTo(
         1,
         Math.min(PART_TRIANGLE_FLOOR, Math.floor(target / Math.max(1, parts))),
     );
+    // A part's share of the model's size: a limit of the model's size is this many times wider
+    // a limit of the part's, which the simplifier measures against
+    const widen = ofModel ? partWidening(doc, scene) : () => 1;
     const start = sceneTriangles(scene);
     let now = start;
-    for (const error of [0.01, 0.05, 0.2, 1]) {
+    for (const error of errors) {
         if (now <= target) break;
         const ratio = Math.min(1, (target / now) * 0.95);
         for (const mesh of doc.getRoot().listMeshes())
@@ -653,12 +661,56 @@ async function simplifyTo(
                 simplifyKeeping(
                     prim,
                     Math.max(ratio, floor / triangles),
-                    error,
+                    Math.min(1, error * widen(mesh)),
                 );
             }
         now = sceneTriangles(scene);
     }
     return now;
+}
+
+/**
+ * For each mesh, how many times larger the model is than the mesh as drawn (its largest
+ * instance): a model of many small parts lets each simplify by the model's measure, so its far
+ * copy fits its target, while a large part keeps its shape (#1180)
+ */
+function partWidening(doc: Document, scene: Scene): (mesh: Mesh) => number {
+    const diagonal = (min: number[], max: number[]) =>
+        Math.hypot(max[0] - min[0], max[1] - min[1], max[2] - min[2]);
+    const { min, max } = getBounds(scene);
+    const model = diagonal(min, max);
+    const widening = new Map<Mesh, number>();
+    for (const mesh of doc.getRoot().listMeshes()) {
+        const scale = Math.max(
+            0,
+            ...mesh
+                .listParents()
+                .filter((p): p is Node => p.propertyType === PropertyType.NODE)
+                .map((node) => {
+                    const m = node.getWorldMatrix();
+                    return Math.max(
+                        Math.hypot(m[0], m[1], m[2]),
+                        Math.hypot(m[4], m[5], m[6]),
+                        Math.hypot(m[8], m[9], m[10]),
+                    );
+                }),
+        );
+        const size = Math.max(
+            0,
+            ...mesh.listPrimitives().map((prim) => {
+                const position = prim.getAttribute("POSITION");
+                return position
+                    ? diagonal(position.getMin([]), position.getMax([]))
+                    : 0;
+            }),
+        );
+        const drawn = size * scale;
+        widening.set(
+            mesh,
+            drawn > 0 && model > 0 ? Math.max(1, model / drawn) : 1,
+        );
+    }
+    return (mesh) => widening.get(mesh) ?? 1;
 }
 
 /**
@@ -735,7 +787,10 @@ async function shrinkTextures(
 const textureName = (texture: Texture, index: number) =>
     texture.getName() || texture.getURI() || `texture ${index + 1}`;
 
-/** The distant version: simplified hard, with small textures. */
+/**
+ * The distant version: simplified as far as keeps its shape, with small textures. It may keep
+ * more than its target: a far copy that caves in looks broken from the stands (#1180).
+ */
 async function makeDistant(
     io: WebIO,
     doc: Document,
@@ -752,7 +807,7 @@ async function makeDistant(
                 Math.floor(triangles * DISTANT_TRIANGLE_RATIO),
             ),
         );
-        await simplifyTo(distant, scene, target);
+        await simplifyTo(distant, scene, target, DISTANT_SIMPLIFY_ERRORS, true);
     }
     await shrinkTextures(distant, DISTANT_TEXTURE_CAP, images, null);
     await distant.transform(

@@ -170,19 +170,40 @@ export const PIT_NEAR_M = 30;
 export const PIT_FAR_M = 38;
 
 /**
+ * How far out (m) per meter of its size a model keeps its detail: the pit's own models, about
+ * 1.5 m across, switch at {@link PIT_NEAR_M}. A larger imported model (a 4.5 m car, a scaffold)
+ * stays as large on screen for longer, so it keeps its detail as far out as one that size
+ * would (#1180).
+ */
+export const PIT_NEAR_PER_M = 20;
+/**
+ * …but never past this (m): a huge prop, or one kept at its Original millions of triangles,
+ * still goes to its far copy across the field
+ */
+export const PIT_NEAR_MAX_M = 100;
+
+/**
  * Whether a model at (`x`, `z`) draws in detail, from its distance to the camera at about
- * keyboard height and whether it did last frame (`was`): the gap between {@link PIT_NEAR_M} and
- * {@link PIT_FAR_M} keeps one at the edge from flickering, as instruments do (`hornSet.ts`).
+ * keyboard height and whether it did last frame (`was`): the gap between the near and far
+ * distances keeps one at the edge from flickering, as instruments do (`hornSet.ts`). Both grow
+ * with the model's drawn size (`sizeM`, its longest side) past the pit's own models', up to
+ * {@link PIT_NEAR_MAX_M}.
  */
 export function isNearPitItem(
     x: number,
     z: number,
     camera: readonly [number, number, number],
     was: boolean | undefined,
+    sizeM = 0,
 ): boolean {
+    const near = Math.min(
+        PIT_NEAR_MAX_M,
+        Math.max(PIT_NEAR_M, sizeM * PIT_NEAR_PER_M),
+    );
+    const far = near * (PIT_FAR_M / PIT_NEAR_M);
     const d = Math.hypot(x - camera[0], camera[1] - 1, z - camera[2]);
-    if (was === undefined) return d < (PIT_NEAR_M + PIT_FAR_M) / 2;
-    return was ? d < PIT_FAR_M : d < PIT_NEAR_M;
+    if (was === undefined) return d < (near + far) / 2;
+    return was ? d < far : d < near;
 }
 
 /**

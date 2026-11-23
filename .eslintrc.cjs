@@ -122,14 +122,21 @@ module.exports = {
             parserOptions: {
                 parser: "@typescript-eslint/parser",
                 extraFileExtensions: [".astro"],
+                // Without type information: building it for an .astro file runs ESLint out of
+                // memory (over 8 GB for packages/ui's few components), which fails CI's lint
+                project: null,
             },
-            rules: Object.keys(require("eslint-plugin-react").rules).reduce(
-                (acc, rule) => {
-                    acc[`react/${rule}`] = "off";
-                    return acc;
-                },
-                {},
-            ),
+            rules: {
+                ...Object.keys(require("eslint-plugin-react").rules).reduce(
+                    (acc, rule) => {
+                        acc[`react/${rule}`] = "off";
+                        return acc;
+                    },
+                    {},
+                ),
+                // Needs type information
+                "@typescript-eslint/no-floating-promises": "off",
+            },
         },
     ],
     settings: {

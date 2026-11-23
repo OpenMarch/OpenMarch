@@ -89,8 +89,8 @@ interface Tier {
 interface ModelGroup {
     /** A built-in's name, or an imported model's `items.model` value */
     name: string;
-    /** An imported model's real footprint, which its Outline scales; null for a built-in */
-    sizeM: { width: number; depth: number } | null;
+    /** An imported model's real size, which its Outline scales; null for a built-in */
+    sizeM: { width: number; depth: number; height: number } | null;
     tracks: PropTrack[];
     /** Detailed first when there are two */
     tiers: Tier[];
@@ -372,6 +372,15 @@ export default function PitModels({ fieldProperties }: PitModelsProps) {
                             scratch.z,
                             cam,
                             g.near.get(track.marcherId),
+                            // An imported model's longest side as drawn; the pit's own are
+                            // its default
+                            g.sizeM
+                                ? Math.max(
+                                      g.sizeM.width,
+                                      g.sizeM.depth,
+                                      g.sizeM.height,
+                                  ) * modelScale(at, g.sizeM)
+                                : 0,
                         );
                         g.near.set(track.marcherId, near);
                         tier = near ? 0 : 1;

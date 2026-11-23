@@ -119,6 +119,64 @@ async function fence(count: number): Promise<Uint8Array> {
     return writeGlb(doc);
 }
 
+/** A sphere `segments` around and `rings` high, `radius` m, at x, z */
+function sphere(
+    doc: Document,
+    segments: number,
+    rings: number,
+    radius: number,
+    x: number,
+    z: number,
+) {
+    const positions: number[] = [];
+    const indices: number[] = [];
+    for (let r = 0; r <= rings; r++)
+        for (let i = 0; i <= segments; i++) {
+            const phi = (r / rings) * Math.PI;
+            const theta = (i / segments) * Math.PI * 2;
+            positions.push(
+                x + radius * Math.sin(phi) * Math.cos(theta),
+                1 + radius * Math.cos(phi),
+                z + radius * Math.sin(phi) * Math.sin(theta),
+            );
+        }
+    for (let r = 0; r < rings; r++)
+        for (let i = 0; i < segments; i++) {
+            const a = r * (segments + 1) + i;
+            const b = a + segments + 1;
+            if (r > 0) indices.push(a, b, a + 1);
+            if (r < rings - 1) indices.push(a + 1, b, b + 1);
+        }
+    return primitive(doc, positions, indices);
+}
+
+/** `count` small balls in rows, each its own mesh */
+async function balls(count: number): Promise<Uint8Array> {
+    const doc = new Document();
+    doc.createBuffer();
+    const scene = doc.createScene();
+    for (let i = 0; i < count; i++)
+        scene.addChild(
+            doc
+                .createNode(`ball ${i}`)
+                .setMesh(
+                    doc
+                        .createMesh(`ball ${i}`)
+                        .addPrimitive(
+                            sphere(
+                                doc,
+                                10,
+                                6,
+                                0.1,
+                                (i % 20) * 0.5,
+                                Math.floor(i / 20) * 0.5,
+                            ),
+                        ),
+                ),
+        );
+    return writeGlb(doc);
+}
+
 /** Each mesh's triangles, by name */
 async function partTriangles(glb: Uint8Array): Promise<Map<string, number>> {
     const doc = await readGlb(glb);
@@ -171,6 +229,22 @@ describe("simplifying keeps every part", () => {
         const parts = await partTriangles(result.model.parts.distant);
         const total = [...parts.values()].reduce((n, t) => n + t, 0);
         expect(total).toBeLessThanOrEqual(DISTANT_TRIANGLE_CAP);
+        expect(Math.min(...parts.values())).toBeGreaterThan(0);
+    });
+
+    it("simplifies a model of many small parts by the whole model's measure in its distant copy (#1180)", async () => {
+        // 200 balls of 100 triangles: each is small beside the model, so its distant copy can
+        // lose most of each ball's detail without the model changing shape
+        const result = await importModel(
+            [picked("balls.glb", await balls(200))],
+            {},
+            env,
+        );
+        if (!result.ok)
+            throw new Error(JSON.stringify(result.report.cantImport));
+        const parts = await partTriangles(result.model.parts.distant);
+        const total = [...parts.values()].reduce((n, t) => n + t, 0);
+        expect(total).toBeLessThanOrEqual(DISTANT_TRIANGLE_CAP * 1.5);
         expect(Math.min(...parts.values())).toBeGreaterThan(0);
     });
 

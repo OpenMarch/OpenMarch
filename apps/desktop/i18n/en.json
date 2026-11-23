@@ -1596,6 +1596,7 @@
                 "description": "Drag to look around, then switch versions to see what simplifying changed.",
                 "which": "Version to show",
                 "lightCopy": "Light copy",
+                "farCopy": "Far-away copy",
                 "hint": "Drag to turn, scroll to zoom",
                 "stands": "From the stands",
                 "closeUp": "Close up",

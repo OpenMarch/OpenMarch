@@ -3822,6 +3822,7 @@
     "props.import.compare.description": "Line under the title of the 3D comparison window: drag in the view to turn the model, and switch between versions (the chosen level and the original) to see what simplifying changed.",
     "props.import.compare.which": "Accessible name of the switch choosing which version of the model the 3D comparison shows.",
     "props.import.compare.lightCopy": "Option in the 3D comparison: the simplified Light copy kept beside the original.",
+    "props.import.compare.farCopy": "Option in the 3D comparison: the much simpler copy of the model the 3D View draws when the camera is far from the prop.",
     "props.import.compare.hint": "Small hint under the 3D comparison: drag with the mouse or finger to turn the model, scroll to zoom.",
     "props.import.compare.stands": "Button in the 3D comparison that moves the camera 30 m away, as an audience member in the stands would see the prop.",
     "props.import.compare.closeUp": "Button in the 3D comparison that moves the camera back close to the model.",

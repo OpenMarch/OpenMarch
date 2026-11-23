@@ -795,7 +795,8 @@ const shots = [
         id: "3d-props-import-compare",
         kind: "still",
         // The import review's Compare in 3D for the chair: the Original (39,936 triangles), with
-        // Light beside it in the switch, turned a little so the cushions' detail shows
+        // Light and the far-away copy beside it in the switch, turned a little so the cushions'
+        // detail shows
         async setup(ctx) {
             const { page } = ctx;
             await importChair(page);
