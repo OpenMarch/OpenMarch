@@ -74,6 +74,7 @@ export const VIEW_MENU_ACTIONS: readonly MenuAction[] = [
 ];
 
 export const HELP_MENU_ACTIONS: readonly MenuAction[] = [
+    { action: "openHelp", labelKey: "menu.help.openHelp", accelerator: "F1" },
     {
         action: "showShortcuts",
         labelKey: "menu.help.showShortcuts",

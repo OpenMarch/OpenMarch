@@ -93,6 +93,7 @@ export class RigController {
     jumpTo(position: Vector3Tuple, target: Vector3Tuple, fovDeg?: number) {
         this.active = null;
         this.stopMotion();
+        this.dropZoom();
         this.setPose(position, target);
         if (fovDeg !== undefined) this.setFov(fovDeg);
         this.apply();
@@ -101,6 +102,7 @@ export class RigController {
     /** Starts a fly-to from wherever the camera is now. */
     flyTo(position: Vector3Tuple, target: Vector3Tuple, options: FlyOptions) {
         this.stopMotion();
+        this.dropZoom();
         const p = this.camera.position;
         const fromFov = this.fov();
         this.active = {
@@ -229,6 +231,12 @@ export class RigController {
         this.samples = [];
     }
 
+    /** Drops a scroll zoom still easing in, so it can't pull a placed pose away. */
+    private dropZoom() {
+        this.pendingZoom = 0;
+        this.zoomAnchor = null;
+    }
+
     /**
      * Grab pan: the ground point that was under the pointer (`from`) moves
      * to where the pointer is now (`to`) by moving the target the other way.
@@ -249,6 +257,52 @@ export class RigController {
             z = focus[2] + (oz / d) * MAX_PAN;
         }
         this.target = [x, this.target[1], z];
+        return true;
+    }
+
+    /**
+     * Moves the whole view by (dx, dy, dz): the orbit target and the camera,
+     * and a fly-to's start and end, so the view keeps up with a performer it
+     * follows, in flight too. Places the camera now.
+     */
+    shift(dx: number, dy: number, dz: number) {
+        if (dx === 0 && dy === 0 && dz === 0) return;
+        const add = (v: Vector3Tuple) => {
+            v[0] += dx;
+            v[1] += dy;
+            v[2] += dz;
+        };
+        add(this.target);
+        const a = this.active;
+        if (a) {
+            add(a.tween.fromPosition);
+            add(a.tween.toPosition);
+            add(a.tween.fromTarget);
+            add(a.tween.toTarget);
+            add(a.currentTarget);
+            this.camera.position.x += dx;
+            this.camera.position.y += dy;
+            this.camera.position.z += dz;
+            this.camera.updateMatrixWorld();
+            return;
+        }
+        // Stepping down off a platform can take a low orbit under the ground.
+        if (this.eyeY() < MIN_EYE_Y)
+            this.spherical.phi = Math.min(
+                this.spherical.phi,
+                maxPhiAboveGround(this.spherical.radius, this.target[1]),
+            );
+        this.apply();
+    }
+
+    /**
+     * Turns the orbit about its target by `radians` (positive toward +X from
+     * +Z), as a chase camera follows its subject round. Not while flying.
+     */
+    turn(radians: number): boolean {
+        if (this.active || radians === 0) return false;
+        this.spherical.theta += radians;
+        this.apply();
         return true;
     }
 

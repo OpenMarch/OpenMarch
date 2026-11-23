@@ -90,12 +90,15 @@ settingsMenus.forEach(({ name, navigate }) => {
     });
 });
 
+/** General's language menu; the window "Open on" menus are comboboxes too */
+const languagePicker = (page: Page) => page.locator("#language");
+
 settingsMenus.forEach(({ name, navigate }) => {
     test(`${name} - Language`, async ({ electronApp }) => {
         const { app, page: mainPage } = electronApp;
         const page = await navigate(app, mainPage);
         await goToSection(page, "General");
-        await page.getByRole("combobox").click();
+        await languagePicker(page).click();
         await page.getByRole("option", { name: "Español" }).click();
         await expect(page.getByText("Idioma", { exact: true })).toBeVisible();
         await expect(
@@ -104,20 +107,20 @@ settingsMenus.forEach(({ name, navigate }) => {
 
         // await expect(page.getByText("Configuración")).toBeVisible();
 
-        await page.getByRole("combobox").click();
+        await languagePicker(page).click();
         await page.getByText("Português (Brasil)").click();
         await expect(
             page.getByRole("heading", { name: "Geral" }),
         ).toBeVisible();
-        await page.getByRole("combobox").click();
+        await languagePicker(page).click();
         await page.getByRole("option", { name: "日本語" }).click();
         await expect(page.getByText("言語", { exact: true })).toBeVisible();
-        await page.getByRole("combobox").click();
+        await languagePicker(page).click();
         await page.getByRole("option", { name: "English" }).click();
         await expect(
             page.getByRole("navigation", { name: "Settings" }),
         ).toBeVisible();
-        await expect(page.getByRole("combobox")).toContainText("English");
+        await expect(languagePicker(page)).toContainText("English");
     });
 });
 

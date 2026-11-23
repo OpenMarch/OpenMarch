@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { touchSafeAccept } from "@/utilities/fileAccept";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -14,6 +14,7 @@ import {
     PlusIcon,
     DotsThreeIcon,
     SpinnerIcon,
+    WarningCircleIcon,
 } from "@phosphor-icons/react";
 import {
     Button,
@@ -41,6 +42,7 @@ import clsx from "clsx";
 import { useTranslate } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
 import { formatLocale } from "@/utilities/formatLocale";
+import { formatExpiryDate } from "../utilities/ensembleExpiry";
 
 function formatDuration(seconds: number): string {
     const roundedSeconds = Math.round(seconds);
@@ -257,11 +259,31 @@ function EditNicknameDialog({
 export function AudioFileSettings({
     production,
     setDefaultAudioFileId,
+    expiredOn,
 }: {
     production: { id: number; default_audio_file_id: number | null };
     setDefaultAudioFileId: (audioFileId: number) => void;
+    /**
+     * Set when the production's ensemble has expired: the ensemble's last
+     * valid day (ISO date). The server refuses audio uploads, so adding is off.
+     * Renaming, choosing the active file and deleting still work.
+     */
+    expiredOn?: string;
 }) {
     const { t } = useTranslate();
+    const expiredNoteId = useId();
+    const [flashExpiredNote, setFlashExpiredNote] = useState(false);
+    useEffect(() => {
+        if (!flashExpiredNote) return;
+        const timer = setTimeout(() => setFlashExpiredNote(false), 2000);
+        return () => clearTimeout(timer);
+    }, [flashExpiredNote]);
+    const isExpired = expiredOn !== undefined;
+    const addDisabledReason = isExpired
+        ? t("mobileExport.expired.addAudioDisabled", {
+              date: formatExpiryDate(expiredOn),
+          })
+        : undefined;
     const productionId = production.id;
     const queryClient = useQueryClient();
     const setActiveMutation = useSetActiveAudioFileMutation(queryClient);
@@ -352,6 +374,11 @@ export function AudioFileSettings({
     };
 
     const handleAddAlternateClick = () => {
+        // The button stays clickable so a click can point at the reason
+        if (isExpired) {
+            setFlashExpiredNote(true);
+            return;
+        }
         addAudioFileInputRef.current?.click();
     };
 
@@ -445,7 +472,7 @@ export function AudioFileSettings({
                                     <span className="truncate font-medium">
                                         {file.nickname ?? file.name}
                                     </span>
-                                    <div className="text-text-subtitle flex flex-wrap gap-12 text-sm">
+                                    <div className="text-text-subtitle text-body flex flex-wrap gap-12">
                                         <span>
                                             {formatDuration(
                                                 Number(
@@ -474,7 +501,7 @@ export function AudioFileSettings({
 
                                 <div className="flex shrink-0 items-center gap-8">
                                     {isActive && (
-                                        <span className="text-accent text-sm font-medium">
+                                        <span className="text-accent text-body font-medium">
                                             {t("mobileExport.audio.active")}
                                         </span>
                                     )}
@@ -499,7 +526,7 @@ export function AudioFileSettings({
                                                     handleSetActive(file.id)
                                                 }
                                                 hidden={isActive}
-                                                className="rounded-4 text-text hover:bg-fg-1 focus:bg-fg-1 flex cursor-pointer items-center gap-8 px-12 py-8 text-sm transition-colors outline-none"
+                                                className="rounded-4 text-text hover:bg-fg-1 focus:bg-fg-1 text-body flex cursor-pointer items-center gap-8 px-12 py-8 transition-colors outline-none"
                                             >
                                                 <CheckCircleIcon size={16} />
                                                 <span>
@@ -512,7 +539,7 @@ export function AudioFileSettings({
                                                 onClick={() =>
                                                     openEditNickname(file)
                                                 }
-                                                className="rounded-4 text-text hover:text-accent flex cursor-pointer items-center gap-8 px-12 py-8 text-sm transition-colors outline-none"
+                                                className="rounded-4 text-text hover:text-accent text-body flex cursor-pointer items-center gap-8 px-12 py-8 transition-colors outline-none"
                                             >
                                                 <PencilIcon size={16} />
                                                 <span>
@@ -525,7 +552,7 @@ export function AudioFileSettings({
                                                 onClick={() =>
                                                     handleDelete(file.id)
                                                 }
-                                                className="rounded-4 text-text hover:text-red flex cursor-pointer items-center gap-8 px-12 py-8 text-sm transition-colors outline-none"
+                                                className="rounded-4 text-text hover:text-red text-body flex cursor-pointer items-center gap-8 px-12 py-8 transition-colors outline-none"
                                             >
                                                 <TrashIcon size={16} />
                                                 <span>
@@ -543,6 +570,25 @@ export function AudioFileSettings({
                 )}
             </div>
 
+            {isExpired && (
+                <div
+                    id={expiredNoteId}
+                    role="status"
+                    data-testid="expired-add-audio-note"
+                    className={clsx(
+                        "rounded-6 bg-red/10 text-body text-red flex items-start gap-8 p-12 transition-shadow duration-300",
+                        flashExpiredNote && "ring-red ring-2",
+                    )}
+                >
+                    <WarningCircleIcon
+                        size={16}
+                        className="mt-2 shrink-0"
+                        aria-hidden
+                    />
+                    <span>{addDisabledReason}</span>
+                </div>
+            )}
+
             <div className="flex justify-end">
                 <input
                     ref={addAudioFileInputRef}
@@ -557,6 +603,15 @@ export function AudioFileSettings({
                     size="compact"
                     onClick={handleAddAlternateClick}
                     disabled={!canMutate}
+                    // Not `disabled` when expired: a click flashes the note
+                    // that says why, and the tooltip repeats it
+                    aria-disabled={isExpired || undefined}
+                    aria-describedby={isExpired ? expiredNoteId : undefined}
+                    tooltipText={addDisabledReason}
+                    data-testid="add-audio-button"
+                    className={clsx(
+                        isExpired && "cursor-not-allowed opacity-50",
+                    )}
                 >
                     <PlusIcon size={16} />{" "}
                     {t("mobileExport.audio.addAlternate")}

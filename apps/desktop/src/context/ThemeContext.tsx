@@ -11,6 +11,9 @@ interface ThemeContextProps {
     setTheme: (theme: string) => void;
 }
 
+/** Read by index.html before the first paint; keep the two in step */
+const THEME_CACHE_KEY = "openmarch:theme";
+
 const ThemeContext = createContext<ThemeContextProps | undefined>(undefined);
 
 export const useTheme = () => {
@@ -22,7 +25,10 @@ export const useTheme = () => {
 };
 
 export const ThemeProvider = ({ children }: { children: ReactNode }) => {
-    const [theme, setTheme] = useState<string>("dark");
+    // index.html set it before the first paint
+    const [theme, setTheme] = useState<string>(() =>
+        document.documentElement.classList.contains("dark") ? "dark" : "light",
+    );
 
     const getSystemTheme = () => {
         return window.matchMedia("(prefers-color-scheme: light)").matches
@@ -34,6 +40,12 @@ export const ThemeProvider = ({ children }: { children: ReactNode }) => {
     const showTheme = (next: string) => {
         setTheme(next);
         document.documentElement.classList.toggle("dark", next === "dark");
+        // For index.html's first paint where nothing else knows the theme (the web build)
+        try {
+            localStorage.setItem(THEME_CACHE_KEY, next);
+        } catch {
+            // Storage blocked: the page just paints light first
+        }
     };
 
     /** Updates this window and saves, which tells the other windows. */

@@ -5,18 +5,21 @@ import type { FieldGesture, FieldPoint, FieldPointer } from "./fieldEditor";
 import { FieldDrag, type FieldKeys } from "./fieldKeys";
 import {
     rotatePoint,
+    scaleFor,
     type HandleId,
     type SelectionFrame,
 } from "./groupTransform";
 import { PRECISION_START, precisionDelta } from "./moveRules";
-import { ROTATE_HONORS, RotationDrag } from "./transformGestures";
+import { ROTATE_HONORS, RotationDrag, SCALE_HONORS } from "./transformGestures";
 
 /**
  * Resizing and turning one item's Outline with its handles (C2.1, props-spec
- * section 5). An Outline's size and turn are its own, beat-keyed and apart
- * from its moves, so the handles change only them: a side or corner resizes
- * about the center, the rotate handle turns it about the center, and the
- * item never moves. The release saves the new size and turn at the playhead.
+ * section 5). A side or corner resizes it as the selection box's handles
+ * scale marchers: the opposite side stays put, so the item's center moves
+ * with the resize, or the center stays with from center (Alt); constrain
+ * ($mod) keeps its proportions. The rotate handle turns it about its center.
+ * The release saves the new size and turn at the playhead, and a moved center
+ * as a drop of the item there, in the same edit.
  */
 
 /** An item's Outline as drawn: its center, size in field units, and turn in degrees clockwise. */
@@ -25,10 +28,23 @@ export type ItemFrame = {
     width: number;
     depth: number;
     rotation: number;
+    /**
+     * An imported model's prop (fork #1078): every handle resizes it evenly, keeping its
+     * proportions, and its height follows (`useFieldItemWrites`)
+     */
+    keepsProportions?: boolean;
 };
 
-/** An Outline's size in field units and turn in degrees, as a handle leaves it. */
-export type ItemSize = { width: number; depth: number; rotation: number };
+/**
+ * An Outline's size in field units and turn in degrees, as a handle leaves it, and its new center
+ * when the resize moved it (absent when the center stayed put).
+ */
+export type ItemSize = {
+    width: number;
+    depth: number;
+    rotation: number;
+    center?: FieldPoint;
+};
 
 /** No handle resizes an Outline below this, in field units: it would vanish. */
 export const MIN_ITEM_SIZE = 2;
@@ -55,24 +71,14 @@ export interface ItemTransformHost {
     cancel(): void;
 }
 
-/** Which of the Outline's own axes a scale handle pulls: -1, 0 (not this axis) or 1. */
-const PULLS: Record<Exclude<HandleId, "rot">, FieldPoint> = {
-    nw: { x: -1, y: -1 },
-    n: { x: 0, y: -1 },
-    ne: { x: 1, y: -1 },
-    e: { x: 1, y: 0 },
-    se: { x: 1, y: 1 },
-    s: { x: 0, y: 1 },
-    sw: { x: -1, y: 1 },
-    w: { x: -1, y: 0 },
-};
+/** A center moved less than this, in field units, stayed put: rounding, not a move. */
+const STILL = 1e-9;
 
 /**
  * As the selection's handles do: while fine is on a resize counts the
  * pointer at a quarter of its speed (a turn doesn't slow), a role key pressed
  * or released mid-drag redraws the Outline at the last pointer, and a release
- * where the last move left the pointer saves what's drawn. Neither handle reads
- * constrain or from center.
+ * where the last move left the pointer saves what's drawn.
  */
 abstract class ItemHandleGesture implements FieldGesture {
     abstract readonly kind: FieldTestGesture;
@@ -108,11 +114,18 @@ abstract class ItemHandleGesture implements FieldGesture {
     protected abstract sizeAt(at: FieldPoint, roles: Roles): ItemSize;
 }
 
+/** A marcher selection's scale roles, without the snapping an item's resize doesn't do */
+const ITEM_SCALE_HONORS: HonoredRoles = { ...SCALE_HONORS, snaps: false };
+
 /**
- * A side or corner: the Outline's sides it pulls follow the pointer, the
- * opposite ones following too, so the center stays where it is. Nothing
- * snaps, so fine needs no re-anchoring: the slow drag goes on from wherever
- * the pointer had taken the sides.
+ * A side or corner, by the selection box's rule (`scaleFor`) in the Outline's
+ * own frame, unturned about its center: the sides it pulls follow the pointer
+ * and the opposite ones stay put, so the center moves; with from center the
+ * opposite sides mirror them and the center stays. Constrain keeps the
+ * proportions (a corner along its diagonal, a side evenly across), as an
+ * imported model's prop always does (#1078). Nothing snaps, so fine needs no
+ * re-anchoring: the slow drag goes on from wherever the pointer had taken the
+ * sides. No side goes below {@link MIN_ITEM_SIZE}.
  */
 export class ItemResizeGesture extends ItemHandleGesture {
     readonly kind: FieldTestGesture = "scale";
@@ -125,11 +138,7 @@ export class ItemResizeGesture extends ItemHandleGesture {
         private readonly handle: Exclude<HandleId, "rot">,
         keys: FieldKeys,
     ) {
-        super(frame, host, keys, {
-            context: "field",
-            fine: "fine",
-            snaps: false,
-        });
+        super(frame, host, keys, ITEM_SCALE_HONORS);
     }
 
     protected sizeAt(at: FieldPoint, roles: Roles): ItemSize {
@@ -140,25 +149,45 @@ export class ItemResizeGesture extends ItemHandleGesture {
             roles.fine,
         );
         this.track = moved.track;
-        // Where the pointer counts as being, unturned about the center into the Outline's own frame
-        const local = rotatePoint(
+        // The drag, unturned into the Outline's own frame
+        const delta = rotatePoint(moved.delta, { x: 0, y: 0 }, -rotation);
+        const keepRatio =
+            roles.constrain || this.frame.keepsProportions === true;
+        const { anchor, x, y } = scaleFor(
+            this.handle,
             {
-                x: this.origin.field.x + moved.delta.x,
-                y: this.origin.field.y + moved.delta.y,
+                left: center.x - width / 2,
+                right: center.x + width / 2,
+                top: center.y - depth / 2,
+                bottom: center.y + depth / 2,
             },
-            center,
-            -rotation,
+            delta,
+            keepRatio,
+            roles.fromCenter,
         );
-        const pulls = PULLS[this.handle];
-        const half = (offset: number, pull: number, size: number) =>
-            pull === 0
-                ? size
-                : Math.max(MIN_ITEM_SIZE, 2 * Math.max(0, offset * pull));
-        return {
-            width: half(local.x - center.x, pulls.x, width),
-            depth: half(local.y - center.y, pulls.y, depth),
+        // No smaller than the least size, evenly when it keeps its proportions; one already
+        // smaller isn't grown by the press
+        const least = (size: number) => Math.min(1, MIN_ITEM_SIZE / size);
+        const even = Math.max(x, least(Math.min(width, depth)));
+        const scale = keepRatio
+            ? { x: even, y: even }
+            : { x: Math.max(x, least(width)), y: Math.max(y, least(depth)) };
+        const size = {
+            width: width * scale.x,
+            depth: depth * scale.y,
             rotation,
         };
+        // The center scales about the anchor too, then turns back with the Outline
+        const local = {
+            x: anchor.x + (center.x - anchor.x) * scale.x,
+            y: anchor.y + (center.y - anchor.y) * scale.y,
+        };
+        if (
+            Math.abs(local.x - center.x) < STILL &&
+            Math.abs(local.y - center.y) < STILL
+        )
+            return size;
+        return { ...size, center: rotatePoint(local, center, rotation) };
     }
 }
 

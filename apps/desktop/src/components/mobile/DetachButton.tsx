@@ -54,7 +54,7 @@ export default function DetachButton(props: ButtonProps) {
                         e.preventDefault();
                     }}
                 >
-                    <div className="text-text text-sm">
+                    <div className="text-text text-body">
                         <T keyName="mobileExport.detach.confirm" />
                     </div>
                     <div className="flex gap-8">

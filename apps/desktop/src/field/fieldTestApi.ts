@@ -104,7 +104,11 @@ export type FieldTestGesture =
     | "pan"
     | "shape"
     | "box"
-    | "prop";
+    | "prop"
+    /** The path pen drawing a path, or a path's corner dragged (pathways step 1) */
+    | "path"
+    /** Set order sweeping through a line's marchers (pathways step 4g) */
+    | "order";
 
 /** How the field draws on this machine (the new field only, #205). */
 export type FieldTestQuality = {
@@ -265,8 +269,22 @@ export type FieldTestShapeOverlay = {
     walks: { from: { x: number; y: number }; to: { x: number; y: number } }[];
     /** The hollow rings where its marchers start (at the start flag), field units. */
     rings: { x: number; y: number }[];
+    /** How many group path lanes are drawn (pathways step 15) */
+    lanes: number;
+    /** Each lane as drawn, on screen (pathways step 3b) */
+    laneLines: { x: number; y: number }[][];
+    /** Adjust keys' handles, on screen */
+    adjustHandles: { x: number; y: number }[];
+    /** The rings round a group's members and selected marchers off it (pathways step 15) */
+    memberRings: {
+        at: { x: number; y: number };
+        kind: "group" | "own";
+        label: string;
+    }[];
     /** Spots it leaves empty on purpose (an odd-count outline's gap), field units. */
     gaps: { x: number; y: number }[];
+    /** Spots a paste leaves empty (#961) */
+    emptySpots: { x: number; y: number }[];
     /** Circles it's drawn on (an Arc's whole circle, #634), field units. */
     construction: {
         center: { x: number; y: number };
@@ -295,6 +313,18 @@ export type FieldTestShapeOverlay = {
     pivotMark: ScreenPoint | null;
     /** The pivot a cell of the editor's pivot menu points at (#437), in field units; null without one */
     pivotPreview: { x: number; y: number } | null;
+    /**
+     * A mirrored paste's mirror point (Paste mirrored): where it is in field units and in the
+     * viewport, which ways it mirrors, and the names shown for its lines; null without one
+     */
+    mirror: {
+        at: { x: number; y: number };
+        screen: ScreenPoint;
+        across: boolean;
+        deep: boolean;
+        acrossLabel: string | null;
+        deepLabel: string | null;
+    } | null;
     /** Who will stand on each spot, as labeled. */
     labels: string[];
     /** The readout by the pointer during a gesture ("7½ × 2 steps · ↔ 2½ ↕ 2 apart"), or null. */

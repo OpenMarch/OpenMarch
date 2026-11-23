@@ -8,11 +8,11 @@
  */
 import { describe, expect, it } from "vitest";
 import { getBounds } from "@gltf-transform/functions";
-import { KHRDracoMeshCompression } from "@gltf-transform/extensions";
 import { validateBytes } from "gltf-validator";
 import { importModel } from "../pipeline";
 import { readImageHeader } from "../imageSize";
-import { TRIANGLE_CAP } from "../rules";
+import { tipped, UPRIGHT } from "../orientation";
+import { DETAILED_TRIANGLE_CAP, TRIANGLE_CAP } from "../rules";
 import type {
     ModelImportChoices,
     ModelImportResult,
@@ -21,7 +21,6 @@ import type {
 } from "../types";
 import {
     chairWith,
-    dracoIo,
     editGlbJson,
     env,
     ktx2Header,
@@ -31,6 +30,7 @@ import {
     read,
     readGlb,
     separateGltf,
+    threeChairs,
     solidPng,
     wrapRoots,
 } from "./fixtures";
@@ -78,10 +78,11 @@ const choiceOf = <C extends string>(result: ModelImportResult, code: C) =>
 
 describe("importModel", () => {
     describe("a good file (TextureCoordinateTest)", () => {
-        it("imports with nothing to choose but the turn", async () => {
+        it("imports with nothing to choose but the tilt and the turn", async () => {
             const result = await run([picked("TextureCoordinateTest.glb")]);
             const model = imported(result);
             expect(result.report.needsChoice.map((c) => c.code)).toEqual([
+                "tilt",
                 "turn",
             ]);
             expect(result.report.cantImport).toEqual([]);
@@ -125,20 +126,22 @@ describe("importModel", () => {
     });
 
     describe("a real chair over the triangle cap (SheenChair)", () => {
-        it("simplifies under the cap by default, with a distant version", async () => {
+        it("simplifies to Light by default, with a distant version and no Light copy", async () => {
             const result = await run([picked("SheenChair.glb")]);
             const model = imported(result);
-            const simplify = choiceOf(result, "simplify")!;
-            expect(simplify).toMatchObject({
+            const detail = choiceOf(result, "detail")!;
+            expect(detail).toMatchObject({
                 triangles: 39_936,
-                cap: TRIANGLE_CAP,
-                preselected: true,
-                applied: true,
+                // Under 100,000 there's no Detailed level
+                levels: ["light", "original"],
+                preselected: "light",
+                applied: "light",
+                lightTriangles: null,
             });
-            expect(simplify.simplifiedTriangles).toBeLessThanOrEqual(
-                TRIANGLE_CAP,
-            );
-            expect(model.sidecar.triangles).toBe(simplify.simplifiedTriangles);
+            expect(detail.appliedTriangles).toBeLessThanOrEqual(TRIANGLE_CAP);
+            expect(model.sidecar.triangles).toBe(detail.appliedTriangles);
+            expect(model.sidecar.detail).toBe("light");
+            expect(model.parts.light).toBeUndefined();
             expect(model.sidecar.distantTriangles).toBeLessThanOrEqual(2_000);
             const { max } = await checkStored(model.parts.model);
             expect(max[1]).toBeCloseTo(0.686, 2);
@@ -147,17 +150,40 @@ describe("importModel", () => {
             expect(model.sidecar.sizeM.depth).toBeCloseTo(0.57, 2);
         });
 
-        it("keeps every triangle when the user says no, with a note", async () => {
+        it("keeps every triangle at Original, with a Light copy beside it", async () => {
             const result = await run([picked("SheenChair.glb")], {
-                simplify: false,
+                detail: "original",
             });
             const model = imported(result);
             expect(model.sidecar.triangles).toBe(39_936);
-            expect(result.report.notes).toContainEqual({
-                code: "overTriangleCap",
-                triangles: 39_936,
-                cap: TRIANGLE_CAP,
+            expect(model.sidecar.detail).toBe("original");
+            expect(result.report.notes).not.toContainEqual(
+                expect.objectContaining({ code: "overTriangleCap" }),
+            );
+            // The Light copy: simplified to the cap, the same size and place
+            expect(model.parts.light).toBeInstanceOf(Uint8Array);
+            expect(model.sidecar.lightTriangles).toBeLessThanOrEqual(
+                TRIANGLE_CAP,
+            );
+            expect(choiceOf(result, "detail")!.lightTriangles).toBe(
+                model.sidecar.lightTriangles,
+            );
+            // Simplifying may move its lowest point a fraction of a millimeter: same place to 1 cm
+            const light = getBounds(
+                (await readGlb(model.parts.light!)).getRoot().listScenes()[0],
+            );
+            const full = await checkStored(model.parts.model);
+            for (const i of [0, 1, 2]) {
+                expect(light.max[i]).toBeCloseTo(full.max[i], 2);
+                expect(light.min[i]).toBeCloseTo(full.min[i], 2);
+            }
+        });
+
+        it("ignores a level it doesn't offer", async () => {
+            const result = await run([picked("SheenChair.glb")], {
+                detail: "detailed",
             });
+            expect(choiceOf(result, "detail")!.applied).toBe("light");
         });
 
         it("drops the extensions GLTFLoader can't use and says so", async () => {
@@ -201,18 +227,35 @@ describe("importModel", () => {
         );
     });
 
-    it("turns a Z-up model upright, pre-selected", async () => {
+    it("keeps a car facing glTF's front upright, though it's longest along Z", async () => {
+        // A car 4 m long facing +Z, 1.4 m tall: the shape of a Z-up post, so no guess (#1200)
+        const result = await run([
+            picked("car.glb", await postGlb([1.8, 1.4, 4])),
+        ]);
+        expect(choiceOf(result, "tilt")).toEqual({
+            code: "tilt",
+            preselected: UPRIGHT,
+            applied: UPRIGHT,
+        });
+        expect(imported(result).sidecar.sizeM.height).toBeCloseTo(1.4, 3);
+    });
+
+    it("leaves a Z-up file as it is until tipped", async () => {
+        // A post saved Z-up lies on its back; Rotate X stands it up
         const glb = await postGlb(
             [0.3, 1.8, 0.3],
             [Math.SQRT1_2, 0, 0, Math.SQRT1_2],
         );
         const result = await run([picked("post-z-up.glb", glb)]);
-        expect(choiceOf(result, "rotateToYUp")).toEqual({
-            code: "rotateToYUp",
-            preselected: true,
-            applied: true,
+        expect(choiceOf(result, "tilt")).toMatchObject({
+            preselected: UPRIGHT,
         });
-        const model = imported(result);
+        expect(imported(result).sidecar.sizeM.height).toBeCloseTo(0.3, 3);
+        const model = imported(
+            await run([picked("post-z-up.glb", glb)], {
+                tilt: tipped(UPRIGHT, 0, "x"),
+            }),
+        );
         expect(model.sidecar.sizeM.height).toBeCloseTo(1.8, 3);
         await checkStored(model.parts.model);
     });
@@ -221,8 +264,54 @@ describe("importModel", () => {
         const result = await run([
             picked("post.glb", await postGlb([0.3, 1.8, 0.3])),
         ]);
-        expect(choiceOf(result, "rotateToYUp")).toBeUndefined();
+        expect(choiceOf(result, "tilt")).toEqual({
+            code: "tilt",
+            preselected: UPRIGHT,
+            applied: UPRIGHT,
+        });
         expect(imported(result).sidecar.sizeM.height).toBeCloseTo(1.8, 3);
+    });
+
+    it("stands up a long model lying on its side when tipped", async () => {
+        // A car 4 m long, 1.4 m tall and 1.8 m wide, lying on its side facing right: it stays
+        // as it is until tipped
+        const glb = await postGlb([4, 1.8, 1.4]);
+        const result = await run([picked("car-on-side.glb", glb)]);
+        expect(choiceOf(result, "tilt")).toMatchObject({
+            preselected: UPRIGHT,
+        });
+        expect(imported(result).sidecar.sizeM.height).toBeCloseTo(1.8, 3);
+
+        const tilt = tipped(UPRIGHT, 0, "x");
+        const model = imported(
+            await run([picked("car-on-side.glb", glb)], { tilt }),
+        );
+        expect(model.sidecar.sizeM.width).toBeCloseTo(4, 3);
+        expect(model.sidecar.sizeM.height).toBeCloseTo(1.4, 3);
+        expect(model.sidecar.sizeM.depth).toBeCloseTo(1.8, 3);
+        await checkStored(model.parts.model);
+    });
+
+    it("tips after turning the way the picture shows", async () => {
+        // Turned a quarter, the 4 m side runs toward the audience; tipping forward then stands
+        // it up (tipping about the file's own axis would stand the 1.8 m side up instead)
+        const glb = await postGlb([4, 1.4, 1.8]);
+        const turn = 90;
+        const tilt = tipped(UPRIGHT, turn, "x");
+        const model = imported(
+            await run([picked("car.glb", glb)], { turn, tilt }),
+        );
+        expect(model.sidecar.sizeM.width).toBeCloseTo(1.8, 3);
+        expect(model.sidecar.sizeM.height).toBeCloseTo(4, 3);
+        expect(model.sidecar.sizeM.depth).toBeCloseTo(1.4, 3);
+    });
+
+    it("ignores a tilt that isn't a quarter-turn rotation", async () => {
+        const glb = await postGlb([0.3, 1.8, 0.3]);
+        const result = await run([picked("post.glb", glb)], {
+            tilt: [1, 0, 0, 0, 1, 0, 0, 0, -1],
+        });
+        expect(choiceOf(result, "tilt")?.applied).toEqual(UPRIGHT);
     });
 
     it("turns the front toward the audience when asked", async () => {
@@ -247,75 +336,25 @@ describe("importModel", () => {
         await checkStored(imported(result).parts.model);
     });
 
-    it("refuses more than 4× the triangle cap before decoding", async () => {
-        // Three chairs sharing one mesh: 119,808 triangles drawn
-        const glb = await chairWith((doc) => {
-            const scene = doc.getRoot().listScenes()[0];
-            const parts = doc
-                .getRoot()
-                .listNodes()
-                .filter((n) => n.getMesh());
-            for (const dx of [1, 2]) {
-                const copy = doc
-                    .createNode(`copy ${dx}`)
-                    .setTranslation([dx, 0, 0]);
-                for (const node of parts)
-                    copy.addChild(
-                        doc
-                            .createNode()
-                            .setMesh(node.getMesh())
-                            .setMatrix(node.getWorldMatrix()),
-                    );
-                scene.addChild(copy);
-            }
-        });
-        expect(refusal(await run([picked("three-chairs.glb", glb)]))).toEqual({
-            code: "tooManyTriangles",
+    it("imports a model far over Light, offering Detailed past 100,000 triangles (#1091)", async () => {
+        // Three chairs sharing one mesh: 119,808 triangles drawn, once refused
+        const glb = await threeChairs();
+        const light = await run([picked("three-chairs.glb", glb)]);
+        expect(choiceOf(light, "detail")).toMatchObject({
             triangles: 119_808,
-            cap: TRIANGLE_CAP,
-            limit: 80_000,
+            levels: ["light", "detailed", "original"],
+            applied: "light",
         });
-    });
-
-    it("refuses more than 4× the cap once decoded, whatever the JSON declares", async () => {
-        // Three chairs, Draco-compressed, with each accessor claiming 3 elements: the
-        // precheck counts 1 triangle per primitive, the decoder makes them all
-        const doc = await readGlb(
-            await chairWith((d) => {
-                const scene = d.getRoot().listScenes()[0];
-                const parts = d
-                    .getRoot()
-                    .listNodes()
-                    .filter((n) => n.getMesh());
-                for (const dx of [1, 2]) {
-                    const copy = d.createNode().setTranslation([dx, 0, 0]);
-                    for (const node of parts)
-                        copy.addChild(
-                            d
-                                .createNode()
-                                .setMesh(node.getMesh()!.clone())
-                                .setMatrix(node.getWorldMatrix()),
-                        );
-                    scene.addChild(copy);
-                }
+        const detailed = imported(
+            await run([picked("three-chairs.glb", glb)], {
+                detail: "detailed",
             }),
         );
-        doc.createExtension(KHRDracoMeshCompression)
-            .setRequired(true)
-            .setEncoderOptions({});
-        const encoded = await (await dracoIo()).writeBinary(doc);
-        const understated = editGlbJson(encoded, (json) => {
-            for (const accessor of json.accessors as { count: number }[])
-                accessor.count = 3;
-        });
-        expect(
-            refusal(await run([picked("draco-chairs.glb", understated)])),
-        ).toEqual({
-            code: "tooManyTriangles",
-            triangles: 119_808,
-            cap: TRIANGLE_CAP,
-            limit: 80_000,
-        });
+        expect(detailed.sidecar.triangles).toBeLessThanOrEqual(
+            DETAILED_TRIANGLE_CAP,
+        );
+        expect(detailed.sidecar.triangles).toBeGreaterThan(TRIANGLE_CAP);
+        expect(detailed.parts.light).toBeInstanceOf(Uint8Array);
     });
 
     it("refuses meshopt data that would decode past its budget", async () => {
@@ -538,8 +577,9 @@ describe("importModel", () => {
             });
         });
 
-        it("refuses a rigged model", async () => {
-            const glb = await chairWith((doc) => {
+        /** The chair with its first mesh skinned to one joint */
+        const riggedChair = () =>
+            chairWith((doc) => {
                 const node = doc
                     .getRoot()
                     .listNodes()
@@ -574,9 +614,85 @@ describe("importModel", () => {
                     );
                 }
             });
-            expect(refusal(await run([picked("rigged.glb", glb)]))).toEqual({
-                code: "rigged",
+
+        it("imports a model whose only checker errors are in its animations (#1168)", async () => {
+            // Sketchfab's converter strides animation data, which glTF forbids, in every
+            // animated model; the import drops animations anyway
+            const glb = editGlbJson(
+                await chairWith((doc) => {
+                    const node = doc.getRoot().listNodes()[0];
+                    const buffer = doc.getRoot().listBuffers()[0];
+                    const accessor = (
+                        type: "SCALAR" | "VEC3",
+                        array: number[],
+                    ) =>
+                        doc
+                            .createAccessor()
+                            .setType(type)
+                            .setArray(new Float32Array(array))
+                            .setBuffer(buffer);
+                    const sampler = doc
+                        .createAnimationSampler()
+                        .setInput(accessor("SCALAR", [0, 1]))
+                        .setOutput(accessor("VEC3", [0, 0, 0, 0, 1, 0]));
+                    doc.createAnimation("bob")
+                        .addSampler(sampler)
+                        .addChannel(
+                            doc
+                                .createAnimationChannel()
+                                .setTargetNode(node)
+                                .setTargetPath("translation")
+                                .setSampler(sampler),
+                        );
+                }),
+                (json) => {
+                    // The output gets a view of its own, with a stride
+                    const animations = json.animations as {
+                        samplers: { output: number }[];
+                    }[];
+                    const accessors = json.accessors as {
+                        bufferView: number;
+                        byteOffset?: number;
+                    }[];
+                    const views = json.bufferViews as {
+                        buffer: number;
+                        byteOffset?: number;
+                        byteLength: number;
+                        byteStride?: number;
+                    }[];
+                    const output = accessors[animations[0].samplers[0].output];
+                    const view = views[output.bufferView];
+                    views.push({
+                        buffer: view.buffer,
+                        byteOffset:
+                            (view.byteOffset ?? 0) + (output.byteOffset ?? 0),
+                        byteLength: 24,
+                        byteStride: 12,
+                    });
+                    output.bufferView = views.length - 1;
+                    output.byteOffset = 0;
+                },
+            );
+            const result = await run([picked("animated.glb", glb)]);
+            imported(result);
+            expect(result.report.notes).toContainEqual(
+                expect.objectContaining({ code: "validatorWarnings" }),
+            );
+        });
+
+        it("imports a rigged model standing still, without its rig (#1168)", async () => {
+            const result = await run([
+                picked("rigged.glb", await riggedChair()),
+            ]);
+            const model = imported(result);
+            expect(result.report.fixedForYou).toContainEqual({
+                code: "rigFrozen",
             });
+            const stored = await readGlb(model.parts.model);
+            expect(stored.getRoot().listSkins()).toEqual([]);
+            for (const mesh of stored.getRoot().listMeshes())
+                for (const prim of mesh.listPrimitives())
+                    expect(prim.listSemantics()).not.toContain("JOINTS_0");
         });
     });
 });

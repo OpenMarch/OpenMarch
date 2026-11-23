@@ -115,7 +115,9 @@
             "loadDialogue": "Abrir archivo…",
             "newDialogue": "Nuevo archivo…",
             "openExport": "Exportar…",
-            "saveDialogue": "Guardar una copia…"
+            "saveDialogue": "Guardar una copia…",
+            "removeUnusedAssets": "Quitar recursos sin usar…",
+            "removeUnusedAssetsKeywords": "quitar borrar eliminar limpiar sin usar recursos modelos importados tamaño"
         },
         "labelWithVariant": "{label} ({variant})",
         "movement": {
@@ -243,12 +245,18 @@
             "openFrontEnsemble": "Abrir front ensemble y podios",
             "openFrontEnsembleKeywords": "pit front ensemble podio tambor mayor drum major marimba vibráfono percusión altavoz bocina equipo preajuste podium vibraphone percussion speaker equipment preset",
             "addFrontEnsembleEquipment": "Agregar equipo del front ensemble o podio",
-            "addFrontEnsembleEquipmentKeywords": "pit podio tambor mayor drum major marimba vibráfono percusión altavoz bocina consola mezcladora torre escalera instrumento podium vibraphone percussion speaker mixer tower stepladder instrument"
+            "addFrontEnsembleEquipmentKeywords": "pit podio tambor mayor drum major marimba vibráfono percusión altavoz bocina consola mezcladora torre escalera instrumento podium vibraphone percussion speaker mixer tower stepladder instrument",
+            "openAssets": "Abrir los recursos del espectáculo",
+            "openAssetsKeywords": "recursos modelos importados archivos créditos licencia tamaño almacenamiento biblioteca"
         },
         "items": {
             "edit": "Editar utilería o equipo seleccionado",
             "editNamed": "Editar {name}",
-            "editKeywords": "editar configuración propiedades utilería equipo podio instrumento nombre tamaño bloquear edit settings properties prop equipment podium instrument name size lock"
+            "editKeywords": "editar configuración propiedades utilería equipo podio instrumento nombre tamaño bloquear edit settings properties prop equipment podium instrument name size lock",
+            "importModel": "Importar un modelo 3D…",
+            "importModelKeywords": "importar modelo 3d glb gltf utilería objeto subir archivo import 3d model prop upload file object",
+            "placeImportedModel": "Colocar un modelo importado",
+            "placeImportedModelKeywords": "colocar modelo importado utilería 3d personalizado place imported model prop custom glb"
         }
     },
     "analyticsOptIn": {
@@ -1434,6 +1442,7 @@
         "hide": "Ocultar en el campo",
         "name": "Nombre",
         "offField": "Fuera del campo en el cabezal de reproducción. Mueve el cabezal a un tiempo en que la utilería esté en el campo para cambiar su contorno.",
+        "keepsProportions": "El ancho, la profundidad y la altura cambian juntos, así el modelo conserva su forma.",
         "outline": {
             "arc": "Arco",
             "circle": "Círculo",
@@ -1469,7 +1478,164 @@
         },
         "locked": "Bloqueado",
         "lockLabel": "Bloqueado",
-        "lockHint": "Una sola posición para todo el show"
+        "lockHint": "Una sola posición para todo el show",
+        "imported": {
+            "title": "Importados",
+            "import": "Importar…",
+            "empty": "Importa un modelo .glb o .gltf, o suéltalo en la ventana, para colocarlo como cualquier otra utilería.",
+            "place": "Colocar {name}",
+            "manage": "Gestionar recursos"
+        },
+        "import": {
+            "title": "Importar un modelo",
+            "pictureAlt": "El modelo visto desde el público",
+            "working": "Preparando el modelo…",
+            "orient": {
+                "detail": "El frente debe mirar hacia el público, con el lado correcto hacia arriba."
+            },
+            "rotateAxis": "Girar en {axis}",
+            "detail": {
+                "title": "Detalle",
+                "levels": {
+                    "light": "Ligero",
+                    "detailed": "Detallado",
+                    "original": "Original"
+                },
+                "cost": "{triangles} triángulos · añade {size} al espectáculo · cada copia se dibuja como {performers, plural, one {# intérprete} other {# intérpretes}}",
+                "heavy": "Va bien en la mayoría de las computadoras recientes. Si la Vista 3D va a tirones, dibuja una copia ligera, que también se guarda en el espectáculo."
+            },
+            "compare": {
+                "open": "Comparar en 3D…",
+                "title": "Comparar en 3D",
+                "description": "Arrastra para mirar alrededor y cambia de versión para ver qué cambió al simplificar.",
+                "which": "Versión que se muestra",
+                "lightCopy": "Copia ligera",
+                "hint": "Arrastra para girar, desplaza para acercar",
+                "stands": "Desde las gradas",
+                "closeUp": "De cerca",
+                "drawFailed": "No se pudo dibujar esta versión."
+            },
+            "size": {
+                "title": "Tamaño",
+                "value": "{width} × {depth} m, {height} m de alto",
+                "question": "¿Es su tamaño real? Si no, elige la unidad en la que se hizo el archivo.",
+                "suggested": "Parecía estar hecho en {unit}, así que se convirtió. Revisa el tamaño."
+            },
+            "units": {
+                "label": "Hecho en",
+                "none": "m",
+                "cm": "cm",
+                "in": "in",
+                "ft": "ft"
+            },
+            "groups": {
+                "cantImport": "No se puede importar",
+                "fixed": "Corregido automáticamente",
+                "notes": "Notas"
+            },
+            "tryAgain": "Reintentar",
+            "name": "Nombre",
+            "saveFailed": "No se pudo agregar el modelo al show.",
+            "cancel": "Cancelar",
+            "add": "Agregar al show",
+            "credits": {
+                "title": "Licencia y créditos",
+                "unknown": "Desconocida",
+                "proprietary": "Todos los derechos reservados",
+                "license": "Licencia",
+                "author": "Autor",
+                "sourceUrl": "Fuente",
+                "attribution": "Atribución",
+                "rights": "Importa solo modelos que tengas derecho a usar."
+            },
+            "cantImport": {
+                "noModelFile": {
+                    "title": "No hay ningún modelo en los archivos",
+                    "detail": "Elige un archivo .glb, o un .gltf junto con los archivos que menciona."
+                },
+                "severalModelFiles": {
+                    "title": "Más de un modelo",
+                    "detail": "Importa uno a la vez: {names}"
+                },
+                "tooLarge": {
+                    "title": "Los archivos son demasiado grandes",
+                    "detail": "{size} MB, supera el límite de {limit} MB"
+                },
+                "unreadable": {
+                    "title": "No se puede leer el archivo"
+                },
+                "externalUri": {
+                    "title": "El modelo carga archivos de internet",
+                    "detail": "Menciona {uri}. Descarga el archivo y elígelo junto con el modelo."
+                },
+                "outsidePickedFiles": {
+                    "title": "El modelo menciona un archivo fuera de su carpeta",
+                    "detail": "Menciona {uri}."
+                },
+                "missingFile": {
+                    "title": "Falta un archivo: {uri}",
+                    "detail": "Elígelo junto con el archivo del modelo."
+                },
+                "requiredExtension": {
+                    "title": "El modelo necesita funciones que OpenMarch no puede leer",
+                    "detail": "Requiere: {extensions}"
+                },
+                "validatorErrors": {
+                    "title": "{count, plural, one {El archivo tiene # error} other {El archivo tiene # errores}}"
+                },
+                "imageTooLarge": {
+                    "title": "Una textura es demasiado grande: {image}",
+                    "detail": "{width} × {height} píxeles; el límite es {limit} por lado."
+                },
+                "imageUnreadable": {
+                    "title": "No se puede leer una textura: {image}"
+                },
+                "tooManyTriangles": {
+                    "title": "Demasiado detallado",
+                    "detail": "{triangles} triángulos; lo máximo que puede importar es {limit}."
+                },
+                "rigged": {
+                    "title": "No se admiten modelos con rig",
+                    "detail": "Importa una versión estática."
+                },
+                "noGeometry": {
+                    "title": "El archivo no tiene nada que dibujar"
+                },
+                "timedOut": {
+                    "title": "Tardó demasiado",
+                    "detail": "Se detuvo después de {seconds} segundos."
+                },
+                "failed": {
+                    "title": "Algo salió mal al prepararlo"
+                }
+            },
+            "fixed": {
+                "texturesShrunk": {
+                    "title": "{count, plural, one {Se redujo # textura a {cap} px} other {Se redujeron # texturas a {cap} px}}"
+                },
+                "dracoDecoded": "Se descomprimió la compresión Draco",
+                "meshoptDecoded": "Se descomprimió la compresión meshopt",
+                "instancesExpanded": "Se convirtieron las copias repetidas en formas simples",
+                "extensionsDropped": "Se omitieron funciones que no necesita",
+                "contentDropped": {
+                    "title": "Se omitió lo que una utilería no usa",
+                    "animations": "{count, plural, one {# animación} other {# animaciones}}",
+                    "cameras": "{count, plural, one {# cámara} other {# cámaras}}",
+                    "morphTargets": "{count, plural, one {# clave de forma} other {# claves de forma}}",
+                    "scenes": "{count, plural, one {# escena adicional} other {# escenas adicionales}}"
+                },
+                "pivotMoved": "Se apoyó en el suelo por su centro"
+            },
+            "notes": {
+                "validatorWarnings": "{count, plural, one {El archivo tiene # advertencia} other {El archivo tiene # advertencias}}",
+                "sizeOutOfRange": {
+                    "title": "Tamaño inusual para una utilería",
+                    "detail": "Su lado más largo mide {largest} m; la utilería suele medir de {min} a {max} m."
+                },
+                "overTriangleCap": "Aún muy detallado: {triangles} triángulos (el objetivo es {cap})"
+            }
+        },
+        "modelMissing": "El modelo de esta utilería ya no está en el espectáculo, así que se dibuja como un bloque."
     },
     "frontEnsemble": {
         "title": "Front ensemble y podios",
@@ -3068,7 +3234,14 @@
             "pickSeatTooltip": "Elegir un asiento: haz clic en un asiento de las gradas para sentarte ahí",
             "venue": "Recinto",
             "freeCamera": "Vista libre",
-            "director": "Director"
+            "director": "Director",
+            "followPerformer": "Seguir a un integrante",
+            "followPerformerTooltip": "Seguir a un integrante: haz clic en un integrante para seguirlo",
+            "following": "Siguiendo a {name}",
+            "povOf": "Vista de {name}",
+            "pointOfView": "Punto de vista",
+            "pointOfViewTooltip": "Punto de vista: ver con los ojos del integrante",
+            "stopFollowing": "Dejar de seguir"
         },
         "readout": {
             "count": "Tiempo {count} de {total}",
@@ -3108,7 +3281,9 @@
             "brassFinish": "Acabado de los metales",
             "tuba": "Tubas",
             "silkShape": "Forma de la seda",
-            "silkArtwork": "Diseño de la seda"
+            "silkArtwork": "Diseño de la seda",
+            "followTurns": "Al seguir: girar con el integrante",
+            "povShowsBody": "Punto de vista: mostrar sus brazos y su instrumento"
         },
         "keys": {
             "playPause": "Reproducir o pausar",
@@ -3117,14 +3292,16 @@
             "cameras": "Cámaras, en el orden del menú",
             "fullscreen": "Pantalla completa",
             "crowd": "Mostrar u ocultar el público",
-            "escape": "Cancelar la elección de asiento, cerrar la configuración, salir de pantalla completa",
+            "escape": "Cancelar una elección, cerrar la configuración, dejar de seguir, salir de pantalla completa",
             "orbit": "Orbitar",
             "orbitOrRight": "Orbitar, o arrastrar con el botón derecho del mouse",
             "panPlain": "Desplazar",
             "zoomOrPinch": "Zoom, o pellizcar en un trackpad",
             "pan": "Desplazar, o arrastrar con el botón derecho del mouse",
             "zoom": "Zoom",
-            "pausedPose": "En pausa: mostrar el paso real o la posición cerrada"
+            "pausedPose": "En pausa: mostrar el paso real o la posición cerrada",
+            "followPerformer": "Elegir un integrante para seguirlo",
+            "pointOfView": "Al seguir: cambiar a su punto de vista y volver"
         },
         "keyNames": {
             "pair": "<first></first> / <second></second>"
@@ -4177,6 +4354,9 @@
         "error.failed": "No se pudo enviar tu reporte. Revisa tu conexión e inténtalo de nuevo.",
         "attach.music.off": "La música no se envía.",
         "attach.music.on": "La música también se envía.",
+        "attach.models": "Incluir modelos importados",
+        "attach.models.off": "Los modelos importados no se envían, solo sus tamaños y detalles.",
+        "attach.models.on": "Los modelos importados también se envían ({size}).",
         "sending.recording": "Subiendo la grabación…",
         "sending.show_file": "Subiendo tu show…",
         "sending.diagnostics": "Subiendo el diagnóstico…",
@@ -4384,6 +4564,39 @@
             "mixed": "Mixto",
             "add": "Agregar línea",
             "everyOther": "Conservar una de cada dos"
+        }
+    },
+    "assets": {
+        "title": "Recursos",
+        "empty": "Este espectáculo aún no tiene recursos importados. Importa un modelo 3D desde el panel Utilería.",
+        "notes": {
+            "unused": "{count, plural, one {# recurso no se usa} other {# recursos no se usan}} en ninguna parte del espectáculo · {size}",
+            "missing": "{count, plural, one {# elemento de utilería usa un modelo que este espectáculo no tiene, así que se dibuja como un bloque.} other {# elementos de utilería usan modelos que este espectáculo no tiene, así que se dibujan como bloques.}}",
+            "large": "Los recursos hacen que este espectáculo sea grande: {size}. Los espectáculos grandes tardan más en abrirse, guardarse y compartirse."
+        },
+        "removeUnused": {
+            "button": "Quitar sin usar…",
+            "title": "{count, plural, one {¿Quitar # recurso sin usar?} other {¿Quitar # recursos sin usar?}}",
+            "description": "Nada en el espectáculo los usa. Quitarlos reduce el espectáculo en {size}. Deshacer no los recupera.",
+            "none": "Todos los recursos están en uso, así que no hay nada que quitar.",
+            "cancel": "Cancelar",
+            "confirm": "{count, plural, one {Quitar # recurso} other {Quitar # recursos}}"
+        },
+        "kind": {
+            "model": "Modelo 3D"
+        },
+        "uses": "{count, plural, one {Usado una vez} other {Usado # veces}}",
+        "unused": "Sin usar",
+        "shareNote": "Licencia desconocida: puede que no tengas derecho a compartirlo",
+        "size": {
+            "bytes": "{value} bytes",
+            "kb": "{value} KB",
+            "mb": "{value} MB",
+            "gb": "{value} GB"
+        },
+        "errors": {
+            "remove": "No se pudieron quitar los recursos sin usar",
+            "credits": "No se pudieron guardar los créditos"
         }
     }
 }

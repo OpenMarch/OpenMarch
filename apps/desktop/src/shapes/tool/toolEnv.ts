@@ -4,6 +4,7 @@ import { useShapeEditorStore } from "../frame/shapeEditorStore";
 import type { XY } from "../types";
 import type { FieldProperties } from "@openmarch/core";
 import { fieldReferenceLines } from "@/field/fieldPlan";
+import { LINE_PULL_PX } from "@/field/editor/linePull";
 import type { FieldLines, ToolEnv } from "./toolKind";
 import { useLastLayoutStore } from "./lastLayout";
 import type { Roles } from "@/input/modifierRoles";
@@ -23,9 +24,10 @@ export const HANDLE_REACH_PX = thresholdsFor("mouse").shapeHandleReach;
 
 /**
  * How near one of the field's lines a box's moving edge must come to land on it, in screen
- * pixels (#425). Kept small so half steps win away from lines; the lab tunes it.
+ * pixels (#425). Kept small so half steps win away from lines; the lab tunes it. A selection of
+ * marchers reaches as far (`linePull.ts`).
  */
-export const EDGE_PULL_PX = 6;
+export const EDGE_PULL_PX = LINE_PULL_PX;
 
 /** The field's lines, worked out once per field */
 const linesByField = new WeakMap<FieldProperties, FieldLines>();
@@ -104,6 +106,9 @@ export function toolEnvFor(
         pivotSnaps: () => [
             ...field.drawn(field.marchers().map((m) => m.id)).values(),
             ...(spots?.() ?? []),
+        ],
+        marcherSnaps: () => [
+            ...field.drawn(field.marchers().map((m) => m.id)).values(),
         ],
     };
 }

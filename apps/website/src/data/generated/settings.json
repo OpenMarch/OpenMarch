@@ -23,6 +23,14 @@
             {
                 "key": "settings.general.openView3dWithShow",
                 "label": "Open 3D View when a show opens"
+            },
+            {
+                "key": "settings.general.editorDisplay",
+                "label": "Open the editor on"
+            },
+            {
+                "key": "settings.general.view3dDisplay",
+                "label": "Open the 3D View on"
             }
         ]
     },
@@ -158,6 +166,10 @@
             {
                 "key": "settings.field.stepSizeWarnings",
                 "label": "Step size warnings"
+            },
+            {
+                "key": "settings.field.followTheLeader",
+                "label": "Follow-the-leader (preview)"
             }
         ]
     },
@@ -179,6 +191,20 @@
                     {
                         "key": "settings.privacy.analytics.toggle",
                         "label": "Enable analytics"
+                    }
+                ]
+            },
+            {
+                "key": "settings.privacy.discord",
+                "label": "Discord status",
+                "options": [
+                    {
+                        "key": "settings.privacy.discord.toggle",
+                        "label": "Show OpenMarch in my Discord status"
+                    },
+                    {
+                        "key": "settings.privacy.discord.showName",
+                        "label": "Show the show's name"
                     }
                 ]
             }

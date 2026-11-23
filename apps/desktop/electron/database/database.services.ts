@@ -14,6 +14,11 @@ import {
     fileTooNewMessage,
     readUserVersion,
 } from "./fileVersion";
+import {
+    hasLeftoverJournal,
+    isFolderAccessError,
+    LEFTOVER_JOURNAL_STATUS,
+} from "./leftoverJournal";
 
 export { handleSqlProxyWithDb };
 
@@ -42,7 +47,12 @@ export type AudioInsertResponse = LegacyDatabaseResponse<AudioFile[]> & {
 /** The `user_version` a new show file starts with. */
 export const DB_USER_VERSION = 7;
 
+/** The file connections open: the show itself, or its working copy (ADR 0018). */
 let DB_PATH = "";
+/** The person's show file while connections open a working copy of it; empty otherwise. */
+let SHOW_PATH = "";
+/** Called after each database handler, so a working copy notices commits at once. */
+let onDatabaseActivity: (() => void) | null = null;
 
 let persistentConnection: DatabaseSync | null = null;
 let persistentConnectionPath: string | null = null;
@@ -55,11 +65,75 @@ export function closePersistentConnection() {
 }
 
 /**
+ * Closes the open show: closes the long-lived connection and clears the active path. Close File,
+ * switching shows and quitting use it so no connection is left on the file.
+ */
+export function closeDatabase() {
+    closePersistentConnection();
+    DB_PATH = "";
+    SHOW_PATH = "";
+    onDatabaseActivity = null;
+}
+
+/**
+ * Points every connection at a working copy of a show (ADR 0018). `getDbPath` keeps reporting
+ * the show file. Call it once the working copy is ready (migrated), before the window reloads.
+ */
+export function connectToWorkingCopy(args: {
+    showPath: string;
+    workingPath: string;
+    onActivity: () => void;
+}) {
+    if (DB_PATH !== args.workingPath) closePersistentConnection();
+    DB_PATH = args.workingPath;
+    SHOW_PATH = args.showPath;
+    onDatabaseActivity = args.onActivity;
+}
+
+/** Changes the show file a working copy publishes to, after Save As. */
+export function setWorkingCopyShowPath(showPath: string) {
+    if (SHOW_PATH) SHOW_PATH = showPath;
+}
+
+/** Whether connections open a working copy instead of the show file. */
+export function isUsingWorkingCopy() {
+    return SHOW_PATH.length > 0;
+}
+
+/** The file connections open. Differs from {@link getDbPath} for a working copy. */
+export function getConnectionPath() {
+    return DB_PATH;
+}
+
+/** Tells the working copy, if any, that a handler may have written. Never throws. */
+export function noteDatabaseActivity() {
+    try {
+        onDatabaseActivity?.();
+    } catch (error) {
+        console.error("Error tracking database activity:", error);
+    }
+}
+
+/** Wraps an IPC handler so the working copy hears about writes it makes. */
+function trackingActivity<A extends unknown[], R>(
+    handler: (...args: A) => R | Promise<R>,
+): (...args: A) => Promise<R> {
+    return async (...args: A) => {
+        try {
+            return await handler(...args);
+        } finally {
+            noteDatabaseActivity();
+        }
+    };
+}
+
+/**
  * Change the location of the database file the application and actively updates.
  *
  * @param path the path to the database file
  * @returns 200 if successful, HTTP status codes if appropriate (426 when the
- * file is from a newer release; nothing is written to it), or -1 otherwise
+ * file is from a newer release; nothing is written to it; 423 when a leftover
+ * journal next to it can't be used), or -1 otherwise
  */
 export function setDbPath(path: string, isNewFile = false) {
     const failedDb = (message: string, statusCode: number = -1) => {
@@ -67,6 +141,11 @@ export function setDbPath(path: string, isNewFile = false) {
         DB_PATH = "";
         return statusCode;
     };
+
+    // Let go of the previous show first, before anything below can return. Closing a show calls
+    // setDbPath(""), which returns at the existence check: the shared connection used to stay
+    // open there, and Windows kept the closed .dots locked until the app quit.
+    closePersistentConnection();
 
     if (!isNewFile) {
         if (!fs.existsSync(path)) {
@@ -86,10 +165,9 @@ export function setDbPath(path: string, isNewFile = false) {
         }
     }
 
-    // Reset any existing long-lived DB handle before opening a new path.
-    closePersistentConnection();
-
     DB_PATH = path;
+    SHOW_PATH = "";
+    onDatabaseActivity = null;
     const db = connect();
 
     try {
@@ -132,14 +210,29 @@ export function setDbPath(path: string, isNewFile = false) {
         }
 
         return 200;
+    } catch (err: unknown) {
+        // SQLite couldn't open a file next to the show: a leftover journal it must play back
+        // first, or a new journal in a folder the app may not write to (macOS folder access).
+        if (!isFolderAccessError(err)) throw err;
+        if (hasLeftoverJournal(path)) {
+            return failedDb(
+                `setDbPath: Leftover journal next to the file can't be used: ${path}-journal`,
+                LEFTOVER_JOURNAL_STATUS,
+            );
+        }
+        return failedDb(
+            `setDbPath: Cannot create the journal next to the file (missing folder access): ${path}`,
+            403,
+        );
     } finally {
         // setDbPath only validates connectivity; close this temporary handle.
         db.close();
     }
 }
 
+/** The show file the person opened, never a working copy. */
 export function getDbPath() {
-    return DB_PATH;
+    return SHOW_PATH || DB_PATH;
 }
 
 let lastLoggedReadyState: boolean | null = null;
@@ -151,7 +244,8 @@ export function databaseIsReady() {
     if (isReady !== lastLoggedReadyState || DB_PATH !== lastLoggedPath) {
         console.log("databaseIsReady:", isReady);
         if (DB_PATH.length > 0) {
-            console.log("Database path:", DB_PATH);
+            // Not the path itself: log lines reach error reports (logSafe.ts)
+            console.log("Database path is set");
         } else {
             console.log("Database path is empty");
         }
@@ -181,7 +275,16 @@ export function connectToPath(path: string) {
         if (!sqlite?.DatabaseSync) {
             throw new Error("node:sqlite module is unavailable");
         }
-        return new sqlite.DatabaseSync(path);
+        const db = new sqlite.DatabaseSync(path);
+        // A working copy is in WAL mode, and the published show file is the durable copy, so
+        // its commits needn't wait for a full flush (ADR 0018).
+        if (SHOW_PATH && path === DB_PATH) {
+            db.exec("PRAGMA synchronous = NORMAL");
+            // Bound the WAL: checkpoint every 1000 pages and trim the file back to 32 MB.
+            db.exec("PRAGMA wal_autocheckpoint = 1000");
+            db.exec(`PRAGMA journal_size_limit = ${32 * 1024 * 1024}`);
+        }
+        return db;
     } catch (error: any) {
         console.error(error);
 
@@ -364,8 +467,8 @@ export async function handleUnsafeSqlProxy(_: any, sql: string) {
  */
 export function initHandlers() {
     // Generic SQL proxy handler for Drizzle ORM
-    ipcMain.handle("sql:proxy", handleSqlProxy);
-    ipcMain.handle("unsafeSql:proxy", handleUnsafeSqlProxy);
+    ipcMain.handle("sql:proxy", trackingActivity(handleSqlProxy));
+    ipcMain.handle("unsafeSql:proxy", trackingActivity(handleUnsafeSqlProxy));
     ipcMain.handle("sql:read-batch", (_, queries: unknown) =>
         handleSqlReadBatch(queries),
     );
@@ -375,15 +478,27 @@ export function initHandlers() {
     // Audio Files
     // ipcMain.handle("audio:insert") is defined in main/index.ts
     ipcMain.handle("audio:getAll", async () => getAudioFilesDetails());
-    ipcMain.handle("audio:getSelected", async () => getSelectedAudioFile());
-    ipcMain.handle("audio:select", async (_, audioFileId: number) =>
-        setSelectAudioFile(audioFileId),
+    ipcMain.handle(
+        "audio:getSelected",
+        trackingActivity(async () => getSelectedAudioFile()),
     );
-    ipcMain.handle("audio:update", async (_, args: ModifiedAudioFileArgs[]) =>
-        updateAudioFiles(args),
+    ipcMain.handle(
+        "audio:select",
+        trackingActivity(async (_, audioFileId: number) =>
+            setSelectAudioFile(audioFileId),
+        ),
     );
-    ipcMain.handle("audio:delete", async (_, audioFileId: number) =>
-        deleteAudioFile(audioFileId),
+    ipcMain.handle(
+        "audio:update",
+        trackingActivity(async (_, args: ModifiedAudioFileArgs[]) =>
+            updateAudioFiles(args),
+        ),
+    );
+    ipcMain.handle(
+        "audio:delete",
+        trackingActivity(async (_, audioFileId: number) =>
+            deleteAudioFile(audioFileId),
+        ),
     );
 }
 

@@ -438,6 +438,86 @@
                             ]
                         }
                     ]
+                },
+                {
+                    "label": "Copy",
+                    "other": [
+                        {
+                            "keys": [
+                                "Ctrl",
+                                "C"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "⌘",
+                                "C"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Paste",
+                    "other": [
+                        {
+                            "keys": [
+                                "Ctrl",
+                                "V"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "⌘",
+                                "V"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Paste exactly",
+                    "other": [
+                        {
+                            "keys": [
+                                "Ctrl",
+                                "Shift",
+                                "V"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "⇧",
+                                "⌘",
+                                "V"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Paste mirrored",
+                    "other": [
+                        {
+                            "keys": [
+                                "Ctrl",
+                                "Alt",
+                                "V"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "⌥",
+                                "⌘",
+                                "V"
+                            ]
+                        }
+                    ]
                 }
             ]
         },
@@ -1042,6 +1122,28 @@
             ]
         },
         {
+            "title": "Paths",
+            "rows": [
+                {
+                    "label": "Path pen",
+                    "other": [
+                        {
+                            "keys": [
+                                "P"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "P"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
             "title": "Batch editing",
             "rows": [
                 {
@@ -1614,6 +1716,23 @@
                             "keys": [
                                 "⌘",
                                 ","
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Get help",
+                    "other": [
+                        {
+                            "keys": [
+                                "F1"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "F1"
                             ]
                         }
                     ]
@@ -1979,42 +2098,6 @@
                     ]
                 },
                 {
-                    "label": "Leave an isolated move",
-                    "other": [
-                        {
-                            "keys": [
-                                "Esc"
-                            ]
-                        }
-                    ],
-                    "mac": [
-                        {
-                            "keys": [
-                                "Esc"
-                            ]
-                        }
-                    ]
-                },
-                {
-                    "label": "Draw a range (drag)",
-                    "other": [
-                        {
-                            "keys": [
-                                "Ctrl"
-                            ],
-                            "gesture": "drag"
-                        }
-                    ],
-                    "mac": [
-                        {
-                            "keys": [
-                                "⌘"
-                            ],
-                            "gesture": "drag"
-                        }
-                    ]
-                },
-                {
                     "label": "Zoom the timeline",
                     "other": [
                         {
@@ -2093,6 +2176,86 @@
                                 "⇧",
                                 "⌘",
                                 "Z"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Copy",
+                    "other": [
+                        {
+                            "keys": [
+                                "Ctrl",
+                                "C"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "⌘",
+                                "C"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Paste",
+                    "other": [
+                        {
+                            "keys": [
+                                "Ctrl",
+                                "V"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "⌘",
+                                "V"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Paste exactly",
+                    "other": [
+                        {
+                            "keys": [
+                                "Ctrl",
+                                "Shift",
+                                "V"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "⇧",
+                                "⌘",
+                                "V"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Paste mirrored",
+                    "other": [
+                        {
+                            "keys": [
+                                "Ctrl",
+                                "Alt",
+                                "V"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "⌥",
+                                "⌘",
+                                "V"
                             ]
                         }
                     ]
@@ -2700,6 +2863,28 @@
             ]
         },
         {
+            "title": "Paths",
+            "rows": [
+                {
+                    "label": "Path pen",
+                    "other": [
+                        {
+                            "keys": [
+                                "P"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "P"
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
             "title": "Batch editing",
             "rows": [
                 {
@@ -3272,6 +3457,23 @@
                             "keys": [
                                 "⌘",
                                 ","
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Get help",
+                    "other": [
+                        {
+                            "keys": [
+                                "F1"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "F1"
                             ]
                         }
                     ]

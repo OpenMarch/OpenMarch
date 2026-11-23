@@ -101,6 +101,21 @@ export function keepingRadius(
     return { ...after, interval: intervalAt(after, r, n) };
 }
 
+/**
+ * The circle laid out for `n` marchers at the radius it has with `from` (a paste onto another
+ * number of marchers, #961; owner 2026-11-22): the same size, the interval whatever that takes.
+ * A circle with no radius (one marcher) keeps its interval.
+ */
+export function circleAtCount(
+    p: CircleParams,
+    from: number,
+    n: number,
+): CircleParams {
+    const r = radiusOf(p, from);
+    if (from === n || !(r > 0)) return p;
+    return { ...p, interval: intervalAt(p, r, n) };
+}
+
 /** The circle's frame: its center, the radius both ways, its turn and flip */
 export function circleFrame(p: CircleParams, n: number): ShapeFrame {
     const r = radiusOf(p, n);

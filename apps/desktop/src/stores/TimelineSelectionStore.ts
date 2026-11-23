@@ -71,6 +71,11 @@ export interface StoredTimelineMembership {
     readonly marcherIds: ReadonlySet<number>;
     /** The timeline's name (UI-14 Rename), `null` or absent when it has none */
     readonly name?: string | null;
+    /**
+     * Whether a line in it follows a drawn trail (pathways step 4), so the edits that can't keep
+     * a trail yet are shown unavailable before they're tried (AP-T5)
+     */
+    readonly trail?: boolean;
 }
 
 /** An isolated stored timeline (see the module comment) and the window to restore after it. */

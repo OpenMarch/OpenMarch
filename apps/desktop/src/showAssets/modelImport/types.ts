@@ -4,6 +4,7 @@
  */
 import type { JsonObject } from "@/showAssets/hash";
 import type { PlanFromAbove } from "@/view3d/core/pit/planFromAbove";
+import type { Tilt } from "./orientation";
 import type { UNIT_FIXES } from "./rules";
 
 /** One file the user picked: a `.glb`, or a `.gltf` and the files it names. */
@@ -14,6 +15,12 @@ export interface PickedFile {
 
 export type UnitFix = "none" | (typeof UNIT_FIXES)[number]["unit"];
 
+/**
+ * How detailed the stored model is (fork #1091): simplified to `TRIANGLE_CAP` (Light), to
+ * `DETAILED_TRIANGLE_CAP` (Detailed), or as the file has it (Original)
+ */
+export type DetailLevel = "light" | "detailed" | "original";
+
 /** A turn about the vertical axis, so the model's front faces the audience (+Z) */
 export type Turn = 0 | 90 | 180 | 270;
 
@@ -23,9 +30,10 @@ export type Turn = 0 | 90 | 180 | 270;
  */
 export interface ModelImportChoices {
     unitFix?: UnitFix;
-    rotateToYUp?: boolean;
+    /** How the model is stood up, before the turn (`orientation.ts`) */
+    tilt?: Tilt;
     turn?: Turn;
-    simplify?: boolean;
+    detail?: DetailLevel;
 }
 
 export type Vec3 = [number, number, number];
@@ -79,16 +87,29 @@ export type Choice =
           preselected: UnitFix;
           applied: UnitFix;
       }
-    | { code: "rotateToYUp"; preselected: boolean; applied: boolean }
+    /**
+     * How the model is stood up: always offered, since a file can lie on any side. Pre-selected
+     * upright, as glTF's Y-up has it. Imports saved before #1200 may also carry a
+     * `zUpSuspected` flag from the old guess; nothing reads it.
+     */
+    | {
+          code: "tilt";
+          preselected: Tilt;
+          applied: Tilt;
+      }
     | { code: "turn"; preselected: Turn; applied: Turn }
     | {
-          code: "simplify";
+          code: "detail";
+          /** Triangles in the file */
           triangles: number;
-          cap: number;
-          preselected: boolean;
-          applied: boolean;
-          /** Triangles after simplifying, or null when not simplified */
-          simplifiedTriangles: number | null;
+          /** The levels offered, lightest first: Detailed only when the file has more than it */
+          levels: DetailLevel[];
+          preselected: DetailLevel;
+          applied: DetailLevel;
+          /** Triangles in the stored model */
+          appliedTriangles: number;
+          /** Triangles in the Light copy kept beside a heavier level, or null at Light */
+          lightTriangles: number | null;
       };
 
 /** Something the import changed on its own, shown collapsed on the review. */
@@ -113,6 +134,8 @@ export type Fix =
           morphTargets: number;
           scenes: number;
       }
+    /** A rigged model frozen in its pose with no animation playing, its rig removed (#1168) */
+    | { code: "rigFrozen" }
     /** The pivot moved to the bottom center of the footprint, by this much (m) */
     | { code: "pivotMoved"; offsetM: Vec3 };
 
@@ -153,6 +176,13 @@ export interface ModelSidecar {
     stand: { atM: [number, number]; topM: number } | null;
     triangles: number;
     distantTriangles: number;
+    /**
+     * The level chosen on the review (#1091). Missing when there was nothing to choose (a model
+     * within the Light cap) and on models imported before it, which are within the cap too.
+     */
+    detail?: DetailLevel;
+    /** Triangles in the `light` part, beside a heavier level */
+    lightTriangles?: number;
     /** The review's report, kept so lasting states can show later (props-spec "Import notes") */
     importNotes: Omit<ModelImportReport, "cantImport">;
 }
@@ -174,7 +204,13 @@ export interface ModelCredits {
 /** A model ready for the store: `kind: "model"`, these parts, sidecar and credits. */
 export interface ImportedModel {
     name: string;
-    parts: { model: Uint8Array; distant: Uint8Array; thumbnail: Uint8Array };
+    parts: {
+        model: Uint8Array;
+        distant: Uint8Array;
+        thumbnail: Uint8Array;
+        /** Beside a level heavier than Light: the Light copy, for devices that can't draw it */
+        light?: Uint8Array;
+    };
     sidecar: ModelSidecar;
     credits: ModelCredits;
 }

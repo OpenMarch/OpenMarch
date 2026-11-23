@@ -62,6 +62,7 @@ import {
     stateOf,
     withDb,
 } from "./convertOnOpenFixtures";
+import { rollBackRoutesSchema } from "./migrationRollback";
 
 /** Where the backup and conversion run: on this thread, or in the app's worker (P9.8). */
 type Mode = "in-thread" | "worker";
@@ -644,9 +645,14 @@ describe.each(["in-thread", "worker"] as const)("convert on open (%s)", (m) => {
     );
 
     it("rolls back the page-era migrations too: a file missing one keeps its old schema when the conversion fails", async () => {
-        // A file an older release wrote before `0019_gray_brood` (the 3D View venue table).
+        // A file an older build wrote before the 3D View venue table, missing its newest
+        // migration. This build's open also rebuilt `timeline_transitions` for routes (unrecorded,
+        // `CONVERTER_SCHEMA_MIGRATION_TAGS`), which an older build never did: undo that too, or
+        // the legacy fork repair this file now needs refuses a table 0017 doesn't make.
         withDb(showPath, (db) => {
             db.exec("DROP TABLE view3d_venue");
+            db.exec("PRAGMA foreign_keys = OFF");
+            rollBackRoutesSchema(db);
             db.exec(
                 `DELETE FROM __drizzle_migrations WHERE created_at = (SELECT max(created_at) FROM __drizzle_migrations)`,
             );

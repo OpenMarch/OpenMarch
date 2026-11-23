@@ -162,7 +162,7 @@ export function LayoutMenu(props: PickerProps) {
                             )}
                             {...focus.trigger}
                             data-testid="shape-layout-menu"
-                            className="rounded-4 hover:bg-fg-2 flex items-center gap-4 px-4 py-2"
+                            className="rounded-4 hover:bg-text/10 flex items-center gap-4 px-4 py-2"
                         >
                             <Thumbnail
                                 version={versionOf(now.layout, now.lines)}
@@ -309,7 +309,7 @@ function LayoutMenuBody({
                                     </span>
                                     <span className="grow">{row.label}</span>
                                     {missing && row.hint && (
-                                        <span className="text-xs">
+                                        <span className="text-sub">
                                             {hintText(row.hint)}
                                         </span>
                                     )}
@@ -392,12 +392,12 @@ function VersionButton({
                     "rounded-4 flex flex-col items-center gap-2 border p-4",
                     on
                         ? "border-accent bg-accent/10 text-accent"
-                        : "hover:bg-fg-2 text-text border-transparent",
+                        : "hover:bg-text/10 text-text border-transparent",
                 )}
             >
                 <Thumbnail version={version} />
                 {caption && (
-                    <span className={clsx("text-xs", !on && "text-text/60")}>
+                    <span className={clsx("text-sub", !on && "text-text/60")}>
                         {caption}
                     </span>
                 )}

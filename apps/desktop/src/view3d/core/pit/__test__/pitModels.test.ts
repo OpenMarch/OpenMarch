@@ -3,6 +3,8 @@ import {
     PIT_MANIFEST,
     PIT_NEAR_M,
     PIT_FAR_M,
+    PIT_NEAR_MAX_M,
+    PIT_NEAR_PER_M,
     hidesVenuePodium,
     isNearPitItem,
     isPodiumModel,
@@ -237,6 +239,23 @@ describe("isNearPitItem", () => {
         expect(isNearPitItem(between, 0, camera, true)).toBe(true);
         expect(isNearPitItem(between, 0, camera, false)).toBe(false);
     });
+
+    it("keeps a larger model's detail farther out, as large on screen", () => {
+        // A 4.5 m car at 60 m looks as large as a 1.5 m drum at 20 m
+        expect(isNearPitItem(60, 0, camera, undefined)).toBe(false);
+        expect(isNearPitItem(60, 0, camera, undefined, 4.5)).toBe(true);
+        expect(
+            isNearPitItem(4.5 * PIT_NEAR_PER_M * 1.5, 0, camera, true, 4.5),
+        ).toBe(false);
+        // A huge one still switches across the field
+        expect(isNearPitItem(PIT_NEAR_MAX_M + 1, 0, camera, false, 40)).toBe(
+            false,
+        );
+        // Small ones switch where the pit's own models do
+        expect(isNearPitItem(PIT_NEAR_M + 1, 0, camera, false, 0.5)).toBe(
+            false,
+        );
+    });
 });
 
 describe("writePitModelMatrix", () => {
@@ -296,5 +315,23 @@ describe("modelsByMarcher", () => {
                 MANIFEST,
             ).size,
         ).toBe(0);
+    });
+});
+
+describe("writePitModelMatrix's scale", () => {
+    it("scales all three sides by one factor, and turns as at real size", () => {
+        const out = new Float32Array(16);
+        writePitModelMatrix(out, 0, 90, { x: 3, z: -2 }, 0.1, 2);
+        // Column-major: model +X toward world +Z, twice as long
+        expect(out[0]).toBeCloseTo(0);
+        expect(out[2]).toBeCloseTo(2);
+        expect(out[5]).toBe(2);
+        expect(out[8]).toBeCloseTo(-2);
+        expect(out[10]).toBeCloseTo(0);
+        expect([out[12], out[13], out[14]]).toEqual([
+            3,
+            expect.closeTo(0.1),
+            -2,
+        ]);
     });
 });

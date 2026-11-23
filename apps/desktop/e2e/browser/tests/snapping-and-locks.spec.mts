@@ -391,6 +391,8 @@ test("Lock Y keeps a dragged group's Y", async ({ show }) => {
     const { page } = show;
     await setUiSettings(page, { lockX: false, lockY: true });
     await expectCanvasMatchesShow(show);
+    // Snapping off, so the group lands where it's dragged, not on a yard line near it (#585)
+    await page.keyboard.press("Shift+M");
     await clickMarcher(page, "T1");
     await clickMarcher(page, "T3", { add: true });
     await clickMarcher(page, "T4", { add: true });
@@ -403,4 +405,27 @@ test("Lock Y keeps a dragged group's Y", async ({ show }) => {
 
     await expectSaved(show, movedBy([1, 3, 4], { x: by.x, y: 0 }));
     await expectCanvasMatchesShow(show);
+});
+
+test("a dragged marcher lands on a yard line within a few pixels of it, with rounding off (#585)", async ({
+    show,
+}) => {
+    const { page } = show;
+    const grid = await fieldGrid(show);
+    const start = startOf(2);
+    // The first yard line (every 8 steps from the 50) 30 or more units to the right
+    const yard = 8 * grid.pixelsPerStep;
+    const line =
+        grid.centerFront.x +
+        Math.ceil((start.x + 30 - grid.centerFront.x) / yard) * yard;
+    // Dropped 2 units short of it: within reach at any zoom the field opens at
+    await clickMarcher(page, "T2");
+    await dragLegs(page, "T2", [{ by: { x: line - 2 - start.x, y: 0 } }]);
+
+    await expect
+        .poll(async () => {
+            const t2 = (await savedPositions(show, 0)).find((p) => p.id === 2)!;
+            return Math.abs(t2.x - line) < 0.001;
+        })
+        .toBe(true);
 });

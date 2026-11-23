@@ -35,6 +35,7 @@ import { toastPassThrough } from "./timelinePassThrough";
 import { offerOnlyThisPage, ownMovers } from "./timelineOnlyThisPage";
 import { boxMembershipEdit } from "@/shapes/placed/boxMembership";
 import { showLeftBoxToast } from "@/shapes/placed/leftBoxToast";
+import { showDroppedAtFlagToast } from "@/shapes/placed/leftOutToast";
 import { invalidatePlacedBoxes } from "@/shapes/placed/placedBoxStore";
 import { editingPositionAt } from "./timelineIsolationPlan";
 import {
@@ -43,7 +44,7 @@ import {
     useTimelineResolverStore,
 } from "./timelineStore";
 import { toastLockedMarchers, withoutLockedMarchers } from "./basicLocks";
-import { TimelineEditRefusedError } from "./timelineEditRefusals";
+import { basicLockedRefusal } from "./timelineEditRefusals";
 
 /**
  * **Move them too** in timeline mode (`utilities/moveThemToo.ts`): after a coordinate edit that
@@ -344,9 +345,7 @@ export async function moveMarchersAndOfferFollowUp({
     // the edit is refused, and the refusal's toast offers Switch to Expert
     const editable = withoutLockedMarchers(target, requested);
     if (editable.moves.length === 0 && editable.locked.length > 0)
-        throw new TimelineEditRefusedError("notSimple", {
-            marcherIds: editable.locked,
-        });
+        throw basicLockedRefusal(editable.locked);
     const moves = editable.moves;
     const keepUnchanged =
         setUnmovedFrom !== undefined &&
@@ -386,6 +385,9 @@ export async function moveMarchersAndOfferFollowUp({
     // A drag back left shape and follow-the-leader members in their move: say who and why (a
     // warning, since the rest was written)
     if (result.skipped) toastTimelineError(result.skipped);
+    // A mid-page position that left members of the flag's shape in another move
+    if (result.droppedFromShapes)
+        showDroppedAtFlagToast(result.droppedFromShapes);
     // The resolver's change re-reads them (`PlacedBoxesOverlay`), except where nobody moves (#455)
     if (writesShapes) invalidatePlacedBoxes();
     if (membership && membership.leaves.length > 0)

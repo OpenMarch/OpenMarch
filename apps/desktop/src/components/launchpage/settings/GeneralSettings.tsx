@@ -14,6 +14,7 @@ import SettingsPanel from "@/settings/SettingsPanel";
 import { APP_LANGUAGES } from "@/utilities/languages";
 import TranslationHelpNote from "@/components/i18n/TranslationHelpNote";
 import UpdateSettingsRow from "@/updates/UpdateSettingsRow";
+import WindowDisplaySettings from "./WindowDisplaySettings";
 
 export default function GeneralSettings() {
     const tolgee = useTolgee(["language"]);
@@ -21,6 +22,7 @@ export default function GeneralSettings() {
     const [automaticUpdatesEnabled, setAutomaticUpdatesEnabled] =
         useState(true);
     const [view3dAutoOpen, setView3dAutoOpen] = useState(false);
+    const [workingCopySaves, setWorkingCopySaves] = useState(true);
 
     useEffect(() => {
         // Load saved language from electron store
@@ -47,6 +49,12 @@ export default function GeneralSettings() {
             if (isMounted) setAutomaticUpdatesEnabled(savedValue !== false);
         };
         void loadAutomaticUpdatesSetting();
+        void window.electron
+            .invoke("settings:get", "workingCopySaves")
+            .then((savedValue: unknown) => {
+                // On by default (ADR 0018), so only an explicit off reads as off
+                if (isMounted) setWorkingCopySaves(savedValue !== false);
+            });
         // Never answered opens it too (the 3D View asks), so only an explicit off reads as off
         void window.electron
             .invoke("settings:get", VIEW3D_AUTO_OPEN_SETTING)
@@ -80,76 +88,115 @@ export default function GeneralSettings() {
         "English";
 
     return (
-        <SettingsPanel>
-            <SettingRow
-                label={<T keyName="settings.general.language" />}
-                htmlFor="language"
-                description={<TranslationHelpNote language={currentLanguage} />}
-            >
-                <Select
-                    value={currentLanguage}
-                    onValueChange={handleLanguageChange}
-                >
-                    <SelectTriggerButton
-                        id="language"
-                        label={currentLanguageName}
-                        className="min-w-[120px]"
-                    />
-                    <SelectContent>
-                        {APP_LANGUAGES.map((language) => (
-                            <SelectItem
-                                key={language.code}
-                                value={language.code}
-                            >
-                                {language.name}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-            </SettingRow>
-
-            {/* The web editor is always the latest version: nothing to install */}
-            {!isWebBuild && <UpdateSettingsRow />}
-            {!isWebBuild && (
+        <>
+            <SettingsPanel>
                 <SettingRow
-                    label={<T keyName="settings.general.automaticDownload" />}
+                    label={<T keyName="settings.general.language" />}
+                    htmlFor="language"
                     description={
-                        <T keyName="settings.general.automaticDownload.description" />
+                        <TranslationHelpNote language={currentLanguage} />
                     }
-                    htmlFor="automatic-updates"
                 >
-                    <Switch
-                        id="automatic-updates"
-                        checked={automaticUpdatesEnabled}
-                        onCheckedChange={(checked) => {
-                            setAutomaticUpdatesEnabled(checked);
-                            window.electron.send("settings:set", {
-                                automaticUpdates: checked,
-                            });
-                        }}
-                    />
+                    <Select
+                        value={currentLanguage}
+                        onValueChange={handleLanguageChange}
+                    >
+                        <SelectTriggerButton
+                            id="language"
+                            label={currentLanguageName}
+                            className="min-w-[120px]"
+                        />
+                        <SelectContent>
+                            {APP_LANGUAGES.map((language) => (
+                                <SelectItem
+                                    key={language.code}
+                                    value={language.code}
+                                >
+                                    {language.name}
+                                </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
                 </SettingRow>
-            )}
 
-            {/* A browser blocks a window opened without a click. */}
+                {/* The web editor is always the latest version: nothing to install */}
+                {!isWebBuild && <UpdateSettingsRow />}
+                {!isWebBuild && (
+                    <SettingRow
+                        label={
+                            <T keyName="settings.general.automaticDownload" />
+                        }
+                        description={
+                            <T keyName="settings.general.automaticDownload.description" />
+                        }
+                        htmlFor="automatic-updates"
+                    >
+                        <Switch
+                            id="automatic-updates"
+                            checked={automaticUpdatesEnabled}
+                            onCheckedChange={(checked) => {
+                                setAutomaticUpdatesEnabled(checked);
+                                window.electron.send("settings:set", {
+                                    automaticUpdates: checked,
+                                });
+                            }}
+                        />
+                    </SettingRow>
+                )}
+
+                {/* Saving through a working copy (ADR 0018); the web editor saves in the browser */}
+                {!isWebBuild && (
+                    <SettingRow
+                        label={
+                            <T keyName="settings.general.workingCopySaves" />
+                        }
+                        description={
+                            <T keyName="settings.general.workingCopySaves.description" />
+                        }
+                        htmlFor="working-copy-saves"
+                    >
+                        <Switch
+                            id="working-copy-saves"
+                            checked={workingCopySaves}
+                            data-testid="settings-working-copy-saves"
+                            onCheckedChange={(checked) => {
+                                setWorkingCopySaves(checked);
+                                window.electron.send("settings:set", {
+                                    workingCopySaves: checked,
+                                });
+                            }}
+                        />
+                    </SettingRow>
+                )}
+            </SettingsPanel>
+
+            {/* Desktop windows only: a browser blocks a window opened without a click, and a
+                tab can't choose its display */}
             {!isWebBuild && (
-                <SettingRow
-                    label={<T keyName="settings.general.openView3dWithShow" />}
-                    htmlFor="view3d-auto-open"
+                <SettingsPanel
+                    heading={<T keyName="settings.general.windows" />}
                 >
-                    <Switch
-                        id="view3d-auto-open"
-                        checked={view3dAutoOpen}
-                        data-testid="settings-view3d-auto-open"
-                        onCheckedChange={(checked) => {
-                            setView3dAutoOpen(checked);
-                            window.electron.send("settings:set", {
-                                [VIEW3D_AUTO_OPEN_SETTING]: checked,
-                            });
-                        }}
-                    />
-                </SettingRow>
+                    <SettingRow
+                        label={
+                            <T keyName="settings.general.openView3dWithShow" />
+                        }
+                        htmlFor="view3d-auto-open"
+                    >
+                        <Switch
+                            id="view3d-auto-open"
+                            checked={view3dAutoOpen}
+                            data-testid="settings-view3d-auto-open"
+                            onCheckedChange={(checked) => {
+                                setView3dAutoOpen(checked);
+                                window.electron.send("settings:set", {
+                                    [VIEW3D_AUTO_OPEN_SETTING]: checked,
+                                });
+                            }}
+                        />
+                    </SettingRow>
+                    <WindowDisplaySettings />
+                </SettingsPanel>
             )}
-        </SettingsPanel>
+        </>
     );
 }

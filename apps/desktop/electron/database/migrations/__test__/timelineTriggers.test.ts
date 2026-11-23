@@ -415,14 +415,15 @@ describeDbTests("timeline schema and triggers", (it) => {
             )) as [string, string][];
             // The app's undo/redo triggers (`<table>_it/_ut/_dt`, P3.5) write only to the
             // history bookkeeping tables, which U-1 allows. (`timelines_*` doesn't match the
-            // `timeline_` prefix, so seven tables' worth, with the two shape recipe tables, ADR 0006,
-            // and `timeline_held_marks`.)
+            // `timeline_` prefix, so ten tables' worth, with the two shape recipe tables, ADR 0006,
+            // `timeline_held_marks`, `timeline_routes`, `timeline_lanes` and
+            // `timeline_route_sources`.)
             const isHistoryTrigger = (name: string) =>
                 /_(it|ut|dt)$/.test(name);
             const historyTriggers = allTriggers.filter(([name]) =>
                 isHistoryTrigger(name),
             );
-            expect(historyTriggers.length).toBe(21);
+            expect(historyTriggers.length).toBe(30);
             for (const [name, triggerSql] of historyTriggers) {
                 // Only the body writes; the header names the watched table. Drop string
                 // literals too: they hold the logged inverse statements.
@@ -445,7 +446,8 @@ describeDbTests("timeline schema and triggers", (it) => {
             const triggers = allTriggers.filter(
                 ([name]) => !isHistoryTrigger(name),
             );
-            expect(triggers.length).toBe(31);
+            // + 3 lane change-log and 3 I-LN1 triggers (v0.10)
+            expect(triggers.length).toBe(40);
             for (const [name, triggerSql] of triggers) {
                 const body = triggerSql
                     .slice(triggerSql.search(/\bBEGIN\b/))
@@ -615,6 +617,7 @@ describeDbTests("timeline schema and triggers", (it) => {
                         dest: null,
                         style: "arc",
                         params: { bulge: 0.25 },
+                        route: null,
                         order: "inherit",
                         slots: 1,
                         start: 16,

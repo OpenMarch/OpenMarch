@@ -343,3 +343,89 @@ describe("anchorAt", () => {
         });
     });
 });
+
+describe("ruledMove landing on the field's lines (#585)", () => {
+    const OFF = { nearestXSteps: 0, nearestYSteps: 0 };
+    /** Lines at these x and y, reached for within 3 field units. */
+    const lines = (x: number[], y: number[] = []) => ({
+        lines: { x, y },
+        radius: { x: 3, y: 3 },
+    });
+    const xs = (positions: MarcherPosition[]) => positions.map((p) => p.x);
+    const ys = (positions: MarcherPosition[]) => positions.map((p) => p.y);
+
+    it("lands the group's nearest edge on a line within reach", () => {
+        // The right edge would reach 558.5: it lands on 560, the group keeping its shape
+        const moved = move(
+            { rounding: OFF, pull: lines([560]) },
+            { x: 35.5, y: 0 },
+            GROUP,
+        );
+        expect(xs(moved)).toEqual([540, 560, 550]);
+        expect(ys(moved)).toEqual([404, 404, 434]);
+    });
+
+    it("lands the group's center on a line", () => {
+        // The center would reach 548
+        expect(
+            xs(
+                move(
+                    { rounding: OFF, pull: lines([549]) },
+                    { x: 35, y: 0 },
+                    GROUP,
+                ),
+            ),
+        ).toEqual([539, 559, 549]);
+    });
+
+    it("lands one marcher on a line", () => {
+        expect(
+            move({ rounding: OFF, pull: lines([540]) }, { x: 35.5, y: 0 }, [
+                GROUP[0],
+            ]),
+        ).toEqual([{ id: 1, x: 540, y: 404 }]);
+    });
+
+    it("lands on a line over the rounding grid, and on the grid away from lines", () => {
+        // On the grid the group would move 40 across (543 to 563)
+        expect(
+            xs(move({ pull: lines([560]) }, { x: 35.5, y: 0 }, GROUP)),
+        ).toEqual([540, 560, 550]);
+        expect(
+            xs(move({ pull: lines([600]) }, { x: 35.5, y: 0 }, GROUP)),
+        ).toEqual([543, 563, 553]);
+    });
+
+    it("still lands on lines with fine, as a box shape does", () => {
+        expect(
+            xs(
+                move({ pull: lines([560]) }, { x: 35.5, y: 0 }, GROUP, {
+                    fine: true,
+                }),
+            ),
+        ).toEqual([540, 560, 550]);
+    });
+
+    it("lands on nothing with the Snap toggle off", () => {
+        expect(
+            xs(
+                move(
+                    { snap: false, pull: lines([560]) },
+                    { x: 35.5, y: 0 },
+                    GROUP,
+                ),
+            ),
+        ).toEqual([538.5, 558.5, 548.5]);
+    });
+
+    it("leaves a locked axis where it is, landing the other", () => {
+        const moved = move(
+            { rounding: OFF, lockX: true, pull: lines([560], [440]) },
+            { x: 35.5, y: 4.5 },
+            GROUP,
+        );
+        expect(xs(moved)).toEqual([503, 523, 513]);
+        // The bottom edge would reach 438.5
+        expect(ys(moved)).toEqual([410, 410, 440]);
+    });
+});

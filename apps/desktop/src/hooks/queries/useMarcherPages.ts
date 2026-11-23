@@ -14,6 +14,8 @@ import {
     type TimelineNeighborPageRequest,
 } from "@/timeline/timelineCoordinateWrites";
 import { removePositionAtBeat } from "@/db-functions/timelinePointMoves";
+import type { DbTransaction } from "@/db-functions/types";
+import { showDroppedAtFlagToast } from "@/shapes/placed/leftOutToast";
 
 /**
  * Timeline mode's write for "set marchers to the previous or next page" (P7.6): one undoable edit
@@ -57,8 +59,14 @@ export const moveMarchersInTargetMutationOptions = () => {
     return mutationOptions({
         // A drag over a window that crosses pages says what it passed through (UI-10), and one
         // that left marchers' later moves behind offers to move them too
-        mutationFn: ({ target, moves }: TimelineEditRequest) =>
-            moveMarchersAndOfferFollowUp({ target, moves }),
+        // `afterWrite`: app data saved in the same edit (a prop's size, with the move a resize gave it)
+        mutationFn: ({
+            target,
+            moves,
+            afterWrite,
+        }: TimelineEditRequest & {
+            afterWrite?: (tx: DbTransaction) => Promise<void>;
+        }) => moveMarchersAndOfferFollowUp({ target, moves, afterWrite }),
         onError: (e, variables) => {
             toastTimelineError(
                 e,
@@ -70,8 +78,8 @@ export const moveMarchersInTargetMutationOptions = () => {
 };
 
 /**
- * Basic mode's **Remove this count's position** (UI-19): one undoable edit merging each marcher's
- * two moves split at `beat` (`removePositionAtBeat`). Like the other timeline writes, the resolver
+ * Basic mode's **Remove this count's position** (UI-19): one undoable edit taking each marcher's
+ * position at `beat` away (`removePositionAtBeat`). Like the other timeline writes, the resolver
  * store picks the change up from the change log, so there is nothing to invalidate.
  */
 export const removePositionAtBeatMutationOptions = () => {
@@ -85,6 +93,10 @@ export const removePositionAtBeatMutationOptions = () => {
             box: { start: number; end: number };
             marcherIds: readonly number[];
         }) => removePositionAtBeat({ db, beat, box, marcherIds }),
+        onSuccess: (result) => {
+            if (result.droppedFromShapes)
+                showDroppedAtFlagToast(result.droppedFromShapes);
+        },
         onError: (e, variables) => {
             toastTimelineError(
                 e,

@@ -71,7 +71,10 @@ describe("SettingsWindow", () => {
 
     it("keeps the language in General and the theme in Appearance", async () => {
         renderWindow();
-        expect(await screen.findByRole("combobox")).toBeVisible();
+        // The language picker; General also has the window "Open on" menus
+        expect(
+            await screen.findByRole("combobox", { name: "English" }),
+        ).toBeVisible();
         expect(screen.queryByRole("radio", { name: "Light" })).toBeNull();
 
         const nav = screen.getByRole("navigation");

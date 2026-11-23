@@ -1,6 +1,6 @@
 ---
-title: Place marchers in a shape
-description: Choose who goes in a shape and in what order, set the spacing, and change a shape after it's placed.
+title: Change a placed shape
+description: Select a shape you've already placed and change it, take one marcher out of it, group marchers into a shape where they stand, or ungroup it.
 type: how-to
 covers:
   - apps/desktop/src/shapes/placed
@@ -22,78 +22,59 @@ sidebar:
 import Media from "@/components/docs/Media.astro";
 import Kbd from "@/components/docs/Kbd.astro";
 import Ui from "@/components/docs/Ui.astro";
-import { Steps } from "@astrojs/starlight/components";
+import Term from "@/components/docs/Term.astro";
+import InShort from "@/components/docs/InShort.astro";
 
-A shape places exactly the marchers you have selected, one on each spot, at the count the playhead is on. This page covers choosing who goes in, who stands where, the spacing, and changing a shape once it's placed. For drawing each kind, see [How shapes work](/guides/shapes/) and the pages after it.
+<InShort>Click any marcher in the shape to select the whole shape, then drag its handles or change its numbers in the floating editor. Each change saves when you let go.</InShort>
 
-## Place the marchers
-
-<Steps>
-
-1. Select the marchers who go in the shape. The <Ui k="inspector.shape.selectTab" /> tab selects a whole section at once; see [Select marchers](/guides/marchers/select-marchers/).
-
-2. Put the playhead on the count where they should stand in the shape. To write a move into the shape, that's the end of the move.
-
-3. Pick a kind and draw it on the field.
-
-4. Set the spacing in the floating editor (below).
-
-5. Select <Ui k="shapes.edit.place" />, or press <Kbd action="applyShape" />.
-
-</Steps>
-
-Placing is one step you can undo. Every selected marcher gets a spot: there are always as many spots as marchers, so a bigger selection makes a bigger shape or a closer spacing.
-
-The shape is drawn for the marchers selected when you drew it. If you change the selection while it's open, the shape stays as it is, and placing it still places only its own marchers.
-
-## Who stands where
-
-OpenMarch gives each marcher a spot by least travel, so everyone's walks are as short and as even as they can be, measured from where they stand at the start flag (in Basic, the start of the page). This keeps paths from crossing and keeps a line that moves into another line in order.
-
-That choice is made when you draw the shape, and again when you change how many across or deep it is. Moving, turning, stretching or flipping it keeps everyone on their own spot, so the form stays the same form. After such changes, <Ui k="shapes.edit.recalculate.label" /> (<Kbd action="shapeRecalculate" />) works out who goes where by least travel again; it lights up only when it would change something.
-
-For a line, curve or arc, the <Ui k="shapes.edit.order.label" /> menu on the editor's second row also has <Ui k="shapes.edit.order.reverse" />, which turns the order along the line end for end, and, when every marcher comes from one placed line, <Ui k="shapes.edit.order.keep" />.
-
-To check the walks before you place the shape, select the pathways button in the floating editor: it draws a line from where each marcher starts to their spot.
-
-## Spacing and size
-
-Each kind has its own spacing, in steps between neighbors:
-
-- A box has a side-to-side and a front-to-back spacing, which you can lock together.
-- A circle has one interval round its ring, which also sets its size.
-- A line, curve or arc either fits its marchers to the length you drew (<Ui k="shapes.kinds.line.spacing.fit" />) or keeps the interval you set and takes the length that needs (<Ui k="shapes.kinds.line.spacing.keep" />).
-
-Expand and Shrink in the floating editor make the whole shape bigger or smaller a half step at a time, keeping its proportions and how many marchers are across and deep. Hold either one to repeat it, or drag it. No spacing goes under half a step.
-
-A spacing can be any number of steps, typed as a whole number, a decimal or a fraction (2, 2.5, 2½, 1⅔, 5/3). The shape keeps it exactly. Dragged spacings and the − and + buttons stay on half steps.
+A placed shape keeps its kind and its numbers, so you can come back and change it as a shape rather than marcher by marcher. To draw one, see [How shapes work](/guides/shapes/).
 
 ## Change a placed shape
+
+Selecting a placed shape brings back its outline, handles and <Term id="floating-editor">floating editor</Term>, with no Place button. Each change is one step you can undo.
 
 <Media
   id="shapes-edit-placed"
   alt="A placed box of trumpets. Clicking one trumpet selects the whole box, showing its outline, handles and floating editor; the box's right side handle is dragged out, the trumpets spread wider, and the change is saved when the button is let go."
 />
 
-- Click any marcher in a placed shape to select the whole shape. Its outline, handles and floating editor come back, with no Place button: every change saves as soon as you let go, and each is one step you can undo.
-- Double-click a marcher in the shape to select that marcher alone, or hold <Kbd keys="Mod" gesture="click" />, or right-click it (on a tablet, touch and hold it, then lift) and choose <Ui k="actions.shape.enterBox" />. Press <Kbd action="cancelAlignmentUpdates" /> to go back to the whole shape.
-- Drag inside the shape, or press the arrow keys, to move the whole shape.
+Drag inside the shape, or press the arrow keys, to move it. Its handles and numbers work as they did before you placed it; see [Draw a box](/guides/shapes/draw-a-box/#change-the-boxs-numbers) and the other draw pages.
 
-If you move a marcher out of a placed shape, they leave it, and a notice says so. Their spot stays empty. In a closed shape, <Ui k="shapes.box.left.closeUp" /> in that notice, or in the floating editor while the shape is selected, spaces the marchers left over the shape again; a box also offers <Ui k="shapes.box.left.resplit" />, which lays it out again for the marchers left. Undo puts the marchers back.
+## Select one marcher in a shape
 
-To stop treating the marchers as a shape, select it and select the ungroup button in the floating editor, whose tip reads <Ui k="shapes.edit.ungroup" />, or press <Kbd action="shapeUngroup" />. Nobody moves.
+Double-click a marcher in the shape to select that marcher alone. <Kbd keys="Mod" gesture="click" /> does it in one click, and so does right-clicking the marcher and choosing <Ui k="actions.shape.enterBox" />. Press <Kbd action="cancelAlignmentUpdates" /> to go back to the whole shape.
+
+## Take a marcher out of a shape
+
+Move a marcher off their spot and they leave the shape; a notice says so, and their spot stays empty. In a closed shape, <Ui k="shapes.box.left.closeUp" /> in that notice, or in the floating editor while the shape is selected, lays the marchers left out in the shape again: a box in Grid takes the layout that fits the new count, or Short back, and an outline spreads round again. A box also offers <Ui k="shapes.box.left.resplit" />, which lays it out again for the marchers left. Undo puts the marcher back.
+
+<Media
+  id="shapes-take-out"
+  alt="A placed 4 × 3 box of trumpets with one spot empty: its trumpet stands outside, beside the box. Clicking the box selects it. The pointer rests on Close up at the right end of the floating editor until its tooltip reads “Close up: fill the 1 empty spot with the marchers left”, clicks it, and the eleven trumpets left fill the box again, the back row one short."
+/>
+
+## Ungroup a shape
+
+To stop treating the marchers as a shape, select it and press <Kbd action="shapeUngroup" />, or right-click it and choose <Ui k="actions.shape.ungroup" />. Nobody moves.
 
 ## Make a shape from where marchers stand
 
-<Ui k="actions.shape.group" /> (<Kbd action="shapeGroup" />) turns the selected marchers into a shape without moving them. From then on, clicking any of them selects them all, and you can move, turn, flip and scale them together with the shape's handles and floating editor.
+Select the marchers, right-click one of them and choose <Ui k="actions.shape.group" /> (<Kbd action="shapeGroup" />). Nobody moves. From then on, clicking any of them selects them all, and you can move, turn, flip and scale them together with the shape's handles and floating editor.
 
 ## Shapes on later pages
 
-When the marchers hold their spots on the pages after, the shape is there too, and you can select it on those pages. Changing it on a later page gives that page its own copy of the shape; the earlier page keeps the shape it had.
+On the pages after, the shape is there too for as long as every one of its marchers stays on its spot, and they're <Term id="held">Held</Term> there: the shape is their hold. You can select it on those pages. Changing it on a later page gives that page its own copy of the shape; the earlier page keeps the one it had.
+
+## Marchers with a position in the middle of the page (Basic)
+
+In Basic, a shape placed at a page's flag holds only the marchers whose last [position in the middle of the page](/guides/timeline/moves/#set-a-position-in-the-middle-of-a-page-basic) is at the same count. Marchers whose last one is at another count still go to their spots, but aren't part of the shape, and a notice names them. They won't move with the shape when you change it later. To keep everyone in it, take away the positions that differ, or give everyone theirs at the same count, then place the shape again.
+
+The same notice appears when you later give marchers in a shape positions in the middle of the page at different counts: the shape keeps the marchers of one count, and names the others.
 
 ## Related
 
-- [How shapes work](/guides/shapes/): kinds, spots and intervals.
+- [How shapes work](/guides/shapes/): kinds, spots, intervals and who goes where.
 - [Draw a box](/guides/shapes/draw-a-box/): the floating editor's numbers and fills.
+- [Copy a formation onto other marchers](/guides/shapes/copy-and-paste/): paste a placed shape onto other marchers.
 - [Snapping and modifier keys](/guides/shapes/snapping-and-modifier-keys/): land a shape on yard lines and hashes.
-- [Moves](/guides/timeline/moves/): how marchers get from one shape to the next.
+- [Make and change moves](/guides/timeline/moves/): how marchers get from one shape to the next.

@@ -9,7 +9,7 @@
  *    an unsupported required extension, an image too large to decode, more than 4× the
  *    triangle cap; then the Khronos validator's errors.
  * 2. Normalize: meters, +Y up, the front toward the audience (+Z), the pivot at the bottom
- *    center. Unit fixes, "rotate to Y-up" and the turn are choices, pre-selected and never
+ *    center. Unit fixes, the tilt and the turn are choices, pre-selected and never
  *    silent.
  * 3. Fit the budget: simplify past the triangle cap (a pre-selected choice), shrink textures to
  *    the cap, and make a distant version.
@@ -25,9 +25,12 @@ import {
     PropertyType,
     WebIO,
     GLB_BUFFER,
+    VertexLayout,
     type Document,
     type Material,
+    type Mesh,
     type Node,
+    type Primitive,
     type Scene,
     type Texture,
 } from "@gltf-transform/core";
@@ -37,7 +40,7 @@ import {
     dedup,
     getBounds,
     prune,
-    simplify,
+    simplifyPrimitive,
     uninstance,
     weld,
 } from "@gltf-transform/functions";
@@ -45,14 +48,16 @@ import { MeshoptDecoder, MeshoptSimplifier } from "meshoptimizer";
 import { planFromAbove } from "@/view3d/core/pit/planFromAbove";
 import { creditsOf, titleOf } from "./credits";
 import { openPickedFiles, RefusedError, type OpenedModel } from "./files";
+import { isTilt, tiltQuaternion, UPRIGHT } from "./orientation";
 import type { ImageCodec } from "./imageCodec";
 import { precheck } from "./precheck";
 import {
+    DETAILED_TRIANGLE_CAP,
     DISTANT_SIMPLIFY_FROM,
     DISTANT_TEXTURE_CAP,
+    DISTANT_SIMPLIFY_ERRORS,
     DISTANT_TRIANGLE_CAP,
     DISTANT_TRIANGLE_RATIO,
-    FLAT_RATIO,
     IMAGE_TYPES,
     MAX_IMPORT_BYTES,
     MODEL_IMPORT_VERSION,
@@ -60,13 +65,11 @@ import {
     PLAUSIBLE_SIZE_M,
     TEXTURE_CAP,
     TRIANGLE_CAP,
-    TRIANGLE_REFUSE_FACTOR,
+    TRIANGLE_HARD_LIMIT,
     UNIT_FIXES,
-    Z_UP_FACTOR,
 } from "./rules";
 import {
     primitiveTriangles,
-    sceneNodes,
     sceneOf,
     sceneTriangles,
     topAt,
@@ -75,6 +78,7 @@ import {
 import { renderThumbnail } from "./thumbnail";
 import type {
     Choice,
+    DetailLevel,
     Fix,
     ModelImportChoices,
     ModelImportReport,
@@ -86,6 +90,8 @@ import type {
     Vec3,
 } from "./types";
 import { validateModel } from "./validate";
+import { freezeSkins } from "./skins";
+import { openZips } from "./zip";
 
 export interface ModelImportEnv {
     images: ImageCodec;
@@ -111,7 +117,8 @@ export async function importModel(
         notes: [],
     };
     try {
-        const opened = await openAndCheck(files, report);
+        const unzipped = openZips(files);
+        const opened = await openAndCheck(unzipped, report);
         if (!opened) return { ok: false, report };
         const read = await readClean(opened, env, report);
         if (!read) return { ok: false, report };
@@ -119,7 +126,7 @@ export async function importModel(
 
         const { turn, root } = normalize(doc, scene, choices, report);
         await doc.transform(weld());
-        await fitTriangles(doc, scene, choices, report);
+        const detail = await fitTriangles(doc, scene, choices, report);
         // After simplifying, which can move the lowest point
         placeOnGround(scene, root, report);
         stripExtras(doc);
@@ -133,9 +140,20 @@ export async function importModel(
             prune({ keepAttributes: true, keepSolidTextures: true }),
         );
 
-        const model = await io.writeBinary(doc);
-        const distant = await makeDistant(io, doc, env.images);
-        const derived = await derive(doc, env.images);
+        // A level heavier than Light keeps a Light copy beside it, for devices that can't draw it
+        const light =
+            detail.row && detail.level !== "light"
+                ? await makeLight(doc)
+                : null;
+        if (detail.row) detail.row.lightTriangles = light?.triangles ?? null;
+        // From the Light copy when there is one: the same shapes, without building a record per
+        // triangle of a model of millions (#1091, measured: 4M triangles took 6 GB)
+        const lighter = light?.doc ?? doc;
+        const distant = await makeDistant(io, lighter, env.images);
+        const derived = await derive(lighter, env.images, doc);
+        // Each copy's materials are merged last, once nothing simplifies from it any more
+        const model = await writeMerged(io, doc);
+        const lightBytes = light ? await writeMerged(io, light.doc) : null;
         const sidecar: ModelSidecar = {
             format: "openmarch-model/1",
             importVersion: MODEL_IMPORT_VERSION,
@@ -145,6 +163,8 @@ export async function importModel(
             stand: derived.stand,
             triangles: sceneTriangles(sceneOf(doc)),
             distantTriangles: distant.triangles,
+            ...(detail.row ? { detail: detail.level } : {}),
+            ...(light ? { lightTriangles: light.triangles } : {}),
             importNotes: {
                 needsChoice: report.needsChoice,
                 fixedForYou: report.fixedForYou,
@@ -157,11 +177,12 @@ export async function importModel(
             model: {
                 name:
                     titleOf(opened.json) ??
-                    opened.name.replace(/\.(glb|gltf)$/i, ""),
+                    fileTitle(opened.name, unzipped.zipName),
                 parts: {
                     model,
                     distant: distant.bytes,
                     thumbnail: derived.thumbnail,
+                    ...(lightBytes ? { light: lightBytes } : {}),
                 },
                 sidecar,
                 credits: creditsOf(opened.json),
@@ -174,12 +195,28 @@ export async function importModel(
     }
 }
 
+/** Names model files get from exporters, which say nothing about the model */
+const GENERIC_NAMES = new Set(["scene", "model", "untitled", "object"]);
+
+/**
+ * A title from the model's file name, or from the zip it came in when the file is only called
+ * `scene` (Sketchfab's `scene.gltf`), as `scaffold stairs` for `scaffold_stairs.zip`.
+ */
+export function fileTitle(path: string, zipName: string | null): string {
+    const name = path
+        .slice(path.lastIndexOf("/") + 1)
+        .replace(/\.(glb|gltf)$/i, "");
+    if (zipName && GENERIC_NAMES.has(name.toLowerCase()))
+        return zipName.replace(/[_]+/g, " ").trim() || name;
+    return name;
+}
+
 /**
  * The checks before decoding, then the validator: the opened model, or null with the refusals
  * in `report`.
  */
 async function openAndCheck(
-    files: readonly PickedFile[],
+    { files, skipped }: { files: readonly PickedFile[]; skipped: string[] },
     report: ModelImportReport,
 ): Promise<OpenedModel | null> {
     const bytes = files.reduce((n, f) => n + f.bytes.byteLength, 0);
@@ -191,7 +228,7 @@ async function openAndCheck(
         });
         return null;
     }
-    const opened = openPickedFiles(files);
+    const opened = openPickedFiles(files, skipped);
     const checked = precheck(opened);
     if (checked.refusals.length) {
         report.cantImport.push(...checked.refusals);
@@ -229,7 +266,7 @@ async function readClean(
                     .reduce((m, prim) => m + primitiveTriangles(prim), 0),
             0,
         );
-    const limit = TRIANGLE_CAP * TRIANGLE_REFUSE_FACTOR;
+    const limit = TRIANGLE_HARD_LIMIT;
     if (decoded > limit) {
         report.cantImport.push({
             code: "tooManyTriangles",
@@ -240,10 +277,13 @@ async function readClean(
         return null;
     }
     const scene = keepOneScene(doc, report);
-    if (sceneNodes(scene).some((n) => n.getSkin() && n.getMesh())) {
+    // A rigged model stands still in the pose it has with no animation playing (#1168)
+    const frozen = freezeSkins(doc, scene);
+    if (frozen === null) {
         report.cantImport.push({ code: "rigged" });
         return null;
     }
+    if (frozen > 0) report.fixedForYou.push({ code: "rigFrozen" });
     await dropExtensions(doc, opened, report);
     if (sceneTriangles(scene) > limit) {
         report.cantImport.push({
@@ -286,7 +326,10 @@ async function readDocument(
     const io = new WebIO()
         .setLogger(new Logger(Logger.Verbosity.ERROR))
         .registerExtensions(ALL_EXTENSIONS)
-        .registerDependencies(dependencies);
+        .registerDependencies(dependencies)
+        // One buffer view per attribute: three reads interleaved ones as attributes the 3D View
+        // can't merge, so every part would be its own draw (#1201)
+        .setVertexLayout(VertexLayout.SEPARATE);
     // Never `read(uri)`: every resource comes from the picked files
     const resources: Record<string, Uint8Array<ArrayBuffer>> = {};
     for (const [uri, bytes] of Object.entries(opened.resources))
@@ -387,6 +430,9 @@ async function dropExtensions(
 const isPlausible = (largestM: number) =>
     largestM >= PLAUSIBLE_SIZE_M.min && largestM <= PLAUSIBLE_SIZE_M.max;
 
+/** The node `normalize` turns and scales the scene with, and `placeOnGround` moves */
+const ROOT_NODE = "OM_import_root";
+
 /**
  * Meters, +Y up, the front toward +Z: one new root node scales and turns the scene
  * (`placeOnGround` moves it later). Returns the turn applied and the node.
@@ -426,27 +472,24 @@ function normalize(
             maxM: PLAUSIBLE_SIZE_M.max,
         });
 
-    // Z-up: suspected when the model stands tallest along Z; a flat one gets no guess
-    const [x, y, z] = size;
-    const flat = Math.min(...size) < FLAT_RATIO * largest;
-    const suspected = !flat && z > x && z > y && z > y * Z_UP_FACTOR;
-    let rotate = choices.rotateToYUp ?? false;
-    if (suspected || choices.rotateToYUp !== undefined) {
-        rotate = choices.rotateToYUp ?? suspected;
-        report.needsChoice.push({
-            code: "rotateToYUp",
-            preselected: suspected,
-            applied: rotate,
-        });
-    }
+    // Upright as the file has it: glTF is Y-up by its spec, and the exporters people use (Blender,
+    // Sketchfab) convert to it. No guess from the model's shape: a car facing glTF's +Z front is
+    // longest along Z, just as a tall Z-up post is. Tipping is always offered for a file that lies
+    // on a side anyway
+    const tilt = choices.tilt && isTilt(choices.tilt) ? choices.tilt : UPRIGHT;
+    report.needsChoice.push({
+        code: "tilt",
+        preselected: UPRIGHT,
+        applied: tilt,
+    });
 
     // The front: glTF's +Z unless the user turns it; always offered, since no file says
     const turn = choices.turn ?? 0;
     report.needsChoice.push({ code: "turn", preselected: 0, applied: turn });
 
-    const root = doc.createNode("OM_import_root");
+    const root = doc.createNode(ROOT_NODE);
     root.setScale([factor, factor, factor]);
-    // Turn about +Y (counter-clockwise from above), after rotating Z-up to Y-up (-90° about X)
+    // Turn about +Y (counter-clockwise from above), after standing it up
     const half = (turn * Math.PI) / 360;
     const yaw: [number, number, number, number] = [
         0,
@@ -454,10 +497,7 @@ function normalize(
         0,
         Math.cos(half),
     ];
-    const zUp: [number, number, number, number] = rotate
-        ? [-Math.SQRT1_2, 0, 0, Math.SQRT1_2]
-        : [0, 0, 0, 1];
-    root.setRotation(multiplyQuat(yaw, zUp));
+    root.setRotation(multiplyQuat(yaw, tiltQuaternion(tilt)));
     for (const child of scene.listChildren()) {
         scene.removeChild(child);
         root.addChild(child);
@@ -498,62 +538,210 @@ function multiplyQuat(
 
 // ------------------------------------------------------------------ the budget
 
-/** Simplifies past the cap when chosen (pre-selected); notes what remains over it. */
+/**
+ * Brings the model to the chosen level (#1091): Light (pre-selected) simplifies to
+ * `TRIANGLE_CAP`, Detailed to `DETAILED_TRIANGLE_CAP`, Original keeps every triangle. A model
+ * within the Light cap has nothing to choose. Notes what a simplification couldn't reach.
+ */
 async function fitTriangles(
     doc: Document,
     scene: Scene,
     choices: ModelImportChoices,
     report: ModelImportReport,
-): Promise<void> {
+): Promise<{
+    level: DetailLevel;
+    row: Extract<Choice, { code: "detail" }> | null;
+}> {
     const triangles = sceneTriangles(scene);
-    if (triangles <= TRIANGLE_CAP) return;
-    const applied = choices.simplify ?? true;
-    const row: Extract<Choice, { code: "simplify" }> = {
-        code: "simplify",
+    if (triangles <= TRIANGLE_CAP) return { level: "original", row: null };
+    const levels: DetailLevel[] =
+        triangles > DETAILED_TRIANGLE_CAP
+            ? ["light", "detailed", "original"]
+            : ["light", "original"];
+    const asked = choices.detail ?? "light";
+    const applied = levels.includes(asked) ? asked : "light";
+    const row: Extract<Choice, { code: "detail" }> = {
+        code: "detail",
         triangles,
-        cap: TRIANGLE_CAP,
-        preselected: true,
+        levels,
+        preselected: "light",
         applied,
-        simplifiedTriangles: null,
+        appliedTriangles: triangles,
+        lightTriangles: null,
     };
     report.needsChoice.push(row);
-    let after = triangles;
-    if (applied) {
-        after = await simplifyTo(doc, scene, TRIANGLE_CAP);
-        row.simplifiedTriangles = after;
+    const target =
+        applied === "light"
+            ? TRIANGLE_CAP
+            : applied === "detailed"
+              ? DETAILED_TRIANGLE_CAP
+              : null;
+    if (target !== null) {
+        row.appliedTriangles = await simplifyTo(doc, scene, target);
+        if (row.appliedTriangles > target)
+            report.notes.push({
+                code: "overTriangleCap",
+                triangles: row.appliedTriangles,
+                cap: target,
+            });
     }
-    if (after > TRIANGLE_CAP)
-        report.notes.push({
-            code: "overTriangleCap",
-            triangles: after,
-            cap: TRIANGLE_CAP,
-        });
+    return { level: applied, row };
+}
+
+/**
+ * The Light copy kept beside a heavier level: the finished model, simplified to the cap and set
+ * back on the ground, since simplifying can take away its lowest points (thin legs, a pole's
+ * foot), so the fallback's swap doesn't make it float.
+ */
+async function makeLight(
+    doc: Document,
+): Promise<{ triangles: number; doc: Document }> {
+    const light = cloneDocument(doc);
+    const scene = sceneOf(light);
+    await simplifyTo(light, scene, TRIANGLE_CAP);
+    const lowest = getBounds(scene).min[1];
+    const root = light
+        .getRoot()
+        .listNodes()
+        .find((n) => n.getName() === ROOT_NODE);
+    if (root && Math.abs(lowest) > 1e-6) {
+        const [x, y, z] = root.getTranslation();
+        root.setTranslation([x, y - lowest, z]);
+    }
+    await light.transform(
+        prune({ keepAttributes: true, keepSolidTextures: true }),
+    );
+    return { triangles: sceneTriangles(scene), doc: light };
 }
 
 /**
  * meshoptimizer's simplifier toward `target` triangles: the ratio first, then a wider error
- * limit until it gets there (spike #995). Returns the triangles left.
+ * limit until it gets there (spike #995), up to the last of `errors`. Each limit is a share of a
+ * part's own size, or with `ofModel` of the whole model's (#1180). Returns the triangles left.
  */
 async function simplifyTo(
     doc: Document,
     scene: Scene,
     target: number,
+    errors: readonly number[] = [0.01, 0.05, 0.2, 1],
+    ofModel = false,
 ): Promise<number> {
     await MeshoptSimplifier.ready;
+    await doc.transform(weld({ overwrite: false }));
+    // The floor never takes more than the target between all the parts: a model of hundreds of
+    // small parts still fits its copy's cap, keeping a few triangles of each
+    const parts = doc
+        .getRoot()
+        .listMeshes()
+        .reduce((n, mesh) => n + mesh.listPrimitives().length, 0);
+    const floor = Math.max(
+        1,
+        Math.min(PART_TRIANGLE_FLOOR, Math.floor(target / Math.max(1, parts))),
+    );
+    // A part's share of the model's size: a limit of the model's size is this many times wider
+    // a limit of the part's, which the simplifier measures against
+    const widen = ofModel ? partWidening(doc, scene) : () => 1;
     const start = sceneTriangles(scene);
     let now = start;
-    for (const error of [0.01, 0.05, 0.2, 1]) {
+    for (const error of errors) {
         if (now <= target) break;
-        await doc.transform(
-            simplify({
-                simplifier: MeshoptSimplifier,
-                ratio: Math.min(1, (target / now) * 0.95),
-                error,
-            }),
-        );
+        const ratio = Math.min(1, (target / now) * 0.95);
+        for (const mesh of doc.getRoot().listMeshes())
+            for (const prim of mesh.listPrimitives()) {
+                const triangles = primitiveTriangles(prim);
+                if (triangles <= floor) continue;
+                // The error is relative to the part's own size, so at a wide limit a thin
+                // part (a pole, a rail) would collapse to nothing (#1169): each part keeps
+                // at least the floor
+                simplifyKeeping(
+                    prim,
+                    Math.max(ratio, floor / triangles),
+                    Math.min(1, error * widen(mesh)),
+                );
+            }
         now = sceneTriangles(scene);
     }
     return now;
+}
+
+/**
+ * For each mesh, how many times larger the model is than the mesh as drawn (its largest
+ * instance): a model of many small parts lets each simplify by the model's measure, so its far
+ * copy fits its target, while a large part keeps its shape (#1180)
+ */
+function partWidening(doc: Document, scene: Scene): (mesh: Mesh) => number {
+    const diagonal = (min: number[], max: number[]) =>
+        Math.hypot(max[0] - min[0], max[1] - min[1], max[2] - min[2]);
+    const { min, max } = getBounds(scene);
+    const model = diagonal(min, max);
+    const widening = new Map<Mesh, number>();
+    for (const mesh of doc.getRoot().listMeshes()) {
+        const scale = Math.max(
+            0,
+            ...mesh
+                .listParents()
+                .filter((p): p is Node => p.propertyType === PropertyType.NODE)
+                .map((node) => {
+                    const m = node.getWorldMatrix();
+                    return Math.max(
+                        Math.hypot(m[0], m[1], m[2]),
+                        Math.hypot(m[4], m[5], m[6]),
+                        Math.hypot(m[8], m[9], m[10]),
+                    );
+                }),
+        );
+        const size = Math.max(
+            0,
+            ...mesh.listPrimitives().map((prim) => {
+                const position = prim.getAttribute("POSITION");
+                return position
+                    ? diagonal(position.getMin([]), position.getMax([]))
+                    : 0;
+            }),
+        );
+        const drawn = size * scale;
+        widening.set(
+            mesh,
+            drawn > 0 && model > 0 ? Math.max(1, model / drawn) : 1,
+        );
+    }
+    return (mesh) => widening.get(mesh) ?? 1;
+}
+
+/**
+ * Simplifies one part, or leaves it as it was when simplifying would leave nothing of it: the
+ * simplifier's count is a ceiling, so a part asked for a triangle or two can collapse to none,
+ * and an empty part is invalid glTF that won't load. That costs the cap only for models of
+ * hundreds of parts, which keep every part over fitting it.
+ */
+function simplifyKeeping(prim: Primitive, ratio: number, error: number) {
+    // Shares its accessors, so the simplifier keeps them for it
+    const before = prim.clone();
+    simplifyPrimitive(prim, { simplifier: MeshoptSimplifier, ratio, error });
+    if (primitiveTriangles(prim) === 0) prim.copy(before);
+    before.dispose();
+}
+
+/**
+ * The fewest triangles simplifying leaves a part, so no part disappears (#1169); less when a
+ * model has more parts than its copy's target allows this many each
+ */
+export const PART_TRIANGLE_FLOOR = 12;
+
+/**
+ * A finished copy, written so the 3D View can draw it in few draws (#1201). The View merges the
+ * parts that share a material and a vertex layout when it loads a model (`mergeByMaterial`),
+ * each part placed by its own world matrix, so one material is one draw. That needs attributes
+ * written separately (the reader's vertex layout) and copies of one material made one here: the
+ * CarConcept's 109 parts drew 218 times a frame with shadows. Run on each finished copy, after
+ * simplifying. The cleanup is ours, as the worker can't look for solid-color textures.
+ */
+async function writeMerged(io: WebIO, doc: Document): Promise<Uint8Array> {
+    await doc.transform(
+        dedup({ propertyTypes: [PropertyType.MATERIAL] }),
+        prune({ keepAttributes: true, keepSolidTextures: true }),
+    );
+    return io.writeBinary(doc);
 }
 
 function stripExtras(doc: Document): void {
@@ -610,7 +798,10 @@ async function shrinkTextures(
 const textureName = (texture: Texture, index: number) =>
     texture.getName() || texture.getURI() || `texture ${index + 1}`;
 
-/** The distant version: simplified hard, with small textures. */
+/**
+ * The distant version: simplified as far as keeps its shape, with small textures. It may keep
+ * more than its target: a far copy that caves in looks broken from the stands (#1180).
+ */
 async function makeDistant(
     io: WebIO,
     doc: Document,
@@ -627,23 +818,24 @@ async function makeDistant(
                 Math.floor(triangles * DISTANT_TRIANGLE_RATIO),
             ),
         );
-        await simplifyTo(distant, scene, target);
+        await simplifyTo(distant, scene, target, DISTANT_SIMPLIFY_ERRORS, true);
     }
     await shrinkTextures(distant, DISTANT_TEXTURE_CAP, images, null);
-    await distant.transform(
-        prune({ keepAttributes: true, keepSolidTextures: true }),
-    );
     return {
-        bytes: await io.writeBinary(distant),
+        bytes: await writeMerged(io, distant),
         triangles: sceneTriangles(scene),
     };
 }
 
 // ------------------------------------------------------------------ 2D and thumbnail
 
-async function derive(doc: Document, images: ImageCodec) {
+/**
+ * What 2D needs, from `doc` (the Light copy above Light); the size from `sizeOf`, the stored
+ * model, which simplifying may have trimmed a hair.
+ */
+async function derive(doc: Document, images: ImageCodec, sizeOf: Document) {
     const scene = sceneOf(doc);
-    const { min, max } = getBounds(scene);
+    const { min, max } = getBounds(sceneOf(sizeOf));
     const triangles = worldTriangles(scene);
     const top = topAt(triangles, 0, 0);
     const colors = new Map<Material | null, [number, number, number]>();

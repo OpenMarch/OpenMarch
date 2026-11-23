@@ -34,6 +34,11 @@ export const tablesWithHistory = [
     schema.timeline_transitions,
     schema.timeline_assignments,
     schema.timeline_slot_destinations,
+    // Routes, and the lanes that bind slots to them (spec v0.9 and v0.10, ADR 0016 and 0017)
+    schema.timeline_routes,
+    schema.timeline_lanes,
+    // Where a route came from (K6, spec J.1): Detach's link back to its group path (step 3c)
+    schema.timeline_route_sources,
     // App data beside them: where marchers are Held (ADR 0012 amendment 2026-10-30)
     schema.timeline_held_marks,
     // Items and their Outline changes (ADR 0010 D-10)

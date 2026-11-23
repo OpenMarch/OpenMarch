@@ -1,4 +1,19 @@
 words:
+  - autocheckpoint
+  - FULLFSYNC
+  - fsyncs
+  - xattr
+  - retarget
+  - recents
+  - discordapp
+  - rehome
+  - rehomed
+  - rehoming
+  - CANTOPEN
+  - errcode
+  - onedrive
+  - googledrive
+  - iclouddrive
   - Crossmen
   - baselined
   - CIEDE
@@ -351,6 +366,7 @@ words:
   - Zingali
   - Zustand
   - 日本語
+  - laned
   - lerp
   - lerped
   - slerp

@@ -6,6 +6,7 @@ import { workspaceSettingsSchema } from "@/settings/workspaceSettings";
 import { postApiEditorV1ProductionsProductionIdRevisions } from "@/api/generated/production-revisions/production-revisions";
 import { _createSectionMappings } from "./create-section-mappings";
 import { FieldProperties, rgbaToString } from "@openmarch/core";
+import { EditorApiError, editorApiStatus } from "@/api/editor-client";
 
 type RevisionCanvasColors = {
     canvas_background_color: string;
@@ -20,6 +21,8 @@ export type UploadResult =
     | {
           success: false;
           error: string;
+          /** The server's HTTP status, when it answered (403: ensemble expired). */
+          status?: number;
       };
 
 export interface UploadProgress {
@@ -113,7 +116,11 @@ async function createRevisionOnServer({
     } catch (error) {
         const errorMessage =
             error instanceof Error ? error.message : String(error);
-        return { success: false, error: errorMessage };
+        return {
+            success: false,
+            error: errorMessage,
+            status: editorApiStatus(error),
+        };
     }
 
     return {
@@ -177,12 +184,13 @@ export async function uploadDatabaseToServer(
         });
 
         if (!revisionUploadResult.success) {
-            throw new Error(
+            throw new EditorApiError(
                 revisionUploadResult.error ||
                     tolgee.t(
                         "mobileExport.revision.uploadFailedUnknown",
                         "Unknown error",
                     ),
+                revisionUploadResult.status,
             );
         }
 
@@ -190,12 +198,14 @@ export async function uploadDatabaseToServer(
     } catch (error) {
         const errorMessage =
             error instanceof Error ? error.message : String(error);
-        throw new Error(
+        // Keep the HTTP status so callers can tell an expired ensemble (403)
+        throw new EditorApiError(
             tolgee.t(
                 "mobileExport.revision.uploadFailed",
                 "Upload failed: {error}",
                 { error: errorMessage },
             ),
+            editorApiStatus(error),
         );
     }
 }

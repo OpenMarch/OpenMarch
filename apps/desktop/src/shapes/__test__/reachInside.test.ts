@@ -149,6 +149,36 @@ describe("the selected box's field mode and reach inside", () => {
 
     beforeEach(() => vi.mocked(commitBox).mockClear());
 
+    it("gives what it doesn't claim to the path drawn under it; inside the box stays the box's", () => {
+        const under = {
+            takeClick: vi.fn(() => true),
+            fieldMenuAt: vi.fn(() => ["pathEdit"]),
+            cursorAt: vi.fn(() => "pointer" as const),
+        };
+        const withPath = new LiveBoxMode(box, new QueryClient(), under);
+        const outside = pointer({ x: member.x + 400, y: member.y + 400 });
+        expect(withPath.claims(outside, editorSays(false))).toBe(false);
+        expect(withPath.takeClick(outside, false)).toBe(true);
+        expect(under.takeClick).toHaveBeenCalledWith(outside, false);
+        expect(withPath.fieldMenuAt(outside)).toEqual(["pathEdit"]);
+        expect(withPath.cursorAt(outside)).toBe("pointer");
+
+        under.fieldMenuAt.mockClear();
+        under.cursorAt.mockClear();
+        const inside = pointer(member);
+        expect(withPath.claims(inside, editorSays(false))).toBe(true);
+        expect(withPath.fieldMenuAt(inside)).toBeNull();
+        expect(under.fieldMenuAt).not.toHaveBeenCalled();
+        withPath.cursorAt(inside);
+        expect(under.cursorAt).not.toHaveBeenCalled();
+    });
+
+    it("without anything under it, takes no click and offers no menu", () => {
+        const outside = pointer({ x: member.x + 400, y: member.y + 400 });
+        expect(mode().takeClick(outside, false)).toBe(false);
+        expect(mode().fieldMenuAt(outside)).toBeNull();
+    });
+
     it("claims a press on a member that doesn't reach inside: the drag moves the box", () => {
         expect(mode().claims(pointer(member), editorSays(false))).toBe(true);
     });
@@ -460,6 +490,37 @@ describe("reaching inside through the field editor", () => {
         expect(commitBox).not.toHaveBeenCalled();
     });
 
+    it("goes inside on a slow second click of a member, and the next click picks another one", () => {
+        let time = 0;
+        const { editor, state } = app({ now: () => time });
+        setActiveFieldEditor(editor);
+        click(editor, m(3), {});
+        expect(state.selected).toEqual([1, 2, 3, 4]);
+        time = 2000;
+        click(editor, m(3), {});
+        expect(state.selected).toEqual([3]);
+        expect(useBoxSelectionStore.getState().inside).toBe(7);
+        time = 4000;
+        click(editor, m(4), {});
+        setActiveFieldEditor(null);
+        expect(state.selected).toEqual([4]);
+        expect(useBoxSelectionStore.getState().inside).toBe(7);
+        expect(commitBox).not.toHaveBeenCalled();
+    });
+
+    it("a Shift-click on a member of the box selected whole never narrows to that marcher (review of #900)", () => {
+        let time = 0;
+        const { editor, state } = app({ now: () => time });
+        setActiveFieldEditor(editor);
+        click(editor, m(3), {});
+        expect(state.selected).toEqual([1, 2, 3, 4]);
+        time = 2000;
+        click(editor, m(3), { shift: true });
+        setActiveFieldEditor(null);
+        expect(state.selected).not.toEqual([3]);
+        expect(useBoxSelectionStore.getState().inside).toBeNull();
+    });
+
     it("picks just the marcher a $mod-click lands on and goes inside its box", () => {
         const { editor, state } = app();
         click(editor, m(3), { ctrl: true });
@@ -615,10 +676,12 @@ describe("reaching inside through the field editor", () => {
             expect(useBoxSelectionStore.getState().inside).toBe(8);
             running?.pointerCancel();
             useBoxSelectionStore.setState({ inside: null });
-            // Off a Mac, Meta is no $mod: the press is the box's, and a click keeps it whole
+            // Off a Mac, Meta is no $mod: the press is the box's, and a drag moves it whole
             const pc = app({ on: big, selected: all });
-            click(pc.editor, m(7), { meta: true });
+            drag(pc.editor, m(7), BY, { meta: true });
             expect(pc.state.selected).toEqual(all);
+            expect(pc.state.drops).toEqual([]);
+            expect(commitBox).toHaveBeenCalledTimes(1);
             expect(useBoxSelectionStore.getState().inside).toBeNull();
         });
 

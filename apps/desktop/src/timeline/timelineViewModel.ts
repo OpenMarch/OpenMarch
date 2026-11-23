@@ -54,6 +54,8 @@ export interface TimelineViewTransition {
     readonly slotCount: number;
     readonly start: number;
     readonly end: number;
+    /** A follow move's line: follow the leader along a drawn trail (pathways step 4) */
+    readonly trail?: boolean;
 }
 
 export interface TimelineViewShape {

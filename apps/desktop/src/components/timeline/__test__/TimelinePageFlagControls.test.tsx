@@ -1,4 +1,5 @@
 import {
+    act,
     cleanup,
     fireEvent,
     render,
@@ -9,6 +10,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type Beat from "@/global/classes/Beat";
 import type Page from "@/global/classes/Page";
 import { useShortcutOverridesStore } from "@/stores/ShortcutOverridesStore";
+import { useInputModeStore } from "@/stores/InputModeStore";
+import { resetKeyboardSeen } from "@/stores/KeyboardSeenStore";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import { Timeline, type TimelineInput } from "../Timeline";
 import {
@@ -170,6 +173,36 @@ describe("Create page at playhead on the paused playhead's right-click menu (UI-
             expect(shortcuts.map(shownText)).toEqual(["Alt+N", "Shift+F"]);
         } finally {
             useShortcutOverridesStore.setState({ overrides: {} });
+        }
+    });
+
+    it("leaves the shortcuts out in the touch layout until a hardware key is pressed (#880)", () => {
+        act(() => {
+            useInputModeStore.getState().setPreference("touch");
+        });
+        try {
+            show({ onAddPageFlag: vi.fn(), onAddSubsetPage: vi.fn() });
+            fireEvent.contextMenu(playhead());
+            expect(
+                screen.queryAllByTestId("timeline-add-page-shortcut"),
+            ).toHaveLength(0);
+            expect(shownText(screen.getByTestId("timeline-add-page"))).toBe(
+                "Create page at playhead3",
+            );
+            act(() => {
+                fireEvent.keyDown(window, { key: "Shift" });
+            });
+            expect(
+                screen
+                    .getAllByTestId("timeline-add-page-shortcut")
+                    .map(shownText),
+            ).toEqual(["F", "Shift+F"]);
+        } finally {
+            act(() => {
+                useInputModeStore.getState().setPreference("auto");
+            });
+            localStorage.clear();
+            resetKeyboardSeen();
         }
     });
 

@@ -77,6 +77,7 @@ import {
     useTimelineCommands,
     moveAtPlayhead,
     splitMoveBlocker,
+    splitAtPlayheadBlocker,
 } from "./useTimelineCommands";
 import { useTimelineClipResize } from "./useTimelineClipResize";
 import { useActionHandler } from "@/shortcuts/useActionHandler";
@@ -135,6 +136,7 @@ function useBasicTimelineExtras(pages: readonly Page[]) {
                 page:
                     names.get(`${point.box.start}:${point.box.end}`)?.name ??
                     "",
+                removeReason: point.removeReason,
             })),
             onRemoveBasicPoint: (beat: number) => {
                 const point = points.find((p) => p.beat === beat);
@@ -406,31 +408,29 @@ export default function TimelineModePanel() {
     );
     // UI-27: ⌘K's Split at playhead acts on the move the playhead is inside (Expert only: Basic
     // has no moves to split, its + splits the page's moves at a new flag). Greyed out while
-    // playing, as the menus' entry is, and where no one move crosses the playhead; the palette
-    // says why beside it instead of a toast after the press
-    const splitTarget = () =>
-        moveAtPlayhead(useTimelineSelectionStore.getState());
+    // playing, as the menus' entry is, and where no one move crosses the playhead. One check for
+    // whether it's available and why not, the same one the action runs, so the palette and the
+    // field menu never offer a split that would only refuse; they say why beside it instead of a
+    // toast after the press
+    const splitBlocker = () =>
+        splitAtPlayheadBlocker(useTimelineSelectionStore.getState(), isPlaying);
     useActionHandler(
         "timelineSplitMoveAtPlayhead",
         () => {
-            const target = splitTarget();
-            if (typeof target !== "string")
+            const state = useTimelineSelectionStore.getState();
+            const target = moveAtPlayhead(state);
+            if (
+                typeof target !== "string" &&
+                splitAtPlayheadBlocker(state, isPlaying) === null
+            )
                 void moves.splitMoveAtPlayhead(target.id, isPlaying);
         },
         {
-            enabled: () =>
-                !basic && !isPlaying && typeof splitTarget() !== "string",
-            disabledReason: () => {
-                if (basic) return undefined;
-                if (isPlaying)
-                    return tolgee.t(
-                        "timeline.moveSplit.paused",
-                        "Pause to split a move.",
-                    );
-                const target = splitTarget();
-                return typeof target === "string" ? target : undefined;
-            },
+            enabled: () => splitBlocker() === null,
+            disabledReason: () => splitBlocker() ?? undefined,
         },
+        // Basic has no moves to split (its + splits the page's moves at a new flag): not offered
+        !basic,
     );
     const clipResize = useTimelineClipResize({ database: db, timelines });
     const queryClient = useQueryClient();

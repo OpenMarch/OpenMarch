@@ -49,6 +49,9 @@ const PLAYWRIGHT_ENV = {
     ELECTRON_ENABLE_STACK_DUMPING: "1",
     PLAYWRIGHT_SESSION: "true",
     DEBUG: "pw:browser",
+    // These tests read the show file while it's open, so they edit it in place. Working-copy
+    // saves (the default, ADR 0018) are covered by their own unit and Windows checks.
+    OPENMARCH_WORKING_COPY: "0",
 };
 
 /**

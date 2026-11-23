@@ -89,9 +89,11 @@ const same = (a: XY, b: XY) =>
  * The shape a recipe describes, or null for a kind (or version) none of `kinds` draws, or a
  * spread generator this app doesn't have, such as one from a newer app
  */
-function placedOf(
-    recipe: PlacedRecipe,
-    kinds: readonly AnyToolKind[],
+export function placedOf(
+    recipe: Pick<PlacedRecipe, "id" | "kind" | "kindVersion" | "params"> & {
+        readonly members: readonly unknown[];
+    },
+    kinds: readonly AnyToolKind[] = PLACED_KINDS,
 ): { kind: AnyToolKind; params: unknown; spots: number } | null {
     const kind = kinds.find(
         (k) =>

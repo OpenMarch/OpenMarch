@@ -215,7 +215,7 @@ export function ScrubNumber({
                             { label },
                         )}
                         data-testid={testId && `${testId}-snap`}
-                        className="rounded-4 text-text/60 hover:bg-fg-2 hover:text-accent min-h-24 px-2"
+                        className="rounded-4 text-text/60 hover:bg-text/10 hover:text-accent min-h-24 px-2"
                         onClick={onSnap}
                         onKeyDown={(e) => {
                             // Enter places the shape and Space plays: here they press this
@@ -257,7 +257,7 @@ export function ScrubNumber({
                         "rounded-4 min-h-24 px-4 tabular-nums select-none",
                         dragging
                             ? "bg-accent text-text-invert"
-                            : "hover:bg-fg-2 hover:text-accent",
+                            : "hover:bg-text/10 hover:text-accent",
                     )}
                     style={{ cursor: CURSORS[axis], touchAction: "none" }}
                     onPointerDown={down}

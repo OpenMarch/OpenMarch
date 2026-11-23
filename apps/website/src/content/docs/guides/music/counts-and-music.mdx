@@ -13,17 +13,20 @@ sidebar:
 import Media from "@/components/docs/Media.astro";
 import Kbd from "@/components/docs/Kbd.astro";
 import Ui from "@/components/docs/Ui.astro";
+import Term from "@/components/docs/Term.astro";
 
 A show's timing is a row of counts. Each count lasts a set number of seconds, and the music file plays underneath them. Everything you write sits on counts, so lining the counts up with the music is what makes the drill land on the music.
 
 <Media
   id="music-timeline-waveform"
-  alt="The timeline with page numbers across the top, measure numbers with a tick for each count under them, and the music's waveform."
+  alt="The left part of the timeline: the playback controls, then pages 1 and 2, measure numbers 1 to 13 with a tick for each count under them, and the music's waveform under those."
 />
+
+Under the timeline's playback controls, the top row is the pages. Under it are the measure numbers with a tick for each count, and under those the music's waveform. <Ui k="tempoMode.button.text" /> is near the right end of the controls.
 
 ## Counts
 
-A count is one beat of the show's music. The timeline is laid out in counts: pages, moves and keyframes start and end on counts, and the readout names where you are by page and count.
+A count is one beat of the show's music. The timeline is laid out in counts: pages, <Term id="move">moves</Term> and <Term id="keyframe">keyframes</Term> start and end on counts, and the <Term id="readout">readout</Term> names where you are by page and count.
 
 Each count has its own length. That length is all the show stores about timing, so a count can be any length: the counts of a slow ballad are long, a fermata can be one count several seconds long, and the counts in a rit. get longer one by one.
 
@@ -41,7 +44,7 @@ Measures help you find your way around the music. Pages don't have to start on a
 
 ## The music
 
-The music file plays under the counts and never changes. The music offset says how many seconds after count 1 the music starts; a negative offset skips into the music. You can see the music as a waveform on the timeline, which shows the loud and quiet moments so you can find the hits.
+The music file plays under the counts and never changes. The music offset says how many seconds after count 1 the music starts (see [Add the show's music](/guides/music/audio/#set-where-the-music-starts)). You can see the music as a waveform on the timeline, which shows the loud and quiet moments so you can find the hits.
 
 When the counts don't match the music, you change the counts: their tempo, their time signatures, or how many there are. You can't stretch or cut the recording itself.
 
@@ -51,11 +54,11 @@ The counts don't stop at the end of your last page. Past it, the timeline keeps 
 
 ## Where you change the timing
 
-All of this is edited in Edit music, a mode of the timeline: select <Ui k="tempoMode.button.text" /> in the timeline's controls, or press <Kbd keys="Shift+T" />. It's where you add the music file, set the tempo, add holds, set time signatures and rehearsal marks, and import a score.
+All of this is edited in Edit music, a mode of the timeline: select <Ui k="tempoMode.button.text" /> in the timeline's controls, or press <Kbd keys="Shift+T" />. It's where you add the music file, set the tempo, add a fermata, set time signatures and <Term id="rehearsal-mark">rehearsal marks</Term>, and import a score.
 
 ## Related
 
 - [Add the show's music](/guides/music/audio/): choose the music file and where it starts.
-- [Line the counts up with the music](/guides/music/tempo/): tempo, holds, time signatures and measures in Edit music.
+- [Set the tempo to match the music](/guides/music/tempo/): tempo, fermatas, time signatures and measures in Edit music.
 - [Import a MusicXML score](/guides/music/musicxml/): take the tempos and measures from the score.
 - [How the timeline works](/guides/timeline/how-the-timeline-works/): pages and moves on the counts.

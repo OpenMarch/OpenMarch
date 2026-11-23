@@ -81,6 +81,12 @@ export interface OpenShowDeps {
      * up). A conversion makes its own backup instead.
      */
     beforeMigrations?: (filePath: string) => void;
+    /**
+     * Runs before anything opens an existing file read-write, so before SQLite plays back a
+     * leftover journal next to it (the app copies the file and its journal into its backups;
+     * `leftoverJournal.ts`).
+     */
+    beforeJournalRecovery?: (filePath: string) => void;
     /** The convert-on-open dialogs. Only called when an existing file opens. */
     dialogs: () => ConvertOnOpenDialogs;
     /**
@@ -145,6 +151,7 @@ export async function openShowDatabase(
         if (backupPath !== undefined)
             return { status: NEEDS_CONVERSION_STATUS, backupPath };
     }
+    if (!isNewFile) deps.beforeJournalRecovery?.(filePath);
     // An existing file may be converted: from here until the window has reloaded, the page
     // showing the previous file must not reach this one.
     const sqlSuspension = !isNewFile
@@ -243,11 +250,11 @@ async function openWithSuspension(
             db.exec(`PRAGMA busy_timeout = ${CONVERSION_BUSY_TIMEOUT_MS}`);
         }
         if (step.next === "stop") {
-            DatabaseServices.setDbPath("", false);
+            DatabaseServices.closeDatabase();
             return stopped(OPEN_STOPPED_STATUS);
         }
         if (step.next === "ask") {
-            DatabaseServices.setDbPath("", false);
+            DatabaseServices.closeDatabase();
             return {
                 status: NEEDS_CONVERSION_STATUS,
                 backupPath: step.backupPath,

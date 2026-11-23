@@ -1,6 +1,11 @@
 import { DatabaseSync } from "node:sqlite";
 
-const triggers = {
+/**
+ * Every trigger, by name. `transitionRoute` says whether `timeline_transitions` has `route_id`
+ * (migration 0024): a file opened with an older migrations folder, as some migration tests do,
+ * logs transitions without it.
+ */
+const buildTriggers = (transitionRoute = true) => ({
     prevent_first_beat_modification: `
             CREATE TRIGGER IF NOT EXISTS prevent_first_beat_modification
                 BEFORE UPDATE ON beats
@@ -50,8 +55,19 @@ const triggers = {
             END;
     `,
     ...timelineInvariantTriggers(),
-    ...timelineChangeLogTriggers(),
-};
+    ...timelineChangeLogTriggers(transitionRoute),
+});
+const triggers = buildTriggers();
+
+/** Whether the file's `timeline_transitions` has `route_id` (migration 0024). */
+const hasTransitionRoute = (dbConnection: DatabaseSync): boolean =>
+    (
+        dbConnection
+            .prepare(
+                "SELECT 1 FROM pragma_table_info('timeline_transitions') WHERE name = 'route_id'",
+            )
+            .all() as unknown[]
+    ).length > 0;
 
 /**
  * Views that depend on tables created by migrations. Dropped before migrations run (so a table
@@ -90,6 +106,105 @@ const views = {
      * a page-era file being converted commits timeline rows before it has the table, so the
      * write wrapper reads this view only once the table exists.
      */
+    /**
+     * The routes' and lanes' commit-time invariants (spec v0.10 §6 and J.3, ADR 0017; plan step
+     * 24): every route is walked through a lane whose slot holds a marcher at some beat (E-R3,
+     * I-R3′); only a follow-the-leader transition carries a route, as its trail (E-R2, I-R2′),
+     * which also keeps step 15's retired `route` style out; an own lane is its route's only lane
+     * (E-R4, I-LN4); every lane of a route is in one move (E-R5, I-LN5; one range by C-11); and a
+     * lane on a follow-the-leader transition is its trail lane (E-LN2, I-LN2). Since step 3b an
+     * own lane carries no Adjust (E-R4), an Adjust's anchors name points of its route (E-J3, I-J3)
+     * and two keys on one straight corner-to-corner stretch are at least a step apart, 126.5625
+     * being `s_min` squared (E-J5, I-J5; I-J4 in full needs `D` on curves and arcs, so the write
+     * path has it; an arc leg, R-14″, is not straight, so it is left out here). Apart from
+     * `timeline_commit_violations` for the same reason as `timeline_held_violations`: the write
+     * wrapper reads it once the lanes table exists, and a view that names a missing table would
+     * break a later table rebuild.
+     */
+    timeline_route_violations: `
+        CREATE VIEW IF NOT EXISTS timeline_route_violations AS
+            SELECT 'E-R3' AS code, NULL AS transition_id,
+                   'route ' || r.id || ' is walked by nobody' AS detail
+              FROM timeline_routes r
+             WHERE NOT EXISTS (SELECT 1 FROM timeline_lanes l
+                                 JOIN timeline_assignments a
+                                   ON a.transition_id = l.transition_id AND a.slot_index = l.slot_index
+                                WHERE l.route_id = r.id)
+               AND NOT EXISTS (SELECT 1 FROM timeline_transitions t
+                                WHERE t.route_id = r.id AND t.path_style = 'follow_the_leader')
+            UNION ALL
+            SELECT 'E-R2' AS code, t.id AS transition_id,
+                   'a ' || t.path_style || ' transition has a route' AS detail
+              FROM timeline_transitions t
+             WHERE (t.path_style <> 'follow_the_leader' AND t.route_id IS NOT NULL)
+                OR t.path_style = 'route'
+            UNION ALL
+            SELECT 'E-R4' AS code, l.transition_id AS transition_id,
+                   'route ' || l.route_id || ' is shared but the lane on slot ' || l.slot_index
+                       || ' has no offset' AS detail
+              FROM timeline_lanes l
+              JOIN timeline_transitions t ON t.id = l.transition_id
+             WHERE l.offset_x IS NULL AND t.path_style <> 'follow_the_leader'
+               AND (SELECT count(*) FROM timeline_lanes u WHERE u.route_id = l.route_id) > 1
+            UNION ALL
+            SELECT 'E-R5' AS code, l.transition_id AS transition_id,
+                   'route ' || l.route_id || ' has lanes in two moves' AS detail
+              FROM timeline_lanes l
+              JOIN timeline_transitions t ON t.id = l.transition_id
+              JOIN timeline_lanes u ON u.route_id = l.route_id AND u.id < l.id
+              JOIN timeline_transitions v ON v.id = u.transition_id
+             WHERE t.timeline_id <> v.timeline_id
+            UNION ALL
+            SELECT 'E-LN2' AS code, l.transition_id AS transition_id,
+                   'the lane on slot ' || l.slot_index
+                       || ' of a follow-the-leader move is not its trail' AS detail
+              FROM timeline_lanes l
+              JOIN timeline_transitions t ON t.id = l.transition_id
+             WHERE t.path_style = 'follow_the_leader'
+               AND (l.offset_x IS NOT NULL OR t.route_id IS NULL OR l.route_id <> t.route_id)
+            UNION ALL
+            SELECT 'E-R4' AS code, l.transition_id AS transition_id,
+                   'the own lane on slot ' || l.slot_index || ' has an Adjust' AS detail
+              FROM timeline_lanes l
+              JOIN timeline_transitions t ON t.id = l.transition_id
+             WHERE l.offset_x IS NULL AND l.adjust IS NOT NULL
+               AND t.path_style <> 'follow_the_leader'
+            UNION ALL
+            SELECT 'E-J3' AS code, l.transition_id AS transition_id,
+                   'an Adjust on slot ' || l.slot_index || ' names a missing point' AS detail
+              FROM timeline_lanes l, json_each(l.adjust, '$.keys') k, timeline_routes r
+             WHERE r.id = l.route_id
+               AND ((json_extract(k.value, '$.a') <> 'from' AND NOT EXISTS (
+                        SELECT 1 FROM json_each(r.geometry, '$.points') p
+                         WHERE json_extract(p.value, '$.id') = json_extract(k.value, '$.a')))
+                 OR (json_extract(k.value, '$.b') <> 'to' AND NOT EXISTS (
+                        SELECT 1 FROM json_each(r.geometry, '$.points') p
+                         WHERE json_extract(p.value, '$.id') = json_extract(k.value, '$.b'))))
+            UNION ALL
+            SELECT 'E-J5' AS code, l.transition_id AS transition_id,
+                   'two Adjust keys on slot ' || l.slot_index || ' are closer than a step' AS detail
+              FROM timeline_lanes l, json_each(l.adjust, '$.keys') k1, json_each(l.adjust, '$.keys') k2
+             WHERE k2.key > k1.key
+               AND json_extract(k2.value, '$.a') = json_extract(k1.value, '$.a')
+               AND json_extract(k2.value, '$.b') = json_extract(k1.value, '$.b')
+               AND (json_extract(k1.value, '$.f') = json_extract(k2.value, '$.f')
+                 OR EXISTS (
+                    SELECT 1 FROM timeline_routes r, json_each(r.geometry, '$.points') pa,
+                                  json_each(r.geometry, '$.points') pb
+                     WHERE r.id = l.route_id AND pb.key = pa.key + 1
+                       AND json_extract(pa.value, '$.id') = json_extract(k1.value, '$.a')
+                       AND json_extract(pb.value, '$.id') = json_extract(k1.value, '$.b')
+                       AND json_type(pa.value, '$.tension') IS NULL
+                       AND json_type(pb.value, '$.tension') IS NULL
+                       AND json_type(pb.value, '$.bulge') IS NULL
+                       AND (json_extract(k1.value, '$.f') - json_extract(k2.value, '$.f'))
+                           * (json_extract(k1.value, '$.f') - json_extract(k2.value, '$.f'))
+                           * ((json_extract(pb.value, '$.at[0]') - json_extract(pa.value, '$.at[0]'))
+                              * (json_extract(pb.value, '$.at[0]') - json_extract(pa.value, '$.at[0]'))
+                            + (json_extract(pb.value, '$.at[1]') - json_extract(pa.value, '$.at[1]'))
+                              * (json_extract(pb.value, '$.at[1]') - json_extract(pa.value, '$.at[1]')))
+                           < 126.5625));
+    `,
     timeline_held_violations: `
         CREATE VIEW IF NOT EXISTS timeline_held_violations AS
             SELECT 'E-H1' AS code, NULL AS transition_id,
@@ -122,6 +237,34 @@ function timelineInvariantTriggers(): Record<string, string> {
     return {
         ...timelineRangeTriggers(),
         ...timelineDestinationTriggers(),
+        ...timelineLaneTriggers(),
+    };
+}
+
+/**
+ * I-LN1 (spec v0.10 §6, plan step 24): a lane's slot is one of its transition's, checked from both
+ * sides (U-3): when a lane is written, and when a transition's `slot_count` drops. The edits that
+ * lower a slot count delete or move the lanes above it first (AP-R15, AP-R20).
+ */
+function timelineLaneTriggers(): Record<string, string> {
+    const laneSlotWhen = `
+        WHEN NOT EXISTS (SELECT 1 FROM timeline_transitions t WHERE t.id = NEW.transition_id
+                         AND NEW.slot_index < t.slot_count)`;
+    const laneSlotMessage = "E-LN1: lane outside the slots of its transition";
+    return {
+        timeline_lane_slot_ins: `
+            CREATE TRIGGER IF NOT EXISTS timeline_lane_slot_ins BEFORE INSERT ON timeline_lanes
+            ${laneSlotWhen}
+            ${raise(laneSlotMessage)}`,
+        timeline_lane_slot_upd: `
+            CREATE TRIGGER IF NOT EXISTS timeline_lane_slot_upd BEFORE UPDATE ON timeline_lanes
+            ${laneSlotWhen}
+            ${raise(laneSlotMessage)}`,
+        timeline_tr_slots_lane_upd: `
+            CREATE TRIGGER IF NOT EXISTS timeline_tr_slots_lane_upd BEFORE UPDATE OF slot_count ON timeline_transitions
+            WHEN EXISTS (SELECT 1 FROM timeline_lanes l WHERE l.transition_id = NEW.id
+                         AND l.slot_index >= NEW.slot_count)
+            ${raise("E-LN1: slot_count below a lane")}`,
     };
 }
 
@@ -279,7 +422,9 @@ function exactReal(column: string): string {
  * `ChangeBatch` without translation. They fire for foreign-key cascades too. They write only to
  * the bookkeeping table (U-1). Timelines are not logged (R-1).
  */
-function timelineChangeLogTriggers(): Record<string, string> {
+function timelineChangeLogTriggers(
+    transitionRoute = true,
+): Record<string, string> {
     const loggedTables: {
         table: string;
         /** The spec's logical table name, written to `tbl` */
@@ -313,7 +458,28 @@ function timelineChangeLogTriggers(): Record<string, string> {
             image: (r) =>
                 `json_object('id', ${r}.id, 'dest', ${r}.dest_shape_id, 'style', ${r}.path_style, ` +
                 `'params', json(${r}.path_params), 'order', ${r}.order_mode, 'slots', ${r}.slot_count, ` +
-                `'start', ${r}.start_beat, 'end', ${r}.end_beat)`,
+                `'start', ${r}.start_beat, 'end', ${r}.end_beat` +
+                (transitionRoute ? `, 'route', ${r}.route_id)` : `)`),
+        },
+        {
+            // Routes are logged like shapes (spec v0.9 §10.2)
+            table: "timeline_routes",
+            logicalName: "routes",
+            rowId: (r) => `${r}.id`,
+            image: (r) =>
+                `json_object('id', ${r}.id, 'geometry', json(${r}.geometry))`,
+        },
+        {
+            // Lanes are logged like routes (spec v0.10 J.1, §10.2); the resolver reads them from
+            // the host mirror and seeds their transitions
+            table: "timeline_lanes",
+            logicalName: "lanes",
+            rowId: (r) => `${r}.id`,
+            image: (r) =>
+                `json_object('id', ${r}.id, 'transition', ${r}.transition_id, 'slot', ${r}.slot_index, ` +
+                `'route', ${r}.route_id, 'offset', CASE WHEN ${r}.offset_x IS NULL THEN NULL ` +
+                `ELSE json_array(${exactReal(`${r}.offset_x`)}, ${exactReal(`${r}.offset_y`)}) END, ` +
+                `'adjust', json(${r}.adjust))`,
         },
         {
             table: "timeline_assignments",
@@ -385,7 +551,50 @@ const normalizeTriggerSql = (sql: string) =>
  * file, and the recreation is one transaction, so a failure can't leave a trigger dropped.
  */
 export const recreateChangeLogTriggers = (dbConnection: DatabaseSync) =>
-    recreateTriggersIfStale(dbConnection, timelineChangeLogTriggers());
+    recreateTriggersIfStale(
+        dbConnection,
+        onExistingTables(
+            dbConnection,
+            timelineChangeLogTriggers(hasTransitionRoute(dbConnection)),
+        ),
+    );
+
+/** The table a trigger is on, read from its header (`... ON <table>` before WHEN or BEGIN). */
+export const triggerTable = (triggerSql: string): string => {
+    const header = triggerSql.split(/\b(?:WHEN|BEGIN)\b/)[0]!;
+    const match = /\bON\s+"?([A-Za-z_][A-Za-z0-9_]*)"?/.exec(header);
+    if (!match) throw new Error(`No table in trigger: ${triggerSql}`);
+    return match[1]!;
+};
+
+/**
+ * Whether a trigger can be created on a file with `tables`: its table exists, and so does the
+ * lanes table when its body reads it (`timeline_tr_slots_lane_upd` is on transitions).
+ */
+const triggerFits = (sql: string, tables: ReadonlySet<string>): boolean =>
+    tables.has(triggerTable(sql)) &&
+    (!/\btimeline_lanes\b/.test(sql) || tables.has("timeline_lanes"));
+
+/**
+ * Only the triggers whose table the file has. A table a later migration adds, such as the routes
+ * table (0024) or the lanes table (0025), is missing from a page-era file until it converts; its
+ * triggers come with it.
+ */
+const onExistingTables = (
+    dbConnection: DatabaseSync,
+    wanted: Record<string, string>,
+): Record<string, string> => {
+    const tables = new Set(
+        (
+            dbConnection
+                .prepare("SELECT name FROM sqlite_schema WHERE type = 'table'")
+                .all() as { name: string }[]
+        ).map((row) => row.name),
+    );
+    return Object.fromEntries(
+        Object.entries(wanted).filter(([, sql]) => triggerFits(sql, tables)),
+    );
+};
 
 /**
  * Recreates the triggers in `wantedTriggers` that are missing or whose stored body differs, in
@@ -454,7 +663,12 @@ export const dropAllTriggers = (dbConnection: DatabaseSync) => {
  * @param db - The database instance to create triggers in.
  */
 export const createAllTriggers = (dbConnection: DatabaseSync) => {
-    for (const [name, trigger] of Object.entries(triggers)) {
+    for (const [name, trigger] of Object.entries(
+        onExistingTables(
+            dbConnection,
+            buildTriggers(hasTransitionRoute(dbConnection)),
+        ),
+    )) {
         try {
             dbConnection.exec(`${trigger}`);
         } catch (error) {
@@ -471,3 +685,27 @@ export const createAllTriggers = (dbConnection: DatabaseSync) => {
         }
     }
 };
+
+/**
+ * The statements `dropAllTriggers` and `createAllTriggers` run, for a caller without a raw
+ * connection (tests that convert through the SQL proxy). `tables` are the file's tables after the
+ * migrations, and `transitionRoute` whether `timeline_transitions` has `route_id`.
+ */
+export function triggerStatements(
+    tables: ReadonlySet<string>,
+    transitionRoute: boolean,
+): { drop: string[]; create: string[] } {
+    const all = buildTriggers(transitionRoute);
+    return {
+        drop: [
+            ...Object.keys(triggers).map(
+                (name) => `DROP TRIGGER IF EXISTS ${name}`,
+            ),
+            ...Object.keys(views).map((name) => `DROP VIEW IF EXISTS ${name}`),
+        ],
+        create: [
+            ...Object.values(all).filter((s) => triggerFits(s, tables)),
+            ...Object.values(views),
+        ],
+    };
+}

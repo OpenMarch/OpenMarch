@@ -32,7 +32,10 @@ function setup({
     reachesInside = undefined as FieldEditorPorts["reachesInside"],
     marcherHidden = undefined as FieldEditorPorts["marcherHidden"],
     positions = [100, 100, 200, 100, 300, 100, 400, 100],
+    selectionCovers = undefined as FieldEditorPorts["selectionCovers"],
     onScreen = undefined as FieldOnScreen | undefined,
+    snap = undefined as FieldEditorPorts["snap"],
+    snapOn = undefined as (() => boolean) | undefined,
 } = {}) {
     const clock = { now: 1000 };
     const state = {
@@ -68,6 +71,8 @@ function setup({
         reachesInside,
         marcherHidden,
         selectionBoxPadding: () => 10,
+        selectionCovers,
+        snap,
         openMenu: vi.fn(),
         showPositions: vi.fn((positions) => {
             state.shown = positions;
@@ -84,6 +89,7 @@ function setup({
         moveTransform,
         now: () => clock.now,
         onScreen,
+        snap: snapOn,
     });
     return { editor, state, ports, clock };
 }
@@ -741,6 +747,81 @@ describe("FieldEditor right-click menu (#315)", () => {
         expect(editor.longPress(at(300, 100, { kind: "touch" }))).toBe(true);
         expect(openMenu).toHaveBeenCalledTimes(1);
         expect(ports.openMenu).toHaveBeenCalledTimes(1);
+    });
+
+    it("opens the field's menu with the mode's actions where it offers them (a path's), keeping the selection", () => {
+        const { editor, ports, state } = setup({ selected: [1] });
+        const fieldMenuAt = vi.fn((p: FieldPointer) =>
+            p.field.y === 300 ? ["editPath", "removePath"] : null,
+        );
+        editor.setMode({
+            ...fakeMode().mode,
+            openMenu: () => false,
+            fieldMenuAt,
+        });
+        rightDown(editor, 250, 300);
+        rightUp(editor, 250, 300);
+        expect(ports.openMenu).toHaveBeenCalledTimes(1);
+        expect(vi.mocked(ports.openMenu!).mock.calls[0]![2]).toEqual([
+            "editPath",
+            "removePath",
+        ]);
+        expect(state.selected).toEqual([1]);
+        // Off it, the field's own menu, with no actions of the mode's
+        rightDown(editor, 250, 200);
+        rightUp(editor, 250, 200);
+        expect(ports.openMenu).toHaveBeenCalledTimes(2);
+        expect(vi.mocked(ports.openMenu!).mock.calls[1]![2]).toBeUndefined();
+        // A long press reaches the same menu on touch
+        editor.longPress(at(250, 300));
+        expect(ports.openMenu).toHaveBeenCalledTimes(3);
+        expect(vi.mocked(ports.openMenu!).mock.calls[2]![2]).toEqual([
+            "editPath",
+            "removePath",
+        ]);
+    });
+
+    it("doesn't ask the mode's field menu over a marcher's dot, even on a path's line (pathways AP-O3)", () => {
+        const { editor, ports, state } = setup({ selected: [1] });
+        // A path's line along y = 100, through every dot
+        const fieldMenuAt = vi.fn((p: FieldPointer) =>
+            p.field.y === 100 ? ["editPath", "removePath"] : null,
+        );
+        const cursorAt = vi.fn(
+            (_p: FieldPointer, hover?: { onDot(): boolean }) =>
+                hover?.onDot() ? null : ("pointer" as const),
+        );
+        editor.setMode({
+            ...fakeMode().mode,
+            openMenu: () => false,
+            fieldMenuAt,
+            cursorAt,
+        });
+        // On marcher 2's dot: the marcher's menu, not the path's
+        rightDown(editor, 200, 100);
+        rightUp(editor, 200, 100);
+        expect(fieldMenuAt).not.toHaveBeenCalled();
+        expect(state.selected).toEqual([2]);
+        expect(vi.mocked(ports.openMenu!).mock.calls[0]![2]).toBeUndefined();
+        // A long press there opens the marcher's menu too (tablet 1.5), not the path's
+        editor.longPress(at(100, 100));
+        expect(fieldMenuAt).not.toHaveBeenCalled();
+        expect(ports.openMenu).toHaveBeenCalledTimes(2);
+        expect(vi.mocked(ports.openMenu!).mock.calls[1]![1]).toBe(1);
+        expect(vi.mocked(ports.openMenu!).mock.calls[1]![2]).toBeUndefined();
+        // Between the dots, the path's
+        rightDown(editor, 250, 100);
+        rightUp(editor, 250, 100);
+        expect(fieldMenuAt).toHaveBeenCalledTimes(1);
+        expect(vi.mocked(ports.openMenu!).mock.calls[2]![2]).toEqual([
+            "editPath",
+            "removePath",
+        ]);
+        // The mode is told when the pointer is over a dot, for its cursor
+        editor.pointerMove(at(300, 100));
+        expect(cursorAt.mock.calls.at(-1)![1]!.onDot()).toBe(true);
+        editor.pointerMove(at(250, 100));
+        expect(cursorAt.mock.calls.at(-1)![1]!.onDot()).toBe(false);
     });
 
     it("opens the menu for a selected placed box's marchers, keeping the selection", () => {
@@ -2067,6 +2148,34 @@ describe("FieldEditor scale and rotate handles (#198)", () => {
         ]);
     });
 
+    describe("snapping the dragged side to the grid (#585)", () => {
+        const tens = (p: FieldPoint) => ({
+            x: Math.round(p.x / 10) * 10,
+            y: Math.round(p.y / 10) * 10,
+        });
+        const dragEastTo = (x: number, snapOn?: () => boolean) => {
+            const { editor, state } = setup({
+                selected: ALL,
+                snap: tens,
+                snapOn,
+            });
+            editor.pointerDown(at(HANDLE.e.x, HANDLE.e.y));
+            editor.pointerMove(at(485, 130));
+            editor.pointerMove(at(x, 160));
+            editor.pointerUp(at(x, 160));
+            return state.drops[0].positions.map((p) => p.x);
+        };
+
+        it("lands the dragged side on the grid, the marchers inside in proportion", () => {
+            // The side would reach 547: it lands on 550
+            expect(dragEastTo(557)).toEqual([100, 250, 400, 550]);
+        });
+
+        it("scales freely with the Snap toggle off", () => {
+            expect(dragEastTo(557, () => false)).toEqual([100, 249, 398, 547]);
+        });
+    });
+
     describe("a formation with height", () => {
         // Marcher 4 is 100 lower: the box runs from (100, 100) to (400, 200), its right-hand
         // handle at (410, 150)
@@ -2190,6 +2299,7 @@ describe("FieldEditor scale and rotate handles (#198)", () => {
         expect(editor.rotationFrame()).toEqual({
             box: { left: 100, top: 100, right: 400, bottom: 100 },
             angle: 90,
+            covers: null,
             around: { x: 250, y: 100 },
         });
         editor.pointerUp(at(280, 100));
@@ -2237,6 +2347,92 @@ describe("FieldEditor scale and rotate handles (#198)", () => {
         expect(editor.activeGesture()).toBe("marquee");
         editor.pointerUp(at(60, 60));
         expect(state.drops).toEqual([]);
+    });
+
+    describe("standing clear of an order lane (pathways step 4j)", () => {
+        // The selection's lane, its tip out past marcher 1 and its names: the box grows to take
+        // it in, from (40, 85) to (410, 115)
+        const COVERS = { left: 40, top: 85, right: 405, bottom: 115 };
+        const lane = () =>
+            setup({ selected: ALL, selectionCovers: () => COVERS });
+
+        it("puts its handles on the grown box: the old corner is empty field", () => {
+            const { editor } = lane();
+            editor.pointerMove(at(40, 85));
+            expect(editor.cursor()).toBe("nwse-resize");
+            editor.pointerMove(at(90, 90));
+            expect(editor.cursor()).not.toBe("nwse-resize");
+            // The middles sit on the middle of the grown sides
+            editor.pointerMove(at(40, 100));
+            expect(editor.cursor()).toBe("ew-resize");
+            editor.pointerMove(at(225, 85));
+            expect(editor.cursor()).toBe("ns-resize");
+        });
+
+        it("still scales the marchers from their own opposite side", () => {
+            const { editor, state } = lane();
+            // The left handle 150 further left: the 300-wide row grows by half from x = 400
+            drag(editor, { x: 40, y: 100 }, { x: -110, y: 100 });
+            expect(state.drops[0].positions.map((p) => p.x)).toEqual([
+                -50, 100, 250, 400,
+            ]);
+        });
+
+        it("moves the selection from a press on the lane's tip, inside the grown box", () => {
+            const { editor } = lane();
+            editor.pointerDown(at(60, 100));
+            editor.pointerMove(at(60, 130));
+            expect(editor.activeGesture()).toBe("move");
+        });
+
+        it("says which handle is pointed at, so a middle one can show only then", () => {
+            const { editor } = lane();
+            expect(editor.hoveredHandle()).toBeNull();
+            editor.pointerMove(at(40, 100));
+            expect(editor.hoveredHandle()).toBe("w");
+            editor.pointerMove(at(250, 300));
+            expect(editor.hoveredHandle()).toBeNull();
+            editor.pointerMove(at(40, 100));
+            editor.pointerLeave();
+            expect(editor.hoveredHandle()).toBeNull();
+        });
+
+        it("forgets the handle pointed at when the selection changes, and shows one pressed with no move first", () => {
+            const { editor } = lane();
+            editor.pointerMove(at(40, 100));
+            editor.selectionChanged();
+            expect(editor.hoveredHandle()).toBeNull();
+            // The right side stays on the padded box (410), past the cover's 405
+            editor.pointerDown(at(410, 100));
+            expect(editor.hoveredHandle()).toBe("e");
+        });
+
+        it("lets a marcher under a hidden middle handle take the press", () => {
+            // The lane's box reaches marcher 1 (100, 100) with its left middle handle
+            const { editor, state } = setup({
+                selected: [2, 3, 4],
+                selectionCovers: () => ({
+                    left: 98,
+                    top: 85,
+                    right: 405,
+                    bottom: 115,
+                }),
+            });
+            editor.pointerMove(at(98, 100));
+            expect(editor.hoveredHandle()).toBeNull();
+            expect(editor.cursor()).toBe("pointer");
+            click(editor, 98, 100, { shift: true });
+            expect(state.selected).toEqual([2, 3, 4, 1]);
+        });
+
+        it("turns with the cover it had at the press while a rotation is dragged", () => {
+            const { editor } = lane();
+            // The rotate handle sits 20 units above the grown box's top middle
+            editor.pointerDown(at(222.5, 65));
+            editor.pointerMove(at(240, 70));
+            expect(editor.activeGesture()).toBe("rotate");
+            expect(editor.rotationFrame()?.covers).toEqual(COVERS);
+        });
     });
 
     it("shows each handle's cursor on hover", () => {
@@ -2772,6 +2968,79 @@ function fakeMode({
 }
 
 describe("FieldEditor modes (#204)", () => {
+    it("keeps a double-click going when the first click's mode hands over to another (a path under a box)", () => {
+        const { editor } = setup({ selected: [1] });
+        const took: string[] = [];
+        const taker = (name: string): FieldMode => ({
+            ...fakeMode({ claims: () => false }).mode,
+            ownsSelectionBox: false,
+            locksSelection: false,
+            takeClick: (_p, double) => {
+                took.push(`${name}:${double ? "double" : "click"}`);
+                return true;
+            },
+        });
+        editor.setMode(taker("box"));
+        click(editor, EMPTY.x, EMPTY.y);
+        editor.setMode(taker("path"));
+        click(editor, EMPTY.x, EMPTY.y);
+        expect(took).toEqual(["box:click", "path:double"]);
+    });
+
+    it("ends a double-click on a change of mode the click wasn't taken for", () => {
+        const { editor } = setup({ selected: [] });
+        const took: boolean[] = [];
+        click(editor, EMPTY.x, EMPTY.y);
+        editor.setMode({
+            ...fakeMode({ claims: () => false }).mode,
+            ownsSelectionBox: false,
+            locksSelection: false,
+            takeClick: (_p, double) => {
+                took.push(double);
+                return true;
+            },
+        });
+        click(editor, EMPTY.x, EMPTY.y);
+        expect(took).toEqual([false]);
+    });
+
+    it("lets a mode take clicks on empty field (a path's line), and leaves drags and marquees there to the field", () => {
+        const { editor, state } = setup({ selected: [1] });
+        const took: string[] = [];
+        const onLine = (p: FieldPointer) => p.field.y === EMPTY.y;
+        editor.setMode({
+            ...fakeMode({ claims: () => false }).mode,
+            ownsSelectionBox: false,
+            locksSelection: false,
+            gesture: { kind: "path", always: false },
+            takeClick: (p, double) => {
+                if (!onLine(p)) return false;
+                took.push(double ? "double" : "click");
+                return true;
+            },
+        });
+        // A click on it keeps the selection; the second click of a double-click is a double
+        click(editor, EMPTY.x, EMPTY.y);
+        expect(state.selected).toEqual([1]);
+        click(editor, EMPTY.x, EMPTY.y);
+        expect(took).toEqual(["click", "double"]);
+        expect(state.selected).toEqual([1]);
+        // A click on a marcher on it is the marcher's
+        click(editor, 300, 100);
+        expect(state.selected).toEqual([3]);
+        expect(took).toEqual(["click", "double"]);
+        // A drag from it is a marquee, the field's
+        editor.pointerDown(at(EMPTY.x - 200, EMPTY.y));
+        editor.pointerMove(at(EMPTY.x - 100, EMPTY.y - 250));
+        editor.pointerMove(at(EMPTY.x, EMPTY.y - 250));
+        editor.pointerUp(at(EMPTY.x, EMPTY.y - 250));
+        expect(took).toEqual(["click", "double"]);
+        expect(state.selected).toEqual([1, 2]);
+        // Off it, a click clears the selection as ever
+        click(editor, EMPTY.x, EMPTY.y - 50);
+        expect(state.selected).toEqual([]);
+    });
+
     it("gives a claimed press to the mode, which selects and drops nothing", () => {
         const { editor, state, ports } = setup({ selected: [2] });
         const { mode, calls } = fakeMode();
@@ -2989,6 +3258,71 @@ describe("FieldEditor groups a press selects (#204)", () => {
         clock.now += 100;
         click(editor, 200, 100);
         expect(doubleClickMarcher).toHaveBeenCalledTimes(1);
+    });
+
+    it("counts a double-click when the app only echoes the first click's selection back", () => {
+        const doubleClickMarcher = vi.fn();
+        const { editor, state, clock } = setup({
+            pressSelection: group,
+            doubleClickMarcher,
+        });
+        click(editor, 100, 100);
+        // React renders the click's selection, in its own order
+        state.selected = [...state.selected].reverse();
+        editor.selectionChanged();
+        clock.now += 100;
+        click(editor, 101, 100);
+        expect(doubleClickMarcher).toHaveBeenCalledWith(1);
+    });
+
+    it("still counts a double-click when the app trims the first click's selection", () => {
+        // A box member outside an isolated move is dimmed and dropped from the selection
+        const doubleClickMarcher = vi.fn();
+        const { editor, state, clock } = setup({
+            pressSelection: group,
+            doubleClickMarcher,
+        });
+        click(editor, 100, 100);
+        expect(state.selected).toEqual([1, 2]);
+        state.selected = [1];
+        editor.selectionChanged();
+        clock.now += 100;
+        click(editor, 101, 100);
+        expect(doubleClickMarcher).toHaveBeenCalledWith(1);
+    });
+
+    it("takes a click after Escape as a click of its own, not a double-click (#628)", () => {
+        const doubleClickMarcher = vi.fn();
+        const { editor, state, clock } = setup({
+            pressSelection: group,
+            doubleClickMarcher,
+        });
+        click(editor, 100, 100);
+        expect(state.selected).toEqual([1, 2]);
+        // Escape clears the selection outside the editor
+        clock.now += 100;
+        state.selected = [];
+        editor.selectionChanged();
+        clock.now += 100;
+        click(editor, 100, 100);
+        expect(doubleClickMarcher).not.toHaveBeenCalled();
+        expect(state.selected).toEqual([1, 2]);
+    });
+
+    it("takes a click after a page change as a click of its own, not a double-click (#628)", () => {
+        const doubleClickMarcher = vi.fn();
+        const { editor, state, clock } = setup({
+            pressSelection: group,
+            doubleClickMarcher,
+        });
+        click(editor, 100, 100);
+        clock.now += 100;
+        // The selection stays, but the field shows another page
+        editor.pageChanged();
+        clock.now += 100;
+        click(editor, 100, 100);
+        expect(doubleClickMarcher).not.toHaveBeenCalled();
+        expect(state.selected).toEqual([1, 2]);
     });
 });
 

@@ -5,6 +5,8 @@ import { SCALE_STEP } from "../frame/scale";
 import type { ToolKind, ToolParam } from "../tool/toolKind";
 import { groupShape } from "./groupShape";
 import {
+    groupEmptySpots,
+    groupForPlacing,
     groupFrame,
     groupInFrame,
     groupInterval,
@@ -129,4 +131,6 @@ export const groupTool: ToolKind<GroupParams> = {
     frameOf: (p) => groupFrame(p),
     withFrame: (p, _n, frame) => withGroupFrame(p, frame),
     fromFrame: (frame, n) => groupInFrame(frame, n),
+    emptySpots: (p) => groupEmptySpots(p),
+    forPlacing: (p) => groupForPlacing(p),
 };

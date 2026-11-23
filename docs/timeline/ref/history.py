@@ -9,7 +9,7 @@ Everything here runs through the §6 write wrapper: one transaction, commit-time
 """
 import sqlite3
 
-TRACKED = ['marchers', 'shapes', 'timelines', 'transitions', 'assignments', 'slot_destinations']
+TRACKED = ['marchers', 'shapes', 'timelines', 'transitions', 'assignments', 'slot_destinations', 'routes', 'lanes']  # v0.10: routes and lanes are undoable too
 
 HISTORY_DDL = """
 CREATE TABLE history_undo (sequence INTEGER PRIMARY KEY, history_group INTEGER NOT NULL, sql TEXT NOT NULL);

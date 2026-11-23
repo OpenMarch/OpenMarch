@@ -4,6 +4,7 @@ import {
     FALLBACK_AFTER_S,
     MAX_COUNTED_FRAME_S,
     createQualityFallbackState,
+    fallbackStep,
     stepQualityFallback,
     type QualityFallbackState,
 } from "../qualityFallback";
@@ -94,5 +95,22 @@ describe("stepQualityFallback", () => {
         const state = createQualityFallbackState();
         expect(run(state, 5, 4)).toHaveLength(1);
         expect(run(state, 5, 60)).toEqual([]);
+    });
+});
+
+describe("the fallback's steps with heavy imported models (#1091)", () => {
+    it("lightens heavy models first, then lowers the quality", () => {
+        expect(
+            fallbackStep({ hasHeavyModels: true, heavyModelsLightened: false }),
+        ).toBe("lightenHeavyModels");
+        expect(
+            fallbackStep({ hasHeavyModels: true, heavyModelsLightened: true }),
+        ).toBe("lowerQuality");
+        expect(
+            fallbackStep({
+                hasHeavyModels: false,
+                heavyModelsLightened: false,
+            }),
+        ).toBe("lowerQuality");
     });
 });

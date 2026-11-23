@@ -626,3 +626,35 @@ marchers a shape where they stand. Nobody moves. It changes no schema.
 Verification: `group/__test__/groupTool.test.ts` (the frame, turn, flip, move, interval and scale,
 and reading groups back across pages) and the browser scenario "Group makes the selected marchers
 a shape…" in `box-tool.spec.mts`.
+
+## Amendment, 2026-11-15: copied pictures
+
+Copy and paste of a formation (#961, owner 2026-11-15) reuses a picture on other marchers. It
+adds no table and changes no recipe: a paste is an ordinary placement.
+
+1. **A copied picture is per-user app storage**, like shape stars and the saved-shape library:
+   one JSON value in the renderer's localStorage (`openmarch:copiedPicture`), so it is there in
+   another show, after a restart, in the app's other windows and in the web editor. The system
+   clipboard is never read or written for it: browsers ask before a page reads it, and copying
+   text would replace the picture. Sharing a picture with another person is its own question
+   (#983) and would be an explicit export on top of this.
+2. **It holds** a `version` (1), the field's `stepPx` where it was copied, `dots` (where each
+   copied marcher stood, in field units) and, when the selection was exactly one placed shape,
+   `shape`: the recipe's `kind`, `kindVersion` and `params`, without `spots` or members. It never
+   names a marcher. A stored value with another version, or that doesn't read, is ignored.
+3. **Pasting opens the shape host's open shape** on the marchers selected, so Enter places it
+   through `writePlacement` as one undo step and Escape discards it. A shape is laid out for the
+   receiving count by its kind (`generate(params, n)`). A kind with `ToolKind.atCount` (box and
+   circle, owner 2026-11-22) first refits its params to keep the space it took for the copied
+   count, its intervals whatever that takes; other kinds keep their own numbers (a line its
+   points). Dots have no
+   rule, so they only fill spots: they open as the group kind, and are placed as plain positions
+   with **no recipe** (`ToolKind.loose`, `ShapePlacement.plain`). A copied group is placed as a
+   group. With fewer marchers than dots the dots of least travel are used; with more, the
+   marchers of least travel take them and the rest are left out of the write.
+4. **A picture this app can't lay out pastes as its dots**: a kind or version it doesn't know,
+   or a picture from a field with another step size, whose dots are scaled to keep their size in
+   steps.
+
+Verification: `copyPaste.test.ts` (what is copied, and what a paste opens for each kind and
+count) and the browser scenarios in `copy-paste.spec.mts`.

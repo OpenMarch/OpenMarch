@@ -25,6 +25,7 @@ import PrivacySettings from "@/components/launchpage/settings/PrivacySettings";
 import DeveloperSettings from "@/components/launchpage/settings/DeveloperSettings";
 import DatabaseRepairSettings from "@/components/launchpage/settings/DatabaseRepairSettings";
 import { isWebBuild } from "@/utilities/webBuild";
+import { isActionOffByFollowTheLeader } from "@/pathways/followTheLeader";
 
 export type SettingsSectionId =
     | "general"
@@ -81,6 +82,8 @@ export const ALL_SETTINGS_SECTIONS: readonly SettingsSection[] = [
                       "settings.general.checkForUpdates",
                       "settings.general.automaticDownload",
                       "settings.general.openView3dWithShow",
+                      "settings.general.editorDisplay",
+                      "settings.general.view3dDisplay",
                   ]),
         ],
     },
@@ -150,6 +153,7 @@ export const ALL_SETTINGS_SECTIONS: readonly SettingsSection[] = [
             "settings.field.labelSize",
             "settings.field.labelPosition",
             "settings.field.stepSizeWarnings",
+            "settings.field.followTheLeader",
         ],
     },
     {
@@ -160,7 +164,9 @@ export const ALL_SETTINGS_SECTIONS: readonly SettingsSection[] = [
         descriptionKey: "settings.shortcuts.description",
         searchKeys: [],
         searchLabels: (t) => [
-            ...ACTION_IDS.map((id) => getActionLabel(id, t)),
+            ...ACTION_IDS.filter((id) => !isActionOffByFollowTheLeader(id)).map(
+                (id) => getActionLabel(id, t),
+            ),
             ...new Set(
                 ACTION_IDS.map((id) =>
                     t(
@@ -179,6 +185,14 @@ export const ALL_SETTINGS_SECTIONS: readonly SettingsSection[] = [
         searchKeys: [
             "settings.privacy.analytics",
             "settings.privacy.analytics.toggle",
+            // Not in the web build, which can't reach the Discord app
+            ...(isWebBuild
+                ? []
+                : [
+                      "settings.privacy.discord",
+                      "settings.privacy.discord.toggle",
+                      "settings.privacy.discord.showName",
+                  ]),
         ],
     },
     {

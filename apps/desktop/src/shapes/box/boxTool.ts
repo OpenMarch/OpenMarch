@@ -8,6 +8,7 @@ import { leftAs, readMemory, sameSize, type ModeMemory } from "./modeMemory";
 import { boxRegion, boxShape } from "./boxShape";
 import {
     boxBlock,
+    filesAtCount,
     filesIn,
     spreadIn,
     frameSizeOf,
@@ -94,6 +95,7 @@ export const boxTool: ToolKind<BoxParams> = {
     frameOf: boxFrame,
     withFrame: (params, _n, frame) => withBoxFrame(params, frame),
     fromFrame: boxInFrame,
+    atCount: boxAtCount,
     settle: snapToGrid,
     closed: {
         modes: ["files", "outline", "spread"],
@@ -238,6 +240,34 @@ function switched(
         left,
     };
     return { ...next, modes };
+}
+
+/**
+ * The box laid out for `n` marchers in the space it takes with `from` (a paste onto another number
+ * of marchers, #961; owner 2026-11-22): its mode and settings, center, turn and flip kept, and its
+ * size exactly (owner 2026-11-22), its intervals off the half steps if they must be. Files picks
+ * the file count a drag over the frame would, never a single rank or file in a frame with both
+ * width and depth; Outline keeps the frame; Spread fills it. The
+ * memory of other modes' numbers is for the count it was made at, so it goes.
+ */
+function boxAtCount(
+    params: BoxParams,
+    from: number,
+    n: number,
+    env: ToolEnv,
+): BoxParams {
+    const frame = frameSizeOf(params, from);
+    // A single marcher has no size to keep
+    if (from === n || (!(frame.width > 0) && !(frame.depth > 0))) return params;
+    const { modes: _modes, ...rest } = params;
+    const distribution = boxDistribution(rest);
+    const next =
+        distribution.mode === "files"
+            ? filesAtCount(rest, frame, n, env)
+            : distribution.mode === "outline"
+              ? outlineIn(frame, rest, rest, n, distribution, env)
+              : (spreadIn(frame, rest, n, env) ?? rest);
+    return snapToGrid(next, n, env);
 }
 
 /**

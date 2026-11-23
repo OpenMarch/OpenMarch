@@ -29,6 +29,8 @@ export const getGetApiEditorV1EnsemblesResponseMock = (
                 min: undefined,
                 max: undefined,
             }),
+            expires_on: faker.date.past().toISOString().slice(0, 10),
+            expired: faker.datatype.boolean(),
             productions: Array.from(
                 { length: faker.number.int({ min: 1, max: 10 }) },
                 (_, i) => i + 1,

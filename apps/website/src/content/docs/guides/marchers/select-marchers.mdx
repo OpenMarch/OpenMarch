@@ -1,6 +1,6 @@
 ---
 title: Select marchers
-description: Select marchers on the field by clicking, with a box or a lasso, or by section, tag, family or drill prefix from the Select tab.
+description: Select marchers on the field by clicking, with a box or a lasso, or a whole section, tag, family or drill prefix at once, with a mouse or on a tablet.
 type: how-to
 covers:
   - apps/desktop/src/field/editor/selectionRules.ts
@@ -25,61 +25,61 @@ sidebar:
 import Media from "@/components/docs/Media.astro";
 import Kbd from "@/components/docs/Kbd.astro";
 import Ui from "@/components/docs/Ui.astro";
+import InShort from "@/components/docs/InShort.astro";
 
-Most tools act on the selected marchers: moving, aligning, placing them on a shape, holding them on a page. Selected marchers are highlighted on the field, and the inspector lists their drill numbers.
+<InShort>Click a marcher, <Kbd keys="Shift" gesture="click" /> to add more, or drag a box around them on empty field. Press <Kbd action="selectAllMarchers" /> for everyone.</InShort>
+
+Most tools act on the selected marchers: moving, aligning, placing them in a shape, holding them on a page. The inspector lists the selected marchers' drill numbers.
 
 ## Click to select
 
-- Click a marcher to select only that marcher, even if others were selected.
+- Click a marcher to select only that marcher.
 - <Kbd keys="Shift" gesture="click" /> a marcher to add it to the selection, or to take it out if it's already selected.
-- Click empty field to clear the selection, or press <Kbd action="cancelAlignmentUpdates" />.
+- Click empty field, or press <Kbd action="cancelAlignmentUpdates" />, to clear the selection.
 
 ## Drag a box
 
-With <Ui k="fieldSelectTool.box" /> picked at the field's top right (the starting tool), drag on empty field to draw a box. While you drag, a small square appears around each marcher the box will take, and the number of marchers shows next to the pointer. When you let go, every marcher whose dot the box touches is selected, and the previous selection is cleared.
+Drag on empty field to draw a box. Every marcher whose dot the box touches is selected, and the previous selection is cleared. While you drag, each marcher the box will take gets a small square, and the number of marchers shows by the pointer.
 
 <Media
   id="marchers-select-box"
   alt="A box is dragged around a row of eight marchers, which become selected. Then a marcher in the row behind them is clicked with Shift held and joins the selection."
 />
 
-- Hold <Kbd keys="Shift" gesture="drag" /> as you start the box to add to the selection. Only the marchers it would add get a square, and the number reads "+3 marchers".
-- Hold <Kbd keys="Alt" gesture="drag" /> as you start the box to take the marchers it touches out of the selection. The squares are dashed, and the number reads "−3 marchers".
+- Hold <Kbd keys="Shift" gesture="drag" /> as you start the box to add to the selection. The number reads "+3 marchers".
+- Hold <Kbd keys="Alt" gesture="drag" /> as you start the box to take marchers out. The squares are dashed, and the number reads "−3 marchers".
 
-A drag that starts inside the frame around several selected marchers moves them instead of drawing a box. Start the box outside the frame, or click empty field first to clear the selection.
+A drag that starts inside the frame around several selected marchers moves them instead. Start the box outside the frame, or clear the selection first.
 
 ## Draw a lasso
 
-For a group that isn't a rectangle, such as a curved line or a block with marchers close around it, draw a lasso. The small bar at the field's top right, above the display buttons, picks what a drag on empty field draws: <Ui k="fieldSelectTool.box" /> or <Ui k="fieldSelectTool.lasso" />.
+A lasso selects a group that isn't a rectangle, such as a curved line. The small bar at the field's top right picks what a drag on empty field draws: <Ui k="fieldSelectTool.box" /> or <Ui k="fieldSelectTool.lasso" />.
 
 <Media
   id="marchers-select-tool"
   alt="The bar at the field's top right with two buttons, Box select and Lasso select, and Lasso select picked. Its tooltip reads Lasso select with the V key: draw around marchers, or double-click and drag with Box for a lasso too."
 />
 
-To draw a lasso:
-
-1. Pick <Ui k="fieldSelectTool.lasso" /> in that bar, or press <Kbd action="toggleLassoSelect" />. The pointer turns into a lasso over empty field.
+1. Pick <Ui k="fieldSelectTool.lasso" /> in that bar, or press <Kbd action="toggleLassoSelect" />.
 2. Drag around the marchers you want.
-3. Bring the pointer back near where you started. The line turns green when letting go will close it.
-4. Let go.
-
-<Ui k="fieldSelectTool.lasso" /> stays picked until you pick <Ui k="fieldSelectTool.box" /> or press <Kbd action="toggleLassoSelect" /> again, and it's kept on this device. To draw one lasso without switching, double-click empty field with <Ui k="fieldSelectTool.box" /> picked, hold the button down on the second click, and drag.
+3. Bring the pointer back near where you started, until the line turns green, and let go.
 
 <Media
   id="marchers-select-lasso"
   alt="With Lasso select picked, a drag on empty field draws a freehand line around a ring of marchers. The line closes back at its start, and every marcher inside it is selected."
 />
 
-As you draw, the marchers inside the lasso get a square and the number shows next to the pointer, faint until letting go would close the lasso. Every marcher whose dot is inside the lasso is selected. If you let go far from the start, the lasso selects nothing. As with a box, a drag that starts inside the frame around several selected marchers moves them, so the pointer stays an arrow there. <Kbd keys="Shift" /> and <Kbd keys="Alt" />, held as you start, add to and take away from the selection, as they do for a box.
+Every marcher whose dot is inside the lasso is selected. If you let go far from the start, it selects nothing. <Kbd keys="Shift" /> and <Kbd keys="Alt" /> add and take away, as they do for a box.
+
+The tool you pick stays picked on this device until you change it. To draw one lasso while <Ui k="fieldSelectTool.box" /> is picked, double-click empty field, hold the button down on the second click, and drag.
 
 ## Select everyone
 
-Press <Kbd action="selectAllMarchers" />, or right-click empty field and choose <Ui k="actions.select.selectAll" />. Props aren't included; select them on the field.
+Press <Kbd action="selectAllMarchers" />, or right-click empty field and choose <Ui k="actions.select.selectAll" />. Props aren't included.
 
-## Select by section, tag, family or drill prefix
+## Select a whole section, tag, family or drill prefix
 
-The <Ui k="inspector.shape.selectTab" /> tab in the toolbar selects groups of marchers by what they are rather than where they stand.
+The toolbar's <Ui k="inspector.shape.selectTab" /> tab selects marchers by what they are rather than where they stand.
 
 <Media
   id="marchers-select-tab"
@@ -88,45 +88,29 @@ The <Ui k="inspector.shape.selectTab" /> tab in the toolbar selects groups of ma
 
 1. Select the <Ui k="inspector.shape.selectTab" /> tab.
 2. Open <Ui k="toolbar.select.selectByText" /> and choose <Ui k="toolbar.select.selectBy.section" />, <Ui k="toolbar.select.selectBy.tag" />, <Ui k="toolbar.select.selectBy.family" /> or <Ui k="toolbar.select.selectBy.drillPrefix" />.
-3. Select a group to select all of its marchers.
+3. Select a group.
 
-Choosing a group replaces the selection. Hold <Kbd keys="Shift" gesture="click" /> to add the group to it instead, for example to select the trumpets and the mellophones together.
+The group replaces the selection. <Kbd keys="Shift" gesture="click" /> a group to add it instead, for example the trumpets and the mellophones together.
 
-- <Ui k="toolbar.select.selectBy.family" /> groups sections by family: Woodwind, Brass, Battery, Guard, Other and Pit.
-- <Ui k="toolbar.select.selectBy.tag" /> lists the tags you've made in the inspector. To make one, select marchers and use the tag buttons at the bottom of the inspector.
-- With many groups, a search box appears after the first few. For sections, tags and drill prefixes, the ones you used last come first.
-
-OpenMarch remembers which kind of group you chose. <Ui k="actions.select.selectAll" /> at the end of the tab selects every marcher.
+<Ui k="toolbar.select.selectBy.family" /> groups sections into Woodwind, Brass, Battery, Guard, Other and Pit. <Ui k="toolbar.select.selectBy.tag" /> lists the tags you've made; see [Change how marchers look](/guides/marchers/appearance/#make-a-tag). With many groups, a search box appears.
 
 ## Select by what they hold
 
 To select everyone holding a rifle at the playhead, whatever their section, right-click a marcher, open <Ui k="field.menu.selectByEquipment" />, then <Ui k="cues.family.guard" />, and choose Select <Ui k="cues.plural.rifle" />. Every item works the same way, and each family's submenu can select all of it, such as <Ui k="actions.cues.selectHoldingFamily.brass" />. See [Change what performers hold](/guides/marchers/equipment/#see-who-holds-what).
 
-## Shapes you've placed
+## Select one marcher in a placed shape
 
-Marchers placed on a box are selected together: clicking one of them selects the whole box. Double-click a marcher in it to select only that marcher, or <Kbd keys="Mod" gesture="click" /> it to reach inside the box straight away. You can also right-click a marcher in the selected box and choose <Ui k="actions.shape.enterBox" />. See [Shapes](/guides/shapes/).
+Clicking a marcher in a placed shape selects the whole shape. To select only that marcher, double-click it or <Kbd keys="Mod" gesture="click" /> it. See [Change a placed shape](/guides/shapes/place-marchers/).
 
 ## On a tablet
 
-On a touch screen, tap a marcher to select only it. Your tap doesn't have to land exactly on the dot: the nearest marcher within about a fingertip's width is picked. Tap empty field to clear the selection. To add marchers to the selection, tap <Ui k="touch.modifiers.add" /> on the buttons over the field to keep it on, then tap each marcher.
+Tap a marcher to select it, and tap empty field to clear the selection. [Use OpenMarch on a tablet](/guides/workspace/on-a-tablet/) has the rules every touch shares. For selecting, two things differ:
 
-Touch and hold a marcher, or empty field, with a finger or a pen, then lift without moving, to open the field's menu, as a right-click does. This works in every drag mode (below). In a placed shape that's selected, hold one of its marchers and choose <Ui k="actions.shape.enterBox" /> to select only that marcher.
-
-What a drag on empty field does depends on the drag mode, the first button over the field (<Ui k="touch.dragMode.prefix" plain /> followed by the mode's name). Tap it to choose:
-
-- <Ui k="touch.dragMode.auto" />, the starting mode: one finger moves the view, and a pen such as Apple Pencil draws a box. To draw a box with a finger, press and hold on empty field for half a second, then drag; if you lift without moving instead, the field's menu opens.
-- <Ui k="touch.dragMode.box" />: one finger, or the pen, draws a box. Use two fingers to move the view.
-- <Ui k="touch.dragMode.lasso" />: one finger, or the pen, draws around the marchers to select. When you lift, the lasso closes back to where you started if you end near your start or have drawn around an area, so you don't need to end exactly where you began. A stroke that does neither, such as a long straight swipe, selects nothing. Use two fingers to move the view.
-- <Ui k="touch.dragMode.pan" />: one finger, or the pen, moves the view.
-
-In every mode, a drag that starts on a marcher, or inside the frame around the selection, moves the marchers. The mode is kept on this device, not in the show file.
-
-To take marchers out of the selection, tap <Ui k="touch.modifiers.subtract" /> to keep it on, then draw a box or lasso around them, as <Kbd keys="Alt" gesture="drag" /> does with a mouse. <Ui k="touch.modifiers.add" /> and <Ui k="touch.modifiers.subtract" /> don't stay on together: turning one on turns the other off.
-
-The <Ui k="inspector.shape.selectTab" /> tab selects whole groups: there, a switch beside <Ui k="toolbar.select.selectByText" /> chooses whether a tapped group replaces the selection or adds to it.
+- To add marchers, tap <Ui k="touch.modifiers.add" /> over the field, then tap or draw around them. <Ui k="touch.modifiers.subtract" /> takes them out instead.
+- What one finger does on empty field depends on the drag mode, the first button over the field. <Ui k="touch.dragMode.auto" />, the starting mode, moves the view with a finger and draws a box with a pen; to draw a box with a finger, hold still for half a second, then drag. <Ui k="touch.dragMode.box" /> and <Ui k="touch.dragMode.lasso" /> draw with a finger, and two fingers move the view. <Ui k="touch.dragMode.pan" /> only moves the view.
 
 ## Related
 
 - [Move marchers](/guides/marchers/move-marchers/): drag and nudge the selection.
-- [Align and space marchers](/guides/marchers/align-and-space/): line the selection up and space it evenly.
+- [Align, space and turn marchers](/guides/marchers/align-and-space/): line the selection up and space it evenly.
 - [Change how marchers look](/guides/marchers/appearance/): tags also set colors and shapes.

@@ -3,6 +3,7 @@
  * Tempo mode: the tempo lanes' popovers: the add/remove box,
  * the inline editor, and the right-click menu with its icons.
  */
+import { twMerge } from "tailwind-merge";
 import { Fragment, useEffect, useRef, useState, type ReactNode } from "react";
 import clsx from "clsx";
 import {
@@ -516,7 +517,10 @@ export function ContextMenu({
         <div
             ref={ref}
             data-testid="tempo-menu"
-            className={`${MENU_CONTENT_CLASS} fixed z-[100] max-h-[calc(100vh-16px)] w-max max-w-[min(440px,calc(100vw-16px))] min-w-220 overflow-y-auto`}
+            className={twMerge(
+                MENU_CONTENT_CLASS,
+                "fixed z-[100] max-h-[calc(100vh-16px)] w-max max-w-[min(440px,calc(100vw-16px))] min-w-220 overflow-y-auto",
+            )}
             style={position}
             {...keepEventsIn}
             onContextMenu={(e) => {

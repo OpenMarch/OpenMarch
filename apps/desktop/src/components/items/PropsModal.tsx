@@ -18,6 +18,7 @@ import type { OutlineType } from "@/db-functions/items";
 import ItemPanelHeader from "./ItemPanelHeader";
 import { ItemEditor, PropColorControl } from "./ItemEditor";
 import { ItemRow, ShowNamesSwitch, type ItemWithMarcher } from "./ItemRows";
+import ImportedModels from "./modelImport/ImportedModels";
 
 const OUTLINE_TOOLS: { id: OutlineType; icon: React.ReactNode }[] = [
     { id: "rectangle", icon: <SquareIcon size={24} /> },
@@ -50,13 +51,21 @@ export default function PropsModal() {
     );
 }
 
-export function PropListContents() {
+export function PropListContents({
+    justImported,
+}: {
+    /** A model just imported (`items.model` value), marked in the Imported group */
+    justImported?: string | null;
+} = {}) {
     const { setContent } = useSidebarModalStore();
     return (
         <div className="animate-scale-in text-text flex h-full w-fit flex-col gap-16">
             <ItemPanelHeader title={<T keyName="props.title" />} />
             <div className="flex w-[28rem] grow flex-col gap-16 overflow-y-auto">
                 <PropToolSelector />
+                <div className="border-stroke border-t pt-12">
+                    <ImportedModels justImported={justImported} />
+                </div>
                 <div className="border-stroke border-t pt-12">
                     <PropList
                         onEdit={(item) =>
@@ -78,7 +87,7 @@ function PropToolSelector() {
     const { toggleOpen } = useSidebarModalStore();
     return (
         <div className="flex flex-col gap-12">
-            <h5 className="text-text/70 text-sm font-medium">
+            <h5 className="text-text/70 text-body font-medium">
                 <T keyName="props.draw.title" />
             </h5>
             <div className="grid grid-cols-5 gap-8">
@@ -94,7 +103,7 @@ function PropToolSelector() {
                         title={t(`props.outline.${tool.id}`)}
                     >
                         {tool.icon}
-                        <span className="text-xs">
+                        <span className="text-sub">
                             {t(`props.outline.${tool.id}`)}
                         </span>
                     </button>
@@ -125,7 +134,7 @@ function PropList({ onEdit }: { onEdit: (item: ItemWithMarcher) => void }) {
         <div className="flex flex-col gap-8">
             <ShowNamesSwitch items={propItems} />
             {selectedProps.length > 1 && (
-                <div className="flex items-center justify-between px-4 pb-4 text-sm">
+                <div className="text-body flex items-center justify-between px-4 pb-4">
                     <span className="text-text/70">
                         <T
                             keyName="props.selectedCount"

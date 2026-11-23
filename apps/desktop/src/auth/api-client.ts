@@ -5,6 +5,7 @@
 import { OPENMARCH_API_ENDPOINT } from "@/global/Constants";
 import axios, { AxiosError, AxiosRequestConfig } from "axios";
 import tolgee from "@/global/singletons/Tolgee";
+import { EditorApiError } from "@/api/editor-client";
 
 // The app's own fallbacks; a message the server sends back is shown as it comes
 const statusFailure = (status: number, statusText: string | undefined) =>
@@ -34,7 +35,8 @@ const getAccessTokenFn = async (): Promise<string | null> => {
  * @param options - Fetch options (method, body, etc.)
  * @param token - The authentication token
  * @returns The response JSON
- * @throws {Error} If the request fails
+ * @throws {EditorApiError} If the request fails; carries the HTTP status
+ *   when the server answered
  */
 async function authenticatedFetch<T>(
     path: string,
@@ -81,7 +83,7 @@ async function authenticatedFetch<T>(
                     errorData.error || errorData.message || errorMessage;
             }
         }
-        throw new Error(errorMessage);
+        throw new EditorApiError(errorMessage, response.status);
     } catch (error) {
         if (axios.isAxiosError(error)) {
             const axiosError = error as AxiosError;
@@ -112,7 +114,7 @@ async function authenticatedFetch<T>(
                     axiosError.response.statusText,
                 );
             }
-            throw new Error(errorMessage);
+            throw new EditorApiError(errorMessage, axiosError.response?.status);
         } else {
             console.error("Unexpected error during API request:", {
                 url,
@@ -204,7 +206,7 @@ export async function apiPostFormData<T>(
                     errorData.error || errorData.message || errorMessage;
             }
         }
-        throw new Error(errorMessage);
+        throw new EditorApiError(errorMessage, response.status);
     } catch (error) {
         if (axios.isAxiosError(error)) {
             const axiosError = error as AxiosError;
@@ -235,7 +237,7 @@ export async function apiPostFormData<T>(
                     axiosError.response.statusText,
                 );
             }
-            throw new Error(errorMessage);
+            throw new EditorApiError(errorMessage, axiosError.response?.status);
         } else {
             console.error("Unexpected error during API request:", {
                 url,

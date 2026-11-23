@@ -2,7 +2,12 @@ import type { FieldProperties } from "@openmarch/core";
 import type { UiSettings } from "@/stores/UiSettingsStore";
 import { getRoundCoordinates2 } from "@/utilities/CoordinateActions";
 import type { FieldPoint } from "./fieldEditor";
-import { followPointer, type MoveTransform } from "./moveGesture";
+import { edgesAndCenter, pullShift, type LinePull } from "./linePull";
+import {
+    followPointer,
+    type MarcherPosition,
+    type MoveTransform,
+} from "./moveGesture";
 
 /**
  * The rules that modify a marcher drag (#197, #189 user stories 36 to 40;
@@ -24,6 +29,8 @@ export type MoveRules = {
     grid: Pick<FieldProperties, "centerFrontPoint" | "pixelsPerStep"> | null;
     /** The Snap toggle; off turns snapping off. On when omitted. */
     snap?: boolean;
+    /** The field's lines a dragged selection lands on (#585); none when omitted. */
+    pull?: LinePull | null;
 };
 
 /** Fine moves the selection at this fraction of the pointer's speed. */
@@ -39,19 +46,27 @@ export const PRECISION_SPEED = 0.25;
  *   group moves in whole rounding steps, so each marcher keeps its offset
  *   from the grid.
  * - Fine (precision), or the Snap toggle off, turns snapping off.
+ * - The selection's nearest edge or center within reach of one of the field's lines (yard lines,
+ *   hashes, sidelines) lands on it, on each axis it moves along that `pull` reaches on (#585;
+ *   `settingsMoveOptions` reaches only where rounding is off). Fine still lands on lines, as a box
+ *   shape does (owner on #453); the Snap toggle off doesn't.
  *
  * Fine's quarter speed is in the delta already ({@link precisionDelta}).
  */
 export function ruledMove(rules: () => MoveRules): MoveTransform {
     return (delta, roles, starts) => {
-        const { rounding, grid, snap: snapOn = true, ...locks } = rules();
+        const { rounding, grid, snap: snapOn = true, pull, ...locks } = rules();
         const across = Math.abs(locks.lockX ? 0 : delta.x);
         const down = Math.abs(locks.lockY ? 0 : delta.y);
         const lockX = locks.lockX || (roles.constrain && down > across);
         const lockY = locks.lockY || (roles.constrain && down <= across);
         const locked = { x: lockX ? 0 : delta.x, y: lockY ? 0 : delta.y };
         const snap = grid !== null && snapOn && !roles.fine;
-        if (!snap) return followPointer(locked, roles, starts);
+        const free = followPointer(locked, roles, starts);
+        const lines = snapOn ? pull : null;
+        const onLines = (placed: MarcherPosition[]) =>
+            lines ? pullOntoLines(placed, free, lockX, lockY, lines) : placed;
+        if (!snap) return onLines(free);
 
         if (starts.length === 1) {
             const [start] = starts;
@@ -63,13 +78,13 @@ export function ruledMove(rules: () => MoveRules): MoveTransform {
                 uiSettings: { coordinateRounding: rounding },
                 fieldProperties: grid,
             });
-            return [
+            return onLines([
                 {
                     id: start.id,
                     x: lockX ? start.x : rounded.xPixels,
                     y: lockY ? start.y : rounded.yPixels,
                 },
-            ];
+            ]);
         }
 
         const stepped = {
@@ -77,12 +92,40 @@ export function ruledMove(rules: () => MoveRules): MoveTransform {
             y: wholeSteps(locked.y, rounding?.nearestYSteps, grid),
         };
         // As getRoundCoordinates2 does, so float noise never reaches a save
-        return followPointer(stepped, roles, starts).map(({ id, x, y }) => ({
-            id,
-            x: thousandths(x),
-            y: thousandths(y),
-        }));
+        return onLines(
+            followPointer(stepped, roles, starts).map(({ id, x, y }) => ({
+                id,
+                x: thousandths(x),
+                y: thousandths(y),
+            })),
+        );
     };
+}
+
+/**
+ * `placed` with each axis that isn't locked moved onto the nearest of the field's lines within
+ * reach of where the pointer has the marchers (`free`, before any rounding): their edges and
+ * center along it, so the formation keeps its shape. An axis with no line near keeps `placed`.
+ */
+function pullOntoLines(
+    placed: MarcherPosition[],
+    free: readonly MarcherPosition[],
+    lockX: boolean,
+    lockY: boolean,
+    { lines, radius }: LinePull,
+): MarcherPosition[] {
+    const shift = (axis: "x" | "y", locked: boolean) =>
+        locked
+            ? null
+            : pullShift(edgesAndCenter(free, axis), lines[axis], radius[axis]);
+    const x = shift("x", lockX);
+    const y = shift("y", lockY);
+    if (x === null && y === null) return placed;
+    return placed.map((p, i) => ({
+        id: p.id,
+        x: x === null ? p.x : thousandths(free[i].x + x),
+        y: y === null ? p.y : thousandths(free[i].y + y),
+    }));
 }
 
 /** `value` to three decimal places, the precision rounding saves. */

@@ -7,6 +7,7 @@ import type { ToolEnv, ToolKind, ToolParam } from "../tool/toolKind";
 import { circleShape } from "./circleShape";
 import {
     CIRCLE_MODES,
+    circleAtCount,
     circleDistribution,
     circleFrame,
     circleInFrame,
@@ -97,6 +98,7 @@ export const circleTool: ToolKind<CircleParams> = {
     params: [INTERVAL],
     scaling: "interval",
     draw: (from, to, n, env) => drawCircle(from, to, n, env),
+    atCount: (params, from, n) => circleAtCount(params, from, n),
     handles(params, n) {
         if (n <= 1) return [];
         return [

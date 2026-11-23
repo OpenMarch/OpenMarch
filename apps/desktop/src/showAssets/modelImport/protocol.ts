@@ -13,21 +13,6 @@ import type {
 export const MODEL_IMPORT_WORKER_CSP =
     "default-src 'none'; script-src 'self' 'wasm-unsafe-eval'";
 
-/**
- * Whether a URL is the import worker's script, which gets `MODEL_IMPORT_WORKER_CSP`: the dev
- * server's `/src/showAssets/modelImport/modelImport.worker.ts?worker_file…`, or the built
- * `assets/modelImport.worker-<hash>.js`.
- */
-export function isModelImportWorkerUrl(url: string): boolean {
-    let pathname: string;
-    try {
-        pathname = new URL(url).pathname;
-    } catch {
-        return false;
-    }
-    return /\/modelImport\.worker(?:\.ts|-[A-Za-z0-9_-]+\.js)$/.test(pathname);
-}
-
 export type ModelImportRequest =
     | { type: "import"; files: PickedFile[]; choices: ModelImportChoices }
     /** Reports what the worker's policy allows (tests and checks) */

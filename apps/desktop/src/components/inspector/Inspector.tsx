@@ -21,7 +21,7 @@ function Inspector() {
                 {/* Scrollable inspector content */}
                 {/* relative so Radix's visually-hidden native selects are contained here instead of escaping to the document */}
                 <div className="relative mt-8 flex min-h-0 flex-1 flex-col gap-48 overflow-y-auto">
-                    {/* Shapes come first: picking one is the usual next step after selecting */}
+                    {/* Shapes first: picking one is the usual next step after selecting */}
                     <ShapeToolSection />
                     {/* Align, flip, rotate and distribute two or more marchers */}
                     <ArrangeSection />

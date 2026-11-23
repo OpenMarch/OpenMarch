@@ -9,19 +9,42 @@
 export const MODEL_ASSET_KIND = "model";
 
 /** Bump when the stored output changes for the same input and choices. */
-export const MODEL_IMPORT_VERSION = 1;
+export const MODEL_IMPORT_VERSION = 5;
 
-/** Triangles a prop model may have before it is simplified (props-spec section 3) */
+/**
+ * The Light level: what a prop model is simplified to by default (props-spec section 3), and
+ * the copy kept beside a heavier level for devices that can't draw it (fork #1091)
+ */
 export const TRIANGLE_CAP = 20_000;
 
-/** Past this multiple of the cap a model is refused: the one hard limit (D-19) */
-export const TRIANGLE_REFUSE_FACTOR = 4;
+/** The Detailed level, offered when the file has more than this */
+export const DETAILED_TRIANGLE_CAP = 100_000;
+
+/**
+ * Past this a model is refused, whatever level is chosen: a sanity ceiling on what the import
+ * decodes and simplifies, not a drawing budget. Below it, triangles are the user's call (#1091).
+ */
+export const TRIANGLE_HARD_LIMIT = 5_000_000;
+
+/**
+ * About how many triangles one performer draws at high quality (docs/3d/findings.md: the
+ * marchers are 1.19M triangles for 300), to say how heavy a model is in the show's own terms
+ */
+export const PERFORMER_TRIANGLES = 4_000;
 
 /** Longest texture edge of a prop model, in pixels (D-19: prop textures 1024) */
 export const TEXTURE_CAP = 1024;
 
-/** The distant version, drawn beyond about 30 m: at most this many triangles… */
+/**
+ * The distant version, drawn beyond about 30 m (farther for a larger model, #1180): simplified
+ * toward this many triangles…
+ */
 export const DISTANT_TRIANGLE_CAP = 2_000;
+/**
+ * …but never past these error limits, each a share of the whole model's size: from where the
+ * far copy draws, 5% of a model is a few pixels, and wider limits cave its shape in (#1180)
+ */
+export const DISTANT_SIMPLIFY_ERRORS = [0.01, 0.02, 0.05];
 /** …and at most this share of the detailed model's */
 export const DISTANT_TRIANGLE_RATIO = 0.25;
 /** …unless it has fewer than this many, when it keeps them all */
@@ -90,12 +113,3 @@ export const UNIT_FIXES = [
     { unit: "in", factor: 0.0254 },
     { unit: "ft", factor: 0.3048 },
 ] as const;
-
-/**
- * Z-up is suspected when Z is strictly the largest side and more than this times Y (owner
- * decision Q37, 2026-10-11). A flat model (a sign, a tarp) gets no guess either way.
- */
-export const Z_UP_FACTOR = 1.25;
-
-/** A model is flat when its thinnest side is under this share of its longest. */
-export const FLAT_RATIO = 0.05;

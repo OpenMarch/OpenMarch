@@ -4,6 +4,7 @@ import {
     ListIcon,
     XIcon,
     MagnifyingGlassIcon,
+    QuestionIcon,
 } from "@phosphor-icons/react";
 import BugReport from "./BugReport";
 import { SealWarningIcon } from "@phosphor-icons/react";
@@ -29,6 +30,8 @@ import MarcherLogo from "@/components/MarcherLogo";
 import { isWebBuild, webChannel } from "@/utilities/webBuild";
 import WebFileMenu from "./WebFileMenu";
 import WebSaveStatus from "../web/WebSaveStatus";
+import WorkingCopySaveStatus from "../workingCopy/WorkingCopySaveStatus";
+import { useWorkingCopyStatus } from "@/hooks/useWorkingCopyStatus";
 import { useWebWelcomeStore } from "@/stores/WebWelcomeStore";
 
 /** Page zoom changes the viewport's CSS size, so it always fires a resize. */
@@ -153,14 +156,17 @@ function EditorTitleBar({
         void fetchDbPath();
     }, [showFilePath]);
 
+    // A working copy reports the show file, which Save As can change (ADR 0018).
+    const workingCopyStatus = useWorkingCopyStatus();
+    const showPath = workingCopyStatus?.showPath ?? dbPath;
     const displayDbPath = dbPathUnavailable
         ? t("titlebar.databasePathUnavailable")
         : showFullDatabasePath
-          ? dbPath
-          : (dbPath
+          ? showPath
+          : (showPath
                 .split(/[/\\]/)
                 .filter((segment) => segment.length > 0)
-                .pop() ?? dbPath);
+                .pop() ?? showPath);
 
     return (
         <>
@@ -230,7 +236,7 @@ function EditorTitleBar({
                                 {isWebBuild && (
                                     <button
                                         type="button"
-                                        className="touch:hidden bg-accent hover:bg-accent/80 focus-visible:ring-accent cursor-pointer rounded-full px-8 py-2 text-xs leading-none font-medium text-white outline-hidden duration-150 ease-out focus-visible:ring-2"
+                                        className="touch:hidden bg-accent hover:bg-accent/80 focus-visible:ring-accent text-sub cursor-pointer rounded-full px-8 py-2 leading-none font-medium text-white outline-hidden duration-150 ease-out focus-visible:ring-2"
                                         onClick={() => openWebWelcome(true)}
                                     >
                                         {t("titlebar.webBadge")}
@@ -259,6 +265,12 @@ function EditorTitleBar({
                     {isWebBuild && variant === "main" && showControls && (
                         <WebSaveStatus />
                     )}
+                    {!isWebBuild &&
+                        variant === "main" &&
+                        showControls &&
+                        workingCopyStatus && (
+                            <WorkingCopySaveStatus status={workingCopyStatus} />
+                        )}
                     {variant === "main" && (
                         <ActionButton
                             action="openCommandPalette"
@@ -266,6 +278,17 @@ function EditorTitleBar({
                             className="titlebar-button hover:text-accent touch:size-44 touch:[&>svg]:size-24 flex cursor-pointer items-center justify-center"
                         >
                             <MagnifyingGlassIcon size={18} />
+                        </ActionButton>
+                    )}
+                    {/* Touch editor: the toolbar tabs need the room; Help is in the ☰ menu (fork #1075) */}
+                    {!tabsInTitleBar && (
+                        <ActionButton
+                            action="openHelp"
+                            aria-label={t("actions.ui.openHelp")}
+                            className="titlebar-button hover:text-accent touch:size-44 touch:[&>svg]:size-24 flex cursor-pointer items-center justify-center"
+                            data-testid="titlebar-help"
+                        >
+                            <QuestionIcon size={18} />
                         </ActionButton>
                     )}
                     <BugReport />

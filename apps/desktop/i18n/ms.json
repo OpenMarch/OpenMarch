@@ -115,7 +115,9 @@
             "loadDialogue": "Buka fail…",
             "newDialogue": "Fail baharu…",
             "openExport": "Eksport…",
-            "saveDialogue": "Simpan salinan…"
+            "saveDialogue": "Simpan salinan…",
+            "removeUnusedAssets": "Buang aset yang tidak digunakan…",
+            "removeUnusedAssetsKeywords": "buang padam bersihkan tidak digunakan aset model diimport saiz"
         },
         "labelWithVariant": "{label} ({variant})",
         "movement": {
@@ -243,12 +245,18 @@
             "openFrontEnsemble": "Buka kumpulan hadapan dan podium",
             "openFrontEnsembleKeywords": "pit front ensemble podium drum major marimba vibraphone percussion speaker equipment preset kumpulan hadapan mejar dram vibrafon perkusi pembesar suara peralatan pratetap",
             "addFrontEnsembleEquipment": "Tambah peralatan kumpulan hadapan atau podium",
-            "addFrontEnsembleEquipmentKeywords": "pit podium drum major marimba vibraphone percussion speaker mixer tower stepladder instrument mejar dram vibrafon perkusi pembesar suara pengadun menara tangga alat muzik"
+            "addFrontEnsembleEquipmentKeywords": "pit podium drum major marimba vibraphone percussion speaker mixer tower stepladder instrument mejar dram vibrafon perkusi pembesar suara pengadun menara tangga alat muzik",
+            "openAssets": "Buka aset persembahan",
+            "openAssetsKeywords": "aset model diimport fail kredit lesen saiz storan pustaka"
         },
         "items": {
             "edit": "Edit prop atau peralatan yang dipilih",
             "editNamed": "Edit {name}",
-            "editKeywords": "edit settings properties prop equipment podium instrument name size lock tetapan sifat peralatan alat muzik nama saiz kunci"
+            "editKeywords": "edit settings properties prop equipment podium instrument name size lock tetapan sifat peralatan alat muzik nama saiz kunci",
+            "importModel": "Import model 3D…",
+            "importModelKeywords": "import model 3d glb gltf prop objek muat naik fail upload file object",
+            "placeImportedModel": "Letakkan model yang diimport",
+            "placeImportedModelKeywords": "letak letakkan model diimport prop 3d tersuai place imported model custom glb"
         }
     },
     "analyticsOptIn": {
@@ -1434,6 +1442,7 @@
         "hide": "Sembunyikan di padang",
         "name": "Nama",
         "offField": "Tiada di padang pada kepala main. Alihkan kepala main ke kiraan ketika prop berada di padang untuk menukar garis luarnya.",
+        "keepsProportions": "Lebar, kedalaman dan tinggi berubah bersama, jadi model kekal pada bentuknya.",
         "outline": {
             "arc": "Lengkok",
             "circle": "Bulatan",
@@ -1469,7 +1478,164 @@
         },
         "locked": "Dikunci",
         "lockLabel": "Dikunci",
-        "lockHint": "Satu kedudukan untuk seluruh persembahan"
+        "lockHint": "Satu kedudukan untuk seluruh persembahan",
+        "imported": {
+            "title": "Diimport",
+            "import": "Import…",
+            "empty": "Import model .glb atau .gltf, atau lepaskan satu pada tetingkap, untuk meletakkannya seperti prop lain.",
+            "place": "Letakkan {name}",
+            "manage": "Urus aset"
+        },
+        "import": {
+            "title": "Import model",
+            "pictureAlt": "Model dilihat dari arah penonton",
+            "working": "Menyediakan model…",
+            "orient": {
+                "detail": "Bahagian depan patut menghadap penonton, dengan bahagian atas di atas."
+            },
+            "rotateAxis": "Putar paksi {axis}",
+            "detail": {
+                "title": "Perincian",
+                "levels": {
+                    "light": "Ringan",
+                    "detailed": "Terperinci",
+                    "original": "Asal"
+                },
+                "cost": "{triangles} segi tiga · menambah {size} pada persembahan · setiap salinan dilukis seperti {performers, plural, other {# pemain}}",
+                "heavy": "Lancar pada kebanyakan komputer baharu. Jika Paparan 3D tersekat-sekat, ia melukis salinan ringan, yang turut disimpan dalam persembahan."
+            },
+            "compare": {
+                "open": "Bandingkan dalam 3D…",
+                "title": "Bandingkan dalam 3D",
+                "description": "Seret untuk melihat sekeliling, kemudian tukar versi untuk melihat apa yang berubah apabila dipermudahkan.",
+                "which": "Versi yang dipaparkan",
+                "lightCopy": "Salinan ringan",
+                "hint": "Seret untuk memutar, tatal untuk mengezum",
+                "stands": "Dari tempat duduk penonton",
+                "closeUp": "Dekat",
+                "drawFailed": "Versi ini tidak dapat dilukis."
+            },
+            "size": {
+                "title": "Saiz",
+                "value": "{width} × {depth} m, tinggi {height} m",
+                "question": "Adakah itu saiz sebenarnya? Jika tidak, pilih unit yang digunakan semasa fail dibuat.",
+                "suggested": "Model ini kelihatan dibuat dalam {unit}, jadi ia telah ditukar. Semak saiznya."
+            },
+            "units": {
+                "label": "Dibuat dalam",
+                "none": "m",
+                "cm": "cm",
+                "in": "in",
+                "ft": "ft"
+            },
+            "groups": {
+                "cantImport": "Tidak dapat diimport",
+                "fixed": "Dibaiki secara automatik",
+                "notes": "Catatan"
+            },
+            "tryAgain": "Cuba lagi",
+            "name": "Nama",
+            "saveFailed": "Tidak dapat menambah model pada persembahan.",
+            "cancel": "Batal",
+            "add": "Tambah pada persembahan",
+            "credits": {
+                "title": "Lesen dan kredit",
+                "unknown": "Tidak diketahui",
+                "proprietary": "Hak cipta terpelihara",
+                "license": "Lesen",
+                "author": "Pencipta",
+                "sourceUrl": "Sumber",
+                "attribution": "Atribusi",
+                "rights": "Import hanya model yang anda berhak gunakan."
+            },
+            "cantImport": {
+                "noModelFile": {
+                    "title": "Tiada model dalam fail",
+                    "detail": "Pilih fail .glb, atau fail .gltf bersama fail yang dirujuknya."
+                },
+                "severalModelFiles": {
+                    "title": "Lebih daripada satu model",
+                    "detail": "Import satu demi satu: {names}"
+                },
+                "tooLarge": {
+                    "title": "Fail terlalu besar",
+                    "detail": "{size} MB, melebihi had {limit} MB"
+                },
+                "unreadable": {
+                    "title": "Fail tidak dapat dibaca"
+                },
+                "externalUri": {
+                    "title": "Model memuatkan fail dari internet",
+                    "detail": "Model merujuk {uri}. Muat turun fail itu dan pilih bersama model."
+                },
+                "outsidePickedFiles": {
+                    "title": "Model merujuk fail di luar foldernya",
+                    "detail": "Model merujuk {uri}."
+                },
+                "missingFile": {
+                    "title": "Fail tiada: {uri}",
+                    "detail": "Pilih fail itu bersama fail model."
+                },
+                "requiredExtension": {
+                    "title": "Model memerlukan ciri yang tidak dapat dibaca oleh OpenMarch",
+                    "detail": "Diperlukan: {extensions}"
+                },
+                "validatorErrors": {
+                    "title": "{count, plural, other {Fail ini mempunyai # ralat}}"
+                },
+                "imageTooLarge": {
+                    "title": "Tekstur terlalu besar: {image}",
+                    "detail": "{width} × {height} piksel; hadnya {limit} bagi setiap sisi."
+                },
+                "imageUnreadable": {
+                    "title": "Tekstur tidak dapat dibaca: {image}"
+                },
+                "tooManyTriangles": {
+                    "title": "Terlalu terperinci",
+                    "detail": "{triangles} segi tiga; paling banyak yang boleh diimport ialah {limit}."
+                },
+                "rigged": {
+                    "title": "Model berig tidak disokong",
+                    "detail": "Import versi pegunnya."
+                },
+                "noGeometry": {
+                    "title": "Fail tidak mengandungi apa-apa untuk dilukis"
+                },
+                "timedOut": {
+                    "title": "Terlalu lama",
+                    "detail": "Dihentikan selepas {seconds} saat."
+                },
+                "failed": {
+                    "title": "Berlaku masalah semasa menyediakannya"
+                }
+            },
+            "fixed": {
+                "texturesShrunk": {
+                    "title": "{count, plural, other {# tekstur dikecilkan kepada {cap} px}}"
+                },
+                "dracoDecoded": "Mampatan Draco dinyahmampat",
+                "meshoptDecoded": "Mampatan meshopt dinyahmampat",
+                "instancesExpanded": "Salinan berulang ditukar menjadi bentuk biasa",
+                "extensionsDropped": "Ciri yang tidak diperlukan ditinggalkan",
+                "contentDropped": {
+                    "title": "Perkara yang tidak digunakan oleh prop ditinggalkan",
+                    "animations": "{count, plural, other {# animasi}}",
+                    "cameras": "{count, plural, other {# kamera}}",
+                    "morphTargets": "{count, plural, other {# shape key}}",
+                    "scenes": "{count, plural, other {# adegan lain}}"
+                },
+                "pivotMoved": "Diletakkan di atas tanah pada pusatnya"
+            },
+            "notes": {
+                "validatorWarnings": "{count, plural, other {Fail ini mempunyai # amaran}}",
+                "sizeOutOfRange": {
+                    "title": "Saiz luar biasa bagi prop",
+                    "detail": "Sisi terpanjangnya {largest} m; prop biasanya {min} hingga {max} m."
+                },
+                "overTriangleCap": "Masih terperinci: {triangles} segi tiga (sasarannya {cap})"
+            }
+        },
+        "modelMissing": "Model prop ini sudah tiada dalam persembahan, jadi ia dilukis sebagai blok."
     },
     "frontEnsemble": {
         "title": "Kumpulan hadapan dan podium",
@@ -3068,7 +3234,14 @@
             "pickSeatTooltip": "Pilih tempat duduk: klik tempat duduk di bahagian penonton untuk duduk di situ",
             "venue": "Lokasi",
             "freeCamera": "Pandangan bebas",
-            "director": "Pengarah"
+            "director": "Pengarah",
+            "followPerformer": "Ikut pemain",
+            "followPerformerTooltip": "Ikut pemain: klik pemain untuk mengikutinya",
+            "following": "Mengikut {name}",
+            "povOf": "Pandangan {name}",
+            "pointOfView": "Sudut pandangan",
+            "pointOfViewTooltip": "Sudut pandangan: lihat melalui mata pemain",
+            "stopFollowing": "Berhenti mengikut"
         },
         "readout": {
             "count": "Kiraan {count} daripada {total}",
@@ -3108,7 +3281,9 @@
             "brassFinish": "Kemasan brass",
             "tuba": "Tuba",
             "silkShape": "Bentuk kain bendera",
-            "silkArtwork": "Gambar kain bendera"
+            "silkArtwork": "Gambar kain bendera",
+            "followTurns": "Semasa mengikut: berpusing bersama pemain",
+            "povShowsBody": "Sudut pandangan: tunjuk lengan dan alat muziknya"
         },
         "keys": {
             "playPause": "Main atau jeda",
@@ -3117,14 +3292,16 @@
             "cameras": "Kamera, mengikut susunan menu",
             "fullscreen": "Skrin penuh",
             "crowd": "Tunjuk atau sembunyi penonton",
-            "escape": "Batal pilihan tempat duduk, tutup tetapan, keluar skrin penuh",
+            "escape": "Batal pilihan, tutup tetapan, berhenti mengikut, keluar skrin penuh",
             "orbit": "Orbit",
             "orbitOrRight": "Orbit, atau seret dengan butang kanan tetikus",
             "panPlain": "Anjak",
             "zoomOrPinch": "Zum, atau cubit pada pad sentuh",
             "pan": "Anjak, atau seret dengan butang kanan tetikus",
             "zoom": "Zum",
-            "pausedPose": "Dijeda: tunjukkan langkah sebenar atau kedudukan rapat"
+            "pausedPose": "Dijeda: tunjukkan langkah sebenar atau kedudukan rapat",
+            "followPerformer": "Pilih pemain untuk diikut",
+            "pointOfView": "Semasa mengikut: tukar ke sudut pandangannya dan kembali"
         },
         "keyNames": {
             "pair": "<first></first> / <second></second>"
@@ -4177,6 +4354,9 @@
         "error.failed": "Laporan anda tidak dapat dihantar. Semak sambungan anda dan cuba lagi.",
         "attach.music.off": "Muzik tidak dihantar.",
         "attach.music.on": "Muzik turut dihantar.",
+        "attach.models": "Sertakan model yang diimport",
+        "attach.models.off": "Model yang diimport tidak dihantar, hanya saiz dan butirannya.",
+        "attach.models.on": "Model yang diimport turut dihantar ({size}).",
         "sending.recording": "Memuat naik rakaman…",
         "sending.show_file": "Memuat naik persembahan anda…",
         "sending.diagnostics": "Memuat naik diagnostik…",
@@ -4384,6 +4564,39 @@
             "mixed": "Bercampur",
             "add": "Tambah garisan",
             "everyOther": "Kekalkan selang satu"
+        }
+    },
+    "assets": {
+        "title": "Aset",
+        "empty": "Persembahan ini belum ada aset yang diimport. Import model 3D dari panel Prop.",
+        "notes": {
+            "unused": "{count, plural, other {# aset tidak digunakan}} di mana-mana dalam persembahan · {size}",
+            "missing": "{count, plural, other {# prop menggunakan model yang tiada dalam persembahan ini, jadi dilukis sebagai blok.}}",
+            "large": "Aset menjadikan persembahan ini besar: {size}. Persembahan besar lebih perlahan dibuka, disimpan dan dikongsi."
+        },
+        "removeUnused": {
+            "button": "Buang yang tidak digunakan…",
+            "title": "{count, plural, other {Buang # aset yang tidak digunakan?}}",
+            "description": "Tiada apa-apa dalam persembahan yang menggunakannya. Membuangnya menjadikan persembahan {size} lebih kecil. Buat asal tidak mengembalikannya.",
+            "none": "Semua aset sedang digunakan, jadi tiada apa-apa untuk dibuang.",
+            "cancel": "Batal",
+            "confirm": "{count, plural, other {Buang # aset}}"
+        },
+        "kind": {
+            "model": "Model 3D"
+        },
+        "uses": "{count, plural, other {Digunakan # kali}}",
+        "unused": "Tidak digunakan",
+        "shareNote": "Lesen tidak diketahui: anda mungkin tiada hak untuk berkongsinya",
+        "size": {
+            "bytes": "{value} bait",
+            "kb": "{value} KB",
+            "mb": "{value} MB",
+            "gb": "{value} GB"
+        },
+        "errors": {
+            "remove": "Tidak dapat membuang aset yang tidak digunakan",
+            "credits": "Tidak dapat menyimpan kredit"
         }
     }
 }

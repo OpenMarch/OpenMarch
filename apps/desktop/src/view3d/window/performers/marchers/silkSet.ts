@@ -312,7 +312,7 @@ export function silkMaterial(composer: Composer): THREE.MeshStandardMaterial {
     material.alphaTest = 0.5;
     material.alphaToCoverage = true;
     material.onBeforeCompile = (shader) => {
-        shader.uniforms.uComposed = composer.uniform;
+        composer.bindUniforms(shader.uniforms);
         shader.uniforms.uSilkPatterns = { value: silkPatternTexture() };
         shader.uniforms.uSilkPatternCount = {
             value: Math.max(1, SILK_PATTERN_IDS.length),

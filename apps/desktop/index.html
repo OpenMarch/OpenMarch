@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en" class="dark">
+<html lang="en">
     <head>
         <meta charset="UTF-8" />
         <link rel="icon" type="image/x-icon" href="/favicon.ico" />
@@ -11,6 +11,21 @@
             http-equiv="Content-Security-Policy"
             content="script-src 'self' 'unsafe-inline' https://us-assets.i.posthog.com; worker-src 'self' data: blob:;"
         />
+        <script>
+            // The theme before the first paint, so a window never shows dark and turns light (or
+            // the reverse): the 3D View's ?theme=, the saved theme the desktop preload reads, or
+            // the web build's last one (ThemeContext keeps it). Light, like main, otherwise.
+            (function () {
+                var theme = new URLSearchParams(location.search).get("theme");
+                if (!theme && window.electron)
+                    theme = window.electron.initialTheme;
+                try {
+                    if (!theme) theme = localStorage.getItem("openmarch:theme");
+                } catch (e) {}
+                if (theme === "dark")
+                    document.documentElement.classList.add("dark");
+            })();
+        </script>
     </head>
     <body>
         <div id="root"></div>

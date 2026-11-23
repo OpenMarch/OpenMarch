@@ -6,10 +6,11 @@ covers:
   - docs/conventions/user-docs.md
   - i18n:timeline.terms
 sidebar:
-  order: 3
+  order: 4
 ---
 
 import Ui from "@/components/docs/Ui.astro";
+import Kbd from "@/components/docs/Kbd.astro";
 
 The words this guide uses, in alphabetical order. Each one means the same thing on every page.
 
@@ -37,33 +38,67 @@ The editor mode that works in pages, like a drill chart: you set each page, and 
 
 A shape that places marchers in rows and columns, given as across × deep, such as 8 × 4. See [Draw a box](/guides/shapes/draw-a-box/).
 
+## Command palette
+
+The box that finds any command by name and runs it. Open it with <Kbd action="openCommandPalette" />, or <Kbd action="openCommandBar" /> when you're not typing in a box; both open the same box, which the shortcut list also calls the command bar. A command that needs numbers, such as a shape's size, asks for them there one at a time. See [The window](/guides/workspace/the-window/#find-a-command-by-name).
+
+## Coordinate sheet
+
+A page for one marcher listing where it stands on every page, as steps from the nearest yard line and hash. Also called a dot sheet. See [Print coordinate sheets and drill charts](/guides/files/print-charts/).
+
 ## Count
 
 One beat of the show's music. Moves, pages and the playhead all fall on counts.
 
+Also called a beat.
+
 ## Defined
 
-A marcher's state on a page where you've set its position: a move of its own ends there, at a keyframe. See [Defined, Held, Not defined](/guides/timeline/defined-held-not-defined/).
+A marcher's state on a page where you've set its position: it has a keyframe on that page, at the page's flag or partway through it. See [Defined, Held, Not defined](/guides/timeline/defined-held-not-defined/).
+
+## Drag mode
+
+On a tablet, what one finger or the pen does on empty field: move the view, or draw a box or lasso to select. You choose it with the first button over the field. See [Select marchers](/guides/marchers/select-marchers/#on-a-tablet).
+
+## Drill chart
+
+A printed picture of the field at one page's set, with every marcher's position. See [Print coordinate sheets and drill charts](/guides/files/print-charts/).
 
 ## Drill number
 
 A marcher's label on the field and in charts, such as T3 or F12: the section's prefix and a number.
 
+## Editing line
+
+The line of text over the field that says what a drag will change, such as "Editing Page 3's move". See [How the timeline works](/guides/timeline/how-the-timeline-works/).
+
 ## Editor
 
 The view for making changes to the show. Its opposite is Preview.
-
-## Expert
-
-The editor mode with the full timeline: moves that cross pages, overlapping moves, the start flag and the loop. See [Basic and Expert](/guides/start/basic-and-expert/).
 
 ## Equipment
 
 What a performer holds: any instrument or piece of guard equipment in OpenMarch's list, or nothing. Each performer holds their own instrument, from their section, until an equipment change sets something else from a count on. See [Change what performers hold](/guides/marchers/equipment/).
 
+## Expert
+
+The editor mode with the full timeline: moves that cross pages, overlapping moves, the start flag and the loop. See [Basic and Expert](/guides/start/basic-and-expert/).
+
+## Fermata
+
+A note held longer than the beat. In OpenMarch it's one count that lasts as long as you set, without changing the tempo around it; Edit music calls it a hold. It isn't a marchers' hold. See [Set the tempo to match the music](/guides/music/tempo/).
+
 ## Field
 
 The playing surface and its markings: sidelines, yard lines, hashes and numbers. Each show has its own field, which you can change. See [Edit the field](/guides/field/edit-the-field/).
+
+## Floating editor
+
+The small bar of numbers and menus that floats beside a selected shape on the field: its size, interval, fill and pivot. See [How shapes work](/guides/shapes/).
+
+## Front ensemble
+
+The players who stand in front of the field with keyboards, drums and other equipment, rather than marching. Also called the pit. See [Set up the front ensemble](/guides/3d-view/front-ensemble/).
 
 ## Front sideline
 
@@ -75,27 +110,35 @@ A row of short marks across each yard line that divides the field front to back.
 
 ## Held
 
-A marcher's state on a page where you've chosen to keep it still, with <Ui k="timeline.terms.holdFromPrevious" /> or <Ui k="timeline.terms.holdOverWindow" />. A hold grows out of the keyframe where the marcher last arrived, or its starting spot. If you change that keyframe, it holds at the new spot, and dragging the marcher inside the hold moves the whole hold. See [Defined, Held, Not defined](/guides/timeline/defined-held-not-defined/).
+A marcher's state on a page where you've chosen to keep it still: a hold keeps it where it last arrived. See [Defined, Held, Not defined](/guides/timeline/defined-held-not-defined/).
+
+## Hold
+
+A stretch of counts in which marchers stay still on purpose. See [Make marchers stand still](/guides/timeline/holds/). A held count in the music is a fermata.
 
 ## Hold style
 
-What marchers do in the 3D View while they're Held: stand, mark time or high mark time. Each hold can have its own, set from the inspector; a hold without one follows Show settings. See [Stand or mark time on a hold](/guides/timeline/defined-held-not-defined/#stand-or-mark-time-on-a-hold).
+What marchers do in the 3D View while they're Held: stand, mark time or high mark time. Each hold can have its own, set from the inspector; a hold without one follows Show settings, as every marcher standing still does, Held or Not defined. See [Stand or mark time on a hold](/guides/timeline/holds/#stand-or-mark-time-on-a-hold).
 
 ## Home
 
-The start of the show, before the first move: where every marcher stands at the beginning. It's the set of the first page.
+The start of the show, before the first move: where every marcher stands at the beginning. On the timeline it's the box with a house. It's numbered as a page, page 0 unless [Show settings](/guides/field/show-settings/#numbers-and-timing) start the numbers elsewhere, and the shortcut list calls it the first page; the page after it is Page 1. See [How the timeline works](/guides/timeline/how-the-timeline-works/#pages-and-their-flags).
 
 ## Inspector
 
-The panel at the side of the window that shows the details of what you've selected: the page, or the selected marchers and their positions.
+The panel at the side of the window that shows the details of what you've selected: the page, or the selected marchers and their positions. See [The window](/guides/workspace/the-window/#the-inspector).
+
+## Interval
+
+The distance from one marcher to the next in a shape, in steps, such as 2 or 2½. A box has one interval across and one front to back. See [How shapes work](/guides/shapes/).
 
 ## Keyframe
 
-A position you set for a marcher at a count. Marchers move from one keyframe to the next.
+A position you set for a marcher at a count. Marchers move from one keyframe to the next. See [How the timeline works](/guides/timeline/how-the-timeline-works/#how-marchers-get-from-one-set-to-the-next).
 
 ## Line
 
-A shape that places marchers evenly along a straight line. See [Draw a line](/guides/shapes/draw-a-line/).
+A shape that places marchers evenly along a straight line, a line with corners, or a curve. See [Draw a line or curve](/guides/shapes/draw-a-line/).
 
 ## Loop
 
@@ -103,7 +146,9 @@ In Expert, a stretch of the show that playback repeats while you work on it. See
 
 ## Marcher
 
-Anyone on the field, in any section, including the color guard. The guide doesn't say performer or dot.
+Anyone on the field, in any section, including the color guard.
+
+Also called a performer or a dot in other drill software.
 
 ## Measure
 
@@ -111,7 +156,13 @@ A group of counts in the music, as numbered in the score. The timeline shows mea
 
 ## Move
 
-A stretch of time on the timeline in which marchers go from one place to another. A page usually has one move across it; in Expert, a move can also start or end in the middle of a page, or run across several pages. See [Moves](/guides/timeline/moves/).
+A stretch of time on the timeline in which marchers go from one place to another. A page usually has one move across it; in Expert, a move can also start or end in the middle of a page, or run across several pages. See [Make and change moves](/guides/timeline/moves/).
+
+Also called a transition.
+
+## Music offset
+
+How many seconds after count 1 the music starts, so the first count lines up with the recording. See [Add the show's music](/guides/music/audio/).
 
 ## Not defined
 
@@ -119,19 +170,33 @@ A marcher's state on a page where nothing has been decided for it. It shows the 
 
 ## Page
 
-A numbered stretch of counts that ends at a set the marchers reach. Pages are numbered as on a drill chart. See [Pages](/guides/timeline/pages/).
+A numbered stretch of counts that ends at a set the marchers reach. Pages are numbered as on a drill chart. See [Add and change pages](/guides/timeline/pages/).
+
+## Page's flag
+
+The line at the end of a page on the timeline, where the marchers reach the page's set. The app calls it Page 3's flag, and you can drag it to make the page longer or shorter. See [Add and change pages](/guides/timeline/pages/).
+
+## Pivot
+
+The point a group of marchers or a shape turns around, shown as a small yellow dot. It starts in the middle; you can move it. See [Align, space and turn marchers](/guides/marchers/align-and-space/).
 
 ## Playhead
 
-The line on the timeline that marks the count you're looking at. The field shows where every marcher is at that count.
+The line on the timeline that marks the count you're looking at. The field shows where every marcher is at that count. See [How the timeline works](/guides/timeline/how-the-timeline-works/#the-playhead-and-the-start-flag).
+
+Also called the cursor or the current count.
 
 ## Preview
 
-The view for watching the show without changing it. Its opposite is Editor. See [Editor and Preview](/guides/workspace/editor-and-preview/).
+The view for watching the show without changing it. Its opposite is Editor. See [Watch the show in Preview](/guides/workspace/editor-and-preview/).
 
 ## Prop
 
-An object on the field, such as a riser or a backdrop, that you draw and move on the timeline like marchers. See [Props](/guides/3d-view/props/).
+An object on the field, such as a riser or a backdrop, that you draw and move on the timeline like marchers. See [Add props to the field](/guides/3d-view/props/).
+
+## Readout
+
+The text above the timeline that says where the playhead is, by page and count ("Pg 3 · ct 4/10") and by measure and beat ("m9 beat 4"). See [How the timeline works](/guides/timeline/how-the-timeline-works/).
 
 ## Rehearsal mark
 
@@ -145,13 +210,17 @@ A group of marchers by instrument or role, such as Trumpet or Color guard. Each 
 
 Where the marchers stand at the end of a page: the picture a drill chart shows for that page.
 
+Also called a picture or a drill set.
+
 ## Shape
 
-A box, line or arc you draw on the field to place the selected marchers in it. See [Shapes](/guides/shapes/).
+A box, circle, line, curve or arc you draw on the field to place the selected marchers in it. See [How shapes work](/guides/shapes/).
 
 ## Show
 
 One `.dots` file: its marchers, music, field and drill.
+
+Also called a drill file or a project.
 
 ## Side 1 and Side 2
 
@@ -159,11 +228,15 @@ The two halves of the field, split at the 50 yard line. Side 1 is on the audienc
 
 ## Snap
 
-Moving marchers and shape points onto the nearest step, yard line or hash as you drag. See [Snapping and modifier keys](/guides/shapes/snapping-and-modifier-keys/).
+Landing on a grid of steps or on the field's lines as you drag. See [Snapping and modifier keys](/guides/shapes/snapping-and-modifier-keys/) and [Move marchers](/guides/marchers/move-marchers/).
+
+## Spot
+
+One place in a shape where a marcher will stand. A shape shows a spot for every selected marcher before you place them. See [How shapes work](/guides/shapes/).
 
 ## Start flag
 
-In Expert, the flag on the timeline that marks where playback starts.
+In Expert, the line on the timeline with a pennant on top that marks where Play starts and where marchers leave from when you move them. In Basic there is no start flag: the start of the page you're on does both jobs. See [How the timeline works](/guides/timeline/how-the-timeline-works/#the-playhead-and-the-start-flag).
 
 ## Step size
 
@@ -171,15 +244,27 @@ How far a marcher travels on each count, given as steps per five yards, such as 
 
 ## Subset
 
-A page added inside another page and numbered after it with a letter, such as 2A after page 2, so the pages after it keep their numbers.
+A page added inside another page and numbered after it with a letter, such as 2A after page 2, so the pages after it keep their numbers. See [Add and change pages](/guides/timeline/pages/#make-a-page-a-subset).
+
+## Tablet layout
+
+The layout OpenMarch uses on a tablet, with bigger controls, a row of buttons over the field and a shorter playback row. See [Use OpenMarch on a tablet](/guides/workspace/on-a-tablet/).
+
+## Tag
+
+A named group of marchers you choose yourself, such as "Soloists", to select them together or give them their own look. See [Change how marchers look](/guides/marchers/appearance/#make-a-tag).
 
 ## Tempo
 
-The speed of the music, in beats per minute. A show can change tempo, all at once or gradually. See [Tempo](/guides/music/tempo/).
+The speed of the music, in beats per minute. A show can change tempo, all at once or gradually. See [Set the tempo to match the music](/guides/music/tempo/).
 
 ## Timeline
 
 The strip along the bottom of the window that holds the show's counts, measures, pages, moves and music, with the playback controls. See [How the timeline works](/guides/timeline/how-the-timeline-works/).
+
+## Venue
+
+Where the 3D View sets the show: a high school or college stadium, a domed pro stadium, a gym or an indoor arena, with its lighting and crowd. See [Change the venue and uniforms](/guides/3d-view/venue-and-uniforms/).
 
 ## Yard line
 

@@ -33,6 +33,8 @@ import {
     itemGeometryQueryOptions,
     moveMarchersInTargetMutationOptions,
 } from "@/hooks/queries";
+import { showAssetsQueryOptions } from "@/hooks/queries/useShowAssets";
+import { libraryModels } from "@/showAssets/libraryModels";
 import {
     beatIndexesById,
     itemOutlineChanges,
@@ -78,10 +80,15 @@ import {
     PlacedBoxesOverlay,
 } from "@/shapes/placed/PlacedBoxesOverlay";
 import { ShapeEditor } from "@/shapes/editor/ShapeEditorBar";
+import { PathEditor } from "@/pathways/PathEditor";
 import HandleMenu from "@/shapes/editor/HandleMenu";
 import FavoritesRing from "@/shapes/tool/FavoritesRing";
 import DockedCommandBar from "@/shortcuts/palette/DockedCommandBar";
 import { useShapeFocus } from "@/shapes/field/useShapeFocus";
+import { useFollowFocus } from "@/pathways/useFollowFocus";
+import { useOrderSweepFocus } from "@/pathways/marcherOrderStore";
+import MarcherOrderOverlay from "@/pathways/MarcherOrderOverlay";
+import { useFollowTheLeader } from "@/pathways/followTheLeader";
 import { useFieldItemWrites } from "@/field/fieldItemWrites";
 import {
     snapToRounding,
@@ -121,6 +128,7 @@ import {
 } from "./fieldNavigation";
 import { GlyphAtlas } from "./sdfText";
 import { selectionBoxPadding } from "./selectionRing";
+import { useSelectionCoverStore } from "@/field/editor/selectionCoverStore";
 import { drawnSelectionBox, selectionHandles } from "./selectionFrame";
 import { fieldObstacleSource } from "./fieldObstacles";
 import { createThreeFieldTestApi } from "./threeFieldTestApi";
@@ -132,6 +140,7 @@ import LabelsLayer, { type LabelStyle } from "./layers/LabelsLayer";
 import { useEquipmentTags } from "@/cues/useEquipmentTags";
 import OverlayLayer from "./layers/OverlayLayer";
 import StartFlagLayers from "./StartFlagLayers";
+import { ModeMarchers } from "./ModeMarchers";
 import {
     drawnSelection,
     useShapeMarchersHidden,
@@ -148,8 +157,11 @@ import { FieldUnavailable, useFieldQualityNotice } from "./FieldQualityNotice";
 import { CanvasErrorBoundary, ContextLossGuard } from "./fieldRecovery";
 import FieldBenchmark from "@/field/benchmark/FieldBenchmark";
 import PropDrawingNotice from "@/components/items/PropDrawingNotice";
+import { ClipboardChip } from "@/shapes/clipboard/ClipboardChip";
 import { threeFieldView } from "@/field/benchmark/fieldScenarios";
 import { r3fFrames } from "./benchmarkFrames";
+import { makeFloorSampler } from "@/pathways/floorSampler";
+import { useTheme } from "@/context/ThemeContext";
 import {
     CHECKPOINT_FONT,
     COLLISION_FONT,
@@ -239,6 +251,29 @@ function ThreeFieldView() {
                 : null,
         [fieldProperties, fieldImage],
     );
+    const { theme: appTheme } = useTheme();
+    // How bright the floor is under the order lanes (step 4i): background and field image, read once
+    const orderFloor = useMemo(
+        () =>
+            makeFloorSampler({
+                background: fieldProperties?.theme.background ?? {
+                    r: 255,
+                    g: 255,
+                    b: 255,
+                },
+                image: fieldImage,
+                placement: fieldImagePlan,
+                width: fieldProperties?.width ?? 0,
+                height: fieldProperties?.height ?? 0,
+                // Beyond the field the app's own background shows through the canvas
+                outside: document.documentElement.classList.contains("dark")
+                    ? 0.06
+                    : 0.92,
+            }),
+        // `appTheme` is what the dark class follows
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+        [fieldProperties, fieldImage, fieldImagePlan, appTheme],
+    );
     const appearanceSteps = useMarcherAppearanceSteps(true);
     const { mutateAsync: moveMarchers } = useMutation(
         moveMarchersInTargetMutationOptions(),
@@ -321,6 +356,18 @@ function ThreeFieldView() {
         [atlases],
     );
 
+    // The labels as drawn, for the order line to keep clear of
+    const labelFadeFrom = quality.settings.labelFadeFrom;
+    const orderLabels = useMemo(
+        () => ({
+            text: labels,
+            style: labelStyle,
+            atlas: atlases.label,
+            fadeFrom: labelFadeFrom,
+        }),
+        [labels, labelStyle, atlases, labelFadeFrom],
+    );
+
     const selectedIds = useMemo(
         () => selectedMarchers.map((marcher) => marcher.id),
         [selectedMarchers],
@@ -351,7 +398,11 @@ function ThreeFieldView() {
         shapeOf,
     });
     const { dimming, look } = timeline;
-    useShapeFocus(dimming);
+    // The Follow tool's line, or Set order's (pathways step 4g): everyone else fades
+    const followFocus = useFollowFocus();
+    const sweepFocus = useOrderSweepFocus();
+    const followTheLeader = useFollowTheLeader();
+    useShapeFocus(dimming, followFocus ?? sweepFocus);
     // #824: while the Field panel is open the drill can't be picked, and while its lines are
     // edited the drill steps back
     const fieldEditing = useIsFieldEditMode() && !preview;
@@ -406,7 +457,11 @@ function ThreeFieldView() {
     // #315: where a right-click opens the field's menu (`useFieldMenu`, below
     // the editor), and the press that closes it, which does nothing more
     const openMenuAt = useRef(
-        (_at: { x: number; y: number }, _marcher: number | null) => {},
+        (
+            _at: { x: number; y: number },
+            _marcher: number | null,
+            _actions?: readonly string[],
+        ) => {},
     );
     const takeMenuPress = useRef((): boolean => false);
 
@@ -444,6 +499,9 @@ function ThreeFieldView() {
                         takeMenuPress.current() || takeFieldPress(),
                     selectionBoxPadding: () =>
                         selectionBoxPadding(useFieldViewStore.getState().zoom),
+                    // Step 4j: the box stands clear of the order lane drawn on the selection
+                    selectionCovers: () =>
+                        useSelectionCoverStore.getState().covers,
                     showPositions: (positions) =>
                         marchers.setOverrides(positions),
                     // #196: drops go through the drop-to-timeline path
@@ -484,7 +542,8 @@ function ThreeFieldView() {
                         snapToRounding(point, latest.current.fieldProperties),
                     propDrawn: (outline) => latest.current.propDrawn(outline),
                     // #315: a right-click opens the field's menu there
-                    openMenu: (at, hit) => openMenuAt.current(at.screen, hit),
+                    openMenu: (at, hit, actions) =>
+                        openMenuAt.current(at.screen, hit, actions),
                 },
                 {
                     isMac: isMacPlatform(),
@@ -492,8 +551,18 @@ function ThreeFieldView() {
                     onScreen: onScreenToggles,
                     // #197: snapping, the Snap toggle and Lock X/Y, read as they are on each
                     // move; off, the Snap toggle frees a rotate handle too
+                    // #585: and lands a dragged or resized selection on the field's lines
                     ...settingsMoveOptions(
                         () => latest.current.fieldProperties ?? null,
+                        () => {
+                            const properties = latest.current.fieldProperties;
+                            return properties
+                                ? {
+                                      properties,
+                                      zoom: useFieldViewStore.getState().zoom,
+                                  }
+                                : null;
+                        },
                     ),
                 },
             ),
@@ -641,6 +710,8 @@ function ThreeFieldView() {
                     <TimelineIsolationBar />
                     <TimelineFromStartBadge />
                     <PropDrawingNotice />
+                    {/* What's copied, in the bottom-left corner across from the zoom box (#961) */}
+                    <ClipboardChip />
                 </>
             )}
             <FieldBenchmark
@@ -703,6 +774,7 @@ function ThreeFieldView() {
                             selectedIds={selectedIds}
                             hiddenIds={hiddenIds}
                         />
+                        <ModeMarchers editor={editor} marchers={marchers} />
                         <PlayheadDriver
                             marchers={marchers}
                             isPlaying={isPlaying}
@@ -781,8 +853,21 @@ function ThreeFieldView() {
                         theme={fieldProperties.theme}
                     />
                 )}
+                {/* A line's order, and Set order's sweep (pathways step 4g): only with
+                    Follow-the-leader on (#1095) */}
+                {fieldProperties && followTheLeader && (
+                    <MarcherOrderOverlay
+                        marchers={marchers}
+                        labels={orderLabels}
+                        theme={fieldProperties.theme}
+                        floor={orderFloor}
+                    />
+                )}
                 {fieldProperties && (
                     <ShapeEditor stepPx={fieldProperties.pixelsPerStep} />
+                )}
+                {fieldProperties && !isPlaying && (
+                    <PathEditor fieldProperties={fieldProperties} />
                 )}
                 {/* Edit lines' rulers and lines, over everything that edits the drill */}
                 {fieldProperties && editingLines && (
@@ -802,6 +887,7 @@ function ThreeFieldView() {
                 <HandleMenu />
                 <FieldContextMenu
                     at={menu.at}
+                    actions={menu.actions}
                     marcher={menu.marcher}
                     onClose={menu.close}
                     selectedCount={selectedIds.length}
@@ -824,6 +910,8 @@ function useFieldItems(
 ): ReadonlyMap<number, string> {
     const { data: itemRows } = useQuery(allItemsQueryOptions());
     const { data: geometry } = useQuery(itemGeometryQueryOptions());
+    const { data: assets } = useQuery(showAssetsQueryOptions());
+    const library = useMemo(() => libraryModels(assets), [assets]);
     const { hiddenPropIds, showPropNames, propNameOverrides } =
         useUiSettingsStore(
             useShallow((s) => ({
@@ -855,8 +943,9 @@ function useFieldItems(
                     item.model ? [[item.marcher_id, item.model] as const] : [],
                 ),
             ),
+            library,
         });
-    }, [items, itemRows, geometry, beats, hiddenPropIds]);
+    }, [items, itemRows, geometry, beats, hiddenPropIds, library]);
     return useMemo(
         () =>
             new Map(

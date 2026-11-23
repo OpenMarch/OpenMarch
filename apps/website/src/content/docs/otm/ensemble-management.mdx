@@ -6,6 +6,14 @@ sidebar:
 ---
 
 import { Aside } from "@astrojs/starlight/components";
+import {
+  CURRENT_SEASON,
+  CURRENT_SEASON_ENDS,
+  FREE_SEATS_PER_ENSEMBLE,
+  NEW_ENSEMBLES_FROM,
+  PREVIOUS_SEASON_ENDS,
+  SEAT_PRICE_LABEL,
+} from "@/lib/seats";
 
 To manage your ensemble, you can use the [Ensemble Management Dashboard](https://app.openmarch.com/).
 
@@ -84,8 +92,8 @@ Reach out to us at [sales@openmarch.com](mailto:sales@openmarch.com) for any que
 
 <Aside type="tip">
   <p>
-    For the 2026 season, each ensemble receives 5 free seats. No credit card
-    required.
+    Each ensemble receives {FREE_SEATS_PER_ENSEMBLE} free seats. No credit card
+    required. Extra seats are {SEAT_PRICE_LABEL} per seat.
   </p>
 </Aside>
 
@@ -98,6 +106,18 @@ We use them to securely process payments and comply with local tax laws and regu
 To view your past invoices, you can use the [Paddle customer portal for OpenMarch LLC](https://customer-portal.paddle.com/cpl_01kgtw8akegpnyc1xzthx8hs66).
 Be sure to log in with the same email address you used to purchase the seats.
 This does not have to be the same email address as your OpenMarch account.
+
+### How long are seats valid?
+
+Seats belong to an ensemble and are valid through a fixed date. They do not renew automatically.
+
+- Ensembles created before {NEW_ENSEMBLES_FROM} are valid through {PREVIOUS_SEASON_ENDS}.
+- New ensembles get {CURRENT_SEASON.yearLabel} seats, valid through {CURRENT_SEASON_ENDS}.
+
+The [Ensemble Management Dashboard](https://app.openmarch.com/) shows the valid-through date for each of your ensembles.
+After that date, you can still open the ensemble, edit its details and download its productions, but you can't upload new productions or revisions.
+
+Need a different date? Reach out to us at [sales@openmarch.com](mailto:sales@openmarch.com).
 
 ### How are seats counted?
 

@@ -25,6 +25,7 @@ import {
     MAX_SUPPORTED_USER_VERSION,
     PAGE_MODEL_USER_VERSION,
     readUserVersion,
+    markLaneModelIfLaned,
 } from "../fileVersion";
 
 /**
@@ -35,6 +36,25 @@ import {
  * New files are timeline files from the start and get all of them.
  */
 export const FIRST_TIMELINE_MIGRATION_TAG = "0018_drop_page_era";
+
+/**
+ * Timeline-only migrations that change a table the page conversion writes (`timeline_transitions`),
+ * or add one the timeline reads beside it (`timeline_lanes`, which the resolver's cold build reads).
+ * The converter writes through this build's schema before the timeline-only migrations run, so
+ * these also run, unrecorded, after a page-model file's page-era migrations, both on open
+ * (`applyPendingMigrations`) and in its conversion (`applyPageMigrationsInTransaction`); the
+ * timeline stage then runs and records them as usual.
+ * Each must be safe to run twice on a file being converted: `IF NOT EXISTS` for new tables, and a
+ * table rebuild that copies every row (a converting file has no rows that use what it adds).
+ */
+export const CONVERTER_SCHEMA_MIGRATION_TAGS = [
+    "0024_timeline_routes",
+    "0025_timeline_lanes",
+    "0026_timeline_lane_adjust",
+    // Route sources (K6, pathways step 3c): not read by the converter or the resolver, but a new
+    // table, so it is made here with the others and the conversion's own stage only drops tables
+    "0028_timeline_route_sources",
+];
 
 /** The migrations folder, also found from a built `dist-electron/main`. */
 export function resolveMigrationsFolder(migrationsFolder?: string): string {
@@ -206,8 +226,38 @@ export function applyPageMigrationsInTransaction(
     const queries = pendingMigrationQueries(rawDb, folder, "page");
     dropAllTriggers(rawDb);
     for (const query of queries) runMigrationQuery(rawDb, query);
+    for (const query of converterSchemaQueries(
+        resolveMigrationsFolder(migrationsFolder),
+    ))
+        runMigrationQuery(rawDb, query);
     createAllTriggers(rawDb);
     recreateChangeLogTriggers(rawDb);
+}
+
+/**
+ * Runs `work` in one transaction, so its statements commit (and sync to disk) once. Inside a
+ * transaction the caller already holds, it just runs `work`, which commits with that one.
+ */
+function inOneTransaction(db: DatabaseSync, work: () => void): void {
+    if (db.isTransaction) {
+        work();
+        return;
+    }
+    db.exec("BEGIN IMMEDIATE");
+    try {
+        work();
+        db.exec("COMMIT");
+    } catch (error) {
+        if (db.isTransaction) db.exec("ROLLBACK");
+        throw error;
+    }
+}
+
+/** The statements of `CONVERTER_SCHEMA_MIGRATION_TAGS`, without the rows that record them. */
+function converterSchemaQueries(folder: string): string[] {
+    return readTaggedMigrations(folder)
+        .filter((m) => CONVERTER_SCHEMA_MIGRATION_TAGS.includes(m.tag))
+        .flatMap((m) => m.sql);
 }
 
 /**
@@ -275,19 +325,25 @@ export class DrizzleMigrationService {
                 userVersion === PAGE_MODEL_USER_VERSION ? "page" : "all",
             );
             // Like drizzle's own migrator, rebuild the triggers on every open, even with nothing
-            // pending, so they always match this build.
-            dropAllTriggers(this.rawDb);
+            // pending, so they always match this build. The drop and the rebuild each commit
+            // once: one statement at a time they were about 100 commits, each syncing the file
+            // and its journal, which took 12-15 s per open on a spinning disk or a Windows VM.
+            inOneTransaction(this.rawDb, () => dropAllTriggers(this.rawDb));
+            if (userVersion === PAGE_MODEL_USER_VERSION)
+                queries.push(...converterSchemaQueries(folder));
             for (const query of queries) {
                 this.rawDb.exec("PRAGMA foreign_keys = OFF");
                 runMigrationQuery(this.rawDb, query);
             }
-            createAllTriggers(this.rawDb);
+            inOneTransaction(this.rawDb, () => createAllTriggers(this.rawDb));
             this.rawDb.prepare("PRAGMA foreign_keys = ON").run();
 
             // The rebuild above already covers every trigger in the `triggers` map; this check
             // makes sure the change-log bodies are current without relying on that. It runs after
             // the file-version guard above, so it never writes to a file this build refuses.
             recreateChangeLogTriggers(this.rawDb);
+            // A step-15 file whose paths 0025 moved to lanes is written as 11 (ADR 0017 §9)
+            markLaneModelIfLaned(this.rawDb);
 
             console.log("Drizzle migrations applied successfully.");
         } catch (error) {

@@ -7,7 +7,20 @@ import {
     useSyncExternalStore,
 } from "react";
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
-import { CaretRightIcon, CheckIcon } from "@phosphor-icons/react";
+import {
+    CaretRightIcon,
+    CheckIcon,
+    ArrowCounterClockwiseIcon,
+    ArrowsLeftRightIcon,
+    ArrowsMergeIcon,
+    ArrowsSplitIcon,
+    ArrowsOutLineHorizontalIcon,
+    BezierCurveIcon,
+    PencilSimpleIcon,
+    TrashIcon,
+    type Icon,
+} from "@phosphor-icons/react";
+import clsx from "clsx";
 import { useTranslate } from "@tolgee/react";
 import {
     KEEP_MENU_EVENTS,
@@ -33,6 +46,7 @@ import Shortcut from "@/components/ui/Shortcut";
 import {
     actionDisabledReason,
     actionLabelNow,
+    hasActionHandler,
     isActionChecked,
     isActionEnabled,
     previewAction,
@@ -41,9 +55,12 @@ import {
 } from "@/shortcuts/registry";
 import { useActionHandler } from "@/shortcuts/useActionHandler";
 import { useIsTouchMode } from "@/stores/InputModeStore";
+import { useShowShortcutHints } from "@/stores/KeyboardSeenStore";
 import type { FieldMarchers } from "./fieldMarchers";
 import { fieldToElement, useFieldViewStore } from "./fieldView";
 import {
+    MENU_CONTENT_CLASS,
+    POINT_MENU_PLACEMENT,
     MENU_ITEM_CLASS,
     MENU_LABEL_CLASS,
     MENU_SEPARATOR_CLASS,
@@ -57,10 +74,20 @@ import {
  *
  * - **Edit <name>**, first, while one item (a prop, front ensemble equipment, a podium) is
  *   selected, as right-clicking one does: it opens the item's edit view.
+ * - **Copy**, **Paste**, **Paste exactly** (#961) and **Paste mirrored**: the selection's
+ *   formation copied, and pasted onto the marchers selected as an open shape that Enter places.
+ *   Unavailable with nobody selected, and the pastes with nothing copied.
  * - **Group** or **Ungroup**, each shown only while it's available: Group with two or
  *   more marchers selected that aren't one placed shape (#603), Ungroup with one selected whole.
  *   With one selected whole and the menu opened on one of its marchers, **Select only this
  *   marcher** goes inside it there, as a double-click on that marcher does (tablet 1.5).
+ * - The **Path** group (pathways, interaction system rule 4), in the path bar's order: **Edit
+ *   group path** (Edit path), **Edit <name>'s line**, **Rejoin group path**, **Match group**,
+ *   **Re-fit path** (Re-center group path), then after a line, as under the bar's ···, **Detach
+ *   from group path** (some of the group selected; "Detach 3 from group path"), **Detach all N
+ *   marchers** (the whole group selected: it ends the group path), each saying what it does under
+ *   its name, and **Remove path**. Edit <name>'s line and Match group stay in their places, greyed
+ *   out with the reason, for any path but a trail; the others show only while they apply.
  * - The commands that set the selection's state on the current page (holds):
  *   **Hold from last keyframe** (timeline mode only), **Hold from start flag to playhead** while
  *   it's available (Expert with a window, #476), then **Clear this page**. Each says what it
@@ -69,12 +96,59 @@ import {
  *   a count, "Hold from last keyframe (3 of 5)", when it would change only some of them.
  * - **Hold style** (ADR 0015 D-5, #775), while a selected marcher is Held at the playhead: the
  *   show setting, stand, mark time or high mark time for that hold, the one in effect checked.
+ * - A line's order (pathways step 4g), with two or more selected and Follow-the-leader on
+ *   (#1095): **Set order**, **Reverse order** and **Clear order**.
+ * - Splitting moves (timeline mode, not Basic): **Split selected marchers into a new move** and
+ *   **Split the move at the playhead**. An entry that can't run says why beside it (a split at
+ *   a count refused while a line follows a trail), before anyone tries it.
  * - Arranging the selection: align and distribute, Swap (two marchers), and **Move to next
  *   page's spots**. That one is a positioning edit, not a page state (owner decision, holds wave
  *   2): on a Held page it moves the whole hold, as a drag does, so it sits with the other edits.
  * - **Select all**, which right-clicking empty field reaches for.
  * - **Edit field**, which puts the canvas into the Edit field mode (#824).
+ *
+ * Each entry shows its shortcut, except in the touch layout before a hardware keyboard has been
+ * used (`useShowShortcutHints`, #880).
+ *
+ * A right-click on what a field mode draws can offer its own actions instead (`actions`): on a
+ * path's line, the same Path group (pathways), each entry shown only while it applies. That menu
+ * is tighter, sized to its words, each entry with its icon, as a shape handle's menu
+ * (`HandleMenu`) has.
  */
+/** The Path group (pathways), on a marcher and on a path's line: each shown only when it applies */
+const PATH: readonly ActionId[] = [
+    "editPath",
+    "editLine",
+    "rejoinPath",
+    "adjustResetSpot",
+    "reverseTrail",
+    "refitPath",
+];
+/**
+ * The Path group's weighty end, kept apart from the routine entries by a line (round 5): Detach
+ * (round 6: off the bar, under ···), Detach all, which ends the group path (with the whole group
+ * selected), and Remove path
+ */
+const PATH_END: readonly ActionId[] = [
+    "detachPath",
+    "detachAllPath",
+    "removePath",
+];
+const PATH_END_SET: ReadonlySet<ActionId> = new Set(PATH_END);
+const PATH_SET: ReadonlySet<ActionId> = new Set([...PATH, ...PATH_END]);
+/**
+ * The path bar's fixed slots (pathways interaction round 2): shown greyed out with their reason
+ * where they can't act, so the entries stay in the same places from one marcher to the next. The
+ * others show only while they apply: Rejoin, and Detach (off the bar since round 6).
+ */
+const PATH_SLOTS: ReadonlySet<ActionId> = new Set([
+    "editLine",
+    "adjustResetSpot",
+]);
+const pathShown = (id: ActionId) =>
+    isActionEnabled(id) ||
+    (PATH_SLOTS.has(id) && actionDisabledReason(id) !== undefined);
+
 /** The page state commands: the group whose entries can show checked */
 const STATE_GROUP: readonly ActionId[] = [
     "timelineHoldFromPrevious",
@@ -93,9 +167,21 @@ const HOLD_STYLE_GROUP: readonly ActionId[] = [
 const GROUPS: readonly (readonly ActionId[])[] = [
     // An item right-clicked: its edit view
     ["editSelectedItem"],
+    // #961: a formation copied, and pasted onto the marchers selected
+    [
+        "copyFormation",
+        "pasteFormation",
+        "pasteFormationInPlace",
+        "pasteMirrored",
+    ],
     ["shapeGroup", "shapeUngroup", "shapeEnterBox"],
+    PATH,
+    PATH_END,
     STATE_GROUP,
     HOLD_STYLE_GROUP,
+    ["splitSelectedIntoNewMove", "timelineSplitMoveAtPlayhead"],
+    // A line's order (pathways step 4g), shown with two or more selected
+    ["setMarcherOrder", "reverseMarcherOrder", "clearMarcherOrder"],
     [
         "alignHorizontally",
         "alignVertically",
@@ -163,6 +249,23 @@ export const FIELD_MENU_ACTIONS: readonly ActionId[] = [
 /** Holds, shown only in timeline mode (unavailable where they can't run) */
 const HOLDS: ReadonlySet<ActionId> = new Set(["timelineHoldFromPrevious"]);
 
+/**
+ * Splitting moves (UI-25, UI-27), shown only in timeline mode and only where they're offered at
+ * all (not in Basic). Unavailable, each says why beside it, as the timeline's menus do, so a
+ * refusal (a line that follows a trail, pathways step 4) is read before it's tried
+ */
+const MOVES: ReadonlySet<ActionId> = new Set([
+    "splitSelectedIntoNewMove",
+    "timelineSplitMoveAtPlayhead",
+]);
+
+/** A line's order (pathways step 4g): only with a line selected, two or more marchers */
+const ORDER: ReadonlySet<ActionId> = new Set([
+    "setMarcherOrder",
+    "reverseMarcherOrder",
+    "clearMarcherOrder",
+]);
+
 /** Shown only while available, as Group is: Hold over the window in Expert with a window (#476) */
 const WHILE_AVAILABLE: ReadonlySet<ActionId> = new Set([
     "editSelectedItem",
@@ -187,6 +290,30 @@ const CHECKABLE: ReadonlySet<ActionId> = new Set([
     ...FAMILY_MENUS.flatMap((m) => m.set),
 ]);
 
+/** A mode's menu: no wider than its words */
+const MODE_CONTENT_CLASS = MENU_CONTENT_CLASS;
+
+/** A mode's entries' icons */
+const MODE_ICONS: Partial<Record<ActionId, Icon>> = {
+    editPath: PencilSimpleIcon,
+    editLine: BezierCurveIcon,
+    detachPath: ArrowsSplitIcon,
+    detachAllPath: ArrowsSplitIcon,
+    rejoinPath: ArrowsMergeIcon,
+    adjustResetSpot: ArrowCounterClockwiseIcon,
+    refitPath: ArrowsOutLineHorizontalIcon,
+    reverseTrail: ArrowsLeftRightIcon,
+    removePath: TrashIcon,
+};
+/** A second line under an entry's name, saying what a weighty one does (its i18n key) */
+const NOTES: Partial<Record<ActionId, string>> = {
+    detachPath: "pathways.editor.detachNote",
+    detachAllPath: "pathways.editor.detachAllNote",
+};
+
+/** Entries that delete something: red where highlighted, as a shape handle's Delete */
+const DESTRUCTIVE: ReadonlySet<ActionId> = new Set(["removePath"]);
+
 /** The room for a check in front of a checkable entry's words */
 const CHECK_SLOT_CLASS = "flex w-[14px] shrink-0 justify-center";
 
@@ -202,6 +329,7 @@ const closedSnapshot = () => "";
 
 export default function FieldContextMenu({
     at,
+    actions = null,
     marcher = null,
     onClose,
     selectedCount,
@@ -209,6 +337,8 @@ export default function FieldContextMenu({
 }: {
     /** Where it opens, in CSS pixels in the field's element; null while closed. */
     at: { x: number; y: number } | null;
+    /** The actions it offers instead of the field's own (a mode's, such as a path's), or null */
+    actions?: readonly ActionId[] | null;
     /** The marcher it was opened on (a right-click or long press on one), or null. */
     marcher?: number | null;
     onClose: () => void;
@@ -221,6 +351,8 @@ export default function FieldContextMenu({
     const recentEquipment = useUiSettingsStore(
         (s) => s.uiSettings.recentEquipment,
     );
+    // A finger-only tablet has no keys to press: the caps wait for a hardware keyboard (#880)
+    const showHints = useShowShortcutHints();
     const open = at !== null;
     useSyncExternalStore(
         subscribeToActionHandlers,
@@ -246,15 +378,24 @@ export default function FieldContextMenu({
         (id) => isActionEnabled(id) || isActionChecked(id),
     );
     const shown = (id: ActionId) =>
-        ON_A_MARCHER.has(id) && marcher === null
-            ? false
-            : HOLD_STYLES.has(id)
-              ? holdStyles
-              : WHILE_AVAILABLE.has(id)
-                ? isActionEnabled(id)
-                : HOLDS.has(id)
-                  ? timelineMode
-                  : true;
+        PATH_SET.has(id)
+            ? pathShown(id)
+            : ON_A_MARCHER.has(id) && marcher === null
+              ? false
+              : HOLD_STYLES.has(id)
+                ? holdStyles
+                : WHILE_AVAILABLE.has(id)
+                  ? isActionEnabled(id)
+                  : HOLDS.has(id)
+                    ? timelineMode
+                    : MOVES.has(id)
+                      ? timelineMode && hasActionHandler(id)
+                      : ORDER.has(id)
+                        ? // Gone with Follow-the-leader off (#1095): no handler then
+                          timelineMode &&
+                          selectedCount >= 2 &&
+                          hasActionHandler(id)
+                        : true;
     // Swap's handler counts the marchers (props aren't swapped), so its own state is the answer
     const enabled = (id: ActionId) => isActionEnabled(id);
     // An entry that can't run and can't say why isn't shown: with nobody selected, that's every
@@ -267,10 +408,22 @@ export default function FieldContextMenu({
         list
             .map((group) => group.filter((id) => shown(id) && explained(id)))
             .filter((group) => group.length > 0);
-    const before = shownGroups(GROUPS.slice(0, EQUIPMENT_AT));
-    const after = shownGroups(GROUPS.slice(EQUIPMENT_AT));
+    // A path's entries show only where they apply, as on a marcher; Detach all and Remove path
+    // after a line. A path's menu is only its own: no Equipment
+    const modeGroups = actions
+        ? [
+              actions.filter((id) => !PATH_END_SET.has(id)),
+              actions.filter((id) => PATH_END_SET.has(id)),
+          ]
+              .map((group) =>
+                  group.filter((id) => !PATH_SET.has(id) || pathShown(id)),
+              )
+              .filter((group) => group.length > 0)
+        : null;
+    const before = modeGroups ?? shownGroups(GROUPS.slice(0, EQUIPMENT_AT));
+    const after = modeGroups ? [] : shownGroups(GROUPS.slice(EQUIPMENT_AT));
     // Equipment needs a selection and the timeline; the picked cue's entries show while they run
-    const equipment = timelineMode && selectedCount > 0;
+    const equipment = !actions && timelineMode && selectedCount > 0;
     const cueEdits = equipment ? CUE_EDITS.filter((id) => enabled(id)) : [];
     const recent = recentEquipment
         .filter((key): key is EquipmentItemKey =>
@@ -279,19 +432,24 @@ export default function FieldContextMenu({
         .map((key) => ({ id: equipmentActionOf(key), key }));
     /**
      * One entry: checked (in effect), runnable, greyed out with its reason behind a ?, or nothing
-     * when it can't run and can't say why (#1039)
+     * when it can't run and can't say why (#1039). In a path's menu it has the mode's icon, and a
+     * weighty one a note under its name
      */
     const entry = (id: ActionId, keyPrefix = "", shortLabel?: string) => {
-        if (!explained(id)) return null;
+        // A path's own entries were picked for where they apply (above)
+        if (!actions && !explained(id)) return null;
         const label =
             shortLabel ??
             actionLabelNow(id) ??
             getActionLabel(id, (key, params) => t(key, params as never));
-        const shortcut = (
-            <span className="ml-auto pl-16">
+        // Hidden when the action has no key, so it takes no room
+        const shortcut = showHints && (
+            <span className="ml-auto pl-16 empty:hidden">
                 <Shortcut action={id} />
             </span>
         );
+        const ModeIcon = actions ? MODE_ICONS[id] : null;
+        const note = NOTES[id];
         const testId = `field-menu-${keyPrefix}${id}`;
         if (isActionChecked(id))
             return (
@@ -318,7 +476,7 @@ export default function FieldContextMenu({
                     ? { marcherId: marcher }
                     : undefined,
             );
-        // Greyed out with a reason: a ? says why, as the timeline's menus do
+        // Greyed out with a reason: a ? says why, as the timeline's menus do (entries with none aren't shown)
         const reason = enabled(id) ? undefined : actionDisabledReason(id);
         if (reason)
             return (
@@ -342,10 +500,35 @@ export default function FieldContextMenu({
                 onSelect={run}
                 onFocus={() => previewAction(id, true)}
                 onBlur={() => previewAction(id, false)}
-                className={MENU_ITEM_CLASS}
+                className={clsx(
+                    MENU_ITEM_CLASS,
+                    actions &&
+                        DESTRUCTIVE.has(id) &&
+                        "data-[highlighted]:text-red",
+                    note && "items-start",
+                )}
             >
+                {ModeIcon && (
+                    <ModeIcon
+                        size={14}
+                        aria-hidden
+                        className={clsx("shrink-0", note && "mt-2")}
+                    />
+                )}
                 {CHECKABLE.has(id) && <span className={CHECK_SLOT_CLASS} />}
-                {label}
+                {note ? (
+                    <span className="flex flex-col">
+                        {label}
+                        <span
+                            className="text-sub text-text-subtitle"
+                            data-testid={`${testId}-note`}
+                        >
+                            {t(note)}
+                        </span>
+                    </span>
+                ) : (
+                    label
+                )}
                 {shortcut}
             </DropdownMenu.Item>
         );
@@ -378,23 +561,20 @@ export default function FieldContextMenu({
             <DropdownMenu.Portal>
                 <DropdownMenu.Content
                     data-testid="field-menu"
-                    align="start"
-                    // In the touch layout its entries are taller, so it often fits neither
-                    // below nor above the finger, and Radix only flips across that way: beside
-                    // the finger it slides up or down to stay on screen (#928). Never taller than
-                    // the screen either: it scrolls instead
-                    side={touch ? "right" : "bottom"}
-                    sideOffset={touch ? 12 : 0}
-                    sticky={touch ? "always" : "partial"}
-                    collisionPadding={8}
+                    // Like a system's context menu, its top corner at the point, slid up or
+                    // across to stay on screen, and scrolled when it's taller than the window
+                    // (owner, 2026-11-18: below the point a long menu ran off the bottom). In
+                    // the touch layout it stands a little clear of the finger (#928)
+                    {...POINT_MENU_PLACEMENT}
+                    sideOffset={touch ? 12 : POINT_MENU_PLACEMENT.sideOffset}
                     // Focus isn't returned to the anchor, a hidden div: it falls to the page
                     // body. The shortcuts listen on the window, so the field's
                     // keys still work
                     onCloseAutoFocus={(event) => event.preventDefault()}
                     {...KEEP_MENU_EVENTS}
                     className={
-                        touch
-                            ? `${TIMELINE_MENU_CONTENT_CLASS} max-h-(--radix-dropdown-menu-content-available-height) overflow-y-auto`
+                        actions
+                            ? MODE_CONTENT_CLASS
                             : TIMELINE_MENU_CONTENT_CLASS
                     }
                 >
@@ -525,8 +705,15 @@ function SubMenu({
 }
 
 type MenuPoint = { x: number; y: number };
-/** Where the menu is open, and the marcher it was opened on (null for none, or from the keyboard) */
-type OpenFieldMenu = { at: MenuPoint; marcher: number | null };
+/**
+ * Where the menu is open, the marcher it was opened on (null for none, or from the keyboard), and
+ * the mode's actions it offers there instead of its own, if any
+ */
+type OpenFieldMenu = {
+    at: MenuPoint;
+    marcher: number | null;
+    actions: readonly ActionId[] | null;
+};
 
 /**
  * Where the field's menu is open, in CSS pixels in the field's element, and
@@ -550,8 +737,16 @@ export function useFieldMenu({
     const shown = useRef(false);
     shown.current = open !== null;
     const openAt = useCallback(
-        (point: MenuPoint, marcher: number | null = null) =>
-            setOpen({ at: point, marcher }),
+        (
+            point: MenuPoint,
+            marcher: number | null = null,
+            actions?: readonly string[],
+        ) =>
+            setOpen({
+                at: point,
+                marcher,
+                actions: (actions as readonly ActionId[] | undefined) ?? null,
+            }),
         [],
     );
     const close = useCallback(() => setOpen(null), []);
@@ -575,6 +770,7 @@ export function useFieldMenu({
                     ? fieldToElement(view, center.x, center.y)
                     : { x: view.width / 2, y: view.height / 2 },
                 marcher: null,
+                actions: null,
             });
         },
         { enabled: hasSelection },
@@ -582,6 +778,7 @@ export function useFieldMenu({
     return {
         at: open?.at ?? null,
         marcher: open?.marcher ?? null,
+        actions: open?.actions ?? null,
         openAt,
         close,
         takePress,

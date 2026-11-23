@@ -160,7 +160,13 @@ export function useSplitMergeActions(
     const storedTimelines = useTimelineSelectionStore((s) => s.storedTimelines);
     const pageBoxes = useTimelineSelectionStore((s) => s.pageBoxes);
     const plan = useMemo(() => {
-        if (windowId === null) return { split: null, merge: null };
+        if (windowId === null)
+            return {
+                split: null,
+                merge: null,
+                splitReason: undefined,
+                mergeReason: undefined,
+            };
         const ctx = splitMergeContext(
             { storedTimelines, pageBoxes },
             selectedMarcherIds,
@@ -170,17 +176,22 @@ export function useSplitMergeActions(
         const t = ctx.storedTimelines.find((x) => x.id === windowId);
         // The page the move starts on: merging fits it to that page's counts
         const page = t ? (overlappedPageTimelines(ctx, t)[0] ?? null) : null;
+        const mergeReason =
+            page && page.id !== windowId
+                ? mergeBlocker(ctx, windowId, page.id)
+                : null;
         return {
             split:
                 split && split.disabledReason === null
                     ? selectedMembers(ctx, windowId)
                     : null,
             merge:
-                page &&
-                page.id !== windowId &&
-                mergeBlocker(ctx, windowId, page.id) === null
+                page && page.id !== windowId && mergeReason === null
                     ? page.id
                     : null,
+            // Shown on the disabled entry in the palette and the field's menu
+            splitReason: split?.disabledReason ?? undefined,
+            mergeReason: mergeReason ?? undefined,
         };
     }, [windowId, storedTimelines, pageBoxes, selectedMarcherIds, isPlaying]);
     useActionHandler(
@@ -189,7 +200,10 @@ export function useSplitMergeActions(
             if (windowId !== null && plan.split)
                 splitMerge.commands.split(windowId, plan.split);
         },
-        { enabled: enabled && plan.split !== null },
+        {
+            enabled: enabled && plan.split !== null,
+            disabledReason: plan.splitReason,
+        },
         enabled,
     );
     useActionHandler(
@@ -198,7 +212,10 @@ export function useSplitMergeActions(
             if (windowId !== null && plan.merge !== null)
                 splitMerge.commands.merge(windowId, plan.merge);
         },
-        { enabled: enabled && plan.merge !== null },
+        {
+            enabled: enabled && plan.merge !== null,
+            disabledReason: plan.mergeReason,
+        },
         enabled,
     );
 }

@@ -59,24 +59,33 @@ Import them at the top of the page:
 import Media from "@/components/docs/Media.astro";
 import Kbd from "@/components/docs/Kbd.astro";
 import Ui from "@/components/docs/Ui.astro";
+import Term from "@/components/docs/Term.astro";
+import InShort from "@/components/docs/InShort.astro";
 import { Steps, Aside } from "@astrojs/starlight/components";
 ```
 
-| Component                          | Use                                                                                          |
-| ---------------------------------- | -------------------------------------------------------------------------------------------- |
-| `<Ui k="i18n.key" />`              | A label exactly as the app shows it, bold. Keys are in `apps/desktop/i18n/en.json`.          |
-| `<Kbd action="actionId" />`        | An action's shortcut, in the reader's system's keys. Ids: `src/data/generated/actions.json`. |
-| `<Kbd keys="Mod+Shift+Z" />`       | Any keys. `Mod` is ⌘ on a Mac and Ctrl elsewhere. Add `gesture="drag"` for a held key.       |
-| `<Media id="shot-id" alt="..." />` | A screenshot or clip recorded from the app (below). `caption` and `maxWidth` optional.       |
-| `<ShortcutList />`                 | The full shortcut list (Reference only).                                                     |
-| `<MenuList />`                     | Every menu and its items, for macOS and Windows/Linux (Reference only).                      |
-| `<Steps>`                          | Wraps a numbered list of steps.                                                              |
-| `<Aside type="caution">`           | Rarely: something the reader would regret missing.                                           |
+| Component                                 | Use                                                                                                 |
+| ----------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| `<Ui k="i18n.key" />`                     | A label exactly as the app shows it, bold. Keys are in `apps/desktop/i18n/en.json`.                 |
+| `<Kbd action="actionId" />`               | An action's shortcut, in the reader's system's keys. Ids: `src/data/generated/actions.json`.        |
+| `<Kbd keys="Mod+Shift+Z" />`              | Any keys. `Mod` is ⌘ on a Mac and Ctrl elsewhere. Add `gesture="drag"` for a held key.              |
+| `<Media id="shot-id" alt="..." />`        | A screenshot or clip recorded from the app (below). `caption` and `maxWidth` optional.              |
+| `<Term id="start-flag">start flag</Term>` | A glossary word, linked to its entry, with the entry's first sentence on hover. First use per page. |
+| `<InShort>…</InShort>`                    | The one-line answer at the top of a how-to page: the mouse way, then the shortcut.                  |
+| `<ShortcutList />`                        | The full shortcut list (Reference only).                                                            |
+| `<MenuList />`                            | Every menu and its items, for macOS and Windows/Linux (Reference only).                             |
+| `<Steps>`                                 | Wraps a numbered list of steps.                                                                     |
+| `<Aside type="caution">`                  | Rarely: something the reader would regret missing.                                                  |
 
 The build also writes the guide as plain text for agents (`starlight-llms-txt`, set up in
-`astro.config.mjs`): `dist/llms.txt`, `dist/llms-full.txt` and one file per chapter in
-`dist/_llms-txt/`. It reads each page's HTML, so a new component must leave readable text
-there; `<Kbd>` writes a `.docs-kbd-text` span for it.
+`astro.config.mjs`): `dist/llms.txt` (an index of every page), `dist/llms-full.txt`, one file
+per chapter in `dist/_llms-txt/`, and a Markdown copy of each page at its address plus `.md`
+(`/guides/timeline/moves.md`, from `src/pages/[...slug].md.ts`), which the page's HTML links
+with `rel="alternate"` (`src/routeData.ts`). They read each page's HTML, so a new component
+must leave readable text there; `<Kbd>` writes a `.docs-kbd-text` span for it.
+
+To audit the whole guide as a reader would (missing pictures, missing context, drift from the
+app), agents use the `docs-audit` skill (`.claude/skills/docs-audit`).
 
 To find a label's key, search `en.json` for the text the app shows
 (`grep -n '"Split page"' ../desktop/i18n/en.json`) and take the key path from the nesting.

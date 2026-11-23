@@ -400,7 +400,9 @@ test("the tap on empty field that closes the long press menu doesn't touch the f
     expect(await selectedDrillNumbers(page)).toEqual(["T2"]);
     const before = await pan(page);
 
-    await tap(page, await emptyField(page));
+    // Empty field beside the menu: the menu is tall enough to cover the usual spot
+    const menu = (await fieldMenu(page).boundingBox())!;
+    await tap(page, { x: menu.x - 120, y: menu.y + 120 });
     await expect(fieldMenu(page)).toBeHidden();
     await page.waitForTimeout(300);
     expect(await selectedDrillNumbers(page)).toEqual(["T2"]);

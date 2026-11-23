@@ -19,11 +19,15 @@ sidebar:
 import Media from "@/components/docs/Media.astro";
 import Kbd from "@/components/docs/Kbd.astro";
 import Ui from "@/components/docs/Ui.astro";
+import Term from "@/components/docs/Term.astro";
+import InShort from "@/components/docs/InShort.astro";
 import { Steps } from "@astrojs/starlight/components";
+
+<InShort>Select the marchers, press <Kbd action="shapeLine" />, drag on the field from one end of the line to the other (or click each point and double-click the last), then select <Ui k="shapes.edit.place" /> (<Kbd action="applyShape" />).</InShort>
 
 A line stands the selected marchers along a path: a straight line from one end to the other, or a line through points you click, with corners where it turns. A curve is the same line with smooth points, so it bends round instead of turning sharply.
 
-**Before you start:** select the marchers who go on the line, and put the playhead on the count where they should stand on it.
+**Before you start:** select the marchers who go on the line, and put the <Term id="playhead">playhead</Term> on the count where they should stand on it.
 
 ## Draw a straight line
 
@@ -36,6 +40,11 @@ A line stands the selected marchers along a path: a straight line from one end t
 3. Select <Ui k="shapes.edit.place" />, or press <Kbd action="applyShape" />.
 
 </Steps>
+
+<Media
+  id="shapes-draw-straight-line"
+  alt="L is pressed, and one drag on empty field draws a straight line of spots, one on each end and the rest spaced evenly between. The pointer moves to Place and clicks it, and the trumpets move onto the line."
+/>
 
 A line drawn diagonally from one yard line to another starts measured side to side, so each marcher is the same distance across from the next: the usual way to write a diagonal.
 
@@ -53,16 +62,16 @@ A line drawn diagonally from one yard line to another starts measured side to si
 
 </Steps>
 
-While you're clicking, a right-click or <Kbd action="shapeRemoveLastPoint" /> takes the last point back, and <Kbd action="cancelAlignmentUpdates" /> cancels the line. Click the first point again to close the line into a loop.
-
-On a tablet, tap the points with a finger or the pen; while a shape tool is chosen, one finger draws and two move the view. Buttons at the top of the field stand in for the keys: <Ui k="shapes.edit.undoPoint" /> takes the last point back, <Ui k="shapes.edit.finish" /> ends the line (a double-tap does too), and <Ui k="shapes.edit.discard" /> drops it.
-
 <Media
   id="shapes-draw-line"
-  alt="L is pressed, then three clicks above a row of trumpets draw a line that rises to a corner and runs flat to the right, with a spot on each end, one on the corner and the rest spaced along it. The pointer moves to Place and clicks it, and the trumpets move onto the line."
+  alt="L is pressed, then three clicks on empty field draw a line that rises to a corner and runs flat to the right, with a spot on each end, one on the corner and the rest spaced along it. The pointer moves to Place and clicks it, and the trumpets move onto the line."
 />
 
-Every corner holds a marcher, so each stretch between corners is spaced on its own. To space the marchers evenly round the whole line instead, choose <Ui k="shapes.kinds.line.corners.off" /> from the corners menu on the editor's second row.
+While you're clicking, a right-click or <Kbd action="shapeRemoveLastPoint" /> takes the last point back, and <Kbd action="cancelAlignmentUpdates" /> cancels the line. Click the first point again to close the line into a loop.
+
+On a tablet, tap the points. Buttons at the top of the field stand in for the keys: <Ui k="shapes.edit.undoPoint" /> takes the last point back, and <Ui k="shapes.edit.finish" /> (or a double-tap) ends the line.
+
+Every corner holds a marcher, so each stretch between corners is spaced on its own. To space the marchers evenly along the whole line instead, choose <Ui k="shapes.kinds.line.corners.off" /> from the corners menu on the editor's second row.
 
 ## Draw a curve
 
@@ -75,10 +84,22 @@ Every point of a line is a handle, and so is the middle of each part between two
 - Drag a point to move it. Drag the handle in the middle of a part to add a point there.
 - Double-click a point to switch it between a corner and a smooth point.
 - Click a smooth point to select it. A short bar through it shows the way the line runs; drag the bar's ends to make the bend rounder or tighter.
-- Right-click a point for its menu (on a tablet, touch and hold it with a finger or the pen, then lift): switch it between <Ui k="shapes.kinds.line.menu.corner" /> and <Ui k="shapes.kinds.line.menu.smooth" />, choose whether a marcher stands on it, <Ui k="shapes.kinds.line.menu.delete" />, or open or close the line there.
+- Right-click a point for its menu: switch it between <Ui k="shapes.kinds.line.menu.corner" /> and <Ui k="shapes.kinds.line.menu.smooth" />, choose whether a marcher stands on it, <Ui k="shapes.kinds.line.menu.delete" />, or open or close the line there.
 - Right-click the middle of a part to <Ui k="shapes.kinds.line.menu.add" />, or to make that part <Ui k="shapes.kinds.line.menu.straight" /> or <Ui k="shapes.kinds.line.menu.curved" />.
 
+<Media
+  id="shapes-curve-bend"
+  alt="An open curve rising to a peak on empty field. The point at the peak is clicked and a short bar appears through it; the bar's right end is dragged further out, and the top of the curve becomes broader and flatter."
+/>
+
 ## Set the interval
+
+<Media
+  id="shapes-line-editor"
+  alt="The floating editor of an open line with a corner. First row: the interval, about 3½ to 3.68 steps, with a lock beside it, then the turn, flip, Shrink, Expand and Recalculate buttons, an eye, a magnet, a pathways button and Place. Second row: Open, Fit, Along the path, Marcher on every corner, and Who goes where set to Least travel."
+/>
+
+On a line with corners, each stretch between corners is spaced on its own, so the interval can show as a range, such as ≈ 3½–3.68: the smallest and the largest. The second row's menus are, in order, the line's ends, its spacing, what the interval measures, its corners, and who goes where.
 
 A new line is drawn to fit: you choose where its ends go, and the floating editor shows the interval that spaces the marchers between them. Typing an interval there makes the line longer or shorter to match. Dragging an end changes the interval, in whole steps, or half steps when you're zoomed in far.
 
@@ -94,19 +115,19 @@ The <Ui k="shapes.kinds.line.measured.label" /> menu says what the interval meas
 
 ### Different intervals in one line
 
-Type a list instead of one interval to space groups of marchers differently. Each group is a count of marchers, `*`, and their interval, with `+` between groups. `2*3+4*2` puts the first 2 marchers 3 steps apart and the next 4 at 2 steps. One group can leave out its count to take everyone else: `2*3+2` is 2 marchers at 3 steps, then the rest at 2. Each group then shows in the editor as its own count and interval, which you can change there.
+In the editor's interval box, type a list instead of one interval to space groups of marchers differently. Each group is a count of marchers, `*`, and their interval, with `+` between groups. `2*3+4*2` puts the first 2 marchers 3 steps apart and the next 4 at 2 steps. One group can leave out its count to take everyone else: `2*3+2` is 2 marchers at 3 steps, then the rest at 2. Each group then shows in the editor as its own count and interval, which you can change there.
 
 ## Who goes where
 
-Marchers take their spots by least travel, so the walks are as short and even as they can be. The <Ui k="shapes.edit.order.label" /> menu on the editor's second row changes that: <Ui k="shapes.edit.order.reverse" /> turns the order along the line end for end, and when the marchers all come from one placed line, <Ui k="shapes.edit.order.keep" /> keeps them in the same order along the new one.
+Marchers take their spots by least travel. To reverse the order along the line, or keep the order of a line they came from, use the <Ui k="shapes.edit.order.label" /> menu on the editor's second row; see [Who goes where](/guides/shapes/#who-goes-where).
 
 ## Close and fill a line
 
-A closed line is a loop with a marcher on every corner. Close it by clicking its first point while you draw, by dropping one end on the other, or by choosing <Ui k="shapes.kinds.line.ends.closed" /> from its <Ui k="shapes.kinds.line.ends.label" /> menu. A closed line can be filled the way a box is, from its <Ui k="shapes.edit.mode.label" /> menu: <Ui k="shapes.edit.mode.outline" /> is the line itself, and <Ui k="shapes.edit.mode.files" /> and <Ui k="shapes.edit.mode.spread" /> fill the inside of the outline you drew.
+A closed line is a loop with a marcher on every corner. Close it by clicking its first point while you draw, by dropping one end on the other, or by choosing <Ui k="shapes.kinds.line.ends.closed" /> from its <Ui k="shapes.kinds.line.ends.label" /> menu. A closed line can be filled from its <Ui k="shapes.edit.mode.label" /> menu: <Ui k="shapes.edit.mode.outline" /> is the line itself, and <Ui k="shapes.edit.mode.files" /> and <Ui k="shapes.edit.mode.spread" /> fill the inside of the outline you drew, as they do for a [box](/guides/shapes/draw-a-box/#choose-how-the-box-is-filled).
 
 ## Related
 
 - [How shapes work](/guides/shapes/): points, paths and spots.
 - [Draw an arc](/guides/shapes/draw-an-arc/): a curve that is part of a circle.
 - [Snapping and modifier keys](/guides/shapes/snapping-and-modifier-keys/): draw lines at 45°, and land points on yard lines.
-- [Place marchers in a shape](/guides/shapes/place-marchers/): change a line after it's placed.
+- [Change a placed shape](/guides/shapes/place-marchers/): change a line after it's placed.

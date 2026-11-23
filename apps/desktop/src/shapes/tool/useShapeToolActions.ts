@@ -1,14 +1,17 @@
 import tolgee from "@/global/singletons/Tolgee";
 import { useCallback } from "react";
 import { useQueryClient, type QueryClient } from "@tanstack/react-query";
-import type { CanvasEditPlan } from "@/timeline/timelineCoordinateWrites";
+import {
+    planCanvasEdit,
+    type CanvasEditPlan,
+} from "@/timeline/timelineCoordinateWrites";
 import {
     useActionHandler,
     useActionHandlerGroup,
 } from "@/shortcuts/useActionHandler";
 import { useEditorReadiness } from "@/shortcuts/handlers/useEditorReadiness";
 import { currentShapeField, shapeContextFor } from "../field/shapeFieldContext";
-import { placementOf, writePlacement } from "./shapePlacement";
+import { placementOf, placesNothing, writePlacement } from "./shapePlacement";
 import { kindPickGate, pickShapeKind } from "./pickKind";
 import { SHAPE_TOOLS } from "./shapeTools";
 import type { ToolState } from "./toolMachine";
@@ -27,7 +30,8 @@ import {
  * The host's place function (spec #344): every open shape is placed through here, by Place
  * (Enter) and nothing else (#416). Its marchers go to their spots and its
  * recipe is saved as one edit (`writePlacement`, the same write a placed shape's edits use).
- * `plan` is the edit window to write to, the current one unless given. Resolves false when
+ * `plan` is the edit window to write to, the current one unless given. A placement that would
+ * change nothing (`placesNothing`) writes nothing and costs no undo step. Resolves false when
  * nothing was placed.
  */
 export async function placeShape(
@@ -39,6 +43,8 @@ export async function placeShape(
     if (!field) return false;
     const placement = placementOf(tool, shapeContextFor(field));
     if (!placement) return false;
+    const edit = plan ?? planCanvasEdit();
+    if (edit.ok && placesNothing(placement, edit.beat)) return true;
     return writePlacement(
         placement,
         queryClient,

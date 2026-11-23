@@ -69,6 +69,11 @@ export type ActionButtonProps =
          * can't be seen. Give it to icon-only buttons.
          */
         caption?: string;
+        /**
+         * A second, quieter line in the tooltip, under the name and shortcut: what the action does
+         * when its name alone doesn't say enough. A long press shows it too.
+         */
+        hint?: string;
         /** Called after the action runs, e.g. to close the menu the button sits in */
         onRun?: () => void;
     };
@@ -87,6 +92,7 @@ export default function ActionButton({
     tooltip,
     toggleState,
     caption,
+    hint,
     onRun,
     children,
     className,
@@ -276,7 +282,8 @@ export default function ActionButton({
             {/* The touch layout shows the long-press bubble instead */}
             <Tip
                 label={hintLabel || undefined}
-                hint={reason}
+                // Greyed out, why it is; otherwise what it does, when given
+                hint={reason ?? hint}
                 action={showShortcut ? action : undefined}
                 disabled={isTouch}
             >
@@ -298,9 +305,9 @@ export default function ActionButton({
                         <span>{hintLabel}</span>
                         {showShortcut && <Shortcut action={action} />}
                     </span>
-                    {reason && (
-                        <span className="text-sub text-text-subtitle">
-                            {reason}
+                    {(reason ?? hint) && (
+                        <span className="text-sub text-text-subtitle block max-w-280">
+                            {reason ?? hint}
                         </span>
                     )}
                 </span>

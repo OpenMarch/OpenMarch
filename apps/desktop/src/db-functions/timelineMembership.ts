@@ -31,6 +31,10 @@ import {
     moveInSentence,
 } from "@/timeline/timelineRangeWords";
 import { text } from "@/timeline/timelineText";
+import {
+    lanesOfTransitions,
+    sweepOrphanRoutesInTransaction,
+} from "./timelineLanes";
 
 export { findTimelineByRange, marcherLabels };
 
@@ -462,6 +466,10 @@ export interface RemoveAssignmentsResult {
  * - With `deleteEmptied`, any transition left with nobody in it is deleted with its destinations,
  *   whatever its slot count (Basic's writes on a converted page's shared transition), instead of
  *   being compacted down to one vacant slot.
+ * - Lanes (AP-R15, spec v0.10 J.8): a slot that compaction removes loses its lane, and the marcher
+ *   moved down from the last slot takes its lane with it, so everyone walks the path they walked.
+ *   A slot left vacant keeps its lane (owner Q1) while another lane of its route has a marcher;
+ *   then every route nobody walks any more goes (AP-H3).
  */
 // eslint-disable-next-line max-lines-per-function
 export const removeAssignmentRowsInTransaction = async ({
@@ -528,12 +536,20 @@ export const removeAssignmentRowsInTransaction = async ({
             .from(a)
             .where(eq(a.transition_id, transitionId))
             .all();
-        if ((tr.slot_count === 1 || deleteEmptied) && remaining.length === 0) {
+        // AP-T6 (pathways step 4): a follow move's line keeps its order and everyone's own end
+        // spot (R-13′), so a marcher who leaves it leaves a gap; with nobody left it goes
+        const trail =
+            tr.path_style === "follow_the_leader" && tr.route_id !== null;
+        if (
+            (tr.slot_count === 1 || deleteEmptied || trail) &&
+            remaining.length === 0
+        ) {
             emptied.add(transitionId);
             continue;
         }
         if (
             !compact ||
+            trail ||
             tr.dest_shape_id !== null ||
             remaining.some((r) => ftlMarchers.has(r.marcher_id))
         ) {
@@ -541,6 +557,20 @@ export const removeAssignmentRowsInTransaction = async ({
             continue;
         }
         const occupantOf = new Map(remaining.map((r) => [r.slot_index, r]));
+        const lanes = new Map(
+            (await lanesOfTransitions(tx, [transitionId])).map((l) => [
+                l.slot_index,
+                l,
+            ]),
+        );
+        const ln = schema.timeline_lanes;
+        /** Deletes the lane on `slot`, if any (its slot goes, or another lane moves onto it) */
+        const dropLane = async (slot: number) => {
+            const lane = lanes.get(slot);
+            if (!lane) return;
+            await tx.delete(ln).where(eq(ln.id, lane.id));
+            lanes.delete(slot);
+        };
 
         let n = tr.slot_count;
         const open = new Set(vacated);
@@ -548,6 +578,7 @@ export const removeAssignmentRowsInTransaction = async ({
             while (open.size > 0 && n > 1) {
                 const top = n - 1;
                 if (open.has(top)) {
+                    await dropLane(top);
                     await tx
                         .delete(d)
                         .where(
@@ -590,6 +621,17 @@ export const removeAssignmentRowsInTransaction = async ({
                     .update(a)
                     .set({ slot_index: to })
                     .where(eq(a.id, occupant.id));
+                // AP-R15: the moved marcher's lane comes with it; the vacated slot's goes
+                await dropLane(to);
+                const moving = lanes.get(top);
+                if (moving) {
+                    await tx
+                        .update(ln)
+                        .set({ slot_index: to })
+                        .where(eq(ln.id, moving.id));
+                    lanes.delete(top);
+                    lanes.set(to, { ...moving, slot_index: to });
+                }
                 await tx.delete(d).where(eq(d.id, point.id));
                 occupantOf.delete(top);
                 occupantOf.set(to, { ...occupant, slot_index: to });
@@ -623,6 +665,8 @@ export const removeAssignmentRowsInTransaction = async ({
         transitionIds: emptied,
         tx,
     });
+    // AP-H3: a path whose last marcher left goes (a vacated slot's lane stays otherwise, Q1)
+    await mapDbErrors(() => sweepOrphanRoutesInTransaction(tx));
     result.deletedTransitionIds = deleted
         .map((r) => r.id)
         .sort((x, y) => x - y);

@@ -67,3 +67,4 @@ packages/metronome/
 
 # Claude Code work trees (claude --worktree, scripts/timeline)
 .claude/worktrees/
+__pycache__/

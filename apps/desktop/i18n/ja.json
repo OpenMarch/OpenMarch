@@ -115,7 +115,9 @@
             "loadDialogue": "ファイルを開く…",
             "newDialogue": "新規ファイル…",
             "openExport": "エクスポート…",
-            "saveDialogue": "コピーを保存…"
+            "saveDialogue": "コピーを保存…",
+            "removeUnusedAssets": "使われていないアセットを削除…",
+            "removeUnusedAssetsKeywords": "削除 消去 整理 未使用 アセット モデル 読み込み サイズ"
         },
         "labelWithVariant": "{label}（{variant}）",
         "movement": {
@@ -243,12 +245,18 @@
             "openFrontEnsemble": "フロントアンサンブルと指揮台を開く",
             "openFrontEnsembleKeywords": "ピット フロントアンサンブル 指揮台 ドラムメジャー マリンバ ビブラフォン 打楽器 パーカッション スピーカー 機材 プリセット pit front ensemble podium drum major marimba vibraphone percussion speaker equipment preset",
             "addFrontEnsembleEquipment": "フロントアンサンブルの機材または指揮台を追加",
-            "addFrontEnsembleEquipmentKeywords": "ピット 指揮台 ドラムメジャー マリンバ ビブラフォン 打楽器 パーカッション スピーカー ミキサー タワー 脚立 楽器 pit podium drum major marimba vibraphone percussion speaker mixer tower stepladder instrument"
+            "addFrontEnsembleEquipmentKeywords": "ピット 指揮台 ドラムメジャー マリンバ ビブラフォン 打楽器 パーカッション スピーカー ミキサー タワー 脚立 楽器 pit podium drum major marimba vibraphone percussion speaker mixer tower stepladder instrument",
+            "openAssets": "ショーのアセットを開く",
+            "openAssetsKeywords": "アセット 読み込んだモデル ファイル クレジット ライセンス サイズ 容量 ライブラリ"
         },
         "items": {
             "edit": "選択したプロップまたは機材を編集",
             "editNamed": "{name}を編集",
-            "editKeywords": "編集 設定 プロパティ プロップ 機材 指揮台 楽器 名前 サイズ ロック edit settings properties prop equipment podium instrument name size lock"
+            "editKeywords": "編集 設定 プロパティ プロップ 機材 指揮台 楽器 名前 サイズ ロック edit settings properties prop equipment podium instrument name size lock",
+            "importModel": "3Dモデルをインポート…",
+            "importModelKeywords": "インポート 読み込み 3Dモデル モデル プロップ 小道具 オブジェクト ファイル アップロード import 3d model glb gltf prop upload file object",
+            "placeImportedModel": "インポートしたモデルを配置",
+            "placeImportedModelKeywords": "配置 インポート モデル プロップ 小道具 カスタム place imported model prop 3d custom glb"
         }
     },
     "analyticsOptIn": {
@@ -1434,6 +1442,7 @@
         "hide": "フィールドで非表示",
         "name": "名前",
         "offField": "再生ヘッドの位置ではフィールド外です。アウトラインを変更するには、プロップがフィールド上にあるカウントへ再生ヘッドを移動してください。",
+        "keepsProportions": "幅・奥行き・高さは一緒に変わるので、モデルの形はそのまま保たれます。",
         "outline": {
             "arc": "円弧",
             "circle": "円",
@@ -1469,7 +1478,164 @@
         },
         "locked": "ロック済み",
         "lockLabel": "ロック",
-        "lockHint": "ショー全体で位置は1つ"
+        "lockHint": "ショー全体で位置は1つ",
+        "imported": {
+            "title": "インポート済み",
+            "import": "インポート…",
+            "empty": ".glbまたは.gltfのモデルをインポートするか、ウィンドウにドロップすると、ほかのプロップと同じように配置できます。",
+            "place": "{name}を配置",
+            "manage": "アセットを管理"
+        },
+        "import": {
+            "title": "モデルをインポート",
+            "pictureAlt": "観客側から見たモデル",
+            "working": "モデルを準備しています…",
+            "orient": {
+                "detail": "正面が観客側を向き、上下が正しくなるようにしてください。"
+            },
+            "rotateAxis": "{axis}軸で回転",
+            "detail": {
+                "title": "詳細度",
+                "levels": {
+                    "light": "軽量",
+                    "detailed": "詳細",
+                    "original": "オリジナル"
+                },
+                "cost": "{triangles} 三角形 · ショーに {size} 追加 · 1 つあたり演奏者 {performers, plural, other {# 人}}分の描画負荷",
+                "heavy": "最近のほとんどのコンピューターで問題なく動きます。3D ビューがカクつくときは軽量版を描画します。軽量版もショーに保存されます。"
+            },
+            "compare": {
+                "open": "3D で比較…",
+                "title": "3D で比較",
+                "description": "ドラッグして見回し、バージョンを切り替えて簡略化で変わったところを確認します。",
+                "which": "表示するバージョン",
+                "lightCopy": "軽量版",
+                "hint": "ドラッグで回転、スクロールでズーム",
+                "stands": "スタンドから",
+                "closeUp": "近くで",
+                "drawFailed": "このバージョンを描画できませんでした。"
+            },
+            "size": {
+                "title": "サイズ",
+                "value": "{width} × {depth} m、高さ{height} m",
+                "question": "これは実際のサイズですか？違う場合は、ファイルが作成された単位を選んでください。",
+                "suggested": "{unit}で作成されたファイルのようなので、変換しました。サイズを確認してください。"
+            },
+            "units": {
+                "label": "作成時の単位",
+                "none": "m",
+                "cm": "cm",
+                "in": "in",
+                "ft": "ft"
+            },
+            "groups": {
+                "cantImport": "インポートできません",
+                "fixed": "自動で修正済み",
+                "notes": "メモ"
+            },
+            "tryAgain": "再試行",
+            "name": "名前",
+            "saveFailed": "モデルをショーに追加できませんでした。",
+            "cancel": "キャンセル",
+            "add": "ショーに追加",
+            "credits": {
+                "title": "ライセンスとクレジット",
+                "unknown": "不明",
+                "proprietary": "全著作権所有",
+                "license": "ライセンス",
+                "author": "作者",
+                "sourceUrl": "入手元",
+                "attribution": "クレジット表記",
+                "rights": "使用する権利のあるモデルだけをインポートしてください。"
+            },
+            "cantImport": {
+                "noModelFile": {
+                    "title": "ファイルにモデルがありません",
+                    "detail": ".glbファイル、または.gltfとそれが参照するファイルを選んでください。"
+                },
+                "severalModelFiles": {
+                    "title": "複数のモデル",
+                    "detail": "1つずつインポートしてください：{names}"
+                },
+                "tooLarge": {
+                    "title": "ファイルが大きすぎます",
+                    "detail": "{size} MB（上限は{limit} MB）"
+                },
+                "unreadable": {
+                    "title": "ファイルを読み込めません"
+                },
+                "externalUri": {
+                    "title": "モデルがインターネットからファイルを読み込みます",
+                    "detail": "{uri}を参照しています。ファイルをダウンロードして、モデルと一緒に選んでください。"
+                },
+                "outsidePickedFiles": {
+                    "title": "モデルがフォルダー外のファイルを参照しています",
+                    "detail": "{uri}を参照しています。"
+                },
+                "missingFile": {
+                    "title": "ファイルがありません：{uri}",
+                    "detail": "モデルファイルと一緒に選んでください。"
+                },
+                "requiredExtension": {
+                    "title": "OpenMarchが読み込めない機能がモデルに必要です",
+                    "detail": "必要な拡張機能：{extensions}"
+                },
+                "validatorErrors": {
+                    "title": "{count, plural, other {ファイルに#件のエラーがあります}}"
+                },
+                "imageTooLarge": {
+                    "title": "テクスチャが大きすぎます：{image}",
+                    "detail": "{width} × {height}ピクセルです。1辺の上限は{limit}です。"
+                },
+                "imageUnreadable": {
+                    "title": "テクスチャを読み込めません：{image}"
+                },
+                "tooManyTriangles": {
+                    "title": "細かすぎます",
+                    "detail": "{triangles} 三角形。読み込める上限は {limit} です。"
+                },
+                "rigged": {
+                    "title": "リグ付きモデルには対応していません",
+                    "detail": "静止したバージョンをインポートしてください。"
+                },
+                "noGeometry": {
+                    "title": "ファイルに描画するものがありません"
+                },
+                "timedOut": {
+                    "title": "時間がかかりすぎました",
+                    "detail": "{seconds}秒後に停止しました。"
+                },
+                "failed": {
+                    "title": "準備中に問題が発生しました"
+                }
+            },
+            "fixed": {
+                "texturesShrunk": {
+                    "title": "{count, plural, other {テクスチャ#個を{cap} pxに縮小}}"
+                },
+                "dracoDecoded": "Draco圧縮を展開",
+                "meshoptDecoded": "meshopt圧縮を展開",
+                "instancesExpanded": "繰り返しのコピーを通常の形状に変換",
+                "extensionsDropped": "不要な機能を除外",
+                "contentDropped": {
+                    "title": "プロップで使わないものを除外",
+                    "animations": "{count, plural, other {アニメーション#個}}",
+                    "cameras": "{count, plural, other {カメラ#個}}",
+                    "morphTargets": "{count, plural, other {シェイプキー#個}}",
+                    "scenes": "{count, plural, other {ほかのシーン#個}}"
+                },
+                "pivotMoved": "底面の中心を設置位置に合わせた"
+            },
+            "notes": {
+                "validatorWarnings": "{count, plural, other {ファイルに#件の警告があります}}",
+                "sizeOutOfRange": {
+                    "title": "プロップとしては珍しいサイズ",
+                    "detail": "最も長い辺は{largest} mです。プロップは通常{min}～{max} mです。"
+                },
+                "overTriangleCap": "まだ細かい状態です：三角形{triangles}個（目標は{cap}個）"
+            }
+        },
+        "modelMissing": "このプロップのモデルはもうショーにないため、ブロックとして描かれています。"
     },
     "frontEnsemble": {
         "title": "フロントアンサンブルと指揮台",
@@ -3068,7 +3234,14 @@
             "pickSeatTooltip": "座席を選択：スタンドの座席をクリックすると、その席からの視点になります。",
             "venue": "会場",
             "freeCamera": "自由視点",
-            "director": "ディレクター"
+            "director": "ディレクター",
+            "followPerformer": "メンバーを追う",
+            "followPerformerTooltip": "メンバーを追う：メンバーをクリックすると、カメラがそのメンバーを追います。",
+            "following": "{name}を追跡中",
+            "povOf": "{name}の視点",
+            "pointOfView": "一人称視点",
+            "pointOfViewTooltip": "一人称視点：メンバーの目線で見る",
+            "stopFollowing": "追跡を終了"
         },
         "readout": {
             "count": "カウント{count}/{total}",
@@ -3108,7 +3281,9 @@
             "brassFinish": "金管の仕上げ",
             "tuba": "チューバ",
             "silkShape": "フラッグのシルクの形",
-            "silkArtwork": "フラッグのシルクの絵柄"
+            "silkArtwork": "フラッグのシルクの絵柄",
+            "followTurns": "追跡中：メンバーと一緒に向きを変える",
+            "povShowsBody": "一人称視点：腕と楽器を表示"
         },
         "keys": {
             "playPause": "再生/一時停止",
@@ -3117,14 +3292,16 @@
             "cameras": "カメラ（メニュー順）",
             "fullscreen": "フルスクリーン",
             "crowd": "観客の表示/非表示",
-            "escape": "座席選択の取消・設定を閉じる・フルスクリーン終了",
+            "escape": "選択の取消・設定を閉じる・追跡終了・フルスクリーン終了",
             "orbit": "回転",
             "orbitOrRight": "回り込み、またはマウスの右ボタンでドラッグ",
             "panPlain": "パン",
             "zoomOrPinch": "ズーム、またはトラックパッドでピンチ",
             "pan": "パン（右ボタンのドラッグでも可）",
             "zoom": "ズーム",
-            "pausedPose": "一時停止中：実際の歩みか、足を閉じた姿勢を表示"
+            "pausedPose": "一時停止中：実際の歩みか、足を閉じた姿勢を表示",
+            "followPerformer": "追うメンバーを選択",
+            "pointOfView": "追跡中：一人称視点との切替"
         },
         "keyNames": {
             "pair": "<first></first> / <second></second>"
@@ -4177,6 +4354,9 @@
         "error.failed": "報告を送信できませんでした。接続を確認して、もう一度お試しください。",
         "attach.music.off": "音楽は送信されません。",
         "attach.music.on": "音楽も送信されます。",
+        "attach.models": "読み込んだモデルを含める",
+        "attach.models.off": "読み込んだモデルは送信されず、サイズと詳細だけが送られます。",
+        "attach.models.on": "読み込んだモデルも送信されます（{size}）。",
         "sending.recording": "録画をアップロード中…",
         "sending.show_file": "ショーをアップロード中…",
         "sending.diagnostics": "診断情報をアップロード中…",
@@ -4384,6 +4564,39 @@
             "mixed": "混在",
             "add": "ラインを追加",
             "everyOther": "1本おきに残す"
+        }
+    },
+    "assets": {
+        "title": "アセット",
+        "empty": "このショーにはまだ読み込んだアセットがありません。プロップパネルから 3D モデルを読み込めます。",
+        "notes": {
+            "unused": "{count, plural, other {# 個のアセットがショーのどこでも使われていません}} · {size}",
+            "missing": "{count, plural, other {# 個のプロップが、このショーにないモデルを使っているため、ブロックとして描かれています。}}",
+            "large": "アセットのためにこのショーは大きくなっています：{size}。大きなショーは開く・保存する・共有するのに時間がかかります。"
+        },
+        "removeUnused": {
+            "button": "未使用を削除…",
+            "title": "{count, plural, other {使われていないアセット # 個を削除しますか？}}",
+            "description": "ショーの中でこれらを使っているものはありません。削除するとショーが {size} 小さくなります。取り消しでは元に戻りません。",
+            "none": "すべてのアセットが使われているので、削除するものはありません。",
+            "cancel": "キャンセル",
+            "confirm": "{count, plural, other {# 個を削除}}"
+        },
+        "kind": {
+            "model": "3D モデル"
+        },
+        "uses": "{count, plural, other {# 回使用}}",
+        "unused": "未使用",
+        "shareNote": "ライセンス不明：共有する権利がない可能性があります",
+        "size": {
+            "bytes": "{value} バイト",
+            "kb": "{value} KB",
+            "mb": "{value} MB",
+            "gb": "{value} GB"
+        },
+        "errors": {
+            "remove": "使われていないアセットを削除できませんでした",
+            "credits": "クレジットを保存できませんでした"
         }
     }
 }

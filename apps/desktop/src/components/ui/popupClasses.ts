@@ -12,9 +12,31 @@
 export const POPOVER_CLASS =
     "bg-modal text-text rounded-6 border-stroke shadow-modal backdrop-blur-32 border p-12";
 
-/** A menu's panel. Add a width (`min-w-*`) where the menu needs one. */
+/**
+ * A menu's panel. Add a width (`min-w-*`) where the menu needs one. A Radix menu is never taller
+ * than the room Radix finds for it on screen: past that it scrolls (owner, 2026-11-18: the
+ * field's menu ran off the bottom of the window). Radix sets the height it has; a menu drawn by
+ * hand has no such variable, so the cap is off there. Merge with `twMerge` to set another cap.
+ */
 export const MENU_CONTENT_CLASS =
-    "bg-modal text-text rounded-6 border-stroke shadow-modal backdrop-blur-32 z-50 flex flex-col gap-2 border p-4";
+    "bg-modal text-text rounded-6 border-stroke shadow-modal backdrop-blur-32 z-50 flex flex-col gap-2 border p-4 max-h-[var(--radix-dropdown-menu-content-available-height)] overflow-y-auto overscroll-contain";
+
+/**
+ * The placement of a menu opened at a point (a right-click, a long press), as Radix props: like a
+ * system's context menu, its top corner at the point, then slid up or across to stay on screen,
+ * and scrolled when it's taller than the window (`MENU_CONTENT_CLASS`). Beside the point, not
+ * below it, since Radix only slides a menu along its side: one below the point can only flip
+ * above it, and a long menu fits neither way. Only for a menu opened on the button's release (as
+ * the field's): slid up under a pointer still pressed, a Radix entry runs on the release.
+ */
+export const POINT_MENU_PLACEMENT = {
+    side: "right",
+    align: "start",
+    sideOffset: 2,
+    sticky: "always",
+    avoidCollisions: true,
+    collisionPadding: 8,
+} as const;
 
 /**
  * One Radix entry: Radix sets `data-highlighted` and `data-disabled`. The highlight is the text

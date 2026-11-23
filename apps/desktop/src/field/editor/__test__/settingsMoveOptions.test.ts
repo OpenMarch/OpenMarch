@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { act } from "@testing-library/react";
+import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import { defaultSettings, useUiSettingsStore } from "@/stores/UiSettingsStore";
 import {
     FieldEditor,
@@ -127,5 +128,100 @@ describe("the selection's rotate handle, with the settings ThreeField reads", ()
         editor.pointerMove(turnedTo(38));
         expect(editor.rotationFrame()?.angle).toBeCloseTo(38, 6);
         editor.pointerCancel();
+    });
+});
+
+describe("landing on the field's lines (#585), with the field ThreeField gives", () => {
+    const FIELD =
+        FieldPropertiesTemplates.HIGH_SCHOOL_FOOTBALL_FIELD_NO_END_ZONES;
+    const FIFTY = FIELD.centerFrontPoint.xPixels;
+    // Off every line front to back: 10.37 steps behind the front sideline
+    const Y = FIELD.centerFrontPoint.yPixels - 10.37 * FIELD.pixelsPerStep;
+
+    /** Two marchers 20 units apart, right of them the 50 yard line 10 units away, at zoom 2. */
+    function setupOnField() {
+        const drops: (readonly MarcherPosition[])[] = [];
+        const ports: FieldEditorPorts = {
+            selection: { get: () => [1, 2], set: vi.fn() },
+            marchers: () => ({
+                ids: [1, 2],
+                positions: Float64Array.from([FIFTY - 30, Y, FIFTY - 10, Y]),
+                hidden: new Uint8Array(2),
+            }),
+            zoom: () => ZOOM,
+            canSelect: () => true,
+            selectionBoxPadding: () => 10,
+            openMenu: vi.fn(),
+            showPositions: vi.fn(),
+            drop: vi.fn((positions) => {
+                drops.push(positions);
+                return new Promise<DropResult>(() => {});
+            }),
+        };
+        const editor = new FieldEditor(
+            ports,
+            settingsMoveOptions(
+                () => FIELD,
+                () => ({ properties: FIELD, zoom: ZOOM }),
+            ),
+        );
+        return { editor, drops };
+    }
+
+    const dragBy = (dx: number) => {
+        const { editor, drops } = setupOnField();
+        editor.pointerDown(at(FIFTY - 10, Y));
+        editor.pointerMove(at(FIFTY - 10 + dx, Y));
+        const guides = editor.modeDrawing()?.guides ?? [];
+        editor.pointerUp(at(FIFTY - 10 + dx, Y));
+        return { dropped: drops[0]!.map((p) => p.x), guides, editor };
+    };
+
+    beforeEach(() => {
+        // No rounding: only the lines pull
+        useUiSettingsStore.setState({
+            uiSettings: {
+                ...useUiSettingsStore.getState().uiSettings,
+                coordinateRounding: { nearestXSteps: 0, nearestYSteps: 0 },
+            },
+        });
+    });
+
+    it("lands the group's edge on the 50 within 6 px, with a guide named for it while dragged", () => {
+        // 8 units right puts the right edge 2 units (4 px at zoom 2) short of the 50
+        const { dropped, guides, editor } = dragBy(8);
+        expect(dropped).toEqual([FIFTY - 20, FIFTY]);
+        expect(guides).toHaveLength(1);
+        expect(guides[0]!.from.x).toBe(FIFTY);
+        // The guide clears on the release
+        expect(editor.modeDrawing()).toBeNull();
+    });
+
+    it("moves freely farther than 6 px from a line", () => {
+        // 4 short of the 50 is 8 px at zoom 2
+        const { dropped, guides } = dragBy(6);
+        expect(dropped).toEqual([FIFTY - 24, FIFTY - 4]);
+        expect(guides).toEqual([]);
+    });
+
+    it("lands on nothing with the Snap toggle off", () => {
+        setSnap(false);
+        expect(dragBy(8).dropped).toEqual([FIFTY - 22, FIFTY - 2]);
+    });
+
+    it("leaves an axis with coordinate rounding to the grid", () => {
+        useUiSettingsStore.setState({
+            uiSettings: {
+                ...useUiSettingsStore.getState().uiSettings,
+                coordinateRounding: { nearestXSteps: 1, nearestYSteps: 0 },
+            },
+        });
+        // The group moves in whole steps across, not onto the 50
+        const { dropped } = dragBy(8);
+        const step = FIELD.pixelsPerStep;
+        expect(dropped).toEqual([
+            FIFTY - 30 + Math.round(8 / step) * step,
+            FIFTY - 10 + Math.round(8 / step) * step,
+        ]);
     });
 });

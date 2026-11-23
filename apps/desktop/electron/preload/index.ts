@@ -11,6 +11,12 @@ import {
 import * as DbServices from "@om-electron/database/database.services";
 
 import type { RecentFile } from "@om-electron/main/services/recent-files-service";
+import type {
+    RecoverableShow,
+    SaveOutcome,
+    WorkingCopyConflictChoice,
+    WorkingCopyStatus,
+} from "@om-electron/database/workingCopy/WorkingCopySession";
 import type { PreviousDotsImportResult } from "@om-electron/main/services/previous-dots-import-service";
 import type {
     AuthState,
@@ -21,6 +27,7 @@ import type {
 } from "@om-electron/main/auth/types";
 import { AUTH_IPC_CHANNELS } from "../../src/global/auth/constants";
 import { MENU_ACTION_CHANNEL } from "../../src/global/menuActions";
+import { THEME_SYNC_CHANNEL } from "../../src/global/themeSync";
 import {
     UPDATE_IPC_CHANNELS,
     type UpdateState,
@@ -28,6 +35,7 @@ import {
 import { GPU_CRASHED_CHANNEL, GPU_PROCESS_GONE_CHANNEL } from "../main/gpu";
 import type { HistoryResponse } from "@/db-functions";
 import type { PendingConversion } from "@om-electron/database/convertOnOpenGate";
+import type { CloudSyncService } from "@om-electron/main/cloudSyncFolder";
 import type {
     SqlBatchQuery,
     SqlReadBatchResult,
@@ -102,13 +110,13 @@ function useLoading() {
         background: #ECEBF0;
         z-index: 9;
     }
-    @media (prefers-color-scheme: dark) {
-        .loader > svg {
-            fill: white;
-        }
-        .app-loading-wrap {
-            background: #0F0E13;
-        }
+    /* The app's theme (index.html sets it before the first paint), not the system's: a dark
+       system with the light theme would otherwise show dark, then turn light */
+    .dark .loader > svg {
+        fill: white;
+    }
+    .dark .app-loading-wrap {
+        background: #0F0E13;
     }
     `;
     const oStyle = document.createElement("style");
@@ -150,6 +158,16 @@ setTimeout(removeLoading, 4999);
  *
  *  I.e. you must type `marchers:readAll` rather than `${table_name}:readAll` for the channel
  */
+/** The saved theme, from main; undefined in the web build, whose `ipcRenderer` has no `sendSync` */
+function readInitialTheme(): string | undefined {
+    if (typeof ipcRenderer.sendSync !== "function") return undefined;
+    try {
+        return ipcRenderer.sendSync(THEME_SYNC_CHANNEL) as string;
+    } catch {
+        return undefined;
+    }
+}
+
 const APP_API = {
     // Titlebar
     minimizeWindow: () => ipcRenderer.send("window:minimize"),
@@ -171,6 +189,8 @@ const APP_API = {
             sendShowFile: boolean;
             expectedShowFileName?: string;
             includeAudio: boolean;
+            /** Imported models' files (fork #1027); off by default */
+            includeAssets?: boolean;
             recording?: {
                 bytes: ArrayBuffer;
                 mimeType: string;
@@ -276,6 +296,9 @@ const APP_API = {
     },
 
     // Themes
+    /** The saved theme when this page loaded, read before any page script so index.html can
+     * set it before the first paint */
+    initialTheme: readInitialTheme(),
     getTheme: () => ipcRenderer.invoke("get-theme"),
     setTheme: (theme: string) => ipcRenderer.invoke("set-theme", theme),
 
@@ -311,6 +334,46 @@ const APP_API = {
     repairDatabase: (dbPath: string): Promise<string | null> =>
         ipcRenderer.invoke("database:repair", dbPath),
     closeCurrentFile: () => ipcRenderer.invoke("closeCurrentFile"),
+    // Saving through a working copy (ADR 0018)
+    workingCopy: {
+        /** The open show's save state, or null when it's edited in place. */
+        getStatus: () =>
+            ipcRenderer.invoke(
+                "working-copy:get-status",
+            ) as Promise<WorkingCopyStatus | null>,
+        onStatus: (callback: (status: WorkingCopyStatus) => void) => {
+            const listener = (
+                _event: Electron.IpcRendererEvent,
+                status: WorkingCopyStatus,
+            ) => callback(status);
+            ipcRenderer.on("working-copy:status", listener);
+            return () =>
+                ipcRenderer.removeListener("working-copy:status", listener);
+        },
+        /** Publishes the open show now (the title bar's Save Now). */
+        saveNow: () =>
+            ipcRenderer.invoke("working-copy:save-now") as Promise<void>,
+        /** Asks for a new file and makes it the open show's file. */
+        saveAs: () =>
+            ipcRenderer.invoke("working-copy:save-as") as Promise<
+                SaveOutcome | { ok: false; cancelled: true }
+            >,
+        resolveConflict: (choice: WorkingCopyConflictChoice) =>
+            ipcRenderer.invoke(
+                "working-copy:resolve-conflict",
+                choice,
+            ) as Promise<SaveOutcome | { ok: false; cancelled: true }>,
+        /** Unpublished changes earlier sessions left, for the launch page. */
+        listRecoverable: () =>
+            ipcRenderer.invoke("working-copy:list-recoverable") as Promise<
+                RecoverableShow[]
+            >,
+        recover: (id: string) =>
+            ipcRenderer.invoke("working-copy:recover", id) as Promise<number>,
+        discard: (id: string) =>
+            ipcRenderer.invoke("working-copy:discard", id) as Promise<void>,
+    },
+
     onLoadFileResponse: (callback: (value: number) => void) => {
         const listener = (_event: Electron.IpcRendererEvent, value: number) =>
             callback(value);
@@ -323,6 +386,31 @@ const APP_API = {
      */
     takeLoadFileRefusal: () =>
         ipcRenderer.invoke("load-file:takeRefusal") as Promise<number | null>,
+    /**
+     * The file name of the leftover journal that stopped the last open (`LEFTOVER_JOURNAL_STATUS`),
+     * or null.
+     */
+    getLeftoverJournal: () =>
+        ipcRenderer.invoke("load-file:leftoverJournal") as Promise<
+            string | null
+        >,
+    /**
+     * Recovers the show from that leftover journal on copies, moves the journal into the
+     * backups (never deletes it) and opens the show. Resolves the open's status; the main
+     * process explains failures.
+     */
+    recoverLeftoverJournal: () =>
+        ipcRenderer.invoke("load-file:recoverFromJournal") as Promise<number>,
+    /**
+     * The cloud sync app (OneDrive, iCloud Drive, Dropbox, Google Drive, Box) whose folder holds
+     * the show a leftover journal stopped, or else the open show, and that show's path; null
+     * for a local folder (`electron/main/cloudSyncFolder.ts`).
+     */
+    getCloudSyncFolder: () =>
+        ipcRenderer.invoke("show:cloudSyncFolder") as Promise<{
+            service: CloudSyncService;
+            filePath: string;
+        } | null>,
 
     // Converting a page-era show to timelines when it opens (ADR 0012 §6)
     /** The page-era file waiting for the person to agree to convert it, or null. */

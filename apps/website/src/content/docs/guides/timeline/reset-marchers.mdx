@@ -1,0 +1,69 @@
+---
+title: Reset or lock marchers on a page
+description: Clear a page, so marchers go back to where the page before left them; remove one position; or lock marchers where they stand, so changes to earlier pages don't move them.
+type: how-to
+covers:
+  - apps/desktop/src/timeline/timelineSetAsShown.ts
+  - apps/desktop/src/timeline/timelineClearPage.ts
+  - apps/desktop/src/timeline/timelineUnset.ts
+  - action:timelineDefineAsShown
+  - action:setSelectedMarchersToPreviousPage
+  - action:setAllMarchersToPreviousPage
+  - action:timelineUnsetHere
+  - i18n:timeline.terms
+  - i18n:toolbar.alignment
+sidebar:
+  order: 6
+---
+
+import Media from "@/components/docs/Media.astro";
+import Kbd from "@/components/docs/Kbd.astro";
+import Ui from "@/components/docs/Ui.astro";
+import Term from "@/components/docs/Term.astro";
+import InShort from "@/components/docs/InShort.astro";
+
+<InShort>Select the marchers, right-click the page's box and select <Ui k="actions.batchEdit.clearPage" values={{ page: "N" }} /> (<Kbd action="setSelectedMarchersToPreviousPage" />) to put them back where the page before left them, or <Ui k="timeline.terms.defineAsShown" /> to lock them where they stand.</InShort>
+
+These commands change a marcher's state on a page, <Term id="defined">Defined</Term> or Not defined. [Defined, Held, Not defined](/guides/timeline/defined-held-not-defined/) explains the states and what they do to later pages.
+
+<Media
+  id="timeline-clear-page-menu"
+  alt="The right-click menu of Page 4's box with four trumpet marchers selected who are Defined there: Split 4 selected into new move, Define as shown (greyed out, as they're already Defined), Hold from last keyframe, Clear Page 4, Subset, Delete page, and Delete page and its moves."
+/>
+
+## Clear a page's positions
+
+<Ui k="timeline.terms.clearThisPage" /> takes the marchers' positions off the page, so they're Not defined there again and stand where the page before left them. It also takes away a hold on the page, so it's how you remove one.
+
+1. Select the marchers. To clear the page for everyone, select nobody.
+2. Right-click the page's box and select <Ui k="actions.batchEdit.clearPage" values={{ page: 3 }} /> (with the page's number, and "(all marchers)" after it when nobody is selected), or press <Kbd action="setSelectedMarchersToPreviousPage" /> for the selected marchers or <Kbd action="setAllMarchersToPreviousPage" /> for everyone.
+
+The same command is in the inspector, as <Ui k="toolbar.alignment.selectedMarchers" /> › <Ui k="actions.batchEdit.clearPage" values={{ page: "N" }} />, and for every marcher in the toolbar's <Ui k="inspector.shape.alignmentTab" /> tab, under <Ui k="toolbar.alignment.allMarchers" />.
+
+The first page has no page before it, so it can't be cleared: there the command is greyed out and says <Ui k="actions.batchEdit.noPageBefore" />.
+
+A hold that grew out of the cleared page's keyframe goes too, and a message says so. Later pages stay where they were, unless you choose the item ending in "move back too"; see [Later pages keep where they were](/guides/timeline/defined-held-not-defined/#later-pages-keep-where-they-were).
+
+## Remove one position
+
+<Ui k="timeline.terms.removeKeyframe" /> takes away one position at one count, where Clear this page works on a whole page. Use it on a <Term id="keyframe">keyframe</Term> in the middle of a page.
+
+1. Select the marchers.
+2. Right-click the diamond at the count and select <Ui k="timeline.terms.removeKeyframe" />.
+
+The marchers no longer stop at that spot: they walk from the keyframe before it to the keyframe after it. Removing the keyframe a hold grows out of removes the hold too. In Basic, a position in the middle of a page is a tick instead; see [Set a position in the middle of a page](/guides/timeline/moves/#set-a-position-in-the-middle-of-a-page-basic).
+
+## Lock marchers where they stand
+
+<Ui k="timeline.terms.defineAsShown" /> makes Not defined marchers Defined where they stand now, so later changes to earlier pages no longer move them on this page. Held marchers stay Held.
+
+1. Select the marchers.
+2. Right-click the page's box, or the dashed line on it, and select <Ui k="timeline.terms.defineAsShown" />.
+
+Dragging a Not defined marcher also makes it Defined, at the spot you drag it to.
+
+## Related
+
+- [Defined, Held, Not defined](/guides/timeline/defined-held-not-defined/): what each state does when you change an earlier page.
+- [Make marchers stand still](/guides/timeline/holds/): hold marchers, and end a hold at a count.
+- [Move marchers](/guides/marchers/move-marchers/): drag and nudge marchers, which makes them Defined.

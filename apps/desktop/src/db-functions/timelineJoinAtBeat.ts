@@ -1,4 +1,5 @@
 import { and, eq, inArray } from "drizzle-orm";
+import { refuseTrailsInMoves } from "./timelineTrails";
 import { schema } from "@/global/database/db";
 import type { DbTransaction } from "./types";
 import { readPageGrid } from "./timelineRipple";
@@ -19,6 +20,7 @@ import {
     type MoveMemberSkip,
     type RemovalPlan,
 } from "./timelineMoveCuts";
+import { refuseRoutesInMoves } from "./timelineRoutes";
 
 /**
  * **Remove keyframe joins the halves after a split** (holds README decision 14, #470). When
@@ -138,6 +140,10 @@ export async function joinMovesAtInTransaction({
             removed,
         )) {
             if (starting.some((id) => !removed.has(id))) continue;
+            // AP-R6 (spec v0.9 step 1): the join doesn't keep a drawn path yet
+            await refuseRoutesInMoves(tx, [nextId]);
+            // AP-T5 (pathways step 4): nor a follow move's trail
+            await refuseTrailsInMoves(tx, [nextId]);
             // `movesStartingAt` just read the move, in this transaction
             const next = (await readTimeline(tx, nextId))!;
             const why = await fitMoveInTransaction({

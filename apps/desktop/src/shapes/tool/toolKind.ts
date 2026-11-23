@@ -67,6 +67,11 @@ export interface ToolEnv {
     readonly pivot?: Pivot;
     /** Where marchers stand, for a dragged pivot to snap to (#350); none when absent */
     readonly pivotSnaps?: () => readonly XY[];
+    /**
+     * Where every marcher stands, and nothing else: what a mirror point snaps to (Paste
+     * mirrored). Not the open shape's spots, which move with the point. None when absent.
+     */
+    readonly marcherSnaps?: () => readonly XY[];
     /** The box's ratio lock: changing one spacing changes the other in proportion */
     readonly ratioLocked?: boolean;
     /** An Arc's lock: changing its width changes its depth in proportion, and back (#634) */
@@ -671,6 +676,12 @@ export interface ToolKind<P> {
      */
     fromFrame(frame: ShapeFrame, n: number, env: ToolEnv): P;
     /**
+     * The shape laid out for `n` marchers in the space it takes with `from` (a paste onto another
+     * number of marchers, #961; owner 2026-11-22): its settings, center, turn and flip kept, its
+     * spacing whatever that takes. Absent: its own params are laid out for the count.
+     */
+    atCount?(params: P, from: number, n: number, env: ToolEnv): P;
+    /**
      * The shape its picture shows (`shapePreview`), when filling a square with {@link fromFrame}
      * wouldn't read as the kind: the Line's zigzag and the Curve's wave (owner, 2026-10-31)
      */
@@ -694,6 +705,18 @@ export interface ToolKind<P> {
      * offers no Recalculate, and it isn't saved to the library, which keeps no spots
      */
     readonly asIs?: boolean;
+    /**
+     * Placing it saves no recipe: its marchers go to its spots and stay plain marchers (loose dots
+     * pasted from the clipboard, #961). It isn't read back from recipes or offered by a picker.
+     */
+    readonly loose?: boolean;
+    /**
+     * Spots nobody takes (loose dots pasted onto fewer marchers, #961): drawn as empty rings
+     * while it's open
+     */
+    emptySpots?(params: P, n: number): readonly XY[];
+    /** The params as placing saves them, when the open shape holds more than a recipe keeps */
+    forPlacing?(params: P): P;
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any

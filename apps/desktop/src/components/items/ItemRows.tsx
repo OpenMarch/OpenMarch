@@ -37,7 +37,7 @@ export function ShowNamesSwitch({
         uiSettings.propNameOverrides[id] ?? uiSettings.showPropNames;
     const allShown = items.every((item) => nameShown(item.id));
     return (
-        <label className="text-text/70 flex items-center justify-between px-4 pb-4 text-sm">
+        <label className="text-text/70 text-body flex items-center justify-between px-4 pb-4">
             <T keyName="props.showNames" />
             <Switch
                 checked={allShown}
@@ -125,7 +125,7 @@ export function ItemRow({
                             </LockSimpleIcon>
                         )}
                     </span>
-                    <span className="text-text/50 text-sm">{subtitle}</span>
+                    <span className="text-text/50 text-body">{subtitle}</span>
                 </div>
             </div>
             <div className="flex gap-4">

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it as plainIt } from "vitest";
 import { DbConnection, describeDbTests } from "@/test/base";
 import { createMarchers, getMarchers } from "@/db-functions/marcher";
+import { createItems } from "@/db-functions/items";
 import { deletePages } from "@/db-functions/page";
 import { moveMarchersOnPage } from "@/db-functions/timelineMoves";
 import type Page from "@/global/classes/Page";
@@ -142,6 +143,55 @@ describeDbTests("readTimelineExportPositions", (it) => {
             x + 24,
             9,
         );
+    });
+
+    // App triage reports #6 and #7 (#1177): every export of a show with an item failed
+    it("leaves items out of the ids it checks, so a show with props exports", async ({
+        db,
+        marchersAndPages: _,
+    }) => {
+        const pages = await sortedPages(db);
+        const [prop, equipment] = await createItems({
+            db,
+            newItems: (["prop", "equipment"] as const).map((kind) => ({
+                kind,
+                home: [0, 0],
+                beatId: pages[0]!.beats[0]!.id,
+                geometry: { outlineType: "rectangle", width: 1, depth: 1 },
+            })),
+        });
+        const itemIds = [prop!.marcher_id, equipment!.marcher_id];
+        const marchers = await getMarchers({ db });
+        const byId = (a: number, b: number) => a - b;
+        const performerIds = marchers.map((m) => m.id).sort(byId);
+        for (const id of itemIds) expect(performerIds).not.toContain(id);
+
+        const read = await readTimelineExportPositions(db);
+        expect([...read.marcherIds].sort(byId)).toEqual(performerIds);
+
+        const positions = await readExportPositions({
+            db,
+            rendered: { pages, marchers },
+            showChangedMessage: "show changed",
+        });
+        expect(Object.keys(positions.marcherPagesByPage)).toHaveLength(
+            pages.length,
+        );
+
+        // A performer added after React read its lists is still caught in a show with items
+        await createMarchers({
+            db,
+            newMarchers: [
+                { section: "Flute", drill_prefix: "N", drill_order: 1 },
+            ],
+        });
+        await expect(
+            readExportPositions({
+                db,
+                rendered: { pages, marchers },
+                showChangedMessage: "show changed",
+            }),
+        ).rejects.toThrow(new ShowChangedDuringExportError("show changed"));
     });
 
     it("readExportPositions rejects lists from before the show changed", async ({

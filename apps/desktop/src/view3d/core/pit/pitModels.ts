@@ -170,25 +170,46 @@ export const PIT_NEAR_M = 30;
 export const PIT_FAR_M = 38;
 
 /**
+ * How far out (m) per meter of its size a model keeps its detail: the pit's own models, about
+ * 1.5 m across, switch at {@link PIT_NEAR_M}. A larger imported model (a 4.5 m car, a scaffold)
+ * stays as large on screen for longer, so it keeps its detail as far out as one that size
+ * would (#1180).
+ */
+export const PIT_NEAR_PER_M = 20;
+/**
+ * …but never past this (m): a huge prop, or one kept at its Original millions of triangles,
+ * still goes to its far copy across the field
+ */
+export const PIT_NEAR_MAX_M = 100;
+
+/**
  * Whether a model at (`x`, `z`) draws in detail, from its distance to the camera at about
- * keyboard height and whether it did last frame (`was`): the gap between {@link PIT_NEAR_M} and
- * {@link PIT_FAR_M} keeps one at the edge from flickering, as instruments do (`hornSet.ts`).
+ * keyboard height and whether it did last frame (`was`): the gap between the near and far
+ * distances keeps one at the edge from flickering, as instruments do (`hornSet.ts`). Both grow
+ * with the model's drawn size (`sizeM`, its longest side) past the pit's own models', up to
+ * {@link PIT_NEAR_MAX_M}.
  */
 export function isNearPitItem(
     x: number,
     z: number,
     camera: readonly [number, number, number],
     was: boolean | undefined,
+    sizeM = 0,
 ): boolean {
+    const near = Math.min(
+        PIT_NEAR_MAX_M,
+        Math.max(PIT_NEAR_M, sizeM * PIT_NEAR_PER_M),
+    );
+    const far = near * (PIT_FAR_M / PIT_NEAR_M);
     const d = Math.hypot(x - camera[0], camera[1] - 1, z - camera[2]);
-    if (was === undefined) return d < (PIT_NEAR_M + PIT_FAR_M) / 2;
-    return was ? d < PIT_FAR_M : d < PIT_NEAR_M;
+    if (was === undefined) return d < (near + far) / 2;
+    return was ? d < far : d < near;
 }
 
 /**
- * Writes a model instance's matrix (column-major, as three stores it): real size, turned by the
- * item's 2D turn (degrees, clockwise on screen, so +X turns toward +Z) and standing at `center`
- * on `baseY`.
+ * Writes a model instance's matrix (column-major, as three stores it): `scale` times real size
+ * (an imported model sized to its Outline; built-ins are 1), turned by the item's 2D turn
+ * (degrees, clockwise on screen, so +X turns toward +Z) and standing at `center` on `baseY`.
  */
 export function writePitModelMatrix(
     out: Float32Array,
@@ -196,17 +217,18 @@ export function writePitModelMatrix(
     rotationDeg: number,
     center: { x: number; z: number },
     baseY: number,
+    scale = 1,
 ): void {
     const radians = (rotationDeg * Math.PI) / 180;
-    const cos = Math.cos(radians);
-    const sin = Math.sin(radians);
+    const cos = Math.cos(radians) * scale;
+    const sin = Math.sin(radians) * scale;
     const o = index * 16;
     out[o] = cos;
     out[o + 1] = 0;
     out[o + 2] = sin;
     out[o + 3] = 0;
     out[o + 4] = 0;
-    out[o + 5] = 1;
+    out[o + 5] = scale;
     out[o + 6] = 0;
     out[o + 7] = 0;
     out[o + 8] = -sin;

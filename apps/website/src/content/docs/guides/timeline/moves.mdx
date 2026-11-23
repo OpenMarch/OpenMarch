@@ -1,12 +1,13 @@
 ---
-title: Moves
-description: Make moves that start or end in the middle of a page or cross pages, and resize, split, merge, rename and isolate them.
+title: Make and change moves
+description: In Expert, make a move (a transition) that starts or ends mid-page or crosses pages, and resize, split, merge, rename or isolate it. In Basic, give marchers a position in the middle of a page.
 type: how-to
 covers:
   - apps/desktop/src/components/timeline/TimelineClipResize.tsx
   - apps/desktop/src/components/timeline/TimelineClipPeel.tsx
   - apps/desktop/src/components/timeline/TimelineRangeMenu.tsx
   - apps/desktop/src/components/timeline/TimelineIsolationBar.tsx
+  - apps/desktop/src/components/timeline/TimelineBasicLayers.tsx
   - apps/desktop/src/components/timeline/splitMergeMoves.ts
   - apps/desktop/src/components/timeline/timelineSplit.ts
   - apps/desktop/src/timeline/timelinePassThrough.ts
@@ -19,6 +20,7 @@ covers:
   - i18n:timeline.merge
   - i18n:timeline.clipResize
   - i18n:timeline.isolation
+  - i18n:timeline.basic.point
   - i18n:timeline.edit.passThrough
 sidebar:
   order: 4
@@ -27,44 +29,47 @@ sidebar:
 import Media from "@/components/docs/Media.astro";
 import Kbd from "@/components/docs/Kbd.astro";
 import Ui from "@/components/docs/Ui.astro";
+import Term from "@/components/docs/Term.astro";
+import InShort from "@/components/docs/InShort.astro";
 
-A move is a stretch of time in which marchers go from one place to another. Every page has a move of its own, and that's all most drill needs. In Expert you can also make moves that start or end in the middle of a page, run across page flags, or cover only some of the marchers on a page, and change each one's timing on its own. [How the timeline works](/guides/timeline/how-the-timeline-works/) explains how moves and pages fit together.
+<InShort>In Expert, drag the start flag to where the marchers should leave, then drag the marchers on the field; a bar for the new move appears under the music. In Basic, put the playhead on a count and drag the marchers to give them a position there.</InShort>
 
-Everything on this page except the first section needs Expert mode. See [Basic and Expert](/guides/start/basic-and-expert/).
+Every page has a <Term id="move">move</Term> of its own, and that's all most drill needs. In Expert you can also make moves that start or end in the middle of a page, run past a page's flag, or cover only some of the marchers on a page, and change each one's timing on its own. [How the timeline works](/guides/timeline/how-the-timeline-works/#moves) explains how moves and pages fit together.
 
-## Moves in Basic
-
-In Basic, each page's move takes marchers from the page before to the page's set. To have marchers arrive somewhere partway through a page, put the playhead on that count (click it in the page's box) and move them. The page's move splits at that count for those marchers: they reach the new spot at that count and the page's set at the page's end. A tick marks the count in the page box; to undo the split, right-click the tick and select <Ui k="timeline.basic.point.remove" />.
+Everything on this page except the last section needs Expert mode. See [Basic and Expert](/guides/start/basic-and-expert/).
 
 ## Make a move
 
-A move covers the counts between the start flag and the playhead. When those counts are exactly one page, your changes go into the page's move. When they start or end anywhere else, you get a new move.
+A move covers the counts between the <Term id="start-flag">start flag</Term> and the playhead. When those counts are exactly one page, your changes go into the page's move. When they start or end anywhere else, you get a new move.
 
-1. Select the page box where the move ends.
+1. Select the box of the page where the move ends.
 2. Drag the start flag to the count where the marchers should leave. To end the move before the page's set, drag the playhead too.
 3. [Select the marchers](/guides/marchers/select-marchers/) and drag them to where they should be at the playhead.
 
-A bar named "Move 1" (or the next free number) appears under the music, from the start flag to the playhead. Up to the start flag's count the marchers move as they did before; from there they walk to their new spot, arriving at the playhead. If you see a <Ui k="timeline.lanes.movesHidden" /> strip instead, the <Ui k="timeline.lanes.moves" /> lane is hidden: click the strip to show it ([Lanes](/guides/timeline/how-the-timeline-works/#lanes)).
+A bar named "Move 1" (or the next free number) appears under the music, from the start flag to the playhead. Up to the start flag the marchers move as they did before; from there they walk to their new spot, arriving at the playhead. If the move ends before the page's flag, they then carry on with the page's move and still reach the page's set. If you see a <Ui k="timeline.lanes.movesHidden" /> strip instead, the <Ui k="timeline.lanes.moves" /> lane is hidden: click the strip to show it ([Lanes](/guides/timeline/how-the-timeline-works/#lanes)).
 
 <Media
   id="timeline-make-move"
   alt="Page 3 is selected with four brass marchers selected on the field. The start flag is dragged four counts into Page 3, then the marchers are dragged toward the front sideline. A bar named Move 1 appears under the waveform, from count 5 of Page 3 to its end."
 />
 
-You can also set the counts first: hold <Kbd keys="Mod" gesture="drag" /> and drag along the timeline to put the start flag and the playhead at the two ends of the drag.
-
-A move you make takes over from the page's move for its marchers, on its counts. If it ends before the page's move does, the marchers then continue with the page's move and still reach the page's set.
+To set the counts first, hold <Kbd keys="Mod" gesture="drag" /> and drag along the timeline: the start flag and the playhead go to the two ends of the drag. The drag also turns <Ui k="timeline.loop.label" plain /> on, so Play repeats that stretch; press <Kbd action="toggleLoop" /> to turn it off.
 
 ## Move marchers across several pages
 
-1. Select the first page's box, then <Kbd keys="Shift" gesture="click" /> the box of the last page. The start flag and the playhead now span all of them, and the line of text over the field says which sets are in between, for example "through set 5".
+1. Select the first page's box, then <Kbd keys="Shift" gesture="click" /> the box of the last page. The start flag and the playhead now span all of them, and the editing line over the field names the sets in between, for example "through set 5".
 2. Drag the selected marchers to where they should be at the end.
 
-The marchers walk straight from where they were to the new spot, through the pages in between, instead of stopping at each page's set. A message says which page ends they now walk straight through, for example "Now walks straight through the end of Page 5", with a button to stop there instead. If you press it, the marchers stop at each page's set on the way, as before.
+The marchers walk straight from where they were to the new spot instead of stopping at each page's set. A message names each page whose flag they now walk straight through, for example "Now walks straight through the end of Page 5", with a button to stop there instead.
 
 <Media
   id="timeline-cross-pages"
-  alt="Pages 5 and 5A are selected together. Three marchers are dragged, and a bar named Move 1 appears across both pages. A message reads Now walks straight through the end of Page 5, with a button to stop at the end of Page 5."
+  alt="Pages 5 and 5A are selected together. Three marchers are dragged on the field, and a bar named Move 1 appears across both pages."
+/>
+
+<Media
+  id="timeline-cross-pages-message"
+  alt="The message that follows: Now walks straight through the end of Page 5, with a button, Stop at the end of Page 5."
 />
 
 ## Give some marchers a move of their own
@@ -72,32 +77,32 @@ The marchers walk straight from where they were to the new spot, through the pag
 To change the timing of some of the marchers in a move without changing the others:
 
 1. Select those marchers on the field.
-2. Right-click the move's bar, or the page's box for a page's move, and select <Ui k="timeline.split.menuNone" />. The menu shows how many marchers are selected, for example "Split 4 selected into new move".
+2. Right-click the move's bar, or the page's box for a page's move, and select <Ui k="timeline.split.menuNone" />. The menu shows how many are selected, for example "Split 2 selected into new move".
 
 The selected marchers get a new move with the same counts and the same motion, and nothing moves on the field. The new move opens on its own (see [Work on one move alone](#work-on-one-move-alone)), so you can resize or split it without touching the others. Press <Kbd keys="Escape" /> when you're done.
 
+Dragging a move's bar down into the empty space below it does the same for the selected marchers in it.
+
 ## Change when a move starts and ends
 
-Drag either end of the move's bar. Dragging an end changes how many counts the move takes; the marchers still go to the same spots.
+Drag either end of the move's bar. The move takes more or fewer counts; the marchers still go to the same spots. While you drag, a label shows the counts before and after. Hold <Kbd keys="Alt" gesture="drag" /> to put the end on any count.
 
 <Media
   id="timeline-resize-move"
   alt="Move 1's right end is dragged two counts into Page 4, then its left end is dragged back to the start of Page 3. The bar grows each time, and a label shows its counts changing."
 />
 
-While you drag, a label shows the counts before and after, and the end lands on page lines, the playhead and measures when it's near one. Hold <Kbd keys="Alt" gesture="drag" /> to put it on any count. When the start flag or the playhead is on the end you want, dragging there moves the line instead; select another page first to move the lines out of the way. An end stops where it would run into another of the marchers' moves, and the label says which.
+An end stops where it would run into another of the marchers' moves, and the label says which. When the start flag or the playhead is on the end you want, dragging there moves the line instead; select another page first to move the lines out of the way.
 
-Drag the middle of the bar sideways to move the whole move earlier or later.
+Drag the middle of the bar sideways to move the whole move earlier or later. To change when a page's move ends, drag the page's flag; see [Change how many counts a page has](/guides/timeline/pages/#change-how-many-counts-a-page-has).
 
-To change when a page's move ends, move the page's flag instead; see [Pages](/guides/timeline/pages/#change-how-many-counts-a-page-has).
+## Use the move's menu
 
-## The move's menu
-
-Right-click a move's bar, or select the ⋯ button on it, to open its menu. On a tablet, tap the bar to select it first: the selected bar shows its ⋯ button and its ends, and a finger near either one takes it (see [On a tablet](/guides/timeline/how-the-timeline-works/#on-a-tablet)).
+Right-click a move's bar, or select the ⋯ button on it, to open its menu.
 
 <Media
   id="timeline-move-menu"
-  alt="The right-click menu of the bar named Move 1, with Edit move, Select marchers, Rename move, Split at playhead, Split 4 selected into new move, Merge into Page 3 fit to its counts, and Delete move. The split and merge items are greyed out, each with a question mark that explains why."
+  alt="The right-click menu of the bar named Move 1, with the playhead inside the move and two of its marchers selected: Edit move, Select marchers, Rename move, Split at playhead, Split 2 selected into new move, Merge into Page 3 fit to its counts (greyed out, with a question mark that explains why), and Delete move."
 />
 
 - <Ui k="timeline.moveMenu.edit" /> opens the move on its own; see [Work on one move alone](#work-on-one-move-alone).
@@ -117,15 +122,22 @@ The move becomes two moves that meet at the playhead, and the marchers keep thei
 
 The command palette (<Kbd action="openCommandPalette" />) has the same command as <Ui k="actions.timeline.splitMoveAtPlayhead" />. If several moves cross the playhead, it asks you to right-click the one to split.
 
+A page's own move has no bar to split. To cut it at a count, add a page there with [Create page at playhead](/guides/timeline/pages/#add-a-page-at-the-playhead).
+
 ## Merge moves
 
-To put the marchers of one move into another, drag the move's bar onto the other move's bar, or onto a page's box. The target is outlined with what will happen, for example "Merge into Page 3", and releasing merges them. A move's menu also has <Ui k="timeline.merge.menuInto" values={{ target: "Page 3" }} /> for each page it overlaps.
+Drag the move's bar onto another move's bar, or up onto a page's box. The target is outlined with what will happen, for example "Merge into Page 3", and releasing merges them. The move's menu also has <Ui k="timeline.merge.menuInto" values={{ target: "Page 3" }} /> for each page it overlaps.
+
+<Media
+  id="timeline-merge"
+  alt="Pages 2 to 4 with a bar for four brass marchers' own move under Page 3. The bar is dragged up onto Page 3's box, which is outlined with Merge into Page 3; on release the bar is gone and its marchers are back in Page 3's move."
+/>
 
 If the two moves have different counts, the merged marchers are fitted to the target's counts: they reach the same spots, at the target's end. The menu item says so: <Ui k="timeline.merge.menuIntoFit" values={{ target: "Page 3" }} />. A merge is refused, with the reason, when a marcher is in both moves.
 
 ## Work on one move alone
 
-Double-click a move's bar or a page's box, or select <Ui k="timeline.moveMenu.edit" /> in its menu. On a tablet, the selected page's ⋯ button opens a menu with <Ui k="timeline.moveMenu.edit" /> for the page's move. The move is isolated:
+Double-click a move's bar or a page's box, or select <Ui k="timeline.moveMenu.edit" /> in its menu. The move is isolated:
 
 - Everyone not in the move is dimmed and can't be selected.
 - The move's paths are drawn on the field, and dotted gray paths show where the move would take marchers who left it.
@@ -134,14 +146,30 @@ Double-click a move's bar or a page's box, or select <Ui k="timeline.moveMenu.ed
 
 <Media
   id="timeline-isolate"
-  alt="Move 1 isolated: the field's other marchers are faded, the four marchers in the move have lines back to where the move starts, drawn red because their steps are too large, and a bar at the top of the field reads Isolated, Page 3, counts 5 to 10, 4 marchers, with a Done button."
+  alt="Move 1 isolated: a bar at the top of the field reads Isolated, Page 3, counts 5 to 10, 4 marchers, with a Done button. Below it the other marchers are faded, and the four marchers in the move have lines back to where the move starts."
 />
 
 Select **Done** in that bar, or press <Kbd keys="Escape" />, to go back.
+
+## Set a position in the middle of a page (Basic)
+
+In Basic, marchers can arrive somewhere partway through a page and still reach the page's set at its end.
+
+1. Click the count on the measure numbers under the page's box to put the playhead there.
+2. [Select the marchers](/guides/marchers/select-marchers/) and drag them to where they should be at that count.
+
+The page's move splits at that count for those marchers: they reach the new spot at that count and the page's set at the page's flag. While they're selected, a thick tick in the accent color runs down through the page's box at that count, under a diamond. To take the position away, right-click the tick and select <Ui k="timeline.basic.point.remove" />. When the playhead is on the tick's count, as it is right after you move marchers there, it covers the tick: right-click the playhead instead, and its menu has <Ui k="timeline.basic.point.remove" /> too. On a touch screen, press and hold the tick or the playhead.
+
+If the marchers are <Term id="held">Held</Term> from that count, <Ui k="timeline.basic.point.remove" plain /> is dimmed and says why: remove the hold first.
+
+<Media
+  id="timeline-basic-point"
+  alt="The timeline in Basic, Pages 2 to 4, with the playhead later in Page 3. Under a diamond at count 4 of Page 3, a thick tick runs down through the page's box: the selected brass marchers have a position of their own there. The pointer is on the tick, and its right-click menu is open on Remove this count's position."
+/>
 
 ## Related
 
 - [How the timeline works](/guides/timeline/how-the-timeline-works/): pages, moves and the start flag.
 - [Defined, Held, Not defined](/guides/timeline/defined-held-not-defined/): keyframes, and what happens on the pages after a move.
 - [See where marchers go](/guides/timeline/see-where-marchers-go/): show paths while you work on a move.
-- [Pages](/guides/timeline/pages/): move a page's flag to change its counts.
+- [Add and change pages](/guides/timeline/pages/): move a page's flag to change its counts.

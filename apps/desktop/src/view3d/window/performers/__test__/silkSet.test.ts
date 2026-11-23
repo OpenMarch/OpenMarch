@@ -189,8 +189,12 @@ describe("silkGrid", () => {
 
 describe("silkMaterial", () => {
     it("is cloth: not metal, double-sided", () => {
+        const uniform = { value: null };
         const m = silkMaterial({
-            uniform: { value: null },
+            uniform,
+            bindUniforms: (u: Record<string, unknown>) => {
+                u.uComposed = uniform;
+            },
         } as unknown as Composer);
         expect(m.metalness).toBe(0);
         expect(m.side).toBe(THREE.DoubleSide);

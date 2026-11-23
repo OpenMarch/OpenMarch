@@ -281,6 +281,13 @@
             "label": "Help",
             "items": [
                 {
+                    "label": "Get Help…",
+                    "keys": [
+                        "F1"
+                    ],
+                    "action": "openHelp"
+                },
+                {
                     "label": "Keyboard Shortcuts",
                     "keys": [
                         "?"
@@ -519,6 +526,13 @@
         {
             "label": "Help",
             "items": [
+                {
+                    "label": "Get Help…",
+                    "keys": [
+                        "F1"
+                    ],
+                    "action": "openHelp"
+                },
                 {
                     "label": "Keyboard Shortcuts",
                     "keys": [

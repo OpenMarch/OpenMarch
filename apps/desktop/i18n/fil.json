@@ -115,7 +115,9 @@
             "loadDialogue": "Buksan ang file…",
             "newDialogue": "Bagong file…",
             "openExport": "I-export…",
-            "saveDialogue": "Mag-save ng kopya…"
+            "saveDialogue": "Mag-save ng kopya…",
+            "removeUnusedAssets": "Alisin ang mga hindi ginagamit na asset…",
+            "removeUnusedAssetsKeywords": "alisin burahin linisin hindi ginagamit asset modelo na-import laki"
         },
         "labelWithVariant": "{label} ({variant})",
         "movement": {
@@ -243,12 +245,18 @@
             "openFrontEnsemble": "Buksan ang front ensemble at mga podium",
             "openFrontEnsembleKeywords": "pit front ensemble podium drum major marimba vibraphone percussion speaker equipment preset kagamitan instrumento",
             "addFrontEnsembleEquipment": "Magdagdag ng kagamitan ng front ensemble o podium",
-            "addFrontEnsembleEquipmentKeywords": "pit podium drum major marimba vibraphone percussion speaker mixer tower stepladder instrument kagamitan instrumento tore hagdan"
+            "addFrontEnsembleEquipmentKeywords": "pit podium drum major marimba vibraphone percussion speaker mixer tower stepladder instrument kagamitan instrumento tore hagdan",
+            "openAssets": "Buksan ang mga asset ng palabas",
+            "openAssetsKeywords": "asset mga modelo na-import file credits lisensya laki imbakan library"
         },
         "items": {
             "edit": "I-edit ang napiling prop o kagamitan",
             "editNamed": "I-edit ang {name}",
-            "editKeywords": "edit settings properties prop equipment podium instrument name size lock i-edit mga setting kagamitan instrumento pangalan laki i-lock"
+            "editKeywords": "edit settings properties prop equipment podium instrument name size lock i-edit mga setting kagamitan instrumento pangalan laki i-lock",
+            "importModel": "Mag-import ng 3D model…",
+            "importModelKeywords": "import 3d model glb gltf prop upload file object i-import mag-import modelo bagay",
+            "placeImportedModel": "Ilagay ang na-import na model",
+            "placeImportedModelKeywords": "place imported model prop 3d custom glb ilagay na-import"
         }
     },
     "analyticsOptIn": {
@@ -1434,6 +1442,7 @@
         "hide": "Itago sa field",
         "name": "Pangalan",
         "offField": "Wala sa field sa playhead. Ilipat ang playhead sa bilang kung saan nasa field ang prop para mabago ang outline nito.",
+        "keepsProportions": "Sabay na nagbabago ang lapad, lalim at taas, kaya napapanatili ng modelo ang hugis nito.",
         "outline": {
             "arc": "Arko",
             "circle": "Bilog",
@@ -1469,7 +1478,164 @@
         },
         "locked": "Naka-lock",
         "lockLabel": "Naka-lock",
-        "lockHint": "Iisang posisyon sa buong palabas"
+        "lockHint": "Iisang posisyon sa buong palabas",
+        "imported": {
+            "title": "Na-import",
+            "import": "I-import…",
+            "empty": "Mag-import ng .glb o .gltf na model, o i-drop ito sa window, para mailagay ito tulad ng ibang prop.",
+            "place": "Ilagay ang {name}",
+            "manage": "Pamahalaan ang mga asset"
+        },
+        "import": {
+            "title": "Mag-import ng model",
+            "pictureAlt": "Ang model kung titingnan mula sa audience",
+            "working": "Inihahanda ang model…",
+            "orient": {
+                "detail": "Dapat nakaharap sa audience ang harap nito, at nakatayo nang tama."
+            },
+            "rotateAxis": "Iikot sa {axis}",
+            "detail": {
+                "title": "Detalye",
+                "levels": {
+                    "light": "Magaan",
+                    "detailed": "Detalyado",
+                    "original": "Orihinal"
+                },
+                "cost": "{triangles} triangle · nagdadagdag ng {size} sa show · bawat kopya ay iginuguhit na parang {performers, plural, =1 {# performer} other {# performer}}",
+                "heavy": "Ayos sa karamihan ng bagong computer. Kung nagha-hang ang 3D View, gumuguhit ito ng magaang kopya, na nakatabi rin sa show."
+            },
+            "compare": {
+                "open": "Ikumpara sa 3D…",
+                "title": "Ikumpara sa 3D",
+                "description": "I-drag para tumingin sa paligid, saka magpalit ng bersyon para makita ang binago ng pagpapasimple.",
+                "which": "Bersyong ipapakita",
+                "lightCopy": "Magaang kopya",
+                "hint": "I-drag para iikot, i-scroll para mag-zoom",
+                "stands": "Mula sa stands",
+                "closeUp": "Malapitan",
+                "drawFailed": "Hindi maiguhit ang bersyong ito."
+            },
+            "size": {
+                "title": "Laki",
+                "value": "{width} × {depth} m, {height} m ang taas",
+                "question": "Ito ba ang totoong laki nito? Kung hindi, piliin ang unit na ginamit sa paggawa ng file.",
+                "suggested": "Mukhang ginawa ito sa {unit}, kaya na-convert ito. Tingnan ang laki."
+            },
+            "units": {
+                "label": "Ginawa sa",
+                "none": "m",
+                "cm": "cm",
+                "in": "in",
+                "ft": "ft"
+            },
+            "groups": {
+                "cantImport": "Hindi ma-import",
+                "fixed": "Inayos na para sa iyo",
+                "notes": "Mga tala"
+            },
+            "tryAgain": "Subukang muli",
+            "name": "Pangalan",
+            "saveFailed": "Hindi naidagdag ang model sa palabas.",
+            "cancel": "Kanselahin",
+            "add": "Idagdag sa palabas",
+            "credits": {
+                "title": "Lisensya at credits",
+                "unknown": "Hindi alam",
+                "proprietary": "Nakalaan ang lahat ng karapatan",
+                "license": "Lisensya",
+                "author": "May-akda",
+                "sourceUrl": "Pinagmulan",
+                "attribution": "Pagkilala",
+                "rights": "Mag-import lang ng mga model na may karapatan kang gamitin."
+            },
+            "cantImport": {
+                "noModelFile": {
+                    "title": "Walang model sa mga file",
+                    "detail": "Pumili ng .glb file, o ng .gltf kasama ang mga file na binabanggit nito."
+                },
+                "severalModelFiles": {
+                    "title": "Higit sa isang model",
+                    "detail": "Isa-isang i-import: {names}"
+                },
+                "tooLarge": {
+                    "title": "Masyadong malaki ang mga file",
+                    "detail": "{size} MB, lampas sa {limit} MB na limit"
+                },
+                "unreadable": {
+                    "title": "Hindi mabasa ang file"
+                },
+                "externalUri": {
+                    "title": "Naglo-load ang model ng mga file mula sa internet",
+                    "detail": "Binabanggit nito ang {uri}. I-download ang file at piliin ito kasama ng model."
+                },
+                "outsidePickedFiles": {
+                    "title": "May binabanggit ang model na file sa labas ng folder nito",
+                    "detail": "Binabanggit nito ang {uri}."
+                },
+                "missingFile": {
+                    "title": "Nawawalang file: {uri}",
+                    "detail": "Piliin ito kasabay ng model file."
+                },
+                "requiredExtension": {
+                    "title": "Kailangan ng model ang mga feature na hindi mabasa ng OpenMarch",
+                    "detail": "Kailangan: {extensions}"
+                },
+                "validatorErrors": {
+                    "title": "{count, plural, one {May # error ang file} other {May # error ang file}}"
+                },
+                "imageTooLarge": {
+                    "title": "Masyadong malaki ang isang texture: {image}",
+                    "detail": "{width} × {height} pixel; {limit} ang limit sa bawat gilid."
+                },
+                "imageUnreadable": {
+                    "title": "Hindi mabasa ang isang texture: {image}"
+                },
+                "tooManyTriangles": {
+                    "title": "Sobrang detalyado",
+                    "detail": "{triangles} triangle; ang pinakamarami na kaya nitong i-import ay {limit}."
+                },
+                "rigged": {
+                    "title": "Hindi suportado ang mga rigged na model",
+                    "detail": "Mag-import ng bersyong hindi gumagalaw."
+                },
+                "noGeometry": {
+                    "title": "Walang maiguguhit sa file"
+                },
+                "timedOut": {
+                    "title": "Masyadong natagalan",
+                    "detail": "Itinigil pagkalipas ng {seconds} segundo."
+                },
+                "failed": {
+                    "title": "Nagkaproblema habang inihahanda ito"
+                }
+            },
+            "fixed": {
+                "texturesShrunk": {
+                    "title": "{count, plural, one {Pinaliit ang # texture sa {cap} px} other {Pinaliit ang # texture sa {cap} px}}"
+                },
+                "dracoDecoded": "Binuksan ang Draco compression",
+                "meshoptDecoded": "Binuksan ang meshopt compression",
+                "instancesExpanded": "Ginawang simpleng hugis ang mga paulit-ulit na kopya",
+                "extensionsDropped": "Inalis ang mga feature na hindi nito kailangan",
+                "contentDropped": {
+                    "title": "Inalis ang hindi ginagamit ng prop",
+                    "animations": "{count, plural, one {# animation} other {# animation}}",
+                    "cameras": "{count, plural, one {# camera} other {# camera}}",
+                    "morphTargets": "{count, plural, one {# shape key} other {# shape key}}",
+                    "scenes": "{count, plural, one {# iba pang scene} other {# iba pang scene}}"
+                },
+                "pivotMoved": "Inilapag sa lupa sa gitna nito"
+            },
+            "notes": {
+                "validatorWarnings": "{count, plural, one {May # babala ang file} other {May # babala ang file}}",
+                "sizeOutOfRange": {
+                    "title": "Hindi karaniwang laki para sa prop",
+                    "detail": "{largest} m ang pinakamahabang gilid nito; karaniwang {min} hanggang {max} m ang mga prop."
+                },
+                "overTriangleCap": "Detalyado pa rin: {triangles} triangle (ang target ay {cap})"
+            }
+        },
+        "modelMissing": "Wala na sa palabas ang model ng prop na ito, kaya iginuguhit ito bilang block."
     },
     "frontEnsemble": {
         "title": "Front ensemble at mga podium",
@@ -3068,7 +3234,14 @@
             "pickSeatTooltip": "Pumili ng upuan: i-click ang isang upuan sa stands para doon maupo",
             "venue": "Venue",
             "freeCamera": "Malayang view",
-            "director": "Director"
+            "director": "Director",
+            "followPerformer": "Sundan ang isang miyembro",
+            "followPerformerTooltip": "Sundan ang isang miyembro: i-click ang isang miyembro para sundan siya",
+            "following": "Sinusundan si {name}",
+            "povOf": "View ni {name}",
+            "pointOfView": "Point of view",
+            "pointOfViewTooltip": "Point of view: tumingin sa mga mata ng miyembro",
+            "stopFollowing": "Itigil ang pagsunod"
         },
         "readout": {
             "count": "Bilang {count} ng {total}",
@@ -3108,7 +3281,9 @@
             "brassFinish": "Finish ng brass",
             "tuba": "Mga tuba",
             "silkShape": "Hugis ng flag silk",
-            "silkArtwork": "Artwork ng flag silk"
+            "silkArtwork": "Artwork ng flag silk",
+            "followTurns": "Habang sumusunod: umikot kasama ng miyembro",
+            "povShowsBody": "Point of view: ipakita ang kanyang mga braso at instrumento"
         },
         "keys": {
             "playPause": "I-play o i-pause",
@@ -3117,14 +3292,16 @@
             "cameras": "Mga camera, ayon sa menu",
             "fullscreen": "Fullscreen",
             "crowd": "Ipakita o itago ang manonood",
-            "escape": "Kanselahin ang pagpili ng upuan, isara ang setting, lumabas sa fullscreen",
+            "escape": "Kanselahin ang pagpili, isara ang setting, itigil ang pagsunod, lumabas sa fullscreen",
             "orbit": "Umikot",
             "orbitOrRight": "Umikot, o i-drag gamit ang kanang button ng mouse",
             "panPlain": "I-pan",
             "zoomOrPinch": "Mag-zoom, o mag-pinch sa trackpad",
             "pan": "I-pan, o i-drag gamit ang kanang button ng mouse",
             "zoom": "Zoom",
-            "pausedPose": "Naka-pause: ipakita ang aktuwal na hakbang o ang closed na posisyon"
+            "pausedPose": "Naka-pause: ipakita ang aktuwal na hakbang o ang closed na posisyon",
+            "followPerformer": "Pumili ng miyembrong susundan",
+            "pointOfView": "Habang sumusunod: lumipat sa kanyang point of view at pabalik"
         },
         "keyNames": {
             "pair": "<first></first> / <second></second>"
@@ -4177,6 +4354,9 @@
         "error.failed": "Hindi naipadala ang ulat mo. Tingnan ang koneksyon mo at subukan ulit.",
         "attach.music.off": "Hindi ipinapadala ang musika.",
         "attach.music.on": "Ipinapadala rin ang musika.",
+        "attach.models": "Isama ang mga in-import na modelo",
+        "attach.models.off": "Hindi ipinapadala ang mga in-import na modelo, ang laki at detalye lang nila.",
+        "attach.models.on": "Ipinapadala rin ang mga in-import na modelo ({size}).",
         "sending.recording": "Ina-upload ang recording…",
         "sending.show_file": "Ina-upload ang palabas mo…",
         "sending.diagnostics": "Ina-upload ang diagnostics…",
@@ -4384,6 +4564,39 @@
             "mixed": "Magkakaiba",
             "add": "Magdagdag ng linya",
             "everyOther": "Panatilihin ang bawat ikalawa"
+        }
+    },
+    "assets": {
+        "title": "Mga asset",
+        "empty": "Wala pang na-import na asset ang palabas na ito. Mag-import ng 3D model mula sa panel na Props.",
+        "notes": {
+            "unused": "{count, plural, one {# asset ang hindi ginagamit} other {# asset ang hindi ginagamit}} saanman sa palabas · {size}",
+            "missing": "{count, plural, =1 {# prop ang gumagamit ng model na wala sa palabas na ito, kaya iginuguhit ito bilang block.} other {# prop ang gumagamit ng mga model na wala sa palabas na ito, kaya iginuguhit sila bilang mga block.}}",
+            "large": "Pinalalaki ng mga asset ang palabas na ito: {size}. Mas mabagal buksan, i-save at ibahagi ang malalaking palabas."
+        },
+        "removeUnused": {
+            "button": "Alisin ang hindi ginagamit…",
+            "title": "{count, plural, one {Alisin ang # hindi ginagamit na asset?} other {Alisin ang # hindi ginagamit na asset?}}",
+            "description": "Walang gumagamit sa mga ito sa palabas. Kapag inalis, liliit ang palabas nang {size}. Hindi ito maibabalik ng Undo.",
+            "none": "Ginagamit ang lahat ng asset, kaya walang aalisin.",
+            "cancel": "Kanselahin",
+            "confirm": "{count, plural, one {Alisin ang # asset} other {Alisin ang # asset}}"
+        },
+        "kind": {
+            "model": "3D model"
+        },
+        "uses": "{count, plural, =1 {Ginamit nang isang beses} other {Ginamit nang # beses}}",
+        "unused": "Hindi ginagamit",
+        "shareNote": "Hindi alam ang lisensya: maaaring wala kang karapatang ibahagi ito",
+        "size": {
+            "bytes": "{value} bytes",
+            "kb": "{value} KB",
+            "mb": "{value} MB",
+            "gb": "{value} GB"
+        },
+        "errors": {
+            "remove": "Hindi naalis ang mga hindi ginagamit na asset",
+            "credits": "Hindi na-save ang credits"
         }
     }
 }

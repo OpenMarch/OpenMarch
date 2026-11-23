@@ -156,7 +156,7 @@ function SeedMenu({
                         aria-label={`${label}: ${seed}`}
                         {...focus.trigger}
                         data-testid={testId}
-                        className="rounded-4 hover:text-accent hover:bg-fg-2 flex min-h-24 items-center px-2"
+                        className="rounded-4 hover:text-accent hover:bg-text/10 flex min-h-24 items-center px-2"
                     >
                         <CaretDownIcon size={10} />
                     </button>
@@ -244,7 +244,7 @@ function SeedMenu({
                             </Tip>
                         )}
                     </div>
-                    <p className="text-text/60 max-w-[15rem] text-xs">
+                    <p className="text-text/60 text-sub max-w-[15rem]">
                         {tolgee.t(
                             "shapes.edit.seed.hint",
                             "Same seed and count in the same shape: same spread. The spacing only scales it.",

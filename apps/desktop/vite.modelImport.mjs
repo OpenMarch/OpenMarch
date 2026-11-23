@@ -1,10 +1,7 @@
 // cspell:words ndarray
 import fs from "node:fs";
 import path from "node:path";
-import {
-    isModelImportWorkerUrl,
-    MODEL_IMPORT_WORKER_CSP,
-} from "./src/showAssets/modelImport/protocol";
+import { workerPolicyFor } from "./src/security/appCsp";
 
 /**
  * What the model import worker (fork #998, `src/showAssets/modelImport/`) needs from the build.
@@ -15,9 +12,9 @@ import {
  *   with `createImageBitmap`; `prune` keeps solid textures). Both compile code with
  *   `Function()` (`ndarray-ops` as it loads), which the worker's CSP refuses. Aliases, not a
  *   plugin, so dev's dependency pre-bundling takes them too.
- * - The dev server sends the worker's script with the worker's own CSP, as the built web app's
- *   `_headers` and the desktop app's main process do (a URL worker takes its policy from its
- *   own response, never from the page).
+ * - The dev server sends each worker's script with the worker's own CSP (`src/security/appCsp.ts`),
+ *   as the built web app's `_headers` and the desktop app's main process do (a URL worker takes
+ *   its policy from its own response, never from the page).
  * - `virtual:openmarch/draco-decoder` is three's web build of Google's Draco decoder as an ES
  *   module, with its WebAssembly inlined: the worker may not fetch anything, not even its own
  *   files. Only a Draco-compressed import loads it.
@@ -36,7 +33,7 @@ export const ndarrayAliases = [
 ];
 
 /**
- * Serves `virtual:openmarch/draco-decoder`, and the worker's CSP from the dev server.
+ * Serves `virtual:openmarch/draco-decoder`, and the workers' CSPs from the dev server.
  * @returns {import("vite").Plugin}
  */
 export const modelImportWorker = () => ({
@@ -44,11 +41,8 @@ export const modelImportWorker = () => ({
     enforce: "pre",
     configureServer(server) {
         server.middlewares.use((req, res, next) => {
-            if (isModelImportWorkerUrl(`http://dev${req.url ?? ""}`))
-                res.setHeader(
-                    "Content-Security-Policy",
-                    MODEL_IMPORT_WORKER_CSP,
-                );
+            const worker = workerPolicyFor(`http://dev${req.url ?? ""}`);
+            if (worker) res.setHeader("Content-Security-Policy", worker.csp);
             next();
         });
     },

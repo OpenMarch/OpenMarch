@@ -1,7 +1,11 @@
 // Differential fuzzer: cached resolver (§9) vs uncached oracle (§8) under random edit batches.
 // usage: node fuzz.mjs [rules=v0.2] [seeds=200] [steps=60]
+// Every third seed also runs a route world (R-14′ lanes, R-9′ trails, R-14″ arc legs) on its own random stream, so the
+// plain worlds are the same as before routes were fuzzed; its numbers are reported separately under `routeWorlds`.
 import { makeOracle } from './oracle.mjs';
 import { makeResolver } from './resolver.mjs';
+import { destinationsOf } from './geom.mjs';
+import { randArcRoute, toggleLeg, landOn, randAdjust, hasArc } from './arcroutes.mjs';
 
 const args = process.argv.slice(2).filter((a) => !a.startsWith('--'));
 const EXPECT_FAIL = process.argv.includes('--expect-fail');
@@ -10,8 +14,8 @@ const EPS = 1e-6;
 
 function mulberry32(a) { return () => { a |= 0; a = (a + 0x6D2B79F5) | 0; let t = Math.imul(a ^ (a >>> 15), 1 | a); t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t; return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 
-function makeWorld(seed) {
-  const R = mulberry32(seed);
+function makeWorld(seed, withRoutes = false) {
+  const R = mulberry32(withRoutes ? seed * 2654435761 + 977 : seed);
   const ri = (a, b) => a + Math.floor(R() * (b - a + 1));
   const pick = (xs) => xs[Math.floor(R() * xs.length)];
   const pt = () => [ri(-10, 10), ri(-10, 10)];
@@ -60,6 +64,35 @@ function makeWorld(seed) {
   };
   for (let i = 0; i < 60; i++) { const r = randRow(); if (r && validRow(r)) { db.assignments.push(r); nextRow++; } }
 
+  // ---- route worlds: own lanes, group lanes (offsets, Adjust) and trail routes, with arc legs (R-14″)
+  let nextRoute = 1, nextLane = 1;
+  const lanesOf = (tid) => Object.entries(db.lanes ?? {}).filter(([, l]) => l.transition === tid);
+  const slotDest = (t, slot) => { try { return destinationsOf(t, db.shapes)[slot]; } catch { return null; } };
+  const newRoute = (targets, extra = {}) => { const id = nextRoute++; db.routes[id] = { geometry: randArcRoute(R, { pt, n: ri(0, 5), targets, ...extra }) }; return id; };
+  const laneSet = (t) => {   // lanes for a non-FTL transition: a group path or own paths
+    const out = [];
+    if (R() < 0.5) {
+      const F = pt(), G = pt(), rid = newRoute([F, G], { from: F, to: G });
+      for (let s = 0; s < t.slots; s++) if (R() < 0.8) {
+        const l = { transition: t.id, slot: s, route: rid, offset: R() < 0.15 ? [0, 0] : [ri(-3, 3), ri(-3, 3)] };
+        if (R() < 0.4) l.adjust = randAdjust(R, db.routes[rid].geometry, 2);
+        out.push([nextLane++, l]);
+      }
+    } else for (let s = 0; s < t.slots; s++) if (R() < 0.75) {
+      const B = slotDest(t, s), rid = newRoute(B ? [B] : []);
+      out.push([nextLane++, { transition: t.id, slot: s, route: rid, offset: null }]);
+    }
+    return out;
+  };
+  if (withRoutes) {
+    db.routes = {}; db.lanes = {};
+    for (const t of Object.values(db.transitions)) {
+      if (t.style === 'follow_the_leader') { if (R() < 0.6) t.route = newRoute([]); }
+      else if (R() < 0.7) for (const [id, l] of laneSet(t)) db.lanes[id] = l;
+    }
+  }
+  const dropLanes = (tid) => lanesOf(tid).map(([id, l]) => { delete db.lanes[id]; return { before: l, after: null }; });
+
   // ---- edit operations: each mutates db and returns a partial batch, or null if it would be rejected
   const ops = {
     insertRow() { for (let i = 0; i < 20; i++) { const r = randRow(); if (r && validRow(r)) { nextRow++; db.assignments.push(r); return { rows: [{ before: null, after: { ...r } }] }; } } return null; },
@@ -83,7 +116,9 @@ function makeWorld(seed) {
     style() { const t = pick(Object.values(db.transitions)); if (!t) return null; const before = { ...t };
       t.style = pick(['direct', 'arc', 'follow_the_leader']); t.params = randParams(t.style);
       if (t.style === 'follow_the_leader' && t.dest == null) { t.dest = ri(1, 6); delete t.points; }   // I-T5: FTL needs a shape
-      return { transitions: [{ id: t.id, before, after: { ...t } }] }; },
+      if (t.style !== 'follow_the_leader') delete t.route;                                              // I-R2′: only a trail has a route
+      const lanes = t.style === 'follow_the_leader' ? dropLanes(t.id) : [];                            // I-LN2: no path lane on FTL
+      return { transitions: [{ id: t.id, before, after: { ...t } }], lanes }; },
     params() { const t = pick(Object.values(db.transitions)); if (!t || t.style === 'direct') return null; const before = { ...t };
       t.params = randParams(t.style); return { transitions: [{ id: t.id, before, after: { ...t } }] }; },
     order() { const t = pick(Object.values(db.transitions)); if (!t) return null; const before = { ...t };
@@ -123,7 +158,7 @@ function makeWorld(seed) {
       const ids = Object.keys(db.transitions); if (ids.length < 3) return null;
       const t = db.transitions[pick(ids)]; delete db.transitions[t.id];
       const gone = db.assignments.filter((r) => r.transition === t.id); db.assignments = db.assignments.filter((r) => r.transition !== t.id);
-      return { transitions: [{ id: t.id, before: t, after: null }], rows: gone.map((r) => ({ before: r, after: null })) };
+      return { transitions: [{ id: t.id, before: t, after: null }], rows: gone.map((r) => ({ before: r, after: null })), lanes: dropLanes(t.id) };
     },
     addTransition() { const t = newTransition(); return { transitions: [{ id: t.id, before: null, after: { ...t } }] }; },
     home() { const m = pick(db.marchers); m.home = pt(); return { marchers: [{ id: m.id }] }; },
@@ -136,9 +171,39 @@ function makeWorld(seed) {
       if (!validRow(r)) return null; nextRow++; db.assignments.push(r); return { rows: [{ before: null, after: { ...r } }] };
     },
   };
+  if (withRoutes) Object.assign(ops, {
+    reroute() { // redraw a route, keeping its ids (so Adjust anchors still name points) or not
+      const rids = Object.keys(db.routes); if (!rids.length) return null; const rid = +pick(rids), g = db.routes[rid].geometry;
+      const user = Object.values(db.lanes).find((l) => l.route === rid), t = user && db.transitions[user.transition];
+      const B = t && user.offset == null ? slotDest(t, user.slot) : null;
+      db.routes[rid] = { geometry: randArcRoute(R, { pt, n: ri(0, 5), targets: B ? [B] : [g.from, g.to], from: R() < 0.7 ? g.from : pt(), to: R() < 0.7 ? g.to : pt(), ids: R() < 0.7 ? g.points.map((q) => q.id) : undefined }) };
+      return { routes: [rid] }; },
+    arcLeg() { const rids = Object.keys(db.routes); if (!rids.length) return null; const rid = +pick(rids);
+      db.routes[rid] = { geometry: toggleLeg(R, db.routes[rid].geometry) }; return { routes: [rid] }; },
+    landOnB() { // a route point onto (or within EPS_GEOM of) B, F or G: cleaning drops it and hands its bulge on
+      const ls = Object.values(db.lanes).filter((l) => db.transitions[l.transition]); if (!ls.length) return null;
+      const l = pick(ls), g = db.routes[l.route].geometry, B = l.offset == null ? slotDest(db.transitions[l.transition], l.slot) : pick([g.from, g.to]);
+      const n = B && landOn(R, g, B); if (!n) return null; db.routes[l.route] = { geometry: n }; return { routes: [l.route] }; },
+    lanes() { // give a transition new lanes, or take its lanes away
+      const t = pick(Object.values(db.transitions)); if (!t || t.style === 'follow_the_leader') return null;
+      const gone = dropLanes(t.id); if (gone.length && R() < 0.5) return { lanes: gone };
+      const add = laneSet(t); for (const [id, l] of add) db.lanes[id] = l;
+      return { lanes: [...gone, ...add.map(([, l]) => ({ before: null, after: l }))] }; },
+    laneEdit() { // an offset or an Adjust changed on one lane of a group path
+      const ls = Object.entries(db.lanes).filter(([, l]) => l.offset); if (!ls.length) return null;
+      const [id, l] = pick(ls), n = { ...l };
+      if (R() < 0.5) n.offset = [ri(-3, 3), ri(-3, 3)]; else if (R() < 0.8) n.adjust = randAdjust(R, db.routes[l.route].geometry, 2); else delete n.adjust;
+      db.lanes[id] = n; return { lanes: [{ before: l, after: n }] }; },
+    trail() { // a follow-the-leader transition gains, changes or loses its trail route
+      const ts = Object.values(db.transitions).filter((t) => t.style === 'follow_the_leader'); if (!ts.length) return null;
+      const t = pick(ts), before = { ...t };
+      if (t.route != null && R() < 0.4) delete t.route; else t.route = R() < 0.5 && Object.keys(db.routes).length ? +pick(Object.keys(db.routes)) : newRoute([]);
+      return { transitions: [{ id: t.id, before, after: { ...t } }] }; },
+  });
   const opNames = Object.keys(ops);
   const merge = (a, b) => ({ destinations: [...(a.destinations ?? []), ...(b.destinations ?? [])], rows: [...(a.rows ?? []), ...(b.rows ?? [])], transitions: [...(a.transitions ?? []), ...(b.transitions ?? [])],
-                             shapes: [...(a.shapes ?? []), ...(b.shapes ?? [])], marchers: [...(a.marchers ?? []), ...(b.marchers ?? [])] });
+                             shapes: [...(a.shapes ?? []), ...(b.shapes ?? [])], marchers: [...(a.marchers ?? []), ...(b.marchers ?? [])],
+                             routes: [...(a.routes ?? []), ...(b.routes ?? [])], lanes: [...(a.lanes ?? []), ...(b.lanes ?? [])] });
   function randomBatch() {
     const n = R() < 0.7 ? 1 : ri(2, 3); let batch = { rows: [], transitions: [], shapes: [], marchers: [] }; const names = [];
     for (let i = 0; i < n; i++) { const name = pick(opNames); const b = ops[name](); if (b) { batch = merge(batch, b); names.push(name); } }
@@ -147,10 +212,19 @@ function makeWorld(seed) {
   return { db, R, randomBatch, SHOW };
 }
 
-function compare(res, db, R, fraction) {
+/** Whether marcher m at beat b walks a founding span along a route with an arc leg (a lane's route, or a trail's). */
+function onArcRoute(o, db, m, b) {
+  const sp = o.spans(m).find((s) => s.start <= b && b < s.end); if (!sp?.row || o.kind(sp) !== 'founding') return false;
+  const t = db.transitions[sp.row.transition];
+  if (t.style === 'follow_the_leader') return t.route != null && hasArc(db.routes[t.route].geometry);
+  const l = Object.values(db.lanes ?? {}).find((x) => x.transition === t.id && x.slot === sp.row.slot);
+  return !!l && hasArc(db.routes[l.route].geometry);
+}
+function compare(res, db, R, fraction, tally) {
   const o = makeOracle(db);
   for (const m of db.marchers) for (let b = -1; b <= 34; b += 0.5) {
     if (R() > fraction) continue;
+    if (tally && onArcRoute(o, db, m.id, b)) tally.arcProbes++;
     const x = res.positionAt(m.id, b), y = o.positionAt(m.id, b);
     if (!(Math.abs(x[0] - y[0]) < EPS && Math.abs(x[1] - y[1]) < EPS)) return { m: m.id, b, resolver: x, oracle: y };
   }
@@ -158,29 +232,39 @@ function compare(res, db, R, fraction) {
 }
 
 const stats = { seeds: 0, batches: 0, divergent: 0, closure: 0, ops: {} };
+const routeStats = { seeds: 0, batches: 0, arcBatches: 0, arcProbes: 0, divergent: 0, closure: 0, exceptions: 0, ops: {} };
 const firstFailures = [];
-for (let seed = 1; seed <= +SEEDS; seed++) {
-  const w = makeWorld(seed);
+const arcCount = (db) => Object.values(db.routes ?? {}).filter((r) => hasArc(r.geometry)).length;
+function runSeed(seed, withRoutes) {
+  const st = withRoutes ? routeStats : stats;
+  const w = makeWorld(seed, withRoutes);
   const res = makeResolver(w.db, { rules });
-  stats.seeds++;
+  st.seeds++;
   compare(res, w.db, w.R, 1);                      // warm everything
   for (let step = 0; step < +STEPS; step++) {
     const rb = w.randomBatch(); if (!rb) continue;
-    stats.batches++; for (const n of rb.names) stats.ops[n] = (stats.ops[n] ?? 0) + 1;
+    st.batches++; for (const n of rb.names) st.ops[n] = (st.ops[n] ?? 0) + 1;
+    if (withRoutes && arcCount(w.db)) st.arcBatches++;
     let cc, bad;
     try {
       res.applyBatch(rb.batch);
       cc = res.checkCacheClosure();
-      bad = compare(res, w.db, w.R, w.R() < 0.4 ? 0.25 : 1);
-    } catch (e) { bad = { exception: e.message.slice(0, 60) }; stats.exceptions = (stats.exceptions ?? 0) + 1; }
+      bad = compare(res, w.db, w.R, w.R() < 0.4 ? 0.25 : 1, withRoutes ? st : null);
+    } catch (e) { bad = { exception: e.message.slice(0, 60) }; st.exceptions = (st.exceptions ?? 0) + 1; }
     if (cc !== true || bad) {
-      if (bad) stats.divergent++; if (cc !== true && cc !== undefined) stats.closure++;
-      if (firstFailures.length < 4) firstFailures.push({ seed, step, ops: rb.names, closure: cc, divergence: bad });
+      if (bad) st.divergent++; if (cc !== true && cc !== undefined) st.closure++;
+      if (firstFailures.length < 4) firstFailures.push({ seed, routes: withRoutes, step, ops: rb.names, closure: cc, divergence: bad });
       break;                                          // one failure per seed; move on
     }
   }
 }
-console.log(JSON.stringify({ rules, ...stats, firstFailures }, (k, v) => (typeof v === 'number' && !Number.isInteger(v) ? +v.toFixed(4) : v), 1));
-console.log(`rules ${rules}: ${stats.batches} batches, ${stats.divergent} divergent, ${stats.closure} closure violations, ${stats.exceptions ?? 0} exceptions${EXPECT_FAIL ? ' (failures expected)' : ''}`);
-const failed = stats.divergent + stats.closure + (stats.exceptions ?? 0) > 0;
+for (let seed = 1; seed <= +SEEDS; seed++) {
+  runSeed(seed, false);
+  if (seed % 3 === 0) runSeed(seed, true);
+}
+console.log(JSON.stringify({ rules, ...stats, routeWorlds: routeStats, firstFailures }, (k, v) => (typeof v === 'number' && !Number.isInteger(v) ? +v.toFixed(4) : v), 1));
+const rs = routeStats;
+console.log(`rules ${rules}: ${stats.batches} batches, ${stats.divergent} divergent, ${stats.closure} closure violations, ${stats.exceptions ?? 0} exceptions; ` +
+  `route worlds ${rs.batches} batches (${rs.arcBatches} with arc legs, ${rs.arcProbes} probes on arcs), ${rs.divergent + rs.closure + rs.exceptions} failing${EXPECT_FAIL ? ' (failures expected)' : ''}`);
+const failed = stats.divergent + stats.closure + (stats.exceptions ?? 0) + rs.divergent + rs.closure + rs.exceptions > 0;
 if (failed !== EXPECT_FAIL) process.exitCode = 1;   // with --expect-fail, finding no failure is the error

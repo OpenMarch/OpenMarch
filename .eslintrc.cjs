@@ -13,6 +13,12 @@ function uiStyleRestrictions() {
                 "Use a theme font size (text-sub, text-body, text-h5..h1; text-micro only for timeline/tempo lane labels), not text-[Npx]. See docs/conventions/ui-styling.md.",
         },
         {
+            // text-xs, text-sm, text-lg: Tailwind's sizes are removed in apps/desktop/src/styles/index.css
+            pattern: String.raw`(^|[\s:"'\x60])text-(xs|sm|base|lg|\d*xl)($|[\s"'\x60])`,
+            message:
+                "Use a theme font size (text-sub, text-body, text-h5..h1; text-micro only for timeline/tempo lane labels). Tailwind's text-xs/sm/base/lg/xl don't exist in this app. See docs/conventions/ui-styling.md.",
+        },
+        {
             // rounded-[3px], rounded-t-[5px]; rounded-2 / rounded-sm etc. aren't the theme's radii
             pattern: String.raw`(^|[\s:"'\x60])rounded(-(t|b|l|r|s|e|tl|tr|bl|br|ss|se|es|ee))?-(\[|(2|xs|sm|md|lg|xl|2xl|3xl)($|[\s"'\x60]))`,
             message:
@@ -116,14 +122,21 @@ module.exports = {
             parserOptions: {
                 parser: "@typescript-eslint/parser",
                 extraFileExtensions: [".astro"],
+                // Without type information: building it for an .astro file runs ESLint out of
+                // memory (over 8 GB for packages/ui's few components), which fails CI's lint
+                project: null,
             },
-            rules: Object.keys(require("eslint-plugin-react").rules).reduce(
-                (acc, rule) => {
-                    acc[`react/${rule}`] = "off";
-                    return acc;
-                },
-                {},
-            ),
+            rules: {
+                ...Object.keys(require("eslint-plugin-react").rules).reduce(
+                    (acc, rule) => {
+                        acc[`react/${rule}`] = "off";
+                        return acc;
+                    },
+                    {},
+                ),
+                // Needs type information
+                "@typescript-eslint/no-floating-promises": "off",
+            },
         },
     ],
     settings: {

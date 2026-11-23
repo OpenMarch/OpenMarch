@@ -21,8 +21,11 @@ import {
 import { deleteTimelinesInTransaction, timelinesWithRange } from "./timelines";
 import { readPageGrid, type PageGrid } from "./timelineRipple";
 import { readBasicRows } from "./basicRows";
-import { marcherSimpleOnBox } from "@/timeline/basicSimple";
-import { TimelineEditRefusedError } from "@/timeline/timelineEditRefusals";
+import { heldArrivalLock } from "@/timeline/basicSimple";
+import {
+    basicLockedRefusal,
+    TimelineEditRefusedError,
+} from "@/timeline/timelineEditRefusals";
 import {
     beatWhere,
     moveInSentence,
@@ -129,6 +132,12 @@ export interface TimelineMoveResult {
      * it (Clear this page)
      */
     cleared?: number[];
+    /**
+     * A Basic edit that re-cut a page's moves: members of the shape placed at its flag whose
+     * positions there ended up in another move than the one the shape followed
+     * (`recipesFollowMembersInTransaction`), so it no longer lists them. By id, for the toast
+     */
+    droppedFromShapes?: number[];
     /**
      * Clear this page on the first page of a Held hold that runs on, or on the page a Held hold
      * arrives from: the marchers whose hold on the later pages went too (its arrival went), and
@@ -1075,7 +1084,7 @@ class NothingWritten extends Error {
  * move together (holds decision 4). Adds what it wrote to `result`.
  *
  * With `basic`, the arrival must be one Basic edits: simple on the page box it ends (Basic's lock,
- * `marcherSimpleOnBox`), else the edit is refused (`notSimple`), naming the marchers. With
+ * `heldArrivalLock`), else the edit is refused (`notSimple`), naming the marchers. With
  * `keepUnchanged`, a marcher left where it is is still written (a shape's members).
  */
 async function moveHeldArrivalsInTransaction(
@@ -1139,30 +1148,22 @@ async function refuseLockedArrivals(
     const rows = await readBasicRows(tx, {
         marcherIds: held.map((h) => h.move.marcherId),
     });
+    const boxes = grid.pages.filter((p) => p.id !== FIRST_PAGE_ID);
     const locked: number[] = [];
-    for (const { move, mark } of held) {
-        // The page its arrival ends on, a mid-page end included
-        const box = grid.pages.find(
-            (p) =>
-                p.id !== FIRST_PAGE_ID &&
-                p.start < mark.start &&
-                mark.start <= p.end,
-        );
-        const own = rows.filter((r) => r.marcherId === move.marcherId);
-        if (box && !marcherSimpleOnBox(own, box).simple)
+    // Basic's lock rule for holds, which the locks draw too (`lockedMarchersByPage`)
+    for (const { move, mark } of held)
+        if (heldArrivalLock(rows, mark, boxes) !== null)
             locked.push(move.marcherId);
-    }
     if (locked.length === 0) return;
     locked.sort((x, y) => x - y);
     const labels: string[] = [];
     for (const id of locked) labels.push(await marcherLabel(tx, id));
-    throw new TimelineEditRefusedError("notSimple", {
-        marcherIds: locked,
-        message:
-            labels.length === 1
-                ? `Marcher ${labels[0]} is Held from an Expert move. Switch to Expert to edit it.`
-                : `Marchers ${labels.join(", ")} are Held from Expert moves. Switch to Expert to edit them.`,
-    });
+    throw basicLockedRefusal(
+        locked,
+        labels.length === 1
+            ? `Marcher ${labels[0]} is Held from an Expert move. Switch to Expert to edit it.`
+            : `Marchers ${labels.join(", ")} are Held from Expert moves. Switch to Expert to edit them.`,
+    );
 }
 
 /** The value occurring most often in `ids` (the smallest of a tie), or null when empty. */

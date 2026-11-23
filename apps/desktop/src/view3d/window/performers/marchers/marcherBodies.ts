@@ -75,6 +75,34 @@ import {
  * Contact shadow under each marcher: a soft dark disc on the turf, in place
  * of real shadows (the instanced skinning has no depth pass yet).
  */
+/** The head bone, as the bake names it (`HEAD_BONES` in `composeMath.ts`). */
+const HEAD_BONE = "DEF-spine006";
+/**
+ * Between the eyes, just inside the face, on the om-pose bodies at rest
+ * (class 1.00, m): the eye geometry (part 6) spans y 1.659 to 1.697 and its
+ * front is at z 0.084; the face's front is at z 0.095. The same on every
+ * body type. Inside the head, whose faces point outward, nothing of the head
+ * is drawn from here.
+ */
+export const EYE_AT_REST: readonly [number, number, number] = [0, 1.678, 0.06];
+
+/**
+ * The head's base at bind, metres: the head bone's origin in `skeleton`, or
+ * null when it has no head bone. A head drawn without itself folds to here.
+ */
+export function headBase(
+    skeleton: THREE.Skeleton,
+): [number, number, number] | null {
+    const i = skeleton.bones.findIndex(
+        (b) => b.name.replace(/\./g, "") === HEAD_BONE,
+    );
+    if (i < 0) return null;
+    const at = new THREE.Vector3().setFromMatrixPosition(
+        skeleton.boneInverses[i].clone().invert(),
+    );
+    return [at.x, at.y, at.z];
+}
+
 export const CONTACT_RADIUS = 0.38;
 export const CONTACT_OPACITY = 0.35;
 const CONTACT_Y = FIELD_SURFACE_Y + 0.005;
@@ -345,6 +373,14 @@ export class MarcherBodies {
     private readonly heldOf: Uint8Array;
     /** The count clock of the last `writeFrame`. */
     private count = 0;
+    private headIndex: number | null = null;
+    /** The head bone's index in the composed bones, or -1. */
+    private get headBone(): number {
+        return (this.headIndex ??= this.bake.boneNames.indexOf(HEAD_BONE));
+    }
+    private eyeScratch: Float32Array | null = null;
+    /** The head's base at bind (`headBase`), for `setHeadless`. */
+    private readonly headAt: [number, number, number] | null;
 
     constructor(
         bodies: ReadonlyMap<BodyType, LoadedBody>,
@@ -353,6 +389,8 @@ export class MarcherBodies {
         quality: MarcherQuality,
     ) {
         this.bake = bake;
+        const anyBody = bodies.values().next().value!;
+        this.headAt = headBase(anyBody.mesh.skeleton);
         this.composer = new Composer(bake, looks.length);
         const firstRow = this.firstRow();
         for (let i = 0; i < looks.length; i++)
@@ -367,10 +405,8 @@ export class MarcherBodies {
         this.contact = createContactMesh(looks.length);
         this.group.add(this.contact);
 
-        if (quality === "low") {
-            const anyBody = bodies.values().next().value!;
+        if (quality === "low")
             this.blockSource = blockGeometry(THREE, anyBody.mesh.skeleton);
-        }
         // Group the slots by mesh: (body type, body look) at high, body look
         // at low. Looks that differ only in what they carry share a mesh.
         const groups = new Map<
@@ -561,6 +597,51 @@ export class MarcherBodies {
     /** Composes this frame's bones (after `setClip`, `setHorn` and `writeFrame`). */
     compose(gl: THREE.WebGLRenderer, force = false): void {
         this.composer.update(gl, this.count, force);
+    }
+
+    /**
+     * Draws slot `slot` without its head, hat and plume, for a camera
+     * looking out of their eyes; null draws every head. Their arms, body
+     * and instrument still draw.
+     */
+    setHeadless(slot: number | null): void {
+        const head = this.headBone;
+        if (head < 0 || !this.headAt) return;
+        this.composer.setHeadless(slot, head, this.headAt);
+    }
+
+    /**
+     * Where slot `slot`'s eyes are as last drawn, in world meters, into
+     * `out`: the eye point of the body at rest (`EYE_AT_REST`) carried by the
+     * head bone's composed matrix at the last `writeFrame`'s count, then
+     * placed like the body at (x, z) facing `heading`, `lift` up. False when
+     * the bake has no head bone.
+     */
+    eyeInto(
+        slot: number,
+        x: number,
+        z: number,
+        heading: number,
+        lift: number,
+        out: [number, number, number],
+    ): boolean {
+        const head = this.headBone;
+        if (head < 0) return false;
+        const m = (this.eyeScratch ??= new Float32Array(this.bake.bones * 16));
+        this.composer.composeSlotCpu(slot, this.count, m);
+        const o = head * 16;
+        const [ex, ey, ez] = EYE_AT_REST;
+        const px = m[o] * ex + m[o + 4] * ey + m[o + 8] * ez + m[o + 12];
+        const py = m[o + 1] * ex + m[o + 5] * ey + m[o + 9] * ez + m[o + 13];
+        const pz = m[o + 2] * ex + m[o + 6] * ey + m[o + 10] * ez + m[o + 14];
+        // as `writeMatrix` places the body
+        const h = this.scaleOf[slot];
+        const c = Math.cos(heading) * h;
+        const s = Math.sin(heading) * h;
+        out[0] = c * px + s * pz + x;
+        out[1] = h * py + STAND_Y + lift;
+        out[2] = -s * px + c * pz + z;
+        return true;
     }
 
     /**

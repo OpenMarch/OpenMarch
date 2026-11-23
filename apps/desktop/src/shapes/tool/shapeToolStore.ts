@@ -2,7 +2,7 @@ import { create } from "zustand";
 import type { CanvasEditPlan } from "@/timeline/timelineCoordinateWrites";
 import { useTimelineSelectionStore } from "@/stores/TimelineSelectionStore";
 import { usePreviewModeStore } from "@/stores/PreviewModeStore";
-import type { ToolState } from "./toolMachine";
+import { keepMirror, type ToolState } from "./toolMachine";
 import { isAwayFrom, momentOf, type ShapeMoment } from "./shapeMoment";
 
 /**
@@ -27,11 +27,14 @@ export interface OpenShape {
     readonly moment: ShapeMoment | null;
 }
 
-/** Applies `change` to the open tool; nothing happens when it's closed */
+/**
+ * Applies `change` to the open tool; nothing happens when it's closed. A mirrored paste stays tied
+ * to its mirror point through it, or is untied by it (`keepMirror`).
+ */
 export function updateTool(change: (tool: ToolState) => ToolState): void {
     const { tool } = useShapeToolStore.getState();
     if (!tool) return;
-    const next = change(tool);
+    const next = keepMirror(tool, change(tool));
     if (next !== tool) useShapeToolStore.setState({ tool: next });
 }
 

@@ -350,6 +350,31 @@ describe("createUpdateController", () => {
         expect(controller.getState().phase.kind).toBe("error");
     });
 
+    it("installs nothing, and closes nothing, when the person keeps the show open", async () => {
+        let attemptCleared = false;
+        const { controller, updater, options } = setup({
+            prepareToQuit: async () => false,
+            takeInstallAttempt: () => {
+                attemptCleared = true;
+                return null;
+            },
+        });
+        updater.emit("update-downloaded", { version: "0.2.1" });
+
+        await controller.install();
+
+        expect(updater.quitAndInstall).not.toHaveBeenCalled();
+        expect(options.relaunch).not.toHaveBeenCalled();
+        expect(controller.getState().phase.kind).toBe("downloaded");
+        // The attempt "Update now" recorded is taken back, so the next launch reports nothing.
+        expect(attemptCleared).toBe(true);
+
+        // "Update now" works again afterwards.
+        options.prepareToQuit = async () => {};
+        await controller.install();
+        expect(updater.quitAndInstall).toHaveBeenCalledOnce();
+    });
+
     it("keeps a download going when a background check finds the same update", async () => {
         const { controller, updater, phase } = setup();
         updater.nextCheck = found("0.2.1");

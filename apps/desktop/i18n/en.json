@@ -50,8 +50,21 @@
             "holdOverWindow": "{holdOverWindow}"
         },
         "edit": {
+            "clearClipboard": "Clear the clipboard",
+            "clearClipboardKeywords": "clear empty clipboard copied formation forget remove",
+            "copy": "Copy",
+            "copyKeywords": "copy formation picture shape positions dots form set clipboard",
             "noRedoAvailable": "No action to redo",
             "noUndoAvailable": "No action to undo",
+            "paste": "Paste",
+            "pasteAsPositions": "Paste a copied shape as its positions",
+            "pasteAsPositionsKeywords": "paste positions coordinates exact spots dots shape clipboard",
+            "pasteAsShape": "Paste a copied shape as the shape",
+            "pasteInPlace": "Paste exactly",
+            "pasteInPlaceKeywords": "paste exactly in place same spot original position coordinates where copied formation restore",
+            "pasteKeywords": "paste formation picture shape positions dots form set clipboard onto selected",
+            "pasteMirrored": "Paste mirrored",
+            "pasteMirroredKeywords": "paste mirror mirrored reflect reflection flip symmetric symmetry opposite other side across point line 50 front back formation clipboard",
             "redo": "Redo",
             "redoFailed": "The redo couldn't be applied, so nothing changed.",
             "undo": "Undo",
@@ -115,7 +128,10 @@
             "loadDialogue": "Open file…",
             "newDialogue": "New file…",
             "openExport": "Export…",
-            "saveDialogue": "Save a copy…"
+            "saveDialogue": "Save a copy…",
+            "saveNow": "Save now",
+            "removeUnusedAssets": "Remove unused assets…",
+            "removeUnusedAssetsKeywords": "remove delete clean unused assets models imported size smaller"
         },
         "labelWithVariant": "{label} ({variant})",
         "movement": {
@@ -173,6 +189,12 @@
             "apply": "Place marchers on the shape",
             "removeLastPoint": "Shape: Remove the last point while drawing",
             "quarterTurn": "Shape: Turn 90° clockwise",
+            "mirrorSideToSide": "Mirrored paste: Mirror side to side",
+            "mirrorFrontToBack": "Mirrored paste: Mirror front to back",
+            "mirrorBoth": "Mirrored paste: Mirror both ways",
+            "mirrorKeywords": "mirror mirrored paste reflect flip side front back both point line",
+            "mirrorOnlyReason": "A mirrored paste only mirrors. Place it, then turn or resize it",
+            "mirrorNotOpen": "Paste mirrored first",
             "recalculate": "Shape: Recalculate who goes where",
             "evenOut": "Shape: Even out the outline",
             "hideMarchers": "Shape: Hide the marchers (hold to peek, tap to keep hidden)",
@@ -237,18 +259,26 @@
             "toggleNextPaths": "Toggle next page paths",
             "togglePreview": "Preview the show",
             "togglePreviewKeywords": "preview cinematic watch present presentation fullscreen play",
+            "openHelp": "Get help",
+            "openHelpKeywords": "help guide docs manual how question assistant ai chatgpt claude prompt",
             "reportFeedback": "Report a bug or send feedback",
             "reportFeedbackKeywords": "bug issue problem feedback feature request support",
             "viewMyReports": "View my reports",
             "openFrontEnsemble": "Open front ensemble and podiums",
             "openFrontEnsembleKeywords": "pit front ensemble podium drum major marimba vibraphone percussion speaker equipment preset",
             "addFrontEnsembleEquipment": "Add front ensemble equipment or podium",
-            "addFrontEnsembleEquipmentKeywords": "pit podium drum major marimba vibraphone percussion speaker mixer tower stepladder instrument"
+            "addFrontEnsembleEquipmentKeywords": "pit podium drum major marimba vibraphone percussion speaker mixer tower stepladder instrument",
+            "openAssets": "Open the show's assets",
+            "openAssetsKeywords": "assets imported models files credits license size storage library"
         },
         "items": {
             "edit": "Edit selected prop or equipment",
             "editNamed": "Edit {name}",
-            "editKeywords": "edit settings properties prop equipment podium instrument name size lock"
+            "editKeywords": "edit settings properties prop equipment podium instrument name size lock",
+            "importModel": "Import a 3D model…",
+            "importModelKeywords": "import 3d model glb gltf prop upload file object",
+            "placeImportedModel": "Place an imported model",
+            "placeImportedModelKeywords": "place imported model prop 3d custom glb"
         },
         "cues": {
             "equipmentNone": "Equipment: Nothing",
@@ -277,6 +307,50 @@
             "equipmentUsual": "Equipment: Their own instrument",
             "moveToPlayhead": "Move cue to playhead",
             "toggleMovesLane": "Show or hide the Moves lane"
+        },
+        "path": {
+            "pen": "Path pen",
+            "remove": "Remove path",
+            "edit": "Edit path",
+            "editGroup": "Edit group path",
+            "editLine": "Edit marcher's line",
+            "editLineOf": "Edit {marcher}'s line",
+            "keywords": "path pen pathway route corner draw curve walk",
+            "finish": "Finish path",
+            "cancel": "Cancel path",
+            "close": "Close path",
+            "removeLastPoint": "Remove last point",
+            "deletePoint": "Delete point",
+            "removeKey": "Remove key",
+            "resetSpot": "Reset spot",
+            "deselectPoint": "Deselect point",
+            "deselectSpot": "Deselect spot",
+            "deselect": "Deselect path",
+            "pointCorner": "Corner point",
+            "pointSmooth": "Smooth point",
+            "detachFromGroup": "Detach from group path",
+            "detachAll": "Detach all marchers",
+            "rejoin": "Rejoin",
+            "rejoinGroup": "Rejoin group path",
+            "refit": "Re-fit path",
+            "adjustRemoveKey": "Remove bend point",
+            "adjustResetSpot": "Match group",
+            "adjustAcknowledge": "Keep moved bends",
+            "follow": "Follow",
+            "followKeywords": "follow leader trail line snake file ftl reverse path",
+            "reverse": "Reverse leader",
+            "removeTrail": "Remove trail",
+            "followPreview": "Preview the follow walk",
+            "followEndsTrail": "Follow: ends from the trail",
+            "followEndsKeep": "Follow: keep end spots",
+            "followEndsRipple": "Follow: ripple into the end spots' form",
+            "showOrder": "Show order",
+            "setOrder": "Set order",
+            "reverseOrder": "Reverse order",
+            "clearOrder": "Clear order",
+            "orderKeywords": "order sequence leader tail first last line follow reverse numbers",
+            "recenter": "Re-center group path",
+            "recenterLoose": "Re-center path"
         }
     },
     "analyticsOptIn": {
@@ -454,7 +528,15 @@
         "empty": "No ensembles found. Create one above!",
         "loading": "Loading ensembles...",
         "viewDetails": "View ensemble details",
-        "loadError": "Error loading ensembles: {error}"
+        "loadError": "Error loading ensembles: {error}",
+        "expiry": {
+            "expiredBadge": "Expired {date}",
+            "expiredExplanation": "These ensembles have expired. You can still open and attach their productions, but new productions and revisions can't be pushed to the mobile app. Contact sales@openmarch.com to extend one.",
+            "expiresIn": "{days, plural, =0 {Expires today ({date}).} one {Expires in # day ({date}).} other {Expires in # days ({date}).}} Contact sales@openmarch.com to extend it.",
+            "hideExpired": "Hide expired ensembles",
+            "noActive": "No active ensembles.",
+            "showExpired": "View expired ensembles ({count})"
+        }
     },
     "exportCoordinates": {
         "abbreviateCoordinateDescriptions": "Abbreviate coordinate descriptions",
@@ -769,6 +851,13 @@
             "title": "Invalid file permissions"
         },
         "guideLinkText": "OpenMarch File Error Guide",
+        "leftoverJournal": {
+            "cancel": "Cancel",
+            "description": "There's a leftover file, “{name}”, next to this show, from a save that didn't finish. OpenMarch can't use it where it is, but it can finish recovering the show from a copy. The leftover file is moved to OpenMarch's backups, not deleted.",
+            "recover": "Recover and open",
+            "syncFolder": "This show is in a folder synced by {service}. Sync apps sometimes hold on to this file while OpenMarch saves, which leaves it behind.",
+            "title": "A leftover file is stopping this show from opening"
+        },
         "notFound": {
             "description": "This file does not exist at this location. Was it moved or renamed?",
             "title": "File not found"
@@ -1321,6 +1410,11 @@
             "description": "OpenMarch couldn't reach its online service or confirm your sign-in. Check your internet connection and try again.",
             "retry": "Try again",
             "title": "Can't reach OpenMarch"
+        },
+        "expired": {
+            "addAudioDisabled": "Can't add audio: this ensemble expired on {date}.",
+            "banner": "This ensemble expired on {date}. New revisions can't be pushed to the mobile app. Contact sales@openmarch.com to extend it.",
+            "pushDisabled": "Can't push: this ensemble expired on {date}."
         }
     },
     "music": {
@@ -1466,6 +1560,7 @@
         "hide": "Hide on the field",
         "name": "Name",
         "offField": "Off field at the playhead. Move the playhead to a count where the prop is on the field to change its outline.",
+        "keepsProportions": "Width, depth and height change together, so the model keeps its shape.",
         "outline": {
             "arc": "Arc",
             "circle": "Circle",
@@ -1501,7 +1596,166 @@
         },
         "locked": "Locked",
         "lockLabel": "Locked",
-        "lockHint": "One position for the whole show"
+        "lockHint": "One position for the whole show",
+        "imported": {
+            "title": "Imported",
+            "import": "Import…",
+            "empty": "Import a .glb, .gltf or .zip model, or drop one on the window, to place it like any prop.",
+            "place": "Place {name}",
+            "manage": "Manage assets"
+        },
+        "import": {
+            "title": "Import a model",
+            "pictureAlt": "The model seen from the audience",
+            "working": "Preparing the model…",
+            "orient": {
+                "detail": "The front should face the audience, right side up."
+            },
+            "rotateAxis": "Rotate {axis}",
+            "detail": {
+                "title": "Detail",
+                "levels": {
+                    "light": "Light",
+                    "detailed": "Detailed",
+                    "original": "Original"
+                },
+                "cost": "{triangles} triangles · adds {size} to the show · each copy draws like {performers, plural, one {# performer} other {# performers}}",
+                "heavy": "Fine on most recent computers. If the 3D View stutters, it draws a Light copy instead, which is kept in the show too."
+            },
+            "compare": {
+                "open": "Compare in 3D…",
+                "title": "Compare in 3D",
+                "description": "Drag to look around, then switch versions to see what simplifying changed.",
+                "which": "Version to show",
+                "lightCopy": "Light copy",
+                "farCopy": "Far-away copy",
+                "hint": "Drag to turn, scroll to zoom",
+                "stands": "From the stands",
+                "closeUp": "Close up",
+                "drawFailed": "Couldn't draw this version."
+            },
+            "size": {
+                "title": "Size",
+                "value": "{width} × {depth} m, {height} m tall",
+                "question": "Is that its real size? If not, pick the unit the file was made in.",
+                "suggested": "It looked like it was made in {unit}, so it was converted. Check the size."
+            },
+            "units": {
+                "label": "Made in",
+                "none": "m",
+                "cm": "cm",
+                "in": "in",
+                "ft": "ft"
+            },
+            "groups": {
+                "cantImport": "Can't import",
+                "fixed": "Fixed for you",
+                "notes": "Notes"
+            },
+            "tryAgain": "Try again",
+            "name": "Name",
+            "saveFailed": "Couldn't add the model to the show.",
+            "cancel": "Cancel",
+            "add": "Add to show",
+            "credits": {
+                "title": "License and credits",
+                "unknown": "Unknown",
+                "proprietary": "All rights reserved",
+                "license": "License",
+                "author": "Author",
+                "sourceUrl": "Source",
+                "attribution": "Attribution",
+                "rights": "Only import models you have the rights to use."
+            },
+            "cantImport": {
+                "noModelFile": {
+                    "title": "No model in the files",
+                    "detail": "Pick a .glb file, a .zip from a model site, or a .gltf with the files it names."
+                },
+                "severalModelFiles": {
+                    "title": "More than one model",
+                    "detail": "Import one at a time: {names}"
+                },
+                "tooLarge": {
+                    "title": "The files are too large",
+                    "detail": "{size} MB, over the {limit} MB limit"
+                },
+                "unreadable": {
+                    "title": "The file can't be read"
+                },
+                "externalUri": {
+                    "title": "The model loads files from the internet",
+                    "detail": "It names {uri}. Download the file and pick it with the model."
+                },
+                "outsidePickedFiles": {
+                    "title": "The model names a file outside its folder",
+                    "detail": "It names {uri}."
+                },
+                "missingFile": {
+                    "title": "Missing file: {uri}",
+                    "detail": "Pick it together with the model file."
+                },
+                "requiredExtension": {
+                    "title": "The model needs features OpenMarch can't read",
+                    "detail": "Required: {extensions}"
+                },
+                "validatorErrors": {
+                    "title": "{count, plural, one {The file has # error} other {The file has # errors}}"
+                },
+                "imageTooLarge": {
+                    "title": "A texture is too large: {image}",
+                    "detail": "{width} × {height} pixels; the limit is {limit} on a side."
+                },
+                "imageUnreadable": {
+                    "title": "A texture can't be read: {image}"
+                },
+                "tooManyTriangles": {
+                    "title": "Far too detailed",
+                    "detail": "{triangles} triangles; the most it can import is {limit}."
+                },
+                "rigged": {
+                    "title": "This model's rig can't be read",
+                    "detail": "Import a still version of it."
+                },
+                "noGeometry": {
+                    "title": "The file has nothing to draw"
+                },
+                "timedOut": {
+                    "title": "It took too long",
+                    "detail": "Stopped after {seconds} seconds."
+                },
+                "failed": {
+                    "title": "Something went wrong preparing it"
+                }
+            },
+            "fixed": {
+                "texturesShrunk": {
+                    "title": "{count, plural, one {Shrank # texture to {cap} px} other {Shrank # textures to {cap} px}}"
+                },
+                "dracoDecoded": "Unpacked Draco compression",
+                "meshoptDecoded": "Unpacked meshopt compression",
+                "instancesExpanded": "Turned repeated copies into plain shapes",
+                "extensionsDropped": "Left out features it doesn't need",
+                "contentDropped": {
+                    "title": "Left out what a prop doesn't use",
+                    "animations": "{count, plural, one {# animation} other {# animations}}",
+                    "cameras": "{count, plural, one {# camera} other {# cameras}}",
+                    "morphTargets": "{count, plural, one {# shape key} other {# shape keys}}",
+                    "scenes": "{count, plural, one {# other scene} other {# other scenes}}"
+                },
+                "rigFrozen": "Removed its rig: it stands still, as posed without animation",
+                "pivotMoved": "Set it on the ground at its center"
+            },
+            "notes": {
+                "validatorWarnings": "{count, plural, one {The file has # warning} other {The file has # warnings}}",
+                "sizeOutOfRange": {
+                    "title": "Unusual size for a prop",
+                    "detail": "Its longest side is {largest} m; props are usually {min} to {max} m."
+                },
+                "overTriangleCap": "Still detailed: {triangles} triangles (the aim is {cap})"
+            }
+        },
+        "modelMissing": "This prop's model isn't in the show any more, so it draws as a block."
     },
     "frontEnsemble": {
         "title": "Front ensemble and podiums",
@@ -1509,10 +1763,14 @@
             "title": "Add equipment",
             "button": "Add"
         },
-        "empty": "No front ensemble yet. Add equipment and podiums, or start from a preset.",
         "list": {
             "equipment": "Equipment",
             "podiums": "Podiums"
+        },
+        "custom": {
+            "title": "Or build it yourself",
+            "description": "Pick instruments, speakers and podiums one at a time.",
+            "button": "Add equipment"
         },
         "placeInstructions": "Click the field to place the {name}. It is on the field from the playhead's count.",
         "equipment": {
@@ -1550,6 +1808,7 @@
             "always": "Each also adds a podium on the 50 and a mixer behind the pit.",
             "addPerformers": "Also add performers",
             "apply": "Apply",
+            "use": "Use this preset",
             "replaces": "Replaces the equipment the last preset added. Its players move to the new spots; those left without an instrument are removed, unless they have moves later in the show. Undo brings everything back. Equipment you added yourself stays.",
             "none": "None",
             "start": "Start from a preset",
@@ -1650,6 +1909,8 @@
         "field.labelSize.small": "Small",
         "field.stepSizeWarnings": "Step size warnings",
         "field.stepSizeWarnings.description": "Mark moves with steps too large to march, and always show their paths.",
+        "field.followTheLeader": "Follow-the-leader (preview)",
+        "field.followTheLeader.description": "Adds Follow, Set order and Ripple in, for lines that follow a leader along a trail. Still being tested. Turned off, a show that has trails still plays them.",
         "general": "General",
         "general.appearance": "Appearance",
         "general.appearance.dark": "Dark",
@@ -1674,6 +1935,15 @@
         "general.editorMode.note": "Switching keeps your show as it is. Anything made in Expert that Basic can't edit stays, plays and is shown as locked in Basic.",
         "general.language": "Language",
         "general.openView3dWithShow": "Open 3D View when a show opens",
+        "general.editorDisplay": "Open the editor on",
+        "general.view3dDisplay": "Open the 3D View on",
+        "general.windows": "Windows",
+        "general.windowDisplay.last": "Where you left it",
+        "general.windowDisplay.display": "Display {number} · {size}",
+        "general.windowDisplay.namedDisplay": "{name} · {size}",
+        "general.windowDisplay.main": "{display} (main)",
+        "general.windowDisplay.disconnected": "A display that isn't connected",
+        "general.windowDisplay.disconnected.description": "Until that display is connected again, the window opens where you left it.",
         "general.performanceMode": "Performance mode",
         "general.performanceMode.description": "Draw the field more simply so it stays smooth on slower computers. The field switches to this by itself when graphics run in software.",
         "general.showFullDatabasePath": "Show full file path",
@@ -1693,6 +1963,12 @@
         "privacy.analytics.disabled": "You are not sharing analytics. If you experience issues or bugs, we will not be aware of them. If you have an issue, please <a>submit feedback</a> so that we can address it.",
         "privacy.analytics.enabled": "You're sharing usage analytics. Thank you for helping us improve OpenMarch for everyone.",
         "privacy.analytics.toggle": "Enable analytics",
+        "privacy.discord": "Discord status",
+        "privacy.discord.about": "While Discord is open on this computer, your Discord status says you're designing a show in OpenMarch, and for how long. Your friends and the people in your servers can see it.",
+        "privacy.discord.showName": "Show the show's name",
+        "privacy.discord.showName.description": "Adds the name of the open show to your Discord status. Off unless you turn it on.",
+        "privacy.discord.showName.needsStatus": "Turn on the Discord status above first.",
+        "privacy.discord.toggle": "Show OpenMarch in my Discord status",
         "privacy.description": "Choose what OpenMarch shares to help improve the app.",
         "repairDotsFile": "Repair DOTS file",
         "repairDotsFile.cancel": "Cancel",
@@ -1780,7 +2056,16 @@
         "utilityUpdateFailed": "Couldn't save the settings",
         "shortcuts.conflictWith": "<keys></keys> is already used by {actions}.",
         "shortcuts.recordingHint": "Press keys… (<keys></keys> to cancel)",
-        "shortcuts.category.field": "Field"
+        "shortcuts.category.field": "Field",
+        "general.workingCopySaves": "Save shows through a working copy",
+        "general.workingCopySaves.description": "Edits go to a private copy, and your show file is updated a few seconds after you stop editing, all at once. Safe in folders that OneDrive, iCloud Drive or Dropbox sync. Turn it off to write every change straight to the show file, as earlier versions did. Applies to the next show you open.",
+        "shortcuts.category.path": "Paths"
+    },
+    "discord": {
+        "presence.designing": "Designing a show",
+        "presence.getOpenMarch": "Get OpenMarch",
+        "presence.launchPage": "Choosing a show",
+        "presence.newShow": "Starting a new show"
     },
     "shapes": {
         "box": {
@@ -1853,6 +2138,15 @@
             "empty": "{count} empty",
             "flipAcross": "Flip side to side",
             "flipDeep": "Flip front to back",
+            "mirror": {
+                "label": "Mirror",
+                "across": "Side to side",
+                "acrossTip": "Mirror across the upright line through the mirror point: side 1 and side 2 swap",
+                "deep": "Front to back",
+                "deepTip": "Mirror across the level line through the mirror point: front and back swap",
+                "both": "Both",
+                "bothTip": "Mirror across both lines: half a turn around the mirror point"
+            },
             "expand": "Expand, keeping the proportions",
             "shrink": "Shrink, keeping the proportions",
             "shrinkFloor": "Shrink: no spacing can go under half a step",
@@ -1965,6 +2259,15 @@
             "groupNeedsTwo": "Select 2 or more marchers to group them",
             "ungroupError": "Couldn't ungroup the shape",
             "ungroupIsolated": "Ungroup this shape outside isolation: it comes from an earlier page",
+            "droppedAtFlag": {
+                "many": "{count, plural, one {# marcher isn't part of the shape at this flag anymore} other {# marchers aren't part of the shape at this flag anymore}}",
+                "one": "{name} isn't part of the shape at this flag anymore"
+            },
+            "leftOut": {
+                "hint": "A shape holds only marchers whose last mid-page position on this page is at the same count. Remove the positions that differ, then place the shape again.",
+                "many": "{count, plural, one {# marcher is on its spot, but isn't part of the shape} other {# marchers are on their spots, but aren't part of the shape}}",
+                "one": "{name} is on its spot, but isn't part of the shape"
+            },
             "leftShape": {
                 "many": "{count, plural, one {# left the {shape, select, block {box} circle {circle} other {shape}}} other {# left the {shape, select, block {box} circle {circle} other {shape}}}}",
                 "one": "{name} left the {shape, select, block {box} circle {circle} other {shape}}"
@@ -2290,6 +2593,43 @@
             "addGroup": "Add group",
             "list": "All groups as a list: count * steps, + between groups",
             "countAt": "{count} at {interval}"
+        },
+        "clipboard": {
+            "announceCleared": "Clipboard cleared",
+            "announceCopied": "{count, plural, one {Copied {name}, # marcher} other {Copied {name}, # marchers}}",
+            "announcePreview": "Paste preview. Enter places it, Escape discards it.",
+            "announceMirrorPreview": "Mirrored paste preview. Move the mirror point with the arrow keys, by clicking the field or by dragging it. Enter places it, Escape discards it.",
+            "anyNumber": "Pastes onto any number of marchers, keeping its size",
+            "asShape": "Shape",
+            "chipCopied": "Copied",
+            "chipEmptySpots": "{count, plural, one {# spot stays empty} other {# spots stay empty}}",
+            "chipExact": "{count, plural, one {Fits the # selected} other {Fits the # selected}}",
+            "chipLabel": "Clipboard: {name}, {count}. {status}. Show details",
+            "chipLaidOut": "{count, plural, one {Laid out for # marcher} other {Laid out for # marchers}}",
+            "chipLeftOut": "{count, plural, one {# marcher has no spot} other {# marchers have no spot}}",
+            "chipShapeOpen": "Place or discard the open shape",
+            "fitEmptySpots": "{count, plural, one {With {selected} selected, # spot stays empty} other {With {selected} selected, # spots stay empty}}",
+            "fitExact": "{count, plural, one {Fits the # marcher selected} other {Fits the # marchers selected}}",
+            "fitLaidOut": "{count, plural, one {Laid out for the # marcher selected} other {Laid out for the # marchers selected}}",
+            "fitLeftOut": "{count, plural, one {# selected marcher has no spot and stays put} other {# selected marchers have no spot and stay put}}",
+            "fixed": "{count, plural, one {Fills # spot: select # marcher to fill it} other {Fills # spots: select # marchers to fill them all}}",
+            "fold": "Hide clipboard details",
+            "left": "{count, plural, one {# marcher has no spot and stays put} other {# marchers have no spot and stay put}}",
+            "marchers": "{count, plural, one {# marcher} other {# marchers}}",
+            "pasteAs": "Paste as",
+            "pasteExactlyHint": "Puts the copy on the exact spot it was copied from, and the selected marchers take its spots by shortest walk.",
+            "pasteMirroredHint": "Puts the copy's mirror image across a point you drag, such as the 50, a yard line or a marcher. Choose side to side, front to back or both in its editor.",
+            "pictureLabel": "Picture of the copied formation",
+            "positions": "Positions",
+            "reasonEmpty": "Nothing is copied",
+            "reasonNotAShape": "Copy a whole shape first",
+            "reasonNothingCopied": "Copy marchers first",
+            "reasonOpenShape": "Place or discard the open shape first",
+            "reasonSelectToCopy": "Select marchers to copy them",
+            "reasonSelectToPaste": "Select the marchers to paste onto",
+            "restedTip": "Clipboard: {name}, {count} · Show details",
+            "shapeAsPositions": "{name} positions",
+            "title": "Clipboard"
         }
     },
     "tags": {
@@ -2457,6 +2797,7 @@
             "noneAtPlayhead": "No move crosses the playhead. Put the playhead inside a move to split it.",
             "severalAt": "Several moves cross {where}. Right-click the one to split.",
             "severalAtPlayhead": "Several moves cross the playhead. Right-click the one to split.",
+            "trail": "Can't split at a count while a line follows a trail. Remove the trail first.",
             "withNote": "{message} · {note}"
         },
         "page": {
@@ -2562,6 +2903,7 @@
             "point": {
                 "label": "Position at count {count} of page {page}",
                 "remove": "Remove this count's position",
+                "removeHeld": "{count, plural, =1 {This marcher is {heldLower} from this count, so its position here stays. Remove the hold first.} other {These marchers are {heldLower} from this count, so their positions here stay. Remove the holds first.}}",
                 "tooltip": "Position at count {count} of page {page}. Right-click to remove it."
             },
             "locked": "{count, plural, =1 {One marcher uses Expert moves on this page. Switch to Expert to edit it.} other {# marchers use Expert moves on this page. Switch to Expert to edit them.}}",
@@ -2880,7 +3222,55 @@
             "keep": {
                 "wholePage": "Keep works on a whole page, not {counts}"
             },
-            "tooFarPastEnd": "that is {count, plural, one {# count} other {# counts}} past the end; one edit stores at most {max}"
+            "tooFarPastEnd": "that is {count, plural, one {# count} other {# counts}} past the end; one edit stores at most {max}",
+            "route": {
+                "takenOverAtStart": "{marcher} is taken over at the start of this move",
+                "takenOverEarlier": "{marcher} is taken over earlier in this move",
+                "followsTheLeader": "{marcher} follows the leader in this move, so it can't have a drawn path yet",
+                "removePathFirst": "{move} has a drawn path: remove it first",
+                "notYet": "{move} has a drawn path, which this edit can't keep yet. Remove the path first",
+                "cantKeep": "This edit can't keep a drawn path yet. Remove the path first",
+                "notInMove": "{marcher} isn't in this move",
+                "groupSplit": "Can't split a group path, or a detached copy of one, yet: remove the path first",
+                "notOnGroupPath": "{marcher} doesn't follow a group path here",
+                "onlyOnPath": "{marcher} is the only marcher on its path here, so there's no group to detach from",
+                "copiesApart": "These marchers' paths aren't the same any more, so they can't be edited as one. Edit each one's path on its own",
+                "rejoinOntoCopy": "That path is a detached copy, not a group path: rejoin the group path it came from instead",
+                "noGroupPath": "{move} has no group path to rejoin",
+                "alreadyOnGroupPath": "Those marchers already follow the group path",
+                "groupTooSmall": "A group path is for two or more marchers",
+                "spotShared": "Spot {spot} is also walked by {marcher} from count {count}",
+                "adjustOutside": "The ends of this line stay on the group path. Drag a round handle between them to bend it",
+                "adjustTooClose": "Keep bend points at least a step apart",
+                "adjustTooShort": "This line is too short to bend. Detach the marcher to edit its own copy",
+                "refitNotNeeded": "The path already fits where its marchers stand",
+                "refitNoFounder": "Nobody starts on this path, so it has no ends to re-fit to",
+                "arcTooRound": "An arc can bend at most into a half circle",
+                "smoothBesideArc": "A point at an end of an arc must be a corner"
+            },
+            "trail": {
+                "tooFew": "Follow is for two or more marchers",
+                "partWay": "{marcher} is in this move for only some of its counts, so it can't follow a trail here",
+                "hasPath": "{marcher} walks a drawn path in this move. Remove the path, then choose Follow",
+                "alreadyFollows": "{marcher} already follows a trail in this move. Select that whole line, and nobody else, to draw its trail again",
+                "sharedShape": "{move} takes these marchers into a shape they share with marchers who aren't selected, so they can't follow a trail on their own",
+                "notYet": "{move} follows a drawn trail, which this edit can't keep yet. Remove the trail first",
+                "split": "{move} can't be split at a count while a line follows a trail. Remove the trail first, or split before choosing Follow",
+                "removeTrailFirst": "{move} follows a drawn trail: remove the trail first",
+                "noTrail": "This trail is gone",
+                "notFitted": "Select marchers standing in a line, curve or arc to drag out a trail",
+                "notAnEnd": "Drag the trail out of an end of the line",
+                "tooShort": "Draw a longer trail",
+                "evenTooWide": "Even spacing can be at most {limit} steps here, or someone would walk backward",
+                "noSpots": "Keep end spots needs every marcher in one move with spots there",
+                "notAForm": "Their end spots don't stand in a line, curve or arc, so the line can't ripple into them",
+                "formLoop": "Their end spots close into a loop (a circle or a box outline). Rippling around an outline comes in a later step",
+                "formFold": "Their end spots fold back close to themselves (a sharp V, or rows through a box), so the line would pass close by itself. Rippling along a snake comes in a later step",
+                "formOverlap": "Their end spots lie on the line where it stands, so the line would walk back through itself. Move the end spots off the line first",
+                "notOneMove": "{marcher} can't join the rest of the line in one move here, so nothing was changed",
+                "noWindow": "Move the playhead past the start flag to drag out a trail",
+                "reverseAlong": "Reverse leader is off for a trail dragged out of a line. Drag the trail out of the other end instead."
+            }
         },
         "expertHolds": {
             "held": "{names}: already {heldLower} from the start flag to the playhead",
@@ -2950,13 +3340,12 @@
             "lockYCaption": "Lock Y",
             "snapCaption": "Snap to grid",
             "lockMarchersAriaLabel": "Cursor movement and marcher snap",
-            "placeAllMarchers": "Place all marchers",
-            "placeSelectedMarchers": "Place selected marchers",
+            "allMarchers": "All marchers",
+            "selectedMarchers": "Selected marchers",
             "clearThisPage": "{clearThisPage}",
             "snapToggleCaption": "Snap",
-            "toNextPageSpots": "...to next page's spots",
-            "setMarcherPositionsAriaLabel": "Set marcher positions",
-            "toPreviousPagePositions": "...to previous page positions"
+            "moveToNextPageSpots": "Move to next page's spots",
+            "setMarcherPositionsAriaLabel": "Set marcher positions"
         },
         "collisions": {
             "collisionsToolbar": "Collisions",
@@ -3003,9 +3392,14 @@
             "shapes": "Shapes",
             "shapesAlways": "Always",
             "shapesOff": "Off",
-            "shapesSelected": "When selected"
+            "shapesSelected": "When selected",
+            "order": "Order",
+            "orderSelected": "While selected",
+            "orderAlways": "Always",
+            "orderOff": "Off"
         },
-        "alignmentTabShort": "Align"
+        "alignmentTabShort": "Align",
+        "pathsTab": "Paths"
     },
     "updates": {
         "pill": {
@@ -3106,7 +3500,14 @@
             "pickSeatTooltip": "Pick a seat: click a seat in the stands to sit there",
             "venue": "Venue",
             "freeCamera": "Free view",
-            "director": "Director"
+            "director": "Director",
+            "followPerformer": "Follow a performer",
+            "followPerformerTooltip": "Follow a performer: click a performer to follow them",
+            "following": "Following {name}",
+            "povOf": "{name}'s view",
+            "pointOfView": "Point of view",
+            "pointOfViewTooltip": "Point of view: see through the performer's eyes",
+            "stopFollowing": "Stop following"
         },
         "readout": {
             "count": "Count {count} of {total}",
@@ -3158,7 +3559,9 @@
             },
             "showNote": "Saved with this show. Undo in the editor reverts a change.",
             "computerNote": "Saved on this computer only. Not part of the show.",
-            "shortcuts": "Keyboard shortcuts"
+            "shortcuts": "Keyboard shortcuts",
+            "followTurns": "Following: turn with the performer",
+            "povShowsBody": "Point of view: show their arms and instrument"
         },
         "keys": {
             "playPause": "Play or pause",
@@ -3167,14 +3570,16 @@
             "cameras": "Cameras, in menu order",
             "fullscreen": "Fullscreen",
             "crowd": "Show or hide the crowd",
-            "escape": "Cancel a seat pick, close settings, leave fullscreen",
+            "escape": "Cancel a pick, close settings, stop following, leave fullscreen",
             "orbit": "Orbit",
             "orbitOrRight": "Orbit, or drag with the right mouse button",
             "panPlain": "Pan",
             "zoomOrPinch": "Zoom, or pinch on a trackpad",
             "pan": "Pan, or drag with the right mouse button",
             "zoom": "Zoom",
-            "pausedPose": "Paused: show the actual step or the closed position"
+            "pausedPose": "Paused: show the actual step or the closed position",
+            "followPerformer": "Pick a performer to follow",
+            "pointOfView": "Following: switch to their point of view and back"
         },
         "keyNames": {
             "pair": "<first></first> / <second></second>"
@@ -3640,7 +4045,8 @@
             "shape": "Shapes",
             "timeline": "Timeline",
             "ui": "View",
-            "field": "Field"
+            "field": "Field",
+            "path": "Paths"
         }
     },
     "shortcut": {
@@ -3682,7 +4088,8 @@
             "noDocument": {
                 "title": "Cannot Save or Export",
                 "message": "There is currently no active document to save or export."
-            }
+            },
+            "saveNow": "Save Now"
         },
         "view": {
             "title": "View",
@@ -3713,6 +4120,7 @@
         },
         "help": {
             "title": "Help",
+            "openHelp": "Get Help…",
             "showShortcuts": "Keyboard Shortcuts",
             "website": "Website",
             "guides": "Docs/Guides",
@@ -3729,6 +4137,14 @@
             "audioFile": "Audio File",
             "video": "Video"
         },
+        "leftoverJournal": {
+            "damagedMessage": "OpenMarch couldn't recover this show, with or without “{name}”. Nothing was changed. Report the problem and include the show and “{name}” if you can.",
+            "damagedTitle": "Couldn't recover the show",
+            "failedTitle": "Couldn't open the show",
+            "journalMoveFailedMessage": "OpenMarch couldn't move “{name}” out of the show's folder, so the show didn't open. The show itself is sound. Report the problem and include the show and “{name}” if you can.",
+            "replaceFailedMessage": "OpenMarch couldn't replace the show with the recovered copy. Another program may be using the file. Nothing was changed: close other programs that might have the show open, then open it again.",
+            "stageFailedMessage": "OpenMarch couldn't make the copies it needs to recover the show. The disk may be full, or OpenMarch may not be allowed to write in the show's folder or its own folder. Nothing was changed."
+        },
         "newShow": {
             "button": "Create New"
         },
@@ -3737,6 +4153,29 @@
         },
         "openFailed": {
             "title": "Error Loading Database"
+        },
+        "recoverOnOpen": {
+            "message": "OpenMarch closed before your last changes to “{name}” were saved.",
+            "detail": "Last edited {time}. Recover them to keep working where you left off, or discard them to open the show as it was last saved. Discarded changes can't be brought back.",
+            "recover": "Recover Changes",
+            "discard": "Discard Changes",
+            "cancel": "Cancel"
+        },
+        "saveAs": {
+            "button": "Save"
+        },
+        "unpublished": {
+            "message": "Your latest changes to “{name}” aren't in its file yet.",
+            "conflictDetail": "“{name}” was changed by another program or computer, so OpenMarch didn't write over it.",
+            "readOnlyDetail": "“{name}” is read-only, so OpenMarch can't write your changes to it.",
+            "busyDetail": "“{name}” couldn't be updated: another program may be using it, or its folder can't be written to.",
+            "busySyncDetail": "“{name}” couldn't be updated: {service} may be using it.",
+            "keptDetail": "If you close anyway, OpenMarch keeps your changes and offers to recover them the next time you open the show.",
+            "keepMine": "Keep My Version",
+            "saveAs": "Save As…",
+            "retry": "Try Again",
+            "closeAnyway": "Close Anyway",
+            "cancel": "Cancel"
         }
     },
     "cues": {
@@ -4337,6 +4776,9 @@
         "error.failed": "Your report couldn't be sent. Check your connection and try again.",
         "attach.music.off": "The music isn't sent.",
         "attach.music.on": "The music is sent too.",
+        "attach.models": "Include imported models",
+        "attach.models.off": "Imported models aren't sent, only their sizes and details.",
+        "attach.models.on": "Imported models are sent too ({size}).",
         "sending.recording": "Uploading the recording…",
         "sending.show_file": "Uploading your show…",
         "sending.diagnostics": "Uploading diagnostics…",
@@ -4544,6 +4986,301 @@
             "mixed": "Mixed",
             "add": "Add line",
             "everyOther": "Keep every other"
+        }
+    },
+    "pathways": {
+        "editor": {
+            "finish": "Finish",
+            "cancel": "Cancel",
+            "bigStepsShort": "Big steps · {steps}",
+            "removeLastPoint": "Remove last point",
+            "pointType": "Point type",
+            "bigStepsTipPoints": "{inches} in a step, all along the path. Lengthen the move, or move or take out points to shorten the path.",
+            "bigStepsLeg": "Big steps · {steps} {where}",
+            "bigStepsTipLegs": "Big steps {legs}. Every marcher passes each point of the path at the same moment, so only getting onto and off the path changes speed. Lengthen the move, or move points to even them out.",
+            "legOnto": "joining the path",
+            "legOff": "leaving the path",
+            "legAlong": "on the path",
+            "legStraight": "straight to the spot",
+            "rejoinTip": "Put the selected marchers back on the group path. A detached marcher's copy goes, and so do any bends on its line",
+            "refitTip": "Move this path's ends to where its marchers stand now and stretch its corners to match",
+            "rehomedBadge": "Bend moved",
+            "rehomedTip": "A point a bend was attached to changed, so the bend moved to the nearest points left. Check it still does what you meant.",
+            "legAdjusted": "{marcher}'s bent line, counts {from} to {to}",
+            "bigStepsTipTrail": "{marcher} has the farthest to go: {inches} in a step. Each marcher walks its own way along the trail at a steady speed. Lengthen the move, or shorten the trail.",
+            "pathKind": "How the marchers take the path",
+            "togetherTip": "Together: the group slides along the path and keeps its shape",
+            "together": "Together",
+            "followTip": "Follow: the line follows its leader along the trail into its end spots",
+            "spacing": "Spacing",
+            "keepSpacing": "Keep spacing",
+            "keepSpacingTip": "Keep spacing: each marcher keeps its distance to the next along the way",
+            "even": "Even",
+            "evenTip": "Even: every marcher ends the same number of steps from the next",
+            "evenOff": "Even: the trail is too short for even steps, or someone would walk backward. Draw it longer",
+            "evenCloser": "Closer together",
+            "evenFarther": "Farther apart",
+            "evenSteps": "{steps} steps",
+            "evenLimit": "up to {limit}",
+            "ends": "Ends",
+            "endsFromTrail": "From trail",
+            "endsFromTrailTip": "From trail: the line stops along the trail, and those become its end spots",
+            "endsKeep": "Keep end spots",
+            "endsKeepTip": "Keep end spots: the line follows the trail into the end spots it already has",
+            "endsRipple": "Ripple in",
+            "endsRippleTip": "Ripple in: the line follows its leader straight to the near end of the form its end spots make, then along it. The leader takes the far end",
+            "endsRippleOff": "Ripple in: their end spots don't stand in a line, curve or arc",
+            "endsNeedSpots": "Ripple in and Keep end spots follow into end spots the line already has on this page. Place them first (a shape tool, or move the marchers), then choose Follow",
+            "rippleArrival": "Leader reaches the form on count {count}",
+            "rippleArrivalStart": "Leader starts at the form",
+            "preview": "Preview",
+            "previewTip": "Preview: the marchers walk the trail from start to end, again and again",
+            "previewReduced": "Preview is off while your system asks for less motion",
+            "previewNothing": "Preview: place a point first",
+            "editTip": "Show this path's points to drag. A click on its line does it too",
+            "editGroupTip": "Show the group path's points to drag. Every marcher on it follows",
+            "editLineTip": "Bend only {marcher}'s line, by its handles. It keeps following the group path's edits. A click on the line does it too",
+            "detachFromGroupCount": "Detach {count} from group path",
+            "detachNote": "Stops following group path changes",
+            "detachAllCount": "Detach all {count} marchers",
+            "detachAllNote": "Ends the group path; each marcher gets their own copy",
+            "resetTip": "Take this marcher's bends off, so it walks the group path like the others again",
+            "groupLabel": "Group path · {count}",
+            "groupLabelTip": "Select everyone on this group path",
+            "ownPaths": "{count} own paths",
+            "drawOneTip": "Draw one path for the selected marchers, in place of their own",
+            "drawPath": "Draw path",
+            "rejoinCount": "Rejoin {count}",
+            "more": "More path commands",
+            "looseLabel": "{count} paths"
+        },
+        "menu": {
+            "pointType": "Corner type",
+            "swapHint": "Double-click a point to swap",
+            "corner": "Corner",
+            "smooth": "Smooth",
+            "roundness": "Roundness",
+            "deletePoint": "Delete point",
+            "addPoint": "Add point here",
+            "straight": "Straight",
+            "curved": "Curved",
+            "noCurve": "The path runs straight through here",
+            "arc": "Arc",
+            "besideArc": "A point at an end of an arc stays a corner",
+            "nextToArc": "An arc meets this leg at a corner"
+        },
+        "errors": {
+            "save": "Couldn't save the path",
+            "remove": "Couldn't remove the path",
+            "adjust": "Couldn't bend this line",
+            "refit": "Couldn't re-fit the path",
+            "reverse": "Couldn't reverse the trail"
+        },
+        "refusals": {
+            "noMove": "{marcher} has no move at the playhead to draw a path on",
+            "playing": "Stop playback to draw a path",
+            "selectOne": "Select a marcher to draw a path for",
+            "twoMoves": "These marchers are in different moves at the playhead: select marchers of one move to draw a group path",
+            "followTwo": "Select the marchers of a line (two or more) to follow a trail",
+            "followTwoMoves": "These marchers are in different moves at the playhead: select marchers of one move to follow a trail",
+            "followTheLeaderOff": "This line follows a trail. Turn on Follow-the-leader (preview) in Settings › Field to edit it"
+        },
+        "banner": {
+            "drawingPoints": "{marcher}'s path: click for a corner, drag for a smooth point · Right-click or <keys></keys> removes the last · Double-click to finish · <esc></esc> to cancel",
+            "drawingPointsClick": "{marcher}'s path: click for a corner, drag for a smooth point · Right-click removes the last · Double-click to finish · <esc></esc> to cancel",
+            "groupDrawing": "Group path for {count} marchers: click for a corner, drag for a smooth point · Right-click removes the last · Double-click to finish · <esc></esc> to cancel",
+            "trailDrawing": "Trail for {count} marchers, {marcher} leading: click for a corner, drag for a smooth point · Right-click removes the last · Double-click to finish · <esc></esc> to cancel",
+            "rippleDrawing": "Ripple in, {marcher} leading: click an end of the form to go straight in, or click for corners first · Double-click to finish · <esc></esc> to cancel",
+            "followGrab": "Follow: drag a trail out of either end of the line · <esc></esc> to leave"
+        },
+        "toolbar": {
+            "path": "Path",
+            "followTip": "Follow: drag a trail out of an end of the selected line, and where the line stops becomes its next spots",
+            "order": "Order",
+            "setOrderTip": "Set order: drag through the selected marchers from the leader to the tail, or click them one by one",
+            "reverseOrderTip": "Reverse order: the tail leads",
+            "clearOrderTip": "Clear order: forget the order set here, and guess it from where the marchers stand"
+        },
+        "toasts": {
+            "removed": "Path removed",
+            "removedGroup": "Removed the path for {count, plural, one {# marcher} other {# marchers}}",
+            "rejoined": "Rejoined {count, plural, one {# marcher} other {# marchers}} to the group path",
+            "rejoinedDropped": "Rejoined {count, plural, one {# marcher} other {# marchers}} to the group path. {dropped, plural, one {# line lost its own shape} other {# lines lost their own shapes}}",
+            "rehomed": "Moved the bend on {count, plural, one {# line} other {# lines}} to the nearest points left",
+            "rehomedKeys": "{count, plural, one {# bend point} other {# bend points}} dropped",
+            "rehomedCleared": "{count, plural, one {# line lost its bend} other {# lines lost their bends}}",
+            "adjustsRemoved": "{count, plural, one {# bend} other {# bends}} removed: {count, plural, one {it was} other {they were}} on the old path",
+            "removedTrail": "Removed the trail: {count, plural, one {# marcher walks} other {# marchers walk}} straight to the same end spots",
+            "reversed": "{marcher} leads now",
+            "detached": "{count, plural, one {# marcher detached} other {# marchers detached}}",
+            "groupEnded": "{count, plural, one {Group path ended: # marcher has their own path} other {Group path ended: # marchers have their own paths}}",
+            "keptLive": "Kept as one group path: {names} share a spot, so they can't each have their own"
+        },
+        "rings": {
+            "group": "Follows the group path",
+            "own": "Own path",
+            "detached": "Detached: walks its own copy of the group path",
+            "adjusted": "Has bends of its own, and still follows the group path's edits",
+            "offGroup": "Not on the group path",
+            "leader": "Leads the line",
+            "follower": "Follows the leader",
+            "dragEnd": "Drag a trail out of this end",
+            "grabEnd": "Drag from an end of the line"
+        },
+        "lanes": {
+            "hover": "{marcher}'s line",
+            "hoverAdjusted": "{marcher}'s line · bent",
+            "stacked": "click for the next of {count}"
+        },
+        "trail": {
+            "leader": "Leader · {marcher}",
+            "reverseTip": "Make the other end of the line lead. Everyone keeps their end spot."
+        },
+        "order": {
+            "error": "Error saving the line's order",
+            "noneToReverse": "These marchers have no order to reverse: set one first",
+            "noneToClear": "Nothing to clear: the order of these marchers is already guessed",
+            "refusePlaying": "Stop playback to set the order",
+            "refuseTwo": "Select the marchers of a line (two or more)",
+            "refuseDrawing": "Finish or cancel the path first",
+            "cancel": "Cancel Set order",
+            "done": "Keep this order",
+            "doneButton": "Done",
+            "banner": "Set order: drag through the marchers from the leader, or click them one by one · {picked} of {count}",
+            "zoomIn": "Zoom in to read the order"
+        },
+        "corners": {
+            "chipLabel": "Turning counts {range} at this corner. Show who turns when.",
+            "chipOffLabel": "Turning counts {range} at this corner, some between counts. Show who turns when.",
+            "listTitle": "Turns at this corner",
+            "leader": "Leader",
+            "onCount": "count {count}",
+            "betweenCounts": "{count} · between {before} and {after}",
+            "stopBefore": "{count, plural, one {# stops or leaves the trail before turning here} other {# stop or leave the trail before turning here}}",
+            "offCountShort": "Turns between counts",
+            "offCountTip": "{turns, plural, one {# turn falls} other {# turns fall}} between counts, at {corners, plural, one {# corner} other {# corners}}. Each marcher reaches a corner at its own steady speed. Move the corner, change the spacing or the move's counts to put every turn on a count. Tap or click a corner's count to see who turns when."
+        },
+        "inspector": {
+            "path": "Path"
+        },
+        "slots": {
+            "detached": "This marcher is detached: Rejoin puts it back on the group path",
+            "ownPath": "This marcher walks its own path, not a group path",
+            "detachNone": "Select marchers on the group path to detach them",
+            "detachWhole": "Select some marchers to detach them. To detach everyone, use ··· › Detach all {count} marchers",
+            "detachAllNone": "Select every marcher on a group path to detach them all",
+            "matchSeveral": "Click one of them again to pick just that marcher, then match it to the group path",
+            "matchNone": "Select a marcher on the group path",
+            "matches": "This marcher already walks the group path exactly: nothing to match",
+            "centered": "The group path already runs through the middle of its marchers",
+            "fits": "The path already fits where its marcher stands",
+            "centeredLoose": "The path already runs through the middle of these marchers"
+        },
+        "editLine": {
+            "groupOnly": "Select a marcher on a group path to edit their line",
+            "ownPath": "This marcher walks its own path: Edit path changes it",
+            "detached": "This marcher is detached: Edit path changes its own copy, or Rejoin puts it back on the group path",
+            "alone": "This marcher is alone on its path: Edit path changes it",
+            "severalSelected": "Click one of them again to pick just that marcher, then edit their line",
+            "noneSelected": "Select a marcher on the group path to edit their line"
+        }
+    },
+    "help": {
+        "title": "Get help",
+        "description": "Look it up in the user guide, or have an AI assistant such as ChatGPT or Claude find the answer for you.",
+        "guide": {
+            "title": "Read the user guide",
+            "body": "Step-by-step help, with pictures and clips.",
+            "open": "Open the guide"
+        },
+        "ai": {
+            "title": "Ask an AI assistant",
+            "body": "Paste this message into ChatGPT, Claude or any AI assistant. It has the assistant read the OpenMarch guide before it answers.",
+            "questionLabel": "What are you trying to do? (optional)",
+            "questionPlaceholder": "For example: I want the trumpets to stand still for 8 counts, but they keep moving.",
+            "copy": "Copy message",
+            "copied": "Copied. Now paste it into your assistant.",
+            "copyFailed": "Couldn't copy it. Select the text below and copy it yourself:",
+            "whatIsCopied": "See the message",
+            "privacy": "Nothing about your show is included."
+        },
+        "report": {
+            "title": "Something not working?",
+            "body": "Tell us what happened. You can record your screen and send a copy of your show."
+        }
+    },
+    "workingCopy": {
+        "status": {
+            "saved": "Saved",
+            "pending": "Edited",
+            "saving": "Saving…",
+            "problem": "Not in your folder yet"
+        },
+        "detail": {
+            "saved": "Your latest changes are in “{name}”.",
+            "pending": "Your changes are kept safe in OpenMarch and written to “{name}” a few seconds after you stop editing, when you switch to another app, and when you close the show.",
+            "deferred": "“{name}” couldn't be updated yet: another program may be using it, or its folder can't be written to. Your changes are kept safe in OpenMarch, which keeps trying on its own.",
+            "deferredSync": "“{name}” couldn't be updated yet: {service} may be using it. Your changes are kept safe in OpenMarch, which keeps trying on its own.",
+            "readOnly": "“{name}” is read-only, so OpenMarch can't write your changes to it. Save them as a new file to keep them.",
+            "conflict": "“{name}” was changed by another program or computer. Choose which version to keep."
+        },
+        "detailsLabel": "Save status",
+        "saveNow": "Save Now",
+        "saveAs": "Save As…",
+        "nothingToSave": "Everything is already saved",
+        "conflict": {
+            "title": "This show changed on disk",
+            "description": "“{name}” was changed by another program or computer since OpenMarch last saved it, so your latest changes haven't been written to it. Which version do you want to keep?",
+            "keepMine": "Keep my version",
+            "keepTheirs": "Use the version on disk",
+            "saveCopy": "Save mine as a new file…"
+        },
+        "missing": {
+            "title": "This show was moved or deleted",
+            "description": "“{name}” isn't where OpenMarch opened it from, so your latest changes haven't been saved to it.",
+            "saveHere": "Save it where it was"
+        },
+        "recovery": {
+            "title": "Recover unsaved changes",
+            "description": "OpenMarch closed before these changes reached their show files.",
+            "lastEdited": "Last edited {time}",
+            "missing": "the show file is missing",
+            "recover": "Recover",
+            "discard": "Discard",
+            "error": "Couldn't recover the changes: {error}"
+        }
+    },
+    "assets": {
+        "title": "Assets",
+        "empty": "This show has no imported assets yet. Import a 3D model from the Props panel.",
+        "notes": {
+            "unused": "{count, plural, one {# asset isn't used} other {# assets aren't used}} anywhere in the show · {size}",
+            "missing": "{count, plural, one {# prop names a model this show doesn't have, so it draws as a block.} other {# props name models this show doesn't have, so they draw as blocks.}}",
+            "large": "Assets make this show large: {size}. Large shows are slower to open, save and share."
+        },
+        "removeUnused": {
+            "button": "Remove unused…",
+            "title": "{count, plural, one {Remove # unused asset?} other {Remove # unused assets?}}",
+            "description": "Nothing in the show uses these. Removing them makes the show {size} smaller. Undo doesn't bring them back.",
+            "none": "Every asset is in use, so there's nothing to remove.",
+            "cancel": "Cancel",
+            "confirm": "{count, plural, one {Remove # asset} other {Remove # assets}}"
+        },
+        "kind": {
+            "model": "3D model"
+        },
+        "uses": "{count, plural, one {Used once} other {Used # times}}",
+        "unused": "Not used",
+        "shareNote": "Unknown license: you may not have the right to share it",
+        "size": {
+            "bytes": "{value} bytes",
+            "kb": "{value} KB",
+            "mb": "{value} MB",
+            "gb": "{value} GB"
+        },
+        "errors": {
+            "remove": "Couldn't remove the unused assets",
+            "credits": "Couldn't save the credits"
         }
     }
 }

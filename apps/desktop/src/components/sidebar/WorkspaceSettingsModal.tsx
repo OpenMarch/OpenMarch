@@ -490,7 +490,7 @@ function WorkspaceSettingsModalContents() {
                 </div>
 
                 {hasChanges && (
-                    <div className="text-sm text-amber-600">
+                    <div className="text-body text-amber-600">
                         <T keyName="workspaceSettings.unsavedChanges" />
                     </div>
                 )}

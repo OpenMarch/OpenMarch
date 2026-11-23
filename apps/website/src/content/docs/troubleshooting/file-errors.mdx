@@ -5,22 +5,34 @@ type: how-to
 covers:
   - apps/desktop/src/hooks/useLoadFileErrorHandler.tsx
   - apps/desktop/electron/database/fileVersion.ts
+  - apps/desktop/electron/database/leftoverJournal.ts
   - i18n:fileAccessDialogError
   - i18n:convertShow.openFailed
   - i18n:convertShow.backupError
+  - i18n:fileDialog.leftoverJournal
+  - apps/desktop/electron/main/leftoverJournalRecovery.ts
+  - apps/desktop/electron/main/cloudSyncFolder.ts
+  - apps/desktop/electron/database/workingCopy
 sidebar:
   order: 1
 ---
 
 import Ui from "@/components/docs/Ui.astro";
+import InShort from "@/components/docs/InShort.astro";
 
-When OpenMarch can't open a show, it says why in a message. Find the message's title below.
+<InShort>
+  Find the message's title below. Most file errors go away when you move the
+  show to a folder of your own on this computer and open it from there.
+</InShort>
+
+When OpenMarch can't open or save a show, it says why in a message, and the message's link opens this page at its section.
 
 ## Invalid file permissions error
 
 OpenMarch isn't allowed to read or write the file. You might see:
 
-- <Ui k="fileAccessDialogError.forbidden.title" /> or "You do not have permission to open this file" when you open it.
+- <Ui k="fileAccessDialogError.forbidden.title" /> or "You do not have
+  permission to open this file" when you open it.
 - A spinner that never stops.
 - An error such as <Ui k="pages.updateFailed" /> when you change something, or changes that are gone the next time you open the show.
 
@@ -58,38 +70,88 @@ Apple's [Mac User Guide](https://support.apple.com/guide/mac-help/mchlp1203/mac)
 
 ## File not found error
 
-<Ui k="fileAccessDialogError.notFound.title" /> means there's no file at the place OpenMarch looked. This usually happens when you open a show from the start page's recent files after the file was moved, renamed or deleted.
+<Ui k="fileAccessDialogError.notFound.title" /> means there's no file at the
+place OpenMarch looked. This usually happens when you open a show from the start
+page's recent files after the file was moved, renamed or deleted.
 
 1. Find the file where it is now, and open it with <Ui k="launchpage.files.openFile" /> on the start page.
-2. Remove the old entry from <Ui k="launchpage.files.title" /> on the start page.
+2. On the start page, point at the old entry in <Ui k="launchpage.files.title" /> and select <Ui k="launchpage.files.removeFile" />, or select <Ui k="launchpage.files.clearMissingRecentFiles" /> to remove every entry whose file is gone.
 
 If you didn't open it from the recent files, [report it](/guides/start/get-help/).
 
 ## Update OpenMarch to open this file
 
-<Ui k="fileAccessDialogError.tooNew.title" /> means the show was saved by a newer version of OpenMarch than the one you're using. The file hasn't been changed. Update OpenMarch, or [download the latest version](/download/), and open it again.
+<Ui k="fileAccessDialogError.tooNew.title" /> means the show was saved by a
+newer version of OpenMarch than the one you're using. The file hasn't been
+changed. Update OpenMarch, or [download the latest version](/download/), and
+open it again.
+
+## A leftover file is stopping this show from opening
+
+<Ui k="fileAccessDialogError.leftoverJournal.title" /> means there's a file next
+to the show with the same name plus `-journal` (for example `My
+show.dots-journal`). OpenMarch makes one while it saves and removes it when the
+save is done. One that's still there is from a save that didn't finish, or it
+was copied or downloaded along with the show. OpenMarch can't use this one where
+it is.
+
+Select <Ui k="fileAccessDialogError.leftoverJournal.recover" />. OpenMarch finishes recovering the show on a copy, checks the result, and opens the show. The `-journal` file is moved to OpenMarch's backups folder, not deleted.
+
+- <Ui k="fileDialog.leftoverJournal.damagedTitle" />: the show didn't come out
+  undamaged, with or without the `-journal` file. Nothing was changed. [Report
+  it](/guides/start/get-help/) and include the show and its `-journal` file if
+  you can.
+- <Ui k="fileDialog.leftoverJournal.failedTitle" />: OpenMarch couldn't finish.
+  The message says why. Most often the folder isn't writable or the disk is full
+  (see [Invalid file permissions error](#invalid-file-permissions-error)), or
+  another program, such as antivirus or a sync app, has the show open: close it
+  and open the show again.
+
+If the show is in a folder a sync app keeps, the dialog says so: see [Shows in a synced folder](#shows-in-a-synced-folder).
+
+Older versions of OpenMarch show "Error Loading Database" with "unable to open database file" instead. Don't delete the `-journal` file: if the save it belongs to had started writing, the show needs it. Copy the show and the `-journal` file together into a folder of your own on this computer, and open the show from there.
+
+When there's a `-journal` file OpenMarch _can_ use, it finishes or undoes the interrupted save by itself, as it always has. Before it does, it puts a copy of the show and the `-journal` file in its backups folder ([Open a show in an older version](/troubleshooting/open-in-an-older-version/) says where that is).
+
+## Shows in a synced folder
+
+You can keep shows in a folder that OneDrive, iCloud Drive, Dropbox, Google Drive or Box keeps in step with the cloud, for example to back them up. Now and then a sync app gets in the way while OpenMarch saves. It can hold on to the `-journal` file OpenMarch makes during a save, so the file is left behind and the show stops at [A leftover file is stopping this show from opening](#a-leftover-file-is-stopping-this-show-from-opening). When that happens, the message names the sync app. Select <Ui k="fileAccessDialogError.leftoverJournal.recover" /> as usual.
+
+If it keeps happening with one show:
+
+- Let the sync app finish (its icon shows when it's up to date) before you open the show, and close OpenMarch before you shut the computer.
+- Don't open the same show on two computers at once. Each sync app keeps one copy and may save the other as a conflict copy, such as `My show (1).dots`.
+- Work on the show in a folder on this computer that isn't synced, and copy it into the synced folder when you're done.
+- Or check that <Ui k="settings.general.workingCopySaves" /> is on in Settings › General (it is unless you turned it off). OpenMarch then edits a private copy and replaces the show file in one step a few seconds after you stop editing, so no `-journal` file is ever left in the synced folder. If a sync app is using the show when OpenMarch wants to update it, the title bar says <Ui k="workingCopy.status.problem" plain /> and OpenMarch tries again by itself; your changes are kept safe meanwhile. See [How the desktop app saves](/guides/files/save-and-open/#how-the-desktop-app-saves).
 
 ## Couldn't back up or convert your file
 
-These appear when you open a show from OpenMarch 0.1.7, which 0.2 converts after saving a copy of it. In each case your file isn't changed.
+These appear when you open a show from OpenMarch 0.1.7 ([Coming from OpenMarch 0.1](/guides/start/coming-from-0-1/)). In each case your file isn't changed.
 
-- <Ui k="convertShow.openFailed.backupTitle" />: OpenMarch couldn't save the `.pre-conversion.dots` copy, so it didn't convert anything. The message says why. Most often the folder is read-only or you don't have permission to write in it, or the disk is full: move the show to a folder of your own, or free some space, and open it again. If the file is in use by another program, close that program first.
-- <Ui k="convertShow.openFailed.convertTitle" />: the conversion failed and was undone. The message names the copy that was saved. [Report it](/guides/start/get-help/) and include the show if you can.
-
-[Coming from OpenMarch 0.1](/guides/start/coming-from-0-1/) explains the conversion.
+- <Ui k="convertShow.openFailed.backupTitle" />: OpenMarch couldn't save the
+  `.pre-conversion.dots` copy, so it didn't convert anything. The message says
+  why. Most often the folder is read-only or you don't have permission to write
+  in it, or the disk is full: move the show to a folder of your own, or free
+  some space, and open it again. If the file is in use by another program, close
+  that program first.
+- <Ui k="convertShow.openFailed.convertTitle" />: the conversion failed and was
+  undone. The message names the copy that was saved. [Report
+  it](/guides/start/get-help/) and include the show if you can.
 
 ## Server error
 
-<Ui k="fileAccessDialogError.server.title" /> comes from a problem inside OpenMarch, not from your file. [Report it](/guides/start/get-help/), and include the show if you can.
+<Ui k="fileAccessDialogError.server.title" /> comes from a problem inside
+OpenMarch, not from your file. [Report it](/guides/start/get-help/), and include
+the show if you can.
 
 ## "Unable to open file" error or render failure
 
 The message says "Unable to open file", or OpenMarch shows <Ui k="fileAccessDialogError.renderFail.title" />. [Report it](/guides/start/get-help/), and include the show if you can.
 
-If a show opens but you get errors while you edit it, try [repairing it](/troubleshooting/repair-a-file/).
+If a show opens but you get errors while you edit it, see [Repair a show file](/troubleshooting/repair-a-file/).
 
 ## Related
 
 - [Repair a show file](/troubleshooting/repair-a-file/): when a show opens but edits fail.
 - [Open a show in an older version](/troubleshooting/open-in-an-older-version/): the copies OpenMarch keeps.
-- [Get help](/guides/start/get-help/): where to report a problem.
+- [Get help and send feedback](/guides/start/get-help/): where to report a problem.

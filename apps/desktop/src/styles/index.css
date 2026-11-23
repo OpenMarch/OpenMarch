@@ -3,20 +3,26 @@
 
 @source "../../../../packages/ui/src/components";
 
+/*
+ * Text sizes: only the theme's sizes exist (docs/conventions/ui-styling.md). "--text-*: initial"
+ * removes Tailwind's built-in sizes (text-xs, text-sm, text-lg, ...), which @openmarch/ui brings
+ * back with its own "tailwindcss" import, so the theme's sizes are declared again here. Keep
+ * these values the same as packages/ui/src/tailwind.css.
+ */
+@theme {
+    --text-*: initial;
+    --text-micro: 0.625rem;
+    --text-sub: 0.6875rem;
+    --text-body: 0.875rem;
+    --text-h5: 1.125rem;
+    --text-h4: 1.25rem;
+    --text-h3: 1.75rem;
+    --text-h2: 2.25rem;
+    --text-h1: 3rem;
+}
+
 /* A clicked control keeps focus without a ring until the keyboard works it (utilities/clickFocus.ts) */
 @custom-variant focus-visible (&:focus-visible:not(:where([data-click-focus])));
-
-:root {
-    --keycap-bg: rgb(255, 255, 255);
-    --keycap-border: rgba(0, 0, 0, 0.14);
-    --keycap-edge: rgba(0, 0, 0, 0.14);
-}
-
-.dark {
-    --keycap-bg: rgb(46, 45, 56);
-    --keycap-border: rgba(255, 255, 255, 0.1);
-    --keycap-edge: rgba(0, 0, 0, 0.55);
-}
 
 /*
  * A keyboard shortcut (components/ui/Shortcut.tsx): one cap holding the keys as each system
@@ -30,9 +36,8 @@
     justify-content: center;
     vertical-align: middle;
     white-space: nowrap;
-    border: 1px solid var(--keycap-border);
-    background: var(--keycap-bg);
-    box-shadow: 0 1px 0 0 var(--keycap-edge);
+    border: 1px solid var(--color-stroke);
+    background-image: var(--background-image-fg-2);
     color: var(--color-text);
     font-family: var(--font-sans);
     font-weight: 500;

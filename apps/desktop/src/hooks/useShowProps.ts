@@ -4,10 +4,17 @@
  * counts them. Podium items join them as platforms at their standing height. The played pit
  * instruments come with them, for the performers who play them (`pitPlayers.ts`).
  */
-import { useQueries, type UseQueryResult } from "@tanstack/react-query";
+import { useMemo } from "react";
+import {
+    useQueries,
+    useQuery,
+    type UseQueryResult,
+} from "@tanstack/react-query";
 import type { DatabaseBeat } from "@/db-functions";
 import type { DatabaseItem, DatabaseItemGeometry } from "@/db-functions/items";
 import { allDatabaseBeatsQueryOptions } from "@/hooks/queries/useBeats";
+import { showAssetsQueryOptions } from "@/hooks/queries/useShowAssets";
+import { libraryModels, type LibraryModel } from "@/showAssets/libraryModels";
 import {
     allItemsQueryOptions,
     itemGeometryQueryOptions,
@@ -37,6 +44,7 @@ export type ShowPropsReturn = {
 const NO_PROPS: PropInput[] = [];
 const NO_INSTRUMENTS: PlayedInstrumentInput[] = [];
 const NONE_HIDDEN: ReadonlySet<number> = new Set();
+const NO_LIBRARY: ReadonlyMap<string, LibraryModel> = new Map();
 
 /**
  * The props among the items, with their Outline changes by marchers row, and the podium items
@@ -44,19 +52,39 @@ const NONE_HIDDEN: ReadonlySet<number> = new Set();
  * height rather than through `surface_type`, which equipment never has. Other equipment isn't
  * stood on. An item hidden on the field in the editor (`hidden`, by item id) is left out: it
  * isn't drawn, so nobody stands on it.
+ *
+ * A Platform prop drawn as an imported model (`library`, by `items.model` value, fork #1000) is
+ * stood on at the top its import found over the middle of the model (`sidecar.stand`), scaled as
+ * the model is, rather than at its Outline's height, which is the model's full height.
  */
 export function propInputs(
     items: readonly ShowPropItem[],
     outlines: ItemOutlineChanges,
     hidden: ReadonlySet<number> = NONE_HIDDEN,
+    library: ReadonlyMap<string, LibraryModel> = NO_LIBRARY,
 ): PropInput[] {
     return items.flatMap((item): PropInput[] => {
         if (hidden.has(item.id)) return [];
         const changes = outlines.get(item.marcher_id) ?? [];
-        if (item.kind === "prop" && item.surface_type)
+        if (item.kind === "prop" && item.surface_type) {
+            const stand =
+                item.surface_type === "platform" && item.model
+                    ? library.get(item.model)?.sidecar
+                    : undefined;
             return [
-                { id: item.marcher_id, surface: item.surface_type, changes },
+                {
+                    id: item.marcher_id,
+                    surface: item.surface_type,
+                    changes,
+                    ...(stand?.stand
+                        ? {
+                              standTop: stand.stand.topM,
+                              modelSizeM: stand.sizeM,
+                          }
+                        : {}),
+                },
             ];
+        }
         const standTop =
             item.kind === "equipment" ? podiumStandTop(item.model) : null;
         const standAt = podiumStandAt(item.model);
@@ -160,10 +188,26 @@ export const _combineShowPropsQueries = (
     };
 };
 
+/** The last imported models read, so every caller in the window gets the same map. */
+let lastLibrary: {
+    assets: unknown;
+    library: ReadonlyMap<string, LibraryModel>;
+} | null = null;
+
+function sharedLibrary(
+    assets: Parameters<typeof libraryModels>[0],
+): ReadonlyMap<string, LibraryModel> {
+    if (!assets) return NO_LIBRARY;
+    if (lastLibrary?.assets !== assets)
+        lastLibrary = { assets, library: libraryModels(assets) };
+    return lastLibrary.library;
+}
+
 /** The last props built, so every caller in the window gets the same arrays. */
 let shared: {
     combined: CombinedProps;
     hidden: ReadonlySet<number>;
+    library: ReadonlyMap<string, LibraryModel>;
     props: PropInput[];
     instruments: PlayedInstrumentInput[];
 } | null = null;
@@ -175,13 +219,24 @@ let shared: {
 function sharedProps(
     combined: CombinedProps,
     hidden: ReadonlySet<number>,
+    library: ReadonlyMap<string, LibraryModel>,
 ): { props: PropInput[]; instruments: PlayedInstrumentInput[] } {
     if (!combined) return { props: NO_PROPS, instruments: NO_INSTRUMENTS };
-    if (shared?.combined !== combined || shared.hidden !== hidden)
+    if (
+        shared?.combined !== combined ||
+        shared.hidden !== hidden ||
+        shared.library !== library
+    )
         shared = {
             combined,
             hidden,
-            props: propInputs(combined.items, combined.outlines, hidden),
+            library,
+            props: propInputs(
+                combined.items,
+                combined.outlines,
+                hidden,
+                library,
+            ),
             instruments: playedInstrumentInputs(
                 combined.items,
                 combined.outlines,
@@ -207,6 +262,8 @@ export function useShowProps(
         ],
         combine: _combineShowPropsQueries,
     });
-    const { props, instruments } = sharedProps(combined, hidden);
+    const { data: assets } = useQuery(showAssetsQueryOptions());
+    const library = useMemo(() => sharedLibrary(assets), [assets]);
+    const { props, instruments } = sharedProps(combined, hidden, library);
     return { props, instruments, isLoading, hasError };
 }

@@ -3,7 +3,7 @@
 //
 // The resolver keeps its own row index, updated only from batch row images (§10.2). It reads marchers,
 // shapes and transitions by id from the host's post-commit mirror (`db`).
-import { lerp, clamp01, destPath, paramT, destinationsOf, arcPoint, flatten, makeTrail } from './geom.mjs';
+import { lerp, clamp01, destPath, paramT, destinationsOf, arcPoint, flatten, makeTrail, makeRouteTrail, makeAlongWay, alongWayEnds, alongWayAt, ftlDest, routeWalk, groupWalk } from './geom.mjs';
 
 export function makeResolver(db, { rules = 'v0.2+' } = {}) {
   const T = (id) => db.transitions[id];
@@ -39,7 +39,7 @@ export function makeResolver(db, { rules = 'v0.2+' } = {}) {
   function computeLocal(tid) {
     const t = T(tid);
     dests.set(tid, destinationsOf(t, db.shapes)); C.destinationsComputed++;          // shape or individual points (D-16)
-    if (isFtl(t)) { paths.set(tid, destPath(db.shapes[t.dest])); C.ftlGeometryComputed++; } else paths.delete(tid);
+    if (isFtl(t)) { paths.set(tid, t.dest == null ? null : destPath(db.shapes[t.dest])); C.ftlGeometryComputed++; } else paths.delete(tid);   // null: no shape (R-13′), the line through dests[tid]
   }
 
   for (const m of homes.keys()) { spans.set(m, build(m)); indexAdd(spans.get(m)); }
@@ -63,7 +63,7 @@ export function makeResolver(db, { rules = 'v0.2+' } = {}) {
   }
   function depsOfEntry(tid) {                                          // exactly what computeEntry reads
     const t = T(tid), F = [...idx(tid)].filter(founding), d = F.map((s) => ['o', s]);
-    if (t.order === 'inherit' && F.length) {
+    if (t.order === 'inherit' && t.dest != null && F.length) {
       const prevs = F.map(prevNonHold), U = prevs[0]?.row.transition;
       if (prevs.every((p) => p && p.row.transition === U) && isFtl(T(U)) && prevs.every((p) => founding(p))) d.push(['e', U]);
     }
@@ -104,12 +104,15 @@ export function makeResolver(db, { rules = 'v0.2+' } = {}) {
       const e = entry(t.id), q = e.qOf.get(s.m), p = clamp01((b - t.start) / (t.end - t.start));   // q in O(1)
       if (p <= 0) return origin(s);                                    // endpoints exact (§8.10)
       if (p >= 1) return e.target.get(s.m);
+      if (e.ends) return alongWayAt(e.trail, e.startDist[q], e.endDist[q], e.ends.turn[q], e.ends.straight[q], e.target.get(s.m), p);   // R-13″
       return e.trail.at(e.startDist[q] + (e.endDist[q] - e.startDist[q]) * p);
     }
     const p = clamp01((b - s.start) / (t.end - s.start));
     const o = origin(s);
     if (isFtl(t)) return lerp(o, entry(t.id).target.get(s.m), p);
     const dst = dests.get(t.id)[s.row.slot];
+    const lane = laneAt(t.id, s.row.slot);                                // R-14′ (v0.10): lane first
+    if (lane) { const g = routeGeo(lane.route); return founding(s) ? (lane.offset ? groupWalk(o, g.points, dst, g.from, g.to, lane.offset, lane.adjust ?? null, g.toBulge).at(p) : routeWalk(o, g.points, dst, g.from, g.to, g.toBulge).at(p)) : lerp(o, dst, p); }
     return t.style === 'arc' ? arcPoint(o, dst, t.params?.bulge ?? 0, p) : lerp(o, dst, p);
   }
   function prevNonHold(s) { const l = spans.get(s.m); for (let j = s.k - 1; j >= 0; j--) if (l[j].row) return l[j]; return null; } // ≤ 2 steps: holds never abut
@@ -122,7 +125,7 @@ export function makeResolver(db, { rules = 'v0.2+' } = {}) {
     const t = T(tid);
     const F = [...idx(tid)].filter(founding);
     let keyed = null, source = { kind: 'slot', fallback: false };
-    if (t.order === 'inherit' && F.length) {
+    if (t.order === 'inherit' && t.dest != null && F.length) {
       const prevs = F.map(prevNonHold);
       const U = prevs[0]?.row.transition;
       if (prevs.every((p) => p && p.row.transition === U)) {
@@ -133,18 +136,25 @@ export function makeResolver(db, { rules = 'v0.2+' } = {}) {
       if (!keyed) source = { kind: 'slot', fallback: true };
     }
     if (!keyed) keyed = F.map((s) => [s.row.slot, s]);
-    keyed.sort((a, b) => a[0] - b[0] || a[1].m - b[1].m);
+    const sign = t.params?.reverse === true ? -1 : 1;                     // R-12′ (step 4)
+    keyed.sort((a, b) => sign * (a[0] - b[0]) || a[1].m - b[1].m);
     const members = keyed.map(([, s]) => s.m);
     const os = keyed.map(([, s]) => origin(s));
-    const path = paths.get(tid), trail = makeTrail(os, t.params?.waypoints ?? [], path);
+    const tr = t.route == null ? null : db.routes?.[t.route]?.geometry;    // R-9′ (step 4): the trail route, read from the host mirror on use
     const n = t.slots, m = members.length, pts = dests.get(tid);
-    const e = { members, source, trail, qOf: new Map(members.map((mm, q) => [mm, q])),
-      startDist: os.map((_, q) => trail.cum[q]),
-      endDist: os.map((_, q) => trail.destOffset + paramT(path.closed, n - m + q, n) * path.L),
-      target: new Map(members.map((mm, q) => [mm, pts[n - m + q]])) };
+    const dest = ftlDest(paths.get(tid), pts, n, sign < 0), path = dest.walked;    // R-13′, R-12′ (step 4)
+    const along = t.dest == null && t.params?.ends === 'along';                      // R-13″ (step 4b): ends along the way
+    const trail = along ? makeAlongWay(os, tr) : tr ? makeRouteTrail(os, tr, path) : makeTrail(os, t.params?.waypoints ?? [], path);
+    const pointOf = keyed.map(([, sp], q) => dest.member(q, m, sp.row.slot));      // R-9's sample, or the row's own slot (R-13′)
+    const startDist = os.map((_, q) => trail.cum[q]);
+    const ends = along ? alongWayEnds(trail, pointOf.map((j) => pts[j]), startDist) : null;
+    const e = { members, source, trail, qOf: new Map(members.map((mm, q) => [mm, q])), ends,
+      startDist,
+      endDist: ends ? ends.endDist : os.map((_, q) => trail.destOffset + dest.along(pointOf[q])),
+      target: new Map(members.map((mm, q) => [mm, pts[pointOf[q]]])) };
     rowsOfTransition(tid).filter((r) => !e.target.has(r.marcher))                  // per-transition index, no full scan
       .sort((a, b) => a.slot - b.slot || a.marcher - b.marcher)
-      .forEach((r, k) => e.target.set(r.marcher, pts[n - m - 1 - k]));
+      .forEach((r, k) => e.target.set(r.marcher, pts[dest.other(k, m, r.slot)]));
     entries.set(tid, e); C.ftlEntriesComputed++;
   }
   function positionAt(m, b) {
@@ -183,7 +193,12 @@ export function makeResolver(db, { rules = 'v0.2+' } = {}) {
     return [...net.values()].filter((c) => c.before || c.after);
   }
 
-  /** batch = { rows:[{before,after}], transitions:[{id,before,after}], shapes:[id], marchers:[{id}], destinations:[transitionId] } (§9.4 order). */
+  // routeGeometry (§9.2 #7, v0.9): read from the host mirror on use; a route edit seeds W-3 for its transition (§9.4)
+  const routeGeo = (rid) => { const r = db.routes?.[rid]; if (!r) throw new Error(`route ${rid} not found (I-D3)`); return r.geometry; };
+  // lanes (v0.10, J.7): read from the host mirror on use, like routes; a lane edit seeds W-3 for its old and new transition
+  const laneAt = (tid, slot) => Object.values(db.lanes ?? {}).find((l) => l.transition === tid && l.slot === slot);
+
+  /** batch = { rows:[{before,after}], transitions:[{id,before,after}], shapes:[id], marchers:[{id}], destinations:[transitionId], routes:[routeId], lanes:[{before,after}] } (§9.4 order). */
   function applyBatch(raw) {
     const batch = { rows: coalesce(raw.rows, (c) => (c.before ?? c.after).id),
                     transitions: coalesce(raw.transitions, (c) => c.id),
@@ -237,6 +252,11 @@ export function makeResolver(db, { rules = 'v0.2+' } = {}) {
     for (const tid of new Set(raw.destinations ?? [])) if (db.transitions[tid]) { computeLocal(tid); seedTs.add(tid); }   // individual points edited
     for (const sid of batch.shapes)
       for (const t of Object.values(db.transitions)) if (t.dest === sid) { computeLocal(t.id); seedTs.add(t.id); }
+    for (const lc of raw.lanes ?? []) for (const l of [lc.before, lc.after]) if (l && db.transitions[l.transition]) seedTs.add(l.transition); // a lane edited
+    for (const rid of new Set(raw.routes ?? []))
+      for (const t of Object.values(db.transitions)) if (t.route === rid) seedTs.add(t.id);   // a trail route edited (R-9′): route -> its follow-the-leader transitions
+    for (const rid of new Set(raw.routes ?? []))
+      for (const l of Object.values(db.lanes ?? {})) if (l.route === rid && db.transitions[l.transition]) seedTs.add(l.transition);   // route geometry edited: route -> lanes -> transitions
     for (const tid of seedTs) seed(tid);
   }
 

@@ -1,4 +1,4 @@
-// cspell:words draco IHDR IDAT IEND
+// cspell:words draco IHDR IDAT IEND filechooser fflate
 /**
  * The model import worker in real Chromium (fork #998): its own CSP (as the web build's
  * `_headers` sends it), the real image codecs and Draco's WebAssembly decoder. The pipeline's
@@ -10,7 +10,9 @@ import { fileURLToPath } from "node:url";
 import zlib from "node:zlib";
 import { Logger, WebIO } from "@gltf-transform/core";
 import { ALL_EXTENSIONS } from "@gltf-transform/extensions";
+import { zipSync } from "fflate";
 import { test, expect } from "../fixtures.mjs";
+import { waitForIdle } from "../app.mjs";
 import type { ModelImportTestResult } from "../../../src/showAssets/modelImport/modelImportTestApi";
 
 const FIXTURES = path.resolve(
@@ -121,4 +123,76 @@ test("runs the model import in its own worker, under its own CSP", async ({
             ],
         }),
     );
+
+    // A zip as Sketchfab hands one out, opened in the worker (#1168)
+    const zipped = await run([
+        file(
+            "chair.zip",
+            zipSync({
+                "source/SheenChair.glb": new Uint8Array(
+                    fs.readFileSync(path.join(FIXTURES, "SheenChair.glb")),
+                ),
+                "license.txt": new TextEncoder().encode("CC-BY-4.0"),
+            }),
+        ),
+    ]);
+    expect(zipped.ok).toBe(true);
+});
+
+// The designer's import (fork #999): Import… in the Props panel opens the review, Add stores the
+// model under Imported, and its tile places it as a prop with a click on the field. One undo
+// removes the prop and keeps the model.
+test("imports a model from the Props panel and places it as a prop", async ({
+    show,
+}) => {
+    test.setTimeout(180_000);
+    const { page } = show;
+    await page.getByRole("button", { name: "Props" }).first().click();
+    const chooser = page.waitForEvent("filechooser");
+    await page.getByTestId("import-model-tile").click();
+    await (await chooser).setFiles(path.join(FIXTURES, "SheenChair.glb"));
+
+    const review = page.getByTestId("model-import-review");
+    await expect(review.getByTestId("model-import-picture")).toBeVisible({
+        timeout: 60_000,
+    });
+    await expect(review.getByTestId("model-import-size")).toHaveText(
+        /× .* m tall$/,
+    );
+    // The chair is past the triangle cap, so the Detail choice shows with Light chosen
+    await expect(
+        review.getByTestId("model-import-detail-light"),
+    ).toHaveAttribute("data-state", "on");
+    await review.getByTestId("model-import-name").fill("Chair");
+    await review.getByTestId("model-import-add").click();
+
+    const tile = page.getByRole("button", { name: "Place Chair" });
+    await expect(tile).toBeVisible({ timeout: 20_000 });
+    expect(
+        await show.query<{ kind: string; name: string }>(
+            "SELECT kind, name FROM show_assets",
+        ),
+    ).toEqual([{ kind: "model", name: "Chair" }]);
+
+    await tile.click();
+    const canvas = (await page
+        .getByTestId("fieldCanvas")
+        .first()
+        .boundingBox())!;
+    await page.mouse.click(
+        canvas.x + canvas.width / 2,
+        canvas.y + canvas.height / 2,
+    );
+    await expect
+        .poll(() =>
+            show.query<{ kind: string; model: string }>(
+                "SELECT kind, model FROM items",
+            ),
+        )
+        .toEqual([{ kind: "prop", model: expect.stringMatching(/^library:/) }]);
+
+    await waitForIdle(page);
+    await page.keyboard.press("ControlOrMeta+z");
+    await expect.poll(() => show.query("SELECT id FROM items")).toEqual([]);
+    expect(await show.query("SELECT id FROM show_assets")).toHaveLength(1);
 });

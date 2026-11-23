@@ -98,9 +98,10 @@ export const WEB_CHANNELS = {
     /** () => { fileName: string } | null: the open show's file name, for a bug report */
     reportShowInfo: "web:reportShowInfo",
     /**
-     * (expectedFileName: string, includeAudio: boolean) => Uint8Array | null:
-     * a scrubbed copy of the open show for a bug report (names and notes
-     * removed, the music too unless included). Null if the open show isn't
+     * (expectedFileName: string, includeAudio: boolean, includeAssets: boolean)
+     * => Uint8Array | null: a scrubbed copy of the open show for a bug report
+     * (names and notes removed, the music and imported models' files too
+     * unless included). Null if the open show isn't
      * `expectedFileName`.
      */
     reportCopy: "web:reportCopy",

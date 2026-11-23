@@ -23,6 +23,7 @@ import { conToastError } from "@/utilities/utils";
 import tolgee from "@/global/singletons/Tolgee";
 import { splitPage } from "@/global/classes/Page";
 import Page from "@/global/classes/Page";
+import { showDroppedAtFlagToast } from "@/shapes/placed/leftOutToast";
 
 // Types
 export type SplitPageArgs = {
@@ -43,7 +44,7 @@ const splitMovesAtNewPage = async (tx: DbTransaction, startBeatId: number) => {
     const beat = grid.beatIds.indexOf(startBeatId);
     const box = grid.pages.find((p) => p.start < beat && beat < p.end);
     if (beat < 0 || !box) return;
-    await splitMovesAtBeatInTransaction({
+    return await splitMovesAtBeatInTransaction({
         tx,
         beat,
         box: { start: box.start, end: box.end },
@@ -61,16 +62,19 @@ export const _splitPage = async ({
         throw new Error("Failed to split page");
     }
 
+    let dropped: number[] | undefined;
     await transactionWithHistory(
         database,
         "splitPage",
         async (tx) =>
             await withTimelinePageRipple(tx, async () => {
                 if (splitMoves)
-                    await splitMovesAtNewPage(
-                        tx,
-                        splitResult.newPageArgs.start_beat,
-                    );
+                    dropped = (
+                        await splitMovesAtNewPage(
+                            tx,
+                            splitResult.newPageArgs.start_beat,
+                        )
+                    )?.droppedFromShapes;
                 // Create the new page
                 await createPagesInTransaction({
                     newPages: [splitResult.newPageArgs],
@@ -99,6 +103,8 @@ export const _splitPage = async ({
                 }
             }),
     );
+    // Members of a shape the split's re-cut left in other moves (`droppedFromShapes`)
+    if (dropped) showDroppedAtFlagToast(dropped);
 };
 
 // React Query mutation hook

@@ -11,10 +11,7 @@ import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { DatabaseSync, type SQLInputValue } from "node:sqlite";
 import { waitForField, waitForSettledField } from "./app.mjs";
-import {
-    isModelImportWorkerUrl,
-    MODEL_IMPORT_WORKER_CSP,
-} from "../../src/showAssets/modelImport/protocol";
+import { workerPolicyFor } from "../../src/security/appCsp";
 
 const desktopDir = path.resolve(
     path.dirname(fileURLToPath(import.meta.url)),
@@ -146,13 +143,14 @@ async function openInBrowser(
         );
         if (!file.startsWith(rendererDir) || !fs.existsSync(file))
             return route.fulfill({ status: 404, body: "Not found" });
-        // The model import worker's own policy, as the web build's `_headers` sends it
-        if (isModelImportWorkerUrl(url.href))
+        // A worker's own policy, as the web build's `_headers` sends it
+        const worker = workerPolicyFor(url.href);
+        if (worker)
             return route.fulfill({
                 path: file,
                 headers: {
                     "Content-Type": "text/javascript",
-                    "Content-Security-Policy": MODEL_IMPORT_WORKER_CSP,
+                    "Content-Security-Policy": worker.csp,
                 },
             });
         return route.fulfill({ path: file });

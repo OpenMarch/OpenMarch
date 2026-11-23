@@ -153,6 +153,8 @@ test("dragging a selected marcher moves the whole selection, as one undo step", 
     show,
 }) => {
     const { page } = show;
+    // Snapping off: a free drop lands where it's dragged, not on a checkpoint near it (#585)
+    await page.keyboard.press("Shift+M");
     // T3 is on the top edge of the selection's box, clear of its handles
     await clickMarcher(page, "T1");
     await clickMarcher(page, "T3", { add: true });
@@ -267,6 +269,8 @@ test("a drop that leaves a later move behind offers to move it too", async ({
     show,
 }) => {
     const { page } = show;
+    // Snapping off: a free drop lands where it's dragged, not on a checkpoint near it (#585)
+    await page.keyboard.press("Shift+M");
     await selectPage(show, "Page 1");
     // T3 is on the top edge of the selection's box, clear of its handles
     await clickMarcher(page, "T1");
@@ -347,6 +351,8 @@ test("a drop inside an isolated move edits the move's end", async ({
     show,
 }) => {
     const { page } = show;
+    // Snapping off: a free drop lands where it's dragged, not on a checkpoint near it (#585)
+    await page.keyboard.press("Shift+M");
     await selectPage(show, "Page 1");
     // Double-clicking page 1's move isolates it
     await page.getByTestId("timeline-clip").first().dblclick();

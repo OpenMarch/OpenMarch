@@ -79,13 +79,13 @@ describe("change-log trigger refresh on open", () => {
                 .get() as { x: number };
             expect(Object.is(row.x, 0.1 + 0.2)).toBe(true);
 
-            // All 15 change-log triggers exist, and an up-to-date file isn't rewritten on open
+            // All 21 change-log triggers exist, and an up-to-date file isn't rewritten on open
             const count = db
                 .prepare(
                     `SELECT count(*) AS n FROM sqlite_master WHERE type='trigger' AND name LIKE 'timeline_log_%'`,
                 )
                 .get() as { n: number };
-            expect(count.n).toBe(15);
+            expect(count.n).toBe(21);
             const schemaVersion = () =>
                 (
                     db.prepare("PRAGMA schema_version").get() as {
@@ -97,6 +97,44 @@ describe("change-log trigger refresh on open", () => {
             const before = schemaVersion();
             recreateChangeLogTriggers(db);
             expect(schemaVersion()).toBe(before);
+        } finally {
+            db.close();
+        }
+    });
+
+    it("restores route_id logging after v0.2.0-beta.5 rewrote the transition triggers", async () => {
+        const db = new DatabaseSync(path.join(dir, "show.dots"));
+        try {
+            applyFileVersionDecision(db, true);
+            const orm = getOrm(db);
+            const open = () =>
+                new DrizzleMigrationService(orm, db).applyPendingMigrations(
+                    migrationsFolder,
+                );
+            await open();
+            await DrizzleMigrationService.initializeDatabase(orm, db);
+
+            // The bodies beta.5 (no paths) writes when it opens a beta.6 file, copied from the
+            // release test's file (2026-11-19): they don't log route_id.
+            const before = (row: string) =>
+                `json_object('id', ${row}.id, 'dest', ${row}.dest_shape_id, 'style', ${row}.path_style, 'params', json(${row}.path_params), 'order', ${row}.order_mode, 'slots', ${row}.slot_count, 'start', ${row}.start_beat, 'end', ${row}.end_beat)`;
+            db.exec(`DROP TRIGGER timeline_log_transitions_ins;
+                DROP TRIGGER timeline_log_transitions_upd;
+                DROP TRIGGER timeline_log_transitions_del;
+                CREATE TRIGGER timeline_log_transitions_ins AFTER INSERT ON timeline_transitions BEGIN INSERT INTO timeline_change_log (tbl, row_id, "before", "after") VALUES ('transitions', NEW.id, NULL, ${before("NEW")}); END;
+                CREATE TRIGGER timeline_log_transitions_upd AFTER UPDATE ON timeline_transitions BEGIN INSERT INTO timeline_change_log (tbl, row_id, "before", "after") VALUES ('transitions', NEW.id, ${before("OLD")}, ${before("NEW")}); END;
+                CREATE TRIGGER timeline_log_transitions_del AFTER DELETE ON timeline_transitions BEGIN INSERT INTO timeline_change_log (tbl, row_id, "before", "after") VALUES ('transitions', OLD.id, ${before("OLD")}, NULL); END;`);
+
+            await open();
+
+            for (const op of ["ins", "upd", "del"]) {
+                const row = db
+                    .prepare(
+                        `SELECT sql FROM sqlite_master WHERE type='trigger' AND name=?`,
+                    )
+                    .get(`timeline_log_transitions_${op}`) as { sql: string };
+                expect(row.sql, op).toContain("route_id");
+            }
         } finally {
             db.close();
         }
