@@ -254,7 +254,23 @@ export function recoverFromLeftoverJournal(
         }
         return { outcome: "recovered", from: sound.from, journalKeptAt };
     } finally {
-        if (createdStaged) fs.rmSync(staged, { force: true });
-        if (workDir) fs.rmSync(workDir, { recursive: true, force: true });
+        // Clean-up is best effort: a sync app may hold the staged copy for a moment, and a
+        // failed delete must not replace the error that brought us here.
+        if (createdStaged) removeBestEffort(staged);
+        if (workDir) removeBestEffort(workDir);
+    }
+}
+
+/** Deletes `target` (a file or folder), retrying briefly; never throws. */
+function removeBestEffort(target: string) {
+    try {
+        fs.rmSync(target, {
+            recursive: true,
+            force: true,
+            maxRetries: 5,
+            retryDelay: 100,
+        });
+    } catch (error) {
+        console.warn(`Couldn't remove ${target}:`, error);
     }
 }

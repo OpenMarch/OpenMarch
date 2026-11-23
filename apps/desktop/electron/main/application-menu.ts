@@ -65,10 +65,14 @@ const linkItem = (label: string, url: string): MenuItemConstructorOptions => ({
  * Basic the Playback menu leaves out the items whose actions Basic turns off. Role items get their
  * labels here too: Electron's own role labels are English only.
  */
-export function buildApplicationMenu({ basic = false } = {}): Menu {
+export function buildApplicationMenu({
+    basic = false,
+    saveNow = false,
+}: { basic?: boolean; saveNow?: boolean } = {}): Menu {
     return Menu.buildFromTemplate(
         applicationMenuTemplate({
             basic,
+            saveNow,
             isMacOS: process.platform === "darwin",
         }),
     );
@@ -81,9 +85,12 @@ export function buildApplicationMenu({ basic = false } = {}): Menu {
 // eslint-disable-next-line max-lines-per-function -- the menu template, one item per entry
 export function applicationMenuTemplate({
     basic,
+    saveNow = false,
     isMacOS,
 }: {
     basic: boolean;
+    /** Show File ▸ Save Now (working-copy saves are on). */
+    saveNow?: boolean;
     isMacOS: boolean;
 }): MenuItemConstructorOptions[] {
     const appName = app.name;
@@ -126,6 +133,19 @@ export function applicationMenuTemplate({
                         void mainProcess.requestNewShowFromMenu();
                     },
                 },
+                // Working-copy saves publish a few seconds after editing stops; this publishes
+                // now (ADR 0018). Without them every edit is already in the file.
+                ...(saveNow
+                    ? ([
+                          {
+                              // No accelerator: Cmd/Ctrl+S swaps marchers.
+                              label: t("menu.file.saveNow"),
+                              click() {
+                                  void mainProcess.publishNow();
+                              },
+                          },
+                      ] satisfies MenuItemConstructorOptions[])
+                    : []),
                 {
                     label: t("menu.file.saveAsCopy"),
                     click(_item, focusedWindow) {

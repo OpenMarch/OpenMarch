@@ -13,6 +13,7 @@ import { LEFTOVER_JOURNAL_STATUS } from "@om-electron/database/leftoverJournalSt
 describe("useLoadFileErrorHandler", () => {
     let send: (code: number) => void;
     let refusal: number | null = null;
+    let syncFolder: { service: "OneDrive"; filePath: string } | null = null;
     const original = window.electron;
 
     beforeEach(() => {
@@ -26,11 +27,13 @@ describe("useLoadFileErrorHandler", () => {
             takeLoadFileRefusal: vi.fn(async () => refusal),
             getLeftoverJournal: vi.fn(async () => "show.dots-journal"),
             recoverLeftoverJournal: vi.fn(async () => 200),
+            getCloudSyncFolder: vi.fn(async () => syncFolder),
         } as typeof window.electron;
     });
 
     afterEach(() => {
         refusal = null;
+        syncFolder = null;
         window.electron = original;
     });
 
@@ -61,6 +64,19 @@ describe("useLoadFileErrorHandler", () => {
         renderHook(() => useLoadFileErrorHandler());
         await act(async () => {});
         expect(useAlertModalStore.getState().isOpen).toBe(false);
+    });
+
+    it("says when the show with a leftover journal is in a synced folder", async () => {
+        syncFolder = {
+            service: "OneDrive",
+            filePath: "C:\\OneDrive\\show.dots",
+        };
+        renderHook(() => useLoadFileErrorHandler());
+        act(() => send(LEFTOVER_JOURNAL_STATUS));
+        render(<AlertModal />);
+        expect(
+            await screen.findByText(/OneDrive|leftoverJournal\.syncFolder/),
+        ).toBeTruthy();
     });
 
     it("offers to recover the show from a leftover journal", async () => {

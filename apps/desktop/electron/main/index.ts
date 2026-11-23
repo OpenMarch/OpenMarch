@@ -19,6 +19,38 @@ import {
     isWindows7,
 } from "./gpu";
 import { randomUUID } from "node:crypto";
+import {
+    isSameFile,
+    publishFile,
+    settlePendingDeletes,
+    removeWithRetry,
+    tempPathBeside,
+} from "../database/atomicFile";
+import {
+    WORKING_COPY_SETTING,
+    createWorkingCopyHost,
+    workingCopySavesEnabled,
+    type RecoverChoice,
+    type WorkingCopyOpen,
+} from "./workingCopyHost";
+import { describeLocation } from "./fileLocation";
+import { withoutPaths } from "../database/logSafe";
+import {
+    type RecoverableWorkingCopy,
+    type SaveOutcome,
+    type WorkingCopyConflictChoice,
+    type WorkingCopySession,
+    type WorkingCopyStatus,
+    WorkingCopyStorageError,
+    removeStaleTempFiles,
+} from "../database/workingCopy/WorkingCopySession";
+import { createWorkingCopyTelemetry } from "./workingCopyTelemetry";
+import { DatabaseSync } from "node:sqlite";
+import {
+    decideFileVersion,
+    PAGE_MODEL_USER_VERSION,
+    readUserVersion,
+} from "../database/fileVersion";
 import { basename, dirname, join, resolve, sep } from "node:path";
 import * as DatabaseServices from "../database/database.services";
 import { VIEW3D_AUTO_OPEN_SETTING } from "../../src/view3d/sync/protocol";
@@ -52,7 +84,7 @@ import {
     clearMissingRecentFiles,
 } from "./services/recent-files-service";
 import type AudioFile from "../../src/global/classes/AudioFile";
-import { init, captureException } from "@sentry/electron/main";
+import { init, captureException, captureMessage } from "@sentry/electron/main";
 
 import {
     automaticUpdatesAreEnabled,
@@ -69,6 +101,8 @@ import {
 import { repairDatabase } from "../database/repair";
 import {
     backupBeforeJournalRecovery,
+    hasLeftoverJournal,
+    isFolderAccessError,
     journalPathFor,
     LEFTOVER_JOURNAL_STATUS,
 } from "../database/leftoverJournal";
@@ -77,6 +111,12 @@ import {
     recoverFromLeftoverJournal,
     SET_ASIDE_MARK,
 } from "./leftoverJournalRecovery";
+import { cloudSyncServiceFor } from "./cloudSyncFolder";
+import { describeLeftoverJournal } from "./leftoverJournalDiagnostics";
+import {
+    diagnosticTags,
+    stripDiagnosticBreadcrumbs,
+} from "./privateDiagnostics";
 import {
     NEEDS_CONVERSION_STATUS,
     OPEN_STOPPED_STATUS,
@@ -99,6 +139,7 @@ import {
     resumeSqlProxyAfterReload,
     withOpenLock,
     type OpenShowDeps,
+    type OpenShowResult,
     type OpenShowOptions,
 } from "./openShow";
 import { choosePreviousDotsFile } from "./services/previous-dots-import-service";
@@ -153,6 +194,8 @@ import {
 //
 
 let isQuitting = false;
+/** Set while the window's close handler runs, so a second close request waits for it. */
+let windowIsClosing = false;
 const store = new Store();
 /** No settings yet: a new install, or a test's fresh profile, with no old storage to move */
 const isNewProfile = store.size === 0;
@@ -183,7 +226,18 @@ console.log("Sentry error reporting enabled:", enableSentry);
 init({
     dsn: "https://72e6204c8e527c4cb7a680db2f9a1e0b@o4509010215239680.ingest.us.sentry.io/4509010222579712",
     enabled: enableSentry,
+    // The app's own diagnostics go without the console breadcrumbs, which name files.
+    beforeSend: stripDiagnosticBreadcrumbs,
 });
+
+/**
+ * Whether the app may send its own diagnostics now. Read each time: the person can opt out of
+ * analytics after launch.
+ */
+const diagnosticsAllowed = () =>
+    enableSentry &&
+    !store.get("optOutAnalytics") &&
+    !process.env.PLAYWRIGHT_SESSION;
 
 /** The person's Discord status (Settings > Privacy). Tests never touch a real Discord. */
 const discordPresence = createDiscordPresence({
@@ -226,9 +280,18 @@ ipcMain.on("settings:set", (event, settings) => {
         setMainLanguage(settings.language);
     }
 
-    // Basic leaves Play On and Loop out of the Playback menu
-    if (Object.prototype.hasOwnProperty.call(settings, "editorMode"))
+    // Basic leaves Play On and Loop out of the Playback menu; Save Now follows working-copy saves
+    if (
+        Object.prototype.hasOwnProperty.call(settings, "editorMode") ||
+        Object.prototype.hasOwnProperty.call(settings, WORKING_COPY_SETTING)
+    )
         showApplicationMenu();
+
+    // Turning working-copy saves off publishes the open show now. It keeps its working copy
+    // until it closes; the next open edits in place. Unpublished changes from earlier sessions
+    // are still offered (ADR 0018).
+    if (settings[WORKING_COPY_SETTING] === false)
+        void workingCopies.current?.flush("setting-off");
 
     if (Object.prototype.hasOwnProperty.call(settings, "automaticUpdates"))
         updates?.setAutomaticDownload(
@@ -438,6 +501,22 @@ async function createWindow(title?: string) {
         if (isQuitting) return;
 
         event.preventDefault();
+        if (windowIsClosing) return;
+        windowIsClosing = true;
+        // A working copy publishes while the window is still visible, so a failed publish can
+        // ask the person and they can cancel quitting (ADR 0018).
+        if (workingCopies.current) {
+            const proceed = await endWorkingCopy("quit").catch((error) => {
+                console.error("Error saving before quit:", error);
+                return true;
+            });
+            if (!proceed) {
+                windowIsClosing = false;
+                // The person kept the app open: it isn't quitting after all
+                appIsQuitting = false;
+                return;
+            }
+        }
         win!.hide(); // use non-null assertion now that we're inside the if-block
         closeView3dWindow();
 
@@ -446,11 +525,17 @@ async function createWindow(title?: string) {
         } catch (e) {
             console.error("Error closing file:", e);
         }
+        await finishPendingDeletes();
 
         isQuitting = true;
         win!.destroy();
         win = null;
         app.quit();
+    });
+
+    // Publish when the person switches away, so the show in its folder is current (ADR 0018).
+    win.on("blur", () => {
+        workingCopies.current?.publishAutomatically("blur");
     });
 
     // Make all links open with the browser, not with the application
@@ -475,7 +560,10 @@ function resolveStartupDatabasePath(): string {
     let pathToOpen = store.get("databasePath") as string;
     const pathFromArgs = process.argv.find((arg) => arg.endsWith(".dots"));
     if (pathFromArgs) pathToOpen = pathFromArgs;
-    console.log("Path to Open:", pathToOpen);
+    console.log(
+        "Show to open at startup:",
+        pathToOpen ? `one in ${whereIs(pathToOpen)}` : "none",
+    );
     if (pathToOpen && isNewShowDraftPath(pathToOpen)) {
         if (fs.existsSync(pathToOpen)) fs.unlinkSync(pathToOpen);
         store.delete("databasePath");
@@ -524,6 +612,28 @@ let refusalAfterReload: number | null = null;
  */
 let leftoverJournalFile: string | null = null;
 
+/**
+ * Reports what the leftover journal that stopped an open looks like (no paths), so the cause of
+ * repeat cases can be found. Never stops the open's answer.
+ */
+function reportLeftoverJournal(filePath: string) {
+    try {
+        const facts = describeLeftoverJournal(filePath);
+        console.warn("A leftover journal stopped an open:", facts);
+        if (!diagnosticsAllowed()) return;
+        captureMessage("Leftover journal stopped an open", {
+            level: "warning",
+            tags: diagnosticTags({
+                syncService: facts.syncService,
+                journalOpenForWrite: facts.journalOpenForWrite,
+            }),
+            extra: { ...facts },
+        });
+    } catch (error) {
+        console.error("Couldn't describe the leftover journal:", error);
+    }
+}
+
 /** The renderer's questions about a leftover journal that stopped an open. */
 function initLeftoverJournalIpcHandlers() {
     ipcMain.handle("load-file:leftoverJournal", () =>
@@ -534,6 +644,12 @@ function initLeftoverJournalIpcHandlers() {
     ipcMain.handle("load-file:recoverFromJournal", async () =>
         recoverAndOpenLeftoverJournalFile(),
     );
+    // The show a leftover journal stopped, else the open show.
+    ipcMain.handle("show:cloudSyncFolder", () => {
+        const filePath = leftoverJournalFile ?? DatabaseServices.getDbPath();
+        const service = cloudSyncServiceFor(filePath);
+        return service ? { service, filePath } : null;
+    });
 }
 
 /**
@@ -559,10 +675,13 @@ async function recoverAndOpenLeftoverJournalFile(): Promise<number> {
         }
         if (result.outcome === "recovered")
             console.log(
-                `Recovered ${filePath} (${result.from}); its journal is now ${result.journalKeptAt}`,
+                `Recovered a show in ${whereIs(filePath)} (${result.from}); its journal is now in ${whereIs(result.journalKeptAt)}`,
             );
     } catch (error) {
-        console.error("Couldn't recover from the leftover journal:", error);
+        console.error(
+            "Couldn't recover from the leftover journal:",
+            withoutPaths(error),
+        );
         captureException(error);
         const step =
             error instanceof JournalRecoveryError ? error.step : "stage";
@@ -626,9 +745,14 @@ async function openRecentFile(filePath: string) {
     return resCode;
 }
 
+// eslint-disable-next-line max-lines-per-function
 function initDatabaseIpcHandlers() {
     ipcMain.handle("database:isReady", DatabaseServices.databaseIsReady);
     ipcMain.handle("database:getPath", () => DatabaseServices.getDbPath());
+    ipcMain.handle(
+        "working-copy:get-status",
+        () => workingCopies.current?.status() ?? null,
+    );
     ipcMain.handle("database:save", async () => saveFile());
     ipcMain.handle("database:load", async () => loadDatabaseFile());
     ipcMain.handle("database:create", async () => newFile());
@@ -670,6 +794,8 @@ function initDatabaseIpcHandlers() {
     );
     ipcMain.handle("database:repair", async (_, dbPath: string) => {
         try {
+            // Repair reads the show file, so it must hold the latest changes (ADR 0018).
+            if (!(await endWorkingCopy("repair"))) return null;
             DatabaseServices.closePersistentConnection();
             const newPath = await repairDatabase(dbPath);
             const resCode = await setActiveDb(newPath);
@@ -692,7 +818,13 @@ function initDatabaseIpcHandlers() {
             throw error;
         }
     });
-    ipcMain.handle("audio:insert", async () => insertAudioFile());
+    ipcMain.handle("audio:insert", async () => {
+        try {
+            return await insertAudioFile();
+        } finally {
+            DatabaseServices.noteDatabaseActivity();
+        }
+    });
     ipcMain.handle("conversion:getPending", () => conversionQuestion.current());
     ipcMain.handle("load-file:takeRefusal", () => {
         const resCode = refusalAfterReload;
@@ -720,12 +852,14 @@ function initRecentFilesIpcHandlers() {
 
 function initIpcHandlers() {
     initDatabaseIpcHandlers();
+    initWorkingCopyIpcHandlers();
     initLeftoverJournalIpcHandlers();
     initRecentFilesIpcHandlers();
 }
 
 void app.whenReady().then(async () => {
     app.setName("OpenMarch");
+    clearSaveScratch();
     console.log("NODE:", process.versions.node);
 
     if (isCodegen) {
@@ -739,11 +873,18 @@ void app.whenReady().then(async () => {
     showApplicationMenu();
     onMainLanguageChange(showApplicationMenu);
 
+    // Working copies a crash left (ADR 0018). Opening one of their shows offers recovery first.
+    workingCopies.scanAtStartup();
     const pathToOpen = resolveStartupDatabasePath();
     if (pathToOpen.length > 0) await setActiveDb(pathToOpen);
     DatabaseServices.initHandlers();
 
-    console.log("db_path: " + DatabaseServices.getDbPath());
+    console.log(
+        "Open show: " +
+            (DatabaseServices.getDbPath()
+                ? `in ${whereIs(DatabaseServices.getDbPath())}`
+                : "none"),
+    );
 
     initIpcHandlers();
     initGetters();
@@ -860,22 +1001,41 @@ function startUpdates(): UpdateController {
 }
 
 /**
+ * Before quitting: gives temp files a sync app still holds up to 10 s to be deleted, so they
+ * aren't left beside the show until it next opens. Quitting goes on at the cap (ADR 0018).
+ */
+async function finishPendingDeletes() {
+    const { settled } = await settlePendingDeletes(10_000);
+    if (!settled)
+        console.warn("Quitting with temp files still held by another program");
+}
+
+/**
  * Before a restart for an update or a move to Applications: close the show the way quitting
  * does, but keep it as the file to open on the next launch. A new show that was never saved is
  * discarded, as on quit.
  */
-async function closeShowForRestart() {
-    // Out of sight first, as quitting does: nothing typed now could be saved
-    win?.hide();
+async function closeShowForRestart(): Promise<boolean> {
     const reopen = currentNewShowDraftPath ? "" : DatabaseServices.getDbPath();
+    // A working copy publishes while the window is still visible, so a failed publish can ask
+    // the person, and they can keep the show open instead (ADR 0018).
+    const proceed = await endWorkingCopy("quit").catch((error) => {
+        console.error("Error saving before restarting:", error);
+        return true;
+    });
+    if (!proceed) return false;
+    // Out of sight, as quitting does: nothing typed now could be saved
+    win?.hide();
     try {
         await closeCurrentFile(true);
     } catch (error) {
         console.error("Error closing file before restarting:", error);
     }
+    await finishPendingDeletes();
     if (reopen) store.set("databasePath", reopen);
     // The windows close without asking again
     isQuitting = true;
+    return true;
 }
 
 ipcMain.handle(UPDATE_IPC_CHANNELS.getState, () => updates?.getState() ?? null);
@@ -888,7 +1048,7 @@ ipcMain.handle(UPDATE_IPC_CHANNELS.download, () => updates?.download());
 ipcMain.handle(UPDATE_IPC_CHANNELS.install, () => updates?.install());
 ipcMain.handle(UPDATE_IPC_CHANNELS.moveToApplications, async () => {
     if (!isMacOS || app.isInApplicationsFolder()) return false;
-    await closeShowForRestart();
+    if (!(await closeShowForRestart())) return false;
     let moved = false;
     try {
         // Quits and opens the moved copy when it works
@@ -907,6 +1067,7 @@ ipcMain.handle(UPDATE_IPC_CHANNELS.moveToApplications, async () => {
 function initGetters() {
     // Exports
     ipcMain.handle("export:pdf", async (_, params) => {
+        await publishBeforeExport();
         return await PDFExportService.export(
             params.sheets,
             params.organizeBySection,
@@ -918,6 +1079,7 @@ function initGetters() {
     ipcMain.handle(
         "export:createExportDirectory",
         async (_, defaultName: string) => {
+            await publishBeforeExport();
             return await PDFExportService.createExportDirectory(defaultName);
         },
     );
@@ -929,6 +1091,7 @@ function initGetters() {
 
     // Video export (streamed file writing)
     ipcMain.handle("export:videoStart", async (_, fileExtension: string) => {
+        await publishBeforeExport();
         return await VideoExportService.start(fileExtension);
     });
     ipcMain.handle(
@@ -969,6 +1132,11 @@ function initGetters() {
 
 // A conversion running in its worker (P9.8) is stopped, and so rolled back, before the app quits.
 stopConversionWorkersOnQuit(app);
+
+// Close the show's connection on the way out, so nothing is left open on the file (ADR 0018).
+app.on("will-quit", () => {
+    DatabaseServices.closeDatabase();
+});
 
 app.on("window-all-closed", async () => {
     // The storage move's hidden windows close before the editor's opens
@@ -1064,6 +1232,7 @@ let applicationMenu: Menu | null = null;
 function showApplicationMenu() {
     applicationMenu = buildApplicationMenu({
         basic: store.get("editorMode") === "basic",
+        saveNow: workingCopySavesEnabled(store.get(WORKING_COPY_SETTING)),
     });
     Menu.setApplicationMenu(applicationMenu);
 }
@@ -1163,7 +1332,7 @@ app.on("activate", () => {
  * @returns 200 for success, -1 for failure
  */
 async function createFileAtPath(filePath: string) {
-    console.log("createFileAtPath:", filePath);
+    console.log(`Creating a show in ${whereIs(filePath)}`);
 
     if (!filePath) return -1;
 
@@ -1220,7 +1389,7 @@ async function openDatabaseAtPathWithoutReload(
     } catch (error) {
         captureException(error);
         store.delete("databasePath");
-        DatabaseServices.setDbPath("", false);
+        DatabaseServices.closeDatabase();
         console.error("Error opening database without reload:", error);
         return -1;
     }
@@ -1422,8 +1591,7 @@ export async function discardNewShowDraft(): Promise<number> {
         return 200;
     }
 
-    DatabaseServices.closePersistentConnection();
-    DatabaseServices.setDbPath("", false);
+    DatabaseServices.closeDatabase();
 
     const storedPath = store.get("databasePath") as string | undefined;
     if (storedPath === draftPath) {
@@ -1529,11 +1697,8 @@ export async function saveFile() {
 
     if (!win) return -1;
 
-    const db = DatabaseServices.connect();
-
-    // Save
-    const response = await dialog
-        .showSaveDialog(win, {
+    try {
+        const result = await dialog.showSaveDialog(win, {
             buttonLabel: t("fileDialog.saveCopy.button"),
             filters: [
                 {
@@ -1541,36 +1706,68 @@ export async function saveFile() {
                     extensions: ["dots"],
                 },
             ],
-        })
-        .then(async (path) => {
-            if (path.canceled || !path.filePath) return 0;
-
-            // Make a copy into a temp file
-            const tempPath = path.filePath + ".tmp";
-            if (fs.existsSync(tempPath)) {
-                fs.unlinkSync(tempPath);
-            }
-
-            const stmt = await db.prepare("VACUUM INTO ?");
-            await stmt.run(tempPath);
-
-            // If there is an existing file, only delete it after successful copy
-            if (fs.existsSync(path.filePath)) {
-                fs.unlinkSync(path.filePath);
-            }
-
-            fs.renameSync(tempPath, path.filePath);
-
-            addRecentFile(path.filePath);
-
-            return 200;
-        })
-        .catch((err) => {
-            console.log(err);
-            return -1;
         });
+        if (result.canceled || !result.filePath) return 0;
+        const target = resolve(result.filePath);
 
-    return response;
+        // A copy over the open show would replace the file under its own connection, and the
+        // show already holds these contents: nothing to do. The same file can be spelled
+        // differently (case on Windows and macOS, a symbolic link), so compare the files.
+        if (isSameFile(target, DatabaseServices.getDbPath())) {
+            // With a working copy, the file can be a few seconds behind: write it now.
+            const outcome = await workingCopies.current?.flush("save-copy");
+            return outcome && !outcome.ok ? -1 : 200;
+        }
+
+        await writeSnapshotTo(target);
+        addRecentFile(target);
+        return 200;
+    } catch (err) {
+        console.log(err);
+        captureException(err);
+        return -1;
+    }
+}
+
+/** A private folder for files a save builds before they go beside the show (ADR 0018). */
+const saveScratchPath = () => join(app.getPath("userData"), "save-scratch");
+
+function saveScratchDirectory(): string {
+    const directory = saveScratchPath();
+    fs.mkdirSync(directory, { recursive: true });
+    return directory;
+}
+
+/**
+ * Deletes snapshots a save left in the scratch folder when the app crashed or was killed during
+ * it. Call at startup: the single-instance lock means no other run is saving.
+ */
+function clearSaveScratch() {
+    try {
+        fs.rmSync(saveScratchPath(), { recursive: true, force: true });
+    } catch (error) {
+        console.warn("Couldn't clear the save scratch folder:", error);
+    }
+}
+
+/**
+ * Writes a consistent copy of the open show to `target`. The snapshot is built in the app's
+ * user data; only the finished file goes beside `target`, and replaces any file there in one
+ * rename (ADR 0018).
+ */
+async function writeSnapshotTo(target: string) {
+    const snapshot = join(saveScratchDirectory(), `${randomUUID()}.dots`);
+    try {
+        const db = DatabaseServices.connect();
+        try {
+            db.prepare("VACUUM INTO ?").run(snapshot);
+        } finally {
+            db.close();
+        }
+        await publishFile(snapshot, target);
+    } finally {
+        await removeWithRetry(snapshot);
+    }
 }
 
 /** Open-dialog filters for a show file, in the app language. */
@@ -1682,8 +1879,11 @@ async function closeCurrentFileNow(isAppQuitting: boolean) {
         console.error("Error getting SVG on close:", error);
     }
 
+    // Publish and release a working copy (ADR 0018); the person may cancel if that fails.
+    if (!(await endWorkingCopy(isAppQuitting ? "quit" : "close"))) return 0;
+
     // Close the current file
-    DatabaseServices.setDbPath("", false);
+    DatabaseServices.closeDatabase();
     // A conversion the quit stopped keeps its file as the one to reopen on the next launch.
     if (!(isAppQuitting && conversionWorkersStopped()))
         store.set("databasePath", "");
@@ -1811,7 +2011,7 @@ function backupLeftoverJournal(path: string) {
         const backup = backupBeforeJournalRecovery(path, backupDir());
         if (backup)
             console.log(
-                `Leftover journal next to ${path}: copied the file to ${backup.showCopy}` +
+                `Leftover journal next to a show in ${whereIs(path)}: copied the file to ${whereIs(backup.showCopy)}` +
                     (backup.journalCopy ? " with its journal" : ""),
             );
     } catch (error) {
@@ -1832,7 +2032,7 @@ function backupBeforeMigrations(path: string) {
     const timestamp = new Date().toISOString().replace(/[:.]/g, "-");
     const originalName = path.split(/[\\/]/).pop();
     const backupPath = join(backupDir, `backup_${timestamp}_${originalName}`);
-    console.log("Creating backup of database in " + backupPath);
+    console.log(`Creating a backup of the show in ${whereIs(backupPath)}`);
     fs.copyFileSync(path, backupPath);
 
     console.log("Deleting backups older than 30 days");
@@ -1854,6 +2054,489 @@ function backupBeforeMigrations(path: string) {
             fs.unlinkSync(filePath);
         }
     });
+}
+
+/************************************** WORKING COPY **************************************/
+// Saving through a private working copy (ADR 0018). On unless the "workingCopySaves" setting
+// is turned off; OPENMARCH_WORKING_COPY=1 / =0 forces it.
+
+const workingCopyRoot = () => join(app.getPath("userData"), "working-copies");
+
+/** The sync app whose folder holds a show, cached per path (it only reads folder names). */
+const syncServiceCache = new Map<string, string | null>();
+function syncServiceOf(showPath: string): string | null {
+    if (!syncServiceCache.has(showPath))
+        syncServiceCache.set(showPath, cloudSyncServiceFor(showPath));
+    return syncServiceCache.get(showPath) ?? null;
+}
+
+/** Where a file is, for log lines: the kind of folder, never the path (logSafe.ts). */
+const whereIs = (filePath: string) =>
+    describeLocation(filePath, app.getPath("userData"));
+
+function reportWorkingCopyStatus(status: WorkingCopyStatus) {
+    if (!win || win.isDestroyed()) return;
+    win.webContents.send("working-copy:status", {
+        ...status,
+        syncService: syncServiceOf(status.showPath),
+    } satisfies WorkingCopyStatus);
+    if (isMacOS)
+        win.setDocumentEdited(
+            status.state !== "saved" && status.state !== "closed",
+        );
+}
+
+/**
+ * Runs `ask` (a working-copy question or the Save As dialog) with the open show's automatic
+ * publishes held: no retry, idle or blur publish writes a temp file behind it, and the title bar
+ * keeps showing why the last one failed. What the person then chooses publishes at once.
+ */
+async function withAutomaticPublishesHeld<T>(
+    ask: () => Promise<T>,
+): Promise<T> {
+    const release = workingCopies.current?.holdAutomaticPublishes();
+    try {
+        return await ask();
+    } finally {
+        release?.();
+    }
+}
+
+/** Shows a working-copy question over the window, with automatic publishes held. */
+function askWorkingCopyQuestion(
+    options: Electron.MessageBoxOptions,
+): Promise<Electron.MessageBoxReturnValue> {
+    return withAutomaticPublishesHeld(() =>
+        win && !win.isDestroyed()
+            ? dialog.showMessageBox(win, options)
+            : dialog.showMessageBox(options),
+    );
+}
+
+/** Asks whether to recover a show's unpublished changes before it opens. */
+async function askRecoverOnOpen(
+    entry: RecoverableWorkingCopy,
+): Promise<RecoverChoice> {
+    const choices: RecoverChoice[] = ["recover", "discard", "cancel"];
+    const edited = entry.manifest.lastEditAt
+        ? new Date(entry.manifest.lastEditAt).toLocaleString()
+        : "";
+    const options: Electron.MessageBoxOptions = {
+        type: "warning",
+        message: t("fileDialog.recoverOnOpen.message", {
+            name: basename(entry.manifest.showPath),
+        }),
+        detail: t("fileDialog.recoverOnOpen.detail", { time: edited }),
+        buttons: [
+            t("fileDialog.recoverOnOpen.recover"),
+            t("fileDialog.recoverOnOpen.discard"),
+            t("fileDialog.recoverOnOpen.cancel"),
+        ],
+        defaultId: 0,
+        cancelId: 2,
+        noLink: true,
+    };
+    // Chosen on the launch page already
+    if (approvedRecoveryId === entry.id) return "recover";
+    // A Playwright run can't answer a native dialog: recover, as the safe choice.
+    if (process.env.PLAYWRIGHT_SESSION) return "recover";
+    const { response } = await askWorkingCopyQuestion(options);
+    return choices[response] ?? "cancel";
+}
+
+const workingCopies = createWorkingCopyHost({
+    sessionOptions: () => ({
+        workingRoot: workingCopyRoot(),
+        appVersion: app.getVersion(),
+        platform: process.platform,
+        onStatus: reportWorkingCopyStatus,
+        onPublish: (event) => workingCopyTelemetry.publish(event),
+    }),
+    askRecover: async (entry) => {
+        workingCopyTelemetry.recoveryOffered();
+        const choice = await askRecoverOnOpen(entry);
+        if (choice === "recover") workingCopyTelemetry.recoveryTaken();
+        return choice;
+    },
+    askUnpublished: askAboutUnpublishedChanges,
+    onSessionChange: (session) => {
+        if (session)
+            workingCopyTelemetry.sessionStarted(
+                syncServiceOf(session.showPath),
+            );
+        else workingCopyTelemetry.sessionEnded();
+    },
+});
+
+/** Non-identifying publish numbers for Sentry, respecting the analytics opt-out (ADR 0018). */
+const workingCopyTelemetry = createWorkingCopyTelemetry({
+    enabled: diagnosticsAllowed,
+    platform: process.platform,
+    appVersion: app.getVersion(),
+});
+
+type UnpublishedAnswer = "retry" | "overwrite" | "saveAs" | "close" | "cancel";
+
+/** Asks what to do when the publish before closing or quitting failed (ADR 0018). */
+async function askAboutUnpublishedChanges(
+    session: WorkingCopySession,
+    outcome: Extract<SaveOutcome, { ok: false }>,
+): Promise<"close" | "cancel" | "retried"> {
+    const name = basename(session.showPath);
+    const choices: { label: string; answer: UnpublishedAnswer }[] =
+        outcome.state === "conflict"
+            ? [
+                  {
+                      label: t("fileDialog.unpublished.keepMine"),
+                      answer: "overwrite",
+                  },
+                  {
+                      label: t("fileDialog.unpublished.saveAs"),
+                      answer: "saveAs",
+                  },
+              ]
+            : outcome.state === "readOnly"
+              ? [
+                    {
+                        label: t("fileDialog.unpublished.saveAs"),
+                        answer: "saveAs",
+                    },
+                ]
+              : [
+                    {
+                        label: t("fileDialog.unpublished.retry"),
+                        answer: "retry",
+                    },
+                    {
+                        label: t("fileDialog.unpublished.saveAs"),
+                        answer: "saveAs",
+                    },
+                ];
+    choices.push(
+        { label: t("fileDialog.unpublished.closeAnyway"), answer: "close" },
+        { label: t("fileDialog.unpublished.cancel"), answer: "cancel" },
+    );
+    const service = syncServiceOf(session.showPath);
+    const options: Electron.MessageBoxOptions = {
+        type: "warning",
+        message: t("fileDialog.unpublished.message", { name }),
+        detail: [
+            outcome.state === "conflict"
+                ? t("fileDialog.unpublished.conflictDetail", { name })
+                : outcome.state === "readOnly"
+                  ? t("fileDialog.unpublished.readOnlyDetail", { name })
+                  : service
+                    ? t("fileDialog.unpublished.busySyncDetail", {
+                          name,
+                          service,
+                      })
+                    : t("fileDialog.unpublished.busyDetail", { name }),
+            t("fileDialog.unpublished.keptDetail"),
+        ].join("\n\n"),
+        buttons: choices.map((choice) => choice.label),
+        defaultId: 0,
+        cancelId: choices.length - 1,
+        noLink: true,
+    };
+    // A Playwright run can't answer: close and keep the changes for recovery.
+    if (process.env.PLAYWRIGHT_SESSION) return "close";
+    const { response } = await askWorkingCopyQuestion(options);
+    const answer = choices[response]?.answer ?? "cancel";
+    if (answer === "cancel" || answer === "close") return answer;
+    if (answer === "overwrite") await session.overwriteShow();
+    else if (answer === "saveAs") {
+        const target = await chooseWorkingCopyTarget(session.showPath);
+        if (target) await saveWorkingCopyAs(session, target);
+    }
+    return "retried";
+}
+
+/** Asks where to save the open show as a new file. */
+async function chooseWorkingCopyTarget(
+    showPath: string,
+): Promise<string | null> {
+    const name = basename(showPath).replace(/\.dots$/i, "");
+    const result = await withAutomaticPublishesHeld(() =>
+        showSaveDialogHandler({
+            buttonLabel: t("fileDialog.saveAs.button"),
+            defaultPath: join(dirname(showPath), `${name} (2).dots`),
+            filters: [
+                {
+                    name: t("fileDialog.filters.openMarchFile"),
+                    extensions: ["dots"],
+                },
+            ],
+        }),
+    );
+    if (result.canceled || !result.filePath) return null;
+    return result.filePath.endsWith(".dots")
+        ? result.filePath
+        : `${result.filePath}.dots`;
+}
+
+/** Makes `newShowPath` the open show's file and publishes to it (Save As). */
+async function saveWorkingCopyAs(
+    session: WorkingCopySession,
+    newShowPath: string,
+): Promise<SaveOutcome> {
+    const outcome = await session.retarget(newShowPath);
+    DatabaseServices.setWorkingCopyShowPath(session.showPath);
+    store.set("databasePath", session.showPath);
+    addRecentFile(session.showPath);
+    win?.setTitle("OpenMarch - " + session.showPath); // i18n-ignore: product name and path
+    if (isMacOS) win?.setRepresentedFilename(session.showPath);
+    reportWorkingCopyStatus(session.status());
+    return outcome;
+}
+
+/** Recovery the person already chose on the launch page, so opening doesn't ask again. */
+let approvedRecoveryId: string | null = null;
+
+function initWorkingCopyIpcHandlers() {
+    ipcMain.handle("working-copy:save-now", () => publishNow());
+    ipcMain.handle("working-copy:save-as", async () => {
+        const session = workingCopies.current;
+        if (!session)
+            return { ok: false, state: "closed", message: "No show is open" };
+        const target = await chooseWorkingCopyTarget(session.showPath);
+        if (!target) return { ok: false, cancelled: true };
+        return saveWorkingCopyAs(session, target);
+    });
+    ipcMain.handle(
+        "working-copy:resolve-conflict",
+        async (_, choice: WorkingCopyConflictChoice) => {
+            const session = workingCopies.current;
+            if (!session)
+                return {
+                    ok: false,
+                    state: "closed",
+                    message: "No show is open",
+                };
+            if (choice === "keepMine") return session.overwriteShow();
+            if (choice === "keepTheirs") {
+                // Drop the working copy and reopen the show as it is on disk.
+                const showPath = session.showPath;
+                await workingCopies.discardCurrent(() =>
+                    DatabaseServices.closeDatabase(),
+                );
+                const resCode = await setActiveDb(showPath);
+                return resCode === 200
+                    ? { ok: true }
+                    : { ok: false, state: "closed", message: String(resCode) };
+            }
+            const target = await chooseWorkingCopyTarget(session.showPath);
+            if (!target) return { ok: false, cancelled: true };
+            return saveWorkingCopyAs(session, target);
+        },
+    );
+    ipcMain.handle("working-copy:list-recoverable", () =>
+        workingCopies.listRecoverable(),
+    );
+    ipcMain.handle("working-copy:recover", async (_, id: string) => {
+        const entry = workingCopies.findRecoverable(id);
+        if (!entry) return 404;
+        approvedRecoveryId = id;
+        workingCopyTelemetry.recoveryOffered();
+        workingCopyTelemetry.recoveryTaken();
+        try {
+            const resCode = await setActiveDb(entry.manifest.showPath);
+            if (resCode === 200) addRecentFile(entry.manifest.showPath);
+            return resCode;
+        } finally {
+            approvedRecoveryId = null;
+        }
+    });
+    ipcMain.handle("working-copy:discard", (_, id: string) => {
+        workingCopies.discard(id);
+    });
+}
+
+/** Publishes and releases the open working copy; false if the person cancelled. */
+function endWorkingCopy(reason: string): Promise<boolean> {
+    return workingCopies.end(reason, () => DatabaseServices.closeDatabase());
+}
+
+/** Publishes the open show now (File ▸ Save Now, Ctrl/Cmd+S). */
+export async function publishNow() {
+    await workingCopies.current?.flush("shortcut");
+}
+
+/** Publishes the open show before an export reads it from disk or shares it. */
+async function publishBeforeExport() {
+    const outcome = await workingCopies.current?.flush("export");
+    if (outcome && !outcome.ok)
+        console.warn(
+            "Exporting before the show could be saved:",
+            outcome.state,
+        );
+}
+
+/**
+ * Whether `path` can open through a working copy: an existing timeline-era file this build
+ * opens as it is. A page-era file converts in place first (the convert-on-open flow), and a
+ * file this build refuses is refused by the usual open, which writes nothing.
+ *
+ * A leftover journal is played back here, after the usual backup, exactly as the usual open
+ * would; when SQLite can't use it, the open stops with `LEFTOVER_JOURNAL_STATUS`.
+ */
+function checkWorkingCopyOpen(
+    path: string,
+): "working-copy" | "in-place" | number {
+    if (!fs.existsSync(path)) return "in-place";
+    if (hasLeftoverJournal(path)) {
+        backupLeftoverJournal(path);
+        let db: DatabaseSync | undefined;
+        try {
+            db = new DatabaseSync(path);
+            db.prepare("SELECT count(*) FROM sqlite_master").get();
+        } catch (error) {
+            if (isFolderAccessError(error)) return LEFTOVER_JOURNAL_STATUS;
+            return "in-place";
+        } finally {
+            db?.close();
+        }
+    }
+    let version: number;
+    let db: DatabaseSync | undefined;
+    try {
+        db = new DatabaseSync(path, { readOnly: true });
+        version = readUserVersion(db);
+    } catch {
+        return "in-place";
+    } finally {
+        db?.close();
+    }
+    const { action } = decideFileVersion(version, false);
+    if (action !== "accept" && action !== "downgrade") return "in-place";
+    if (version === PAGE_MODEL_USER_VERSION) return "in-place";
+    try {
+        fs.accessSync(path, fs.constants.R_OK | fs.constants.W_OK);
+    } catch {
+        return 403;
+    }
+    // Publishing renames a file into the show's folder: check that a new file can go there
+    // (on macOS, access checks can pass for Documents or Downloads while writes fail).
+    const probe = tempPathBeside(path);
+    try {
+        fs.writeFileSync(probe, "", { flag: "wx" });
+    } catch (error) {
+        console.error("Can't write beside the show:", withoutPaths(error));
+        return 403;
+    }
+    void removeWithRetry(probe);
+    return "working-copy";
+}
+
+/** Whether `path` is a page-era (version 7) show, which asks whether to convert it before it opens. */
+function isPageEraFile(path: string): boolean {
+    let db: DatabaseSync | undefined;
+    try {
+        db = new DatabaseSync(path, { readOnly: true });
+        return readUserVersion(db) === PAGE_MODEL_USER_VERSION;
+    } catch {
+        return false;
+    } finally {
+        db?.close();
+    }
+}
+
+/**
+ * The open itself: through a working copy when working-copy saves are on (or to continue a
+ * recovered one), otherwise in place. A new show is created in place, then reopened through a
+ * working copy.
+ */
+async function openShowWithSaveMode(
+    path: string,
+    isNewFile: boolean,
+    options: OpenShowOptions,
+    recover?: RecoverableWorkingCopy,
+): Promise<OpenShowResult> {
+    // The caller (setActiveDbNow) has published and released the show that was open, unless
+    // this file only asks whether to convert it first.
+    const enabled =
+        workingCopySavesEnabled(store.get(WORKING_COPY_SETTING)) &&
+        !isNewShowDraftPath(path);
+    if (!recover && !enabled) {
+        // Temp files a working-copy publish or Save As Copy left beside it (a sync app held
+        // them), now that it's edited in place.
+        if (!isNewFile) void removeStaleTempFiles(path);
+        return openShowDatabase(path, isNewFile, openShowDeps(), options);
+    }
+
+    if (isNewFile) {
+        const created = await openShowDatabase(path, true, openShowDeps());
+        created.db?.close();
+        if (created.sqlSuspension !== undefined)
+            DatabaseServices.resumeSqlProxy(created.sqlSuspension);
+        DatabaseServices.closeDatabase();
+        if (created.status !== 200) return created;
+    }
+
+    if (!recover) {
+        const check = checkWorkingCopyOpen(path);
+        if (typeof check === "number") return { status: check };
+        if (check === "in-place") {
+            void removeStaleTempFiles(path);
+            return openShowDatabase(path, false, openShowDeps(), options);
+        }
+    }
+
+    const showPath = recover?.manifest.showPath ?? resolve(path);
+    let opened: WorkingCopyOpen<OpenShowResult>;
+    try {
+        opened = await workingCopies.open(showPath, {
+            recover,
+            migrate: async (workingPath) => {
+                const result = await openShowDatabase(
+                    workingPath,
+                    false,
+                    {
+                        ...openShowDeps(),
+                        // The backup is of the show, under its own name.
+                        beforeMigrations: () =>
+                            backupBeforeMigrations(showPath),
+                        beforeJournalRecovery: undefined,
+                    },
+                    options,
+                );
+                result.db?.close();
+                return { ...result, db: undefined };
+            },
+            connect: (session) =>
+                DatabaseServices.connectToWorkingCopy({
+                    showPath: session.showPath,
+                    workingPath: session.workingPath,
+                    onActivity: () => session.noteActivity(),
+                }),
+        });
+    } catch (error) {
+        // Only when OpenMarch's own folder can't hold a copy (full, read-only), and before a
+        // session took over. Anything about the show itself, such as a sync app writing it while
+        // it's copied, is reported as usual: editing it in place is what goes wrong in synced
+        // folders. Edit in place, as before working-copy saves, rather than refuse the show.
+        if (
+            recover ||
+            workingCopies.current ||
+            !(error instanceof WorkingCopyStorageError)
+        )
+            throw error;
+        console.error(
+            "Couldn't open through a working copy, editing in place:",
+            withoutPaths(error),
+        );
+        void removeStaleTempFiles(path);
+        return openShowDatabase(path, false, openShowDeps(), options);
+    }
+    if (opened.session)
+        workingCopyTelemetry.tempFilesFound(opened.staleTempFiles);
+    if (opened.session)
+        console.log(
+            `Editing a show in ${whereIs(opened.session.showPath)} through a working copy in ${whereIs(opened.session.workingPath)}` +
+                (opened.staleTempFiles
+                    ? ` (removed ${opened.staleTempFiles} leftover temp files)`
+                    : ""),
+        );
+    return opened.result;
 }
 
 /** The dependencies of `openShowDatabase` in the running app. */
@@ -1894,6 +2577,7 @@ function setActiveDb(
     );
 }
 
+// eslint-disable-next-line max-lines-per-function
 async function setActiveDbNow(
     path: string,
     isNewFile: boolean,
@@ -1906,20 +2590,39 @@ async function setActiveDbNow(
     leftoverJournalFile = null;
     const hadShowOpen = DatabaseServices.getDbPath() !== "";
     try {
+        // Publish and release the open show first (ADR 0018); the person may cancel if that
+        // fails. Then unpublished changes from an earlier session are offered before anything
+        // opens, whichever way the show is being opened, including changes closing the open
+        // show just left behind. A page-era file first asks whether to convert it, over the
+        // open show, as with working-copy saves off: only Confirm closes the open show.
+        const closeConnections = () => DatabaseServices.closeDatabase();
+        const recover = isNewFile
+            ? (await endWorkingCopy("switch"))
+                ? null
+                : "cancel"
+            : await workingCopies.prepareOpen(path, {
+                  closeConnections,
+                  keepCurrentOpen:
+                      !options.conversionConfirmed && isPageEraFile(path),
+              });
+        if (recover === "cancel") return OPEN_STOPPED_STATUS;
+
         // The 3D View shows one show; a confirmed conversion is about to replace it.
         if (options.conversionConfirmed) closeView3dWindow();
 
-        const result = await openShowDatabase(
+        const result = await openShowWithSaveMode(
             path,
             isNewFile,
-            openShowDeps(),
             options,
+            recover ?? undefined,
         );
         result.db?.close();
         const token = result.sqlSuspension;
         // The renderer offers to open it without the journal (`load-file:recoverFromJournal`).
-        if (result.status === LEFTOVER_JOURNAL_STATUS)
+        if (result.status === LEFTOVER_JOURNAL_STATUS) {
             leftoverJournalFile = path;
+            reportLeftoverJournal(path);
+        }
 
         if (result.status === NEEDS_CONVERSION_STATUS && result.backupPath) {
             if (token !== undefined) DatabaseServices.resumeSqlProxy(token);
@@ -1961,7 +2664,7 @@ async function setActiveDbNow(
                 win?.webContents.reload();
             } else {
                 console.error(
-                    `Error loading database file [code=${result.status}] [path=${path}]`,
+                    `Error loading database file [code=${result.status}] [in ${whereIs(path)}]`,
                 );
                 if (hadShowOpen && !DatabaseServices.getDbPath()) {
                     // The refusal closed the show that was open: go to the launch page, which
@@ -1990,7 +2693,7 @@ async function setActiveDbNow(
     } catch (error) {
         captureException(error);
         store.delete("databasePath"); // Reset database path
-        DatabaseServices.setDbPath("", false);
+        DatabaseServices.closeDatabase();
         dialog.showErrorBox(
             t("fileDialog.openFailed.title"),
             (error as Error).message,

@@ -5,7 +5,7 @@ import {
 import { assert } from "../utilities/assert";
 import { mainProcessLog } from "../utilities/mainProcessLog";
 import { DbConnection, DbTransaction } from "./types";
-import { asc, lt, max } from "drizzle-orm";
+import { asc, isNotNull, lt, max } from "drizzle-orm";
 import { DB, schema } from "../global/database/db";
 import { Constants } from "../global/Constants";
 import { getTableName, gt, sql, eq, desc, count, inArray } from "drizzle-orm";
@@ -802,7 +802,14 @@ async function executeHistoryActionUnlocked(
  */
 export async function resetTimelineChangeLog(db: DbConnection | DB) {
     await withTransactionWithHistoryLock(async () => {
-        await db.delete(schema.timeline_change_log).run();
+        // With a WHERE clause: SQLite clears a table for a bare DELETE by rewriting its pages
+        // even when it is empty, which counts as a write. Every open calls this, and a write
+        // would make an unchanged show look edited, so a working copy would publish it again
+        // (ADR 0018).
+        await db
+            .delete(schema.timeline_change_log)
+            .where(isNotNull(schema.timeline_change_log.seq))
+            .run();
         emitTimelineChange({ kind: "reset" });
     });
 }

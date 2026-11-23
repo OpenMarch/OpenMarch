@@ -11,6 +11,7 @@ import { isWebBuild } from "@/utilities/webBuild";
 import { canSendReports, openReport } from "@/feedback/openReport";
 import { useActionHandler } from "../useActionHandler";
 import { MY_REPORTS_URL } from "@/feedback/reportsApi";
+import { workingCopyIsActive } from "@/hooks/useWorkingCopyStatus";
 
 // eslint-disable-next-line max-lines-per-function
 export function useFileActionHandlers() {
@@ -40,6 +41,14 @@ export function useFileActionHandlers() {
     useActionHandler("viewMyReports", () => {
         window.open(MY_REPORTS_URL, "_blank", "noopener,noreferrer");
     });
+
+    // Only while the open show is edited through a working copy; otherwise every change is
+    // already in the file.
+    useActionHandler(
+        "saveNow",
+        () => void window.electron.workingCopy?.saveNow(),
+        { enabled: () => workingCopyIsActive() },
+    );
 
     useActionHandler("launchLoadFileDialogue", () => {
         void window.electron.databaseLoad();

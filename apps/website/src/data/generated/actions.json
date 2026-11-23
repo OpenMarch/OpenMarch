@@ -9,6 +9,11 @@
         "category": "file",
         "bindings": []
     },
+    "saveNow": {
+        "label": "Save now",
+        "category": "file",
+        "bindings": []
+    },
     "launchNewFileDialogue": {
         "label": "New file…",
         "category": "file",

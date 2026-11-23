@@ -99,8 +99,12 @@ export interface UpdateControllerOptions {
     /** The install "Update now" started last session, if any; cleared once read */
     takeInstallAttempt: () => InstallAttempt | null;
     saveInstallAttempt: (attempt: InstallAttempt) => void;
-    /** Closes the show so it reopens after the restart; resolves when it's safe to quit */
-    prepareToQuit: () => Promise<void>;
+    /**
+     * Closes the show so it reopens after the restart; resolves when it's safe to quit, or to
+     * false when the person chose to keep the show open (its last save failed and they
+     * cancelled), and nothing was closed.
+     */
+    prepareToQuit: () => Promise<boolean | void>;
     /** Opens the app again on this version, when "Update now" couldn't install */
     relaunch: () => void;
     /**
@@ -280,7 +284,12 @@ export function createUpdateController(
             options.saveInstallAttempt({ from: currentVersion, to });
             const relaunchAfter = options.relaunchAfterInstall;
             try {
-                await options.prepareToQuit();
+                if ((await options.prepareToQuit()) === false) {
+                    // The show stays open: no install now, and no attempt to report.
+                    installing = false;
+                    options.takeInstallAttempt();
+                    return;
+                }
                 log.info(`Installing OpenMarch ${to} and restarting`);
                 // Windows: install without the installer's pages, then open the app again.
                 // macOS reopens by itself. Linux opens the new AppImage only after this app

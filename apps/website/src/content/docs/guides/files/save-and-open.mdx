@@ -8,6 +8,11 @@ covers:
   - apps/desktop/src/components/titlebar/WebFileMenu.tsx
   - apps/desktop/src/components/web
   - apps/desktop/electron/main/application-menu.ts
+  - apps/desktop/src/components/workingCopy
+  - apps/desktop/electron/main/workingCopyHost.ts
+  - i18n:workingCopy
+  - i18n:fileDialog.recoverOnOpen
+  - i18n:fileDialog.unpublished
   - action:launchNewFileDialogue
   - action:launchLoadFileDialogue
   - action:launchSaveFileDialogue
@@ -27,7 +32,7 @@ import { Steps, Aside } from "@astrojs/starlight/components";
 
 <InShort>Select <Ui k="launchpage.files.createNew" /> or <Ui k="launchpage.files.openFile" /> on the start page or in the toolbar's <Ui k="inspector.shape.fileTab" plain /> tab. Every change saves itself; in the web editor, select <Ui k="web.backUp" /> often to keep a copy.</InShort>
 
-A show is one file, ending in `.dots`. It holds everything: the marchers and sections, the music and tempo, the field, the drill on the timeline, props, and the 3D View's venue and cameras. The desktop app saves every change to that file as you make it, so there's no Save button. The web editor keeps shows in the browser instead; read [Keep shows safe in the web editor](#keep-shows-safe-in-the-web-editor) before you rely on it.
+A show is one file, ending in `.dots`. It holds everything: the marchers and sections, the music and tempo, the field, the drill on the timeline, props, and the 3D View's venue and cameras. The desktop app saves on its own a few seconds after you stop editing, so there's no Save step to remember; see [How the desktop app saves](#how-the-desktop-app-saves). The web editor keeps shows in the browser instead; read [Keep shows safe in the web editor](#keep-shows-safe-in-the-web-editor) before you rely on it.
 
 ## The start page
 
@@ -90,6 +95,27 @@ Every change is saved to the show's file straight away. To take a change back, u
 To keep a separate copy, for example before trying something big or to send to another staff member, select <Ui k="fileTab.saveFile" /> in the <Ui k="inspector.shape.fileTab" plain /> tab and choose where to save it. The copy is a whole show; the file you're working in stays open.
 
 To close the show and go back to the start page, select <Ui k="fileTab.exitFile" />.
+
+## How the desktop app saves
+
+Your changes go to a private copy inside OpenMarch, and the show file is updated in one step: about 15 seconds after you stop editing (at most 30 seconds while you keep going), when you switch to another app, when you close the show, and when you choose **File › <Ui k="menu.file.saveNow" plain />** or <Ui k="workingCopy.saveNow" plain /> in the title bar. A sync app such as OneDrive, iCloud Drive or Dropbox never sees a half-written show or a `-journal` file next to it, so shows are safe to keep in folders they sync.
+
+The title bar shows where the show stands. Select it for details and a <Ui k="workingCopy.saveNow" /> button.
+
+| Title bar | Means |
+| --- | --- |
+| <Ui k="workingCopy.status.saved" plain /> | The show file has every change. |
+| <Ui k="workingCopy.status.pending" plain /> | There are changes the show file doesn't have yet. They're kept safe and written in a few seconds. |
+| <Ui k="workingCopy.status.saving" plain /> | The show file is being written. |
+| <Ui k="workingCopy.status.problem" plain /> | OpenMarch couldn't write the show file, usually because a sync app or another program is using it. Your changes are kept safe, and OpenMarch keeps trying by itself. If the file is read-only, select <Ui k="workingCopy.saveAs" /> to save the show as a new file and keep working in it. |
+
+If you close, quit or restart OpenMarch for an update while it can't write the show file, it asks first: try again, save as a new file, or <Ui k="fileDialog.unpublished.closeAnyway" plain /> and keep the changes for later.
+
+If OpenMarch quits or the computer crashes before your last changes reach the file, they aren't lost. The next time you open that show, however you open it, OpenMarch asks whether to <Ui k="fileDialog.recoverOnOpen.recover" plain /> or <Ui k="fileDialog.recoverOnOpen.discard" plain />. The start page also lists them under <Ui k="workingCopy.recovery.title" plain />.
+
+If the show file was changed by another program or computer since OpenMarch last saved it, for example by a sync app bringing in someone else's version, OpenMarch doesn't write over it. It asks whether to <Ui k="workingCopy.conflict.keepMine" plain />, <Ui k="workingCopy.conflict.keepTheirs" plain />, or <Ui k="workingCopy.conflict.saveCopy" plain />. <Ui k="workingCopy.conflict.keepMine" plain /> replaces the version you were asked about: if the file changes again before yours is written, OpenMarch asks again.
+
+To go back to the way earlier versions saved, writing every change straight to the show file as you make it, turn off <Ui k="settings.general.workingCopySaves" /> in Settings › General. It applies to the next show you open. Keep it on for shows in a synced folder.
 
 ## Share a show
 

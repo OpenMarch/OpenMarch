@@ -30,6 +30,8 @@ import MarcherLogo from "@/components/MarcherLogo";
 import { isWebBuild, webChannel } from "@/utilities/webBuild";
 import WebFileMenu from "./WebFileMenu";
 import WebSaveStatus from "../web/WebSaveStatus";
+import WorkingCopySaveStatus from "../workingCopy/WorkingCopySaveStatus";
+import { useWorkingCopyStatus } from "@/hooks/useWorkingCopyStatus";
 import { useWebWelcomeStore } from "@/stores/WebWelcomeStore";
 
 /** Page zoom changes the viewport's CSS size, so it always fires a resize. */
@@ -154,14 +156,17 @@ function EditorTitleBar({
         void fetchDbPath();
     }, [showFilePath]);
 
+    // A working copy reports the show file, which Save As can change (ADR 0018).
+    const workingCopyStatus = useWorkingCopyStatus();
+    const showPath = workingCopyStatus?.showPath ?? dbPath;
     const displayDbPath = dbPathUnavailable
         ? t("titlebar.databasePathUnavailable")
         : showFullDatabasePath
-          ? dbPath
-          : (dbPath
+          ? showPath
+          : (showPath
                 .split(/[/\\]/)
                 .filter((segment) => segment.length > 0)
-                .pop() ?? dbPath);
+                .pop() ?? showPath);
 
     return (
         <>
@@ -260,6 +265,12 @@ function EditorTitleBar({
                     {isWebBuild && variant === "main" && showControls && (
                         <WebSaveStatus />
                     )}
+                    {!isWebBuild &&
+                        variant === "main" &&
+                        showControls &&
+                        workingCopyStatus && (
+                            <WorkingCopySaveStatus status={workingCopyStatus} />
+                        )}
                     {variant === "main" && (
                         <ActionButton
                             action="openCommandPalette"

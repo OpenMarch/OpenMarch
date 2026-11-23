@@ -1,10 +1,19 @@
 words:
+  - autocheckpoint
+  - FULLFSYNC
+  - fsyncs
+  - xattr
+  - retarget
+  - recents
   - discordapp
   - rehome
   - rehomed
   - rehoming
   - CANTOPEN
   - errcode
+  - onedrive
+  - googledrive
+  - iclouddrive
   - Crossmen
   - baselined
   - CIEDE

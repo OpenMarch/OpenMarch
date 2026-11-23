@@ -250,11 +250,11 @@ async function openWithSuspension(
             db.exec(`PRAGMA busy_timeout = ${CONVERSION_BUSY_TIMEOUT_MS}`);
         }
         if (step.next === "stop") {
-            DatabaseServices.setDbPath("", false);
+            DatabaseServices.closeDatabase();
             return stopped(OPEN_STOPPED_STATUS);
         }
         if (step.next === "ask") {
-            DatabaseServices.setDbPath("", false);
+            DatabaseServices.closeDatabase();
             return {
                 status: NEEDS_CONVERSION_STATUS,
                 backupPath: step.backupPath,

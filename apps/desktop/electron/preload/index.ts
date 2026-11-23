@@ -11,6 +11,12 @@ import {
 import * as DbServices from "@om-electron/database/database.services";
 
 import type { RecentFile } from "@om-electron/main/services/recent-files-service";
+import type {
+    RecoverableShow,
+    SaveOutcome,
+    WorkingCopyConflictChoice,
+    WorkingCopyStatus,
+} from "@om-electron/database/workingCopy/WorkingCopySession";
 import type { PreviousDotsImportResult } from "@om-electron/main/services/previous-dots-import-service";
 import type {
     AuthState,
@@ -29,6 +35,7 @@ import {
 import { GPU_CRASHED_CHANNEL, GPU_PROCESS_GONE_CHANNEL } from "../main/gpu";
 import type { HistoryResponse } from "@/db-functions";
 import type { PendingConversion } from "@om-electron/database/convertOnOpenGate";
+import type { CloudSyncService } from "@om-electron/main/cloudSyncFolder";
 import type {
     SqlBatchQuery,
     SqlReadBatchResult,
@@ -327,6 +334,46 @@ const APP_API = {
     repairDatabase: (dbPath: string): Promise<string | null> =>
         ipcRenderer.invoke("database:repair", dbPath),
     closeCurrentFile: () => ipcRenderer.invoke("closeCurrentFile"),
+    // Saving through a working copy (ADR 0018)
+    workingCopy: {
+        /** The open show's save state, or null when it's edited in place. */
+        getStatus: () =>
+            ipcRenderer.invoke(
+                "working-copy:get-status",
+            ) as Promise<WorkingCopyStatus | null>,
+        onStatus: (callback: (status: WorkingCopyStatus) => void) => {
+            const listener = (
+                _event: Electron.IpcRendererEvent,
+                status: WorkingCopyStatus,
+            ) => callback(status);
+            ipcRenderer.on("working-copy:status", listener);
+            return () =>
+                ipcRenderer.removeListener("working-copy:status", listener);
+        },
+        /** Publishes the open show now (the title bar's Save Now). */
+        saveNow: () =>
+            ipcRenderer.invoke("working-copy:save-now") as Promise<void>,
+        /** Asks for a new file and makes it the open show's file. */
+        saveAs: () =>
+            ipcRenderer.invoke("working-copy:save-as") as Promise<
+                SaveOutcome | { ok: false; cancelled: true }
+            >,
+        resolveConflict: (choice: WorkingCopyConflictChoice) =>
+            ipcRenderer.invoke(
+                "working-copy:resolve-conflict",
+                choice,
+            ) as Promise<SaveOutcome | { ok: false; cancelled: true }>,
+        /** Unpublished changes earlier sessions left, for the launch page. */
+        listRecoverable: () =>
+            ipcRenderer.invoke("working-copy:list-recoverable") as Promise<
+                RecoverableShow[]
+            >,
+        recover: (id: string) =>
+            ipcRenderer.invoke("working-copy:recover", id) as Promise<number>,
+        discard: (id: string) =>
+            ipcRenderer.invoke("working-copy:discard", id) as Promise<void>,
+    },
+
     onLoadFileResponse: (callback: (value: number) => void) => {
         const listener = (_event: Electron.IpcRendererEvent, value: number) =>
             callback(value);
@@ -354,6 +401,16 @@ const APP_API = {
      */
     recoverLeftoverJournal: () =>
         ipcRenderer.invoke("load-file:recoverFromJournal") as Promise<number>,
+    /**
+     * The cloud sync app (OneDrive, iCloud Drive, Dropbox, Google Drive, Box) whose folder holds
+     * the show a leftover journal stopped, or else the open show, and that show's path; null
+     * for a local folder (`electron/main/cloudSyncFolder.ts`).
+     */
+    getCloudSyncFolder: () =>
+        ipcRenderer.invoke("show:cloudSyncFolder") as Promise<{
+            service: CloudSyncService;
+            filePath: string;
+        } | null>,
 
     // Converting a page-era show to timelines when it opens (ADR 0012 §6)
     /** The page-era file waiting for the person to agree to convert it, or null. */

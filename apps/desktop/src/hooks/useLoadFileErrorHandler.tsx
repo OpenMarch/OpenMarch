@@ -19,6 +19,9 @@ const FILE_ERROR_GUIDE_URLS = {
     default: siteUrl(
         "/troubleshooting/file-errors/#unable-to-open-file-error-or-render-failure",
     ),
+    syncFolder: siteUrl(
+        "/troubleshooting/file-errors/#shows-in-a-synced-folder",
+    ),
 } as const;
 
 function ReferToGuide({ guideUrl }: { guideUrl: string }) {
@@ -43,23 +46,44 @@ function ReferToGuide({ guideUrl }: { guideUrl: string }) {
     );
 }
 
-/** Names the leftover journal that stopped the open, once the main process says which. */
+/**
+ * Names the leftover journal that stopped the open, once the main process says which, and says
+ * so when the show is in a cloud-synced folder, the likely reason the journal was left.
+ */
 function LeftoverJournalDescription() {
     const [name, setName] = useState<string | null>(null);
+    const [syncService, setSyncService] = useState<string | null>(null);
     useEffect(() => {
         let unmounted = false;
         void window.electron.getLeftoverJournal?.().then((journal) => {
             if (!unmounted) setName(journal);
         });
+        void window.electron
+            .getCloudSyncFolder?.()
+            .then((folder) => {
+                if (!unmounted) setSyncService(folder?.service ?? null);
+            })
+            .catch(() => {});
         return () => {
             unmounted = true;
         };
     }, []);
     return (
-        <T
-            keyName="fileAccessDialogError.leftoverJournal.description"
-            params={{ name: name ?? "-journal" }}
-        />
+        <>
+            <T
+                keyName="fileAccessDialogError.leftoverJournal.description"
+                params={{ name: name ?? "-journal" }}
+            />
+            {syncService && (
+                <span className="mt-8 block">
+                    <T
+                        keyName="fileAccessDialogError.leftoverJournal.syncFolder"
+                        params={{ service: syncService }}
+                    />{" "}
+                    <ReferToGuide guideUrl={FILE_ERROR_GUIDE_URLS.syncFolder} />
+                </span>
+            )}
+        </>
     );
 }
 

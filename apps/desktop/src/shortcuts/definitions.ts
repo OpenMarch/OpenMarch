@@ -214,6 +214,14 @@ const STATIC_ACTIONS = {
         // Electron binds this in the native menu; the web build has none.
         defaultBindings: isWebBuild ? ["$mod+S"] : [],
     },
+    // Working-copy saves (ADR 0018): write the show file now instead of a few seconds later.
+    // No default key yet: Cmd/Ctrl+S swaps marchers on desktop.
+    saveNow: {
+        labelKey: "actions.file.saveNow",
+        category: "file",
+        scope: "global",
+        defaultBindings: [],
+    },
     launchNewFileDialogue: {
         labelKey: "actions.file.newDialogue",
         category: "file",

@@ -129,6 +129,7 @@
             "newDialogue": "New file…",
             "openExport": "Export…",
             "saveDialogue": "Save a copy…",
+            "saveNow": "Save now",
             "removeUnusedAssets": "Remove unused assets…",
             "removeUnusedAssetsKeywords": "remove delete clean unused assets models imported size smaller"
         },
@@ -822,6 +823,7 @@
             "cancel": "Cancel",
             "description": "There's a leftover file, “{name}”, next to this show, from a save that didn't finish. OpenMarch can't use it where it is, but it can finish recovering the show from a copy. The leftover file is moved to OpenMarch's backups, not deleted.",
             "recover": "Recover and open",
+            "syncFolder": "This show is in a folder synced by {service}. Sync apps sometimes hold on to this file while OpenMarch saves, which leaves it behind.",
             "title": "A leftover file is stopping this show from opening"
         },
         "notFound": {
@@ -2027,6 +2029,8 @@
         "shortcuts.conflictWith": "<keys></keys> is already used by {actions}.",
         "shortcuts.recordingHint": "Press keys… (<keys></keys> to cancel)",
         "shortcuts.category.field": "Field",
+        "general.workingCopySaves": "Save shows through a working copy",
+        "general.workingCopySaves.description": "Edits go to a private copy, and your show file is updated a few seconds after you stop editing, all at once. Safe in folders that OneDrive, iCloud Drive or Dropbox sync. Turn it off to write every change straight to the show file, as earlier versions did. Applies to the next show you open.",
         "shortcuts.category.path": "Paths"
     },
     "discord": {
@@ -4051,7 +4055,8 @@
             "noDocument": {
                 "title": "Cannot Save or Export",
                 "message": "There is currently no active document to save or export."
-            }
+            },
+            "saveNow": "Save Now"
         },
         "view": {
             "title": "View",
@@ -4113,6 +4118,29 @@
         },
         "openFailed": {
             "title": "Error Loading Database"
+        },
+        "recoverOnOpen": {
+            "message": "OpenMarch closed before your last changes to “{name}” were saved.",
+            "detail": "Last edited {time}. Recover them to keep working where you left off, or discard them to open the show as it was last saved. Discarded changes can't be brought back.",
+            "recover": "Recover Changes",
+            "discard": "Discard Changes",
+            "cancel": "Cancel"
+        },
+        "saveAs": {
+            "button": "Save"
+        },
+        "unpublished": {
+            "message": "Your latest changes to “{name}” aren't in its file yet.",
+            "conflictDetail": "“{name}” was changed by another program or computer, so OpenMarch didn't write over it.",
+            "readOnlyDetail": "“{name}” is read-only, so OpenMarch can't write your changes to it.",
+            "busyDetail": "“{name}” couldn't be updated: another program may be using it, or its folder can't be written to.",
+            "busySyncDetail": "“{name}” couldn't be updated: {service} may be using it.",
+            "keptDetail": "If you close anyway, OpenMarch keeps your changes and offers to recover them the next time you open the show.",
+            "keepMine": "Keep My Version",
+            "saveAs": "Save As…",
+            "retry": "Try Again",
+            "closeAnyway": "Close Anyway",
+            "cancel": "Cancel"
         }
     },
     "cues": {
@@ -5036,6 +5064,47 @@
         "report": {
             "title": "Something not working?",
             "body": "Tell us what happened. You can record your screen and send a copy of your show."
+        }
+    },
+    "workingCopy": {
+        "status": {
+            "saved": "Saved",
+            "pending": "Edited",
+            "saving": "Saving…",
+            "problem": "Not in your folder yet"
+        },
+        "detail": {
+            "saved": "Your latest changes are in “{name}”.",
+            "pending": "Your changes are kept safe in OpenMarch and written to “{name}” a few seconds after you stop editing, when you switch to another app, and when you close the show.",
+            "deferred": "“{name}” couldn't be updated yet: another program may be using it, or its folder can't be written to. Your changes are kept safe in OpenMarch, which keeps trying on its own.",
+            "deferredSync": "“{name}” couldn't be updated yet: {service} may be using it. Your changes are kept safe in OpenMarch, which keeps trying on its own.",
+            "readOnly": "“{name}” is read-only, so OpenMarch can't write your changes to it. Save them as a new file to keep them.",
+            "conflict": "“{name}” was changed by another program or computer. Choose which version to keep."
+        },
+        "detailsLabel": "Save status",
+        "saveNow": "Save Now",
+        "saveAs": "Save As…",
+        "nothingToSave": "Everything is already saved",
+        "conflict": {
+            "title": "This show changed on disk",
+            "description": "“{name}” was changed by another program or computer since OpenMarch last saved it, so your latest changes haven't been written to it. Which version do you want to keep?",
+            "keepMine": "Keep my version",
+            "keepTheirs": "Use the version on disk",
+            "saveCopy": "Save mine as a new file…"
+        },
+        "missing": {
+            "title": "This show was moved or deleted",
+            "description": "“{name}” isn't where OpenMarch opened it from, so your latest changes haven't been saved to it.",
+            "saveHere": "Save it where it was"
+        },
+        "recovery": {
+            "title": "Recover unsaved changes",
+            "description": "OpenMarch closed before these changes reached their show files.",
+            "lastEdited": "Last edited {time}",
+            "missing": "the show file is missing",
+            "recover": "Recover",
+            "discard": "Discard",
+            "error": "Couldn't recover the changes: {error}"
         }
     },
     "assets": {
