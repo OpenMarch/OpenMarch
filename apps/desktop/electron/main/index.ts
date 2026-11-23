@@ -32,7 +32,9 @@ import {
 } from "./discord/discordPresence";
 import {
     DISCORD_PRESENCE_SETTING,
+    DISCORD_SHOW_NAME_SETTING,
     discordPresenceEnabled,
+    discordShowNameEnabled,
 } from "../../src/discord/discordPresenceSettings";
 import { textContextMenuTemplate } from "./textContextMenu";
 import { openSettingsWindow } from "./settings-window";
@@ -197,6 +199,8 @@ const discordPresence = createDiscordPresence({
         }),
     isEnabled: () =>
         discordPresenceEnabled(store.get(DISCORD_PRESENCE_SETTING)),
+    showsShowName: () =>
+        discordShowNameEnabled(store.get(DISCORD_SHOW_NAME_SETTING)),
     t,
 });
 onMainLanguageChange(() => discordPresence.refresh());
@@ -231,7 +235,11 @@ ipcMain.on("settings:set", (event, settings) => {
             automaticUpdatesAreEnabled(settings.automaticUpdates),
         );
 
-    if (DISCORD_PRESENCE_SETTING in settings) discordPresence.refresh();
+    if (
+        DISCORD_PRESENCE_SETTING in settings ||
+        DISCORD_SHOW_NAME_SETTING in settings
+    )
+        discordPresence.refresh();
 });
 
 ipcMain.handle("settings:get", (_, key) => {

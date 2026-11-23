@@ -9,3 +9,10 @@ export const DISCORD_PRESENCE_SETTING = "discordPresence";
 /** Never answered reads as on, so only an explicit `false` turns the status off. */
 export const discordPresenceEnabled = (saved: unknown): boolean =>
     saved !== false;
+
+/** Also show the open show's name in the Discord status. Off unless turned on: names can be private. */
+export const DISCORD_SHOW_NAME_SETTING = "discordPresenceShowName";
+
+/** Only an explicit `true` shows the show's name. */
+export const discordShowNameEnabled = (saved: unknown): boolean =>
+    saved === true;

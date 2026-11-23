@@ -191,6 +191,7 @@ export const ALL_SETTINGS_SECTIONS: readonly SettingsSection[] = [
                 : [
                       "settings.privacy.discord",
                       "settings.privacy.discord.toggle",
+                      "settings.privacy.discord.showName",
                   ]),
         ],
     },

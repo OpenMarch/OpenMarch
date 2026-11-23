@@ -94,6 +94,64 @@ describe("presenceActivity", () => {
         expect(JSON.stringify(activity)).not.toContain("Fall Show");
     });
 
+    it("names the show on a second line only when asked", () => {
+        const activity = presenceActivity(
+            { showPath: "/shows/Fall Show 2026.dots", isNewShowDraft: false },
+            started,
+            t,
+            true,
+        );
+        expect(activity.details).toBe("<discord.presence.designing>");
+        expect(activity.state).toBe("Fall Show 2026");
+    });
+
+    it("cuts a long name without splitting an emoji", () => {
+        const activity = presenceActivity(
+            {
+                showPath: `/shows/${"x".repeat(125)}🎺🎺.dots`,
+                isNewShowDraft: false,
+            },
+            started,
+            t,
+            true,
+        );
+        expect(activity.state?.isWellFormed()).toBe(true);
+        expect(activity.state?.endsWith("🎺…")).toBe(true);
+    });
+
+    it("cuts a long show name to Discord's 128 characters and skips a one-letter one", () => {
+        const long = presenceActivity(
+            {
+                showPath: `/shows/${"x".repeat(200)}.dots`,
+                isNewShowDraft: false,
+            },
+            started,
+            t,
+            true,
+        );
+        expect(long.state).toHaveLength(128);
+        const short = presenceActivity(
+            { showPath: "/shows/A.dots", isNewShowDraft: false },
+            started,
+            t,
+            true,
+        );
+        expect(short.state).toBeUndefined();
+    });
+
+    it("never names a new show's draft file", () => {
+        const activity = presenceActivity(
+            {
+                showPath: "/data/new-show-drafts/abc.dots",
+                isNewShowDraft: true,
+            },
+            started,
+            t,
+            true,
+        );
+        expect(JSON.stringify(activity)).not.toContain("abc");
+    });
+
     it("says a new show is being started", () => {
         const activity = presenceActivity(
             {
@@ -226,6 +284,48 @@ describe.skipIf(process.platform === "win32")(
                     pid: 1,
                 }),
             ).rejects.toThrow(/Invalid Client ID/);
+        });
+
+        it("adds and removes the show's name when its switch flips", async () => {
+            const path = socketPath();
+            const discord = fakeDiscord(path);
+            await discord.listen();
+            cleanups.push(discord.quit);
+            let showName = false;
+            const presence = createDiscordPresence({
+                clientId: "123",
+                connect: () =>
+                    connectDiscordIpc({
+                        clientId: "123",
+                        paths: [path],
+                        pid: 1,
+                    }),
+                isEnabled: () => true,
+                showsShowName: () => showName,
+                t,
+                retryMs: 20,
+            });
+            cleanups.push(() => presence.stop());
+
+            presence.setScreen({
+                showPath: "/s/Fall Show.dots",
+                isNewShowDraft: false,
+            });
+            await until(() => activities(discord.frames).length === 1);
+            expect(activities(discord.frames)[0]).not.toHaveProperty("state");
+
+            showName = true;
+            presence.refresh();
+            await until(() => activities(discord.frames).length === 2);
+            expect(activities(discord.frames)[1]).toMatchObject({
+                details: "<discord.presence.designing>",
+                state: "Fall Show",
+            });
+
+            showName = false;
+            presence.refresh();
+            await until(() => activities(discord.frames).length === 3);
+            expect(activities(discord.frames)[2]).not.toHaveProperty("state");
         });
 
         it("waits for Discord, follows settings and the open show, and reconnects after Discord restarts", async () => {

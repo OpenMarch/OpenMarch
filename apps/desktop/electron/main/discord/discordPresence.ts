@@ -1,11 +1,13 @@
 /**
  * The person's Discord status while OpenMarch runs: "Playing OpenMarch — Designing a show" and
- * how long the show has been open. It never names the show: show names can be private.
+ * how long the show has been open. It names the show only when the person opts in
+ * (`DISCORD_SHOW_NAME_SETTING`): show names can be private.
  * Settings > Privacy turns it off (`DISCORD_PRESENCE_SETTING`).
  *
  * Discord need not be running: OpenMarch tries again every so often, and sets the status as
  * soon as Discord answers. If Discord quits, it waits for it to come back.
  */
+import { basename, extname } from "node:path";
 import type { DiscordActivity, DiscordIpcConnection } from "./discordIpc";
 
 /**
@@ -19,6 +21,28 @@ export const DISCORD_LOGO_ASSET = "openmarch";
 
 const RETRY_MS = 30_000;
 
+/** Discord refuses a status line shorter than 2 or longer than 128 characters */
+const STATE_MAX_LENGTH = 128;
+
+/** The show's file name without `.dots`, as Discord's second status line */
+function showNameForStatus(showPath: string): string | undefined {
+    const file = basename(showPath);
+    const name = (
+        extname(file).toLowerCase() === ".dots"
+            ? file.slice(0, -".dots".length)
+            : file
+    ).trim();
+    if (name.length < 2) return undefined;
+    if (name.length <= STATE_MAX_LENGTH) return name;
+    // Cut by whole characters so an emoji is never split in half, then fit the UTF-16 limit
+    let cut = "";
+    for (const char of name) {
+        if (cut.length + char.length > STATE_MAX_LENGTH - 1) break;
+        cut += char;
+    }
+    return `${cut}…`;
+}
+
 /** What OpenMarch is showing right now, from the main process's point of view */
 export interface PresenceScreen {
     /** The open show's file, or "" on the launch page */
@@ -29,12 +53,14 @@ export interface PresenceScreen {
 
 /**
  * The status for what's on screen. `startedAt` is when the show opened, for the elapsed time.
- * `t` is main's translator, so the status follows the app language.
+ * `t` is main's translator, so the status follows the app language. `showName` adds the open
+ * show's name as a second line; off unless the person turned it on.
  */
 export function presenceActivity(
     screen: PresenceScreen,
     startedAt: number,
     t: (key: string) => string,
+    showName = false,
 ): DiscordActivity {
     const activity: DiscordActivity = {
         type: 0,
@@ -59,6 +85,10 @@ export function presenceActivity(
         return activity;
     }
     activity.details = t("discord.presence.designing");
+    if (showName) {
+        const name = showNameForStatus(screen.showPath);
+        if (name) activity.state = name;
+    }
     return activity;
 }
 
@@ -67,6 +97,8 @@ export interface DiscordPresenceDeps {
     connect: () => Promise<DiscordIpcConnection>;
     /** Settings > Privacy: show OpenMarch in the Discord status */
     isEnabled: () => boolean;
+    /** Settings > Privacy: also show the open show's name. Off unless turned on. */
+    showsShowName?: () => boolean;
     t: (key: string) => string;
     now?: () => number;
     retryMs?: number;
@@ -85,6 +117,7 @@ export function createDiscordPresence({
     clientId,
     connect,
     isEnabled,
+    showsShowName = () => false,
     t,
     now = Date.now,
     retryMs = RETRY_MS,
@@ -101,7 +134,9 @@ export function createDiscordPresence({
     const wanted = () => !stopped && !!clientId && isEnabled();
 
     const send = () => {
-        connection?.setActivity(presenceActivity(screen, startedAt, t));
+        connection?.setActivity(
+            presenceActivity(screen, startedAt, t, showsShowName()),
+        );
     };
 
     const scheduleRetry = () => {

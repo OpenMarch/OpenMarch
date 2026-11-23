@@ -201,6 +201,10 @@
                     {
                         "key": "settings.privacy.discord.toggle",
                         "label": "Show OpenMarch in my Discord status"
+                    },
+                    {
+                        "key": "settings.privacy.discord.showName",
+                        "label": "Show the show's name"
                     }
                 ]
             }
