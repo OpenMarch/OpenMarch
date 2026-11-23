@@ -3867,14 +3867,15 @@ the connector (step 6).
 | QA-RP-12 | The Ends commands from the palette; Ripple in with no form, then with no end spots | Each sets its choice; greyed out, Ripple in gives the form's reason, then the end-spots hint |
 | QA-UNDO-RP | Each write above | One undo step restores every row (transition, assignments, destinations, route, recipe rows) and id; redo restores the same rows |
 
-## Appendix M: Design change: exact paths (exact-path plan steps 1 and 2)
+## Appendix M: Design change: exact paths (exact-path plan steps 1, 2 and 5)
 
 **Change (owner grill, 2026-11-22; [ADR 0018](../adr/0018-exact-paths.md), proposed, for the owner
 to confirm before any code):** an **exact path** stores one marcher's walk during one move as
 fixed shapes plus timing keys. It's authored data, not a cache. You change it by redrawing it.
 This appendix gives the format's rules (EP), what a reader does with it (EP-R) and the converter
-that turns resolved motion into exact paths (EP-C, step 2). Storage, the editor and the `schema`
-file are steps 3 to 5 and are not here.
+that turns resolved motion into exact paths (EP-C, step 2). M.7 gives how exact paths sit in a
+`.om` file (step 5, `@openmarch/schema` 0.5.0). Storage and the editor are steps 3 and 4 and are
+not here.
 
 ### M.1 Decisions (owner, 2026-11-22)
 
@@ -3889,6 +3890,9 @@ file are steps 3 to 5 and are not here.
 | DE-7 | One format, fully importable. There is no export-only subset. |
 | DE-8 | The type has no units: field units (y down) inside OpenMarch, steps (y up from the front sideline, x from center) in `schema` files. Facing is parked. |
 | DE-9 | Exact paths go into `.om` as an optional field in its next version. Whether `.ompb` (schema#1) is still needed is parked until step 5. |
+| DE-10 | In `.om`, each exact path carries its own start and end tick, keyed by marcher. It is not placed by a page plus an offset, so the path stays where it is in time when a page boundary moves (owner, 2026-11-22). |
+| DE-11 | In `.om`, counts that no exact path covers are holds in any page that has an exact path for the marcher. A page with none is a straight line between the sets, as before (owner, 2026-11-22). |
+| DE-12 | `v` stays 1 and the three shape kinds stay fixed. A reader refuses a show whose exact paths break a rule, so an incompatible change goes in a new top-level `.om` field, which older readers drop (owner, 2026-11-22). |
 
 ### M.2 The format
 
@@ -4000,3 +4004,37 @@ R-20's `createWalkedPaths`.
 | QA-EP-8 | 300 seeded random shows (QA-WP-15's generator) | As QA-EP-6, with the seed in the failure |
 
 **Measured (step 2, 2026-11-22).** QA-EP-7 on the three v0.1.7 release files and 42 parity shows (43,268 exact paths in the parity set; up to 197 marchers): every gap under `10⁻¹¹`, two keys per path. Those shows walk only lines and arc moves, which an exact path holds exactly; the three browser-test shows that have drawn paths (corners only) agree the same way. Curves are measured on QA-EP-8's random shows (coordinates 0 to 1,800, about 160 steps, so curves far larger than a real move's): worst gap 0.100 against the 0.1125 tolerance, 9.5 keys per path on average. Lines, arc moves and follow the leader take two keys. Cubics and Adjust on curves take more, because R-14 times a cubic by its 64-chord table and an exact path by true length (DE-3): the converter keys the difference. At coordinates 0 to 450 a cubic path needs a median of 2 keys. Tick rounding alone (every key kept) costs at most R-20's own polyline gap, 0.025.
+
+### M.7 In a `.om` file (step 5)
+
+`@openmarch/schema` 0.5.0 (`.om` schema `0.3.0`) owns the format and its functions (DE-6) and adds
+the optional top-level field `exactPaths`:
+
+```ts
+interface ExactPathEntry {
+    marcherId: string; // the same ids as `coordinates`
+    startTick: number; // whole ticks from the start of the show, 480 per beat
+    endTick: number; // startTick + the path's last key tick
+    path: ExactPath; // M.2, unchanged
+}
+```
+
+- **Ticks** count from the start of the show on the same beat scale as `startBeatIndex`: beat `b`
+  is tick `b × 480`. The path's own key ticks count from `startTick` (DE-10).
+- **Coordinates** are steps on the same axes as `.om` coordinates: x from the centre of the field,
+  y from the y-origin toward the back. That y points the other way from OpenMarch's, so the export
+  maps every point as the coordinates are mapped and negates each arc's `bend` (EP-3). Keys are
+  unchanged: `u` is per piece, and a uniform scale keeps every share.
+- **Readers that don't know the field** drop it and draw straight lines between sets.
+
+| ID | Rule |
+| --- | --- |
+| EP-P1 | `startTick` is a whole number, 0 or more. |
+| EP-P2 | `endTick` is `startTick` plus the path's last key tick. |
+| EP-P3 | One marcher's exact paths don't overlap in time. One may start on the tick another ends. |
+| EP-R2 | **Reading a show.** A page is the walk into a set: from its `startBeatIndex` to the next page's (the last page runs on to the end of the show). In a page with an exact path for the marcher, the marcher follows each path from its `startTick` to its `endTick` (EP-R at `tick − startTick`) and stands still on the page's other counts: at the end of the path before, or, before the page's first path, at that path's start. Where one path ends on the tick the next starts, the next one plays. A page with no exact path for the marcher is a straight line between the sets (DE-11). |
+
+Validation applies EP-1 to EP-6 to each path and EP-P1 to EP-P3 to the list. Every break of a rule
+names its id. The package's tests cover these rules and EP-R2, and check that its copy of EP-R
+matches `packages/core`'s on shared paths. Not checked: whether a path's ends match the marcher's
+spots, and whether `marcherId` names a performer. The export keeps both right.

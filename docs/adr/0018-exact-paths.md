@@ -1,7 +1,8 @@
 # 0018: Exact paths: a marcher's walk saved as fixed shapes plus timing
 
-- Status: proposed (decisions from the owner grill, 2026-11-22; awaiting the owner's OK on this
-  record)
+- Status: accepted by the owner on 2026-11-23 (decisions from the owner grill, 2026-11-22). Step
+  5's file decisions (placement by start and end tick, the stand-still rule, `v` stays 1) are in
+  spec Appendix M.7.
 - Date: 2026-11-22
 - Amends: timeline spec D-2 and §11 (sampled motion is never read back as state), for exact paths
   only
