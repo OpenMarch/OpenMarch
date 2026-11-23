@@ -7,6 +7,7 @@ import { PLACED_KINDS, placedOf, type PlacedBox } from "../placed/placedBox";
 import type { AnyToolKind, ToolEnv, ToolKind } from "../tool/toolKind";
 import type { GroupParams } from "../group/groupGeometry";
 import type { ShapeContext, XY } from "../types";
+import { mirrorParams, mirrorPoint, type MirrorAxes } from "../tool/mirror";
 
 /**
  * A copied picture (#961): where a selection of marchers stood, to paste onto other marchers.
@@ -214,6 +215,14 @@ export interface PastePlan {
     readonly left: number;
 }
 
+/**
+ * Paste mirrored: the paste starts where it was copied, mirrored through `point` the ways the
+ * axes say (`tool/mirror.ts`)
+ */
+export interface PasteMirror extends MirrorAxes {
+    readonly point: XY;
+}
+
 /** Sizes within this of each other are the same step size */
 const SAME_STEP = 1e-6;
 
@@ -364,6 +373,7 @@ function planShape(
     stepPx: number,
     inPlace: boolean,
     ctx: ShapeContext | undefined,
+    mirror: PasteMirror | undefined,
 ): PastePlan {
     const n = marchers.length;
     const params =
@@ -377,7 +387,7 @@ function planShape(
         stepPx,
         inPlace,
     );
-    const moved =
+    const shifted =
         by.x === 0 && by.y === 0
             ? params
             : kind.withFrame(params, n, {
@@ -387,6 +397,9 @@ function planShape(
                       y: frame.center.y + by.y,
                   },
               });
+    const moved = mirror
+        ? mirrorParams(kind, shifted, n, mirror.point, mirror)
+        : shifted;
     return {
         kind,
         params: moved,
@@ -411,15 +424,19 @@ function planShape(
  *
  * A shape this app can't lay out (a newer kind, or a picture from a field with another step size)
  * pastes as loose dots, kept the same size in steps. Null with nobody to paste onto.
+ *
+ * `mirror` (Paste mirrored, always in place) mirrors the copy before anything is fitted, so loose
+ * dots onto fewer marchers use the dots nearest them on the mirrored side.
  */
 export function planPaste({
     picture,
     marchers,
     stepPx,
-    inPlace = false,
+    inPlace: inPlaceAsked = false,
     asPositions = false,
     kinds = PLACED_KINDS,
     ctx,
+    mirror,
 }: {
     picture: CopiedPicture;
     /** The receiving marchers, where they stand and where they start the move */
@@ -432,7 +449,10 @@ export function planPaste({
     kinds?: readonly AnyToolKind[];
     /** The field's shape context: a shape centers its spots, not its frame, on the receivers */
     ctx?: ShapeContext;
+    /** Paste mirrored: where it was copied, mirrored through a point */
+    mirror?: PasteMirror;
 }): PastePlan | null {
+    const inPlace = inPlaceAsked || mirror !== undefined;
     const n = marchers.length;
     if (n === 0) return null;
     const scale = stepPx / picture.stepPx;
@@ -447,12 +467,16 @@ export function planPaste({
             stepPx,
             inPlace,
             ctx,
+            mirror,
         );
 
     // Loose dots: the same spot in steps on a field with another step size
-    const copied = sameStep
+    const sized = sameStep
         ? picture.dots
         : picture.dots.map((p) => ({ x: p.x * scale, y: p.y * scale }));
+    const copied = mirror
+        ? sized.map((p) => mirrorPoint(p, mirror.point, mirror))
+        : sized;
     const centered = shift(middle(copied), marchers, stepPx, inPlace);
     // A centered paste onto another number of marchers fits the dots onto them
     const fit =

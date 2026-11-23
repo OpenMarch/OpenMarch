@@ -12,7 +12,13 @@ import {
 } from "@/shortcuts/useActionHandler";
 import { currentShapeField, shapeContextFor } from "../field/shapeFieldContext";
 import { nudgeEnvFor } from "./toolEnv";
-import { clearSelection, edit, finishPoints, redo } from "./toolMachine";
+import {
+    clearSelection,
+    edit,
+    finishPoints,
+    nudgeMirrorPoint,
+    redo,
+} from "./toolMachine";
 import { updateTool, useShapeToolStore } from "./shapeToolStore";
 import { cancelShapeGesture, removeLastShapePoint } from "./shapeToolMode";
 
@@ -96,6 +102,13 @@ export function ShapeToolKeys(): null {
         const env = nudgeEnvFor(field, nudge);
         updateTool((tool) => {
             if (tool.params === null || tool.gesture) return tool;
+            // A mirrored paste's arrow keys move its mirror point, as they'd move a marcher
+            if (tool.mirror)
+                return nudgeMirrorPoint(
+                    tool,
+                    { x: d.x * px, y: d.y * px },
+                    env,
+                );
             const params = tool.kind.move(
                 tool.params,
                 tool.marchers.length,

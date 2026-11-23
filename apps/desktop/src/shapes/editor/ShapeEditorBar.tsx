@@ -18,6 +18,7 @@ import {
 import { animated, to, useSpring } from "@react-spring/web";
 import { prefersReducedMotion } from "@/components/timeline/reducedMotion";
 import { setShapeEditorRect } from "./shapeEditorRect";
+import { MirrorControls } from "./MirrorControls";
 import { clearPlacement, oneRowRoom } from "./editorPlacement";
 import {
     coverInset,
@@ -169,6 +170,9 @@ const EDITOR_SPRING = { tension: 210, friction: 26, clamp: true };
 const EDIT_WINDOW_MS = 1000;
 /** How long the editor stays put before the other layers hear where it settled (#927) */
 const NOTE_SETTLED_MS = 150;
+
+/** Room the floating editor leaves around a mirrored paste's pink point, in CSS px */
+const MIRROR_POINT_CLEAR_PX = 18;
 
 /**
  * The floating editor (08-shape-system-ux.md, "The floating editor"), the main place for editing
@@ -426,10 +430,13 @@ function ShapeEditorBar({
     const numbers = useMemo(() => numberActions(live, run, chips), [live]);
     const frame = kind.frameOf(params, spots);
 
+    // A mirrored paste's flip keys switch which ways it mirrors through its point (Paste mirrored)
     const flip = (axis: "across" | "deep") =>
-        updateWith(live, (now, env) =>
-            flipShape(kind, now, spots, axis, pivotOf(now), env),
-        );
+        live.mirror
+            ? live.mirror.toggle(axis)
+            : updateWith(live, (now, env) =>
+                  flipShape(kind, now, spots, axis, pivotOf(now), env),
+              );
     // The keys act on this shape while its editor shows (#429): mounted after the app's own
     // handlers, the flips sit on top of the marchers' flips and go back when it closes. A held
     // key doesn't repeat them (review)
@@ -439,15 +446,56 @@ function ShapeEditorBar({
     useActionHandler("flipVertical", () => flip("deep"), {
         ignoreRepeat: true,
     });
+    // A mirrored paste only mirrors (owner on Paste mirrored): its keys and palette entries for
+    // turning and resizing are off, saying why, and its Mirror choice is on
+    const mirrored = target.mirror !== undefined;
+    const mirrorOnly = () =>
+        mirrored
+            ? tolgee.t(
+                  "actions.shape.mirrorOnlyReason",
+                  "A mirrored paste only mirrors. Place it, then turn or resize it",
+              )
+            : undefined;
     useActionHandler("shapeQuarterTurn", () => turnQuarter(live), {
+        enabled: !mirrored,
+        disabledReason: mirrorOnly,
         ignoreRepeat: true,
     });
+    const mirrorWay = (axes: { across: boolean; deep: boolean }) => () =>
+        live.mirror?.set(axes);
+    const mirrorOpen = {
+        enabled: mirrored,
+        disabledReason: () =>
+            mirrored
+                ? undefined
+                : tolgee.t(
+                      "actions.shape.mirrorNotOpen",
+                      "Paste mirrored first",
+                  ),
+        ignoreRepeat: true,
+    };
+    useActionHandler(
+        "mirrorSideToSide",
+        mirrorWay({ across: true, deep: false }),
+        mirrorOpen,
+    );
+    useActionHandler(
+        "mirrorFrontToBack",
+        mirrorWay({ across: false, deep: true }),
+        mirrorOpen,
+    );
+    useActionHandler(
+        "mirrorBoth",
+        mirrorWay({ across: true, deep: true }),
+        mirrorOpen,
+    );
     // A double-click on the pivot, as the pivot menu's entry (tablet 1.5): back to the center
     useActionHandler(
         "shapeCenterPivot",
         () => pickPivotOf(live, DEFAULT_PIVOT),
         {
-            enabled: pivotOf(params) !== DEFAULT_PIVOT,
+            enabled: !mirrored && pivotOf(params) !== DEFAULT_PIVOT,
+            disabledReason: mirrorOnly,
             ignoreRepeat: true,
         },
     );
@@ -457,10 +505,12 @@ function ShapeEditorBar({
     const canExpand =
         env !== null && scaledOnce(target, params, 1, env) !== null;
     useActionHandler("shapeShrink", () => scaleOnce(live, -1, envFor), {
-        enabled: canShrink,
+        enabled: !mirrored && canShrink,
+        disabledReason: mirrorOnly,
     });
     useActionHandler("shapeExpand", () => scaleOnce(live, 1, envFor), {
-        enabled: canExpand,
+        enabled: !mirrored && canExpand,
+        disabledReason: mirrorOnly,
     });
     useActionHandler("shapeRecalculate", () => target.recalculate?.(), {
         enabled: target.recalculate !== null,
@@ -469,7 +519,8 @@ function ShapeEditorBar({
     // An outline evened out in its frame (owner on #459): none where it doesn't apply
     const evenState = evenStateOf(kind, params, spots);
     useActionHandler("shapeEvenOut", () => evenOut(live), {
-        enabled: evenState === "uneven",
+        enabled: !mirrored && evenState === "uneven",
+        disabledReason: mirrorOnly,
         ignoreRepeat: true,
     });
 
@@ -519,178 +570,204 @@ function ShapeEditorBar({
                 data-testid={`${testId}-bar`}
                 data-rows={twoRows ? 2 : 1}
             >
-                {/* What the shape is, and what's done to it: side by side, or one above the
-                    other when the field is too narrow for one row */}
-                <span
-                    ref={whatRow}
-                    className="flex shrink-0 items-center gap-6"
-                    data-editor-row
-                >
+                {/* A mirrored paste only mirrors (owner): which way, Recalculate, then Place */}
+                {target.mirror ? (
                     <span
-                        className="flex items-center gap-2"
-                        data-testid={`${testId}-text`}
+                        ref={whatRow}
+                        className="flex shrink-0 items-center gap-6"
+                        data-editor-row
                     >
-                        {layout.values.map((x) => (
-                            <Fragment key={x.param.key}>
-                                <NumberChip
-                                    param={x.param}
-                                    display={x.display}
-                                    note={x.note}
-                                    before={x.before}
-                                    after={x.after}
-                                    canLess={x.less !== null}
-                                    canMore={x.more !== null}
-                                    glyph={null}
-                                    actions={numbers}
-                                />
-                                {layout.ratioLock &&
-                                    x.param.ratioLockAfter === true && (
-                                        <RatioLockButton sizes />
-                                    )}
-                            </Fragment>
-                        ))}
-                        {target.empty > 0 && (
-                            <span className="text-text/60">
-                                ·{" "}
-                                {tolgee.t(
-                                    "shapes.edit.empty",
-                                    "{count} empty",
-                                    {
-                                        count: target.empty,
-                                    },
-                                )}
-                            </span>
+                        <MirrorControls axes={target.mirror} />
+                        {kind.asIs !== true && (
+                            <MirrorRecalculate
+                                live={live}
+                                canRecalculate={target.recalculate !== null}
+                            />
                         )}
                     </span>
-                    <span className="contents" {...intervalsCarry}>
-                        {layout.groups && layout.groups.length > 1 && (
-                            <>
-                                <Divider />
-                                <GroupMenu
-                                    target={live}
-                                    groups={layout.groups}
-                                    envFor={envFor}
-                                    onScrubbing={setShapeScrubbing}
-                                />
-                                {layout.lock !== null && (
-                                    <IntervalLockButton
-                                        live={live}
-                                        locked={layout.lock}
+                ) : (
+                    <span
+                        ref={whatRow}
+                        className="flex shrink-0 items-center gap-6"
+                        data-editor-row
+                    >
+                        <span
+                            className="flex items-center gap-2"
+                            data-testid={`${testId}-text`}
+                        >
+                            {layout.values.map((x) => (
+                                <Fragment key={x.param.key}>
+                                    <NumberChip
+                                        param={x.param}
+                                        display={x.display}
+                                        note={x.note}
+                                        before={x.before}
+                                        after={x.after}
+                                        canLess={x.less !== null}
+                                        canMore={x.more !== null}
+                                        glyph={null}
+                                        actions={numbers}
                                     />
-                                )}
-                            </>
-                        )}
-                        {layout.groups?.length === 1 && (
-                            <>
-                                <Divider />
-                                <GroupChips
-                                    target={live}
-                                    groups={layout.groups}
-                                    envFor={envFor}
-                                    onScrubbing={setShapeScrubbing}
-                                />
-                                <span className="text-text/60">
-                                    {tolgee.t("shapes.edit.steps", "steps")}
-                                </span>
-                                {layout.lock !== null && (
-                                    <IntervalLockButton
-                                        live={live}
-                                        locked={layout.lock}
-                                    />
-                                )}
-                            </>
-                        )}
-                        {layout.intervals.length > 0 && (
-                            <>
-                                <Divider />
-                                <span className="flex items-center gap-2">
-                                    {layout.intervals.map((x) => (
-                                        <NumberChip
-                                            key={x.param.key}
-                                            param={x.param}
-                                            display={x.display}
-                                            note={null}
-                                            canLess={false}
-                                            canMore={false}
-                                            glyph={paramGlyph(
-                                                x.param,
-                                                params,
-                                                spots,
-                                            )}
-                                            glyphAfter={
-                                                x.param.glyphAfter === true
-                                            }
-                                            derived={x.derived}
-                                            actions={numbers}
-                                        />
-                                    ))}
-                                    <span className="text-text/60">
-                                        {tolgee.t("shapes.edit.steps", "steps")}
-                                    </span>
                                     {layout.ratioLock &&
-                                        layout.intervals.length > 1 && (
-                                            <RatioLockButton />
+                                        x.param.ratioLockAfter === true && (
+                                            <RatioLockButton sizes />
                                         )}
+                                </Fragment>
+                            ))}
+                            {target.empty > 0 && (
+                                <span className="text-text/60">
+                                    ·{" "}
+                                    {tolgee.t(
+                                        "shapes.edit.empty",
+                                        "{count} empty",
+                                        {
+                                            count: target.empty,
+                                        },
+                                    )}
+                                </span>
+                            )}
+                        </span>
+                        <span className="contents" {...intervalsCarry}>
+                            {layout.groups && layout.groups.length > 1 && (
+                                <>
+                                    <Divider />
+                                    <GroupMenu
+                                        target={live}
+                                        groups={layout.groups}
+                                        envFor={envFor}
+                                        onScrubbing={setShapeScrubbing}
+                                    />
                                     {layout.lock !== null && (
                                         <IntervalLockButton
                                             live={live}
                                             locked={layout.lock}
                                         />
                                     )}
-                                </span>
-                            </>
+                                </>
+                            )}
+                            {layout.groups?.length === 1 && (
+                                <>
+                                    <Divider />
+                                    <GroupChips
+                                        target={live}
+                                        groups={layout.groups}
+                                        envFor={envFor}
+                                        onScrubbing={setShapeScrubbing}
+                                    />
+                                    <span className="text-text/60">
+                                        {tolgee.t("shapes.edit.steps", "steps")}
+                                    </span>
+                                    {layout.lock !== null && (
+                                        <IntervalLockButton
+                                            live={live}
+                                            locked={layout.lock}
+                                        />
+                                    )}
+                                </>
+                            )}
+                            {layout.intervals.length > 0 && (
+                                <>
+                                    <Divider />
+                                    <span className="flex items-center gap-2">
+                                        {layout.intervals.map((x) => (
+                                            <NumberChip
+                                                key={x.param.key}
+                                                param={x.param}
+                                                display={x.display}
+                                                note={null}
+                                                canLess={false}
+                                                canMore={false}
+                                                glyph={paramGlyph(
+                                                    x.param,
+                                                    params,
+                                                    spots,
+                                                )}
+                                                glyphAfter={
+                                                    x.param.glyphAfter === true
+                                                }
+                                                derived={x.derived}
+                                                actions={numbers}
+                                            />
+                                        ))}
+                                        <span className="text-text/60">
+                                            {tolgee.t(
+                                                "shapes.edit.steps",
+                                                "steps",
+                                            )}
+                                        </span>
+                                        {layout.ratioLock &&
+                                            layout.intervals.length > 1 && (
+                                                <RatioLockButton />
+                                            )}
+                                        {layout.lock !== null && (
+                                            <IntervalLockButton
+                                                live={live}
+                                                locked={layout.lock}
+                                            />
+                                        )}
+                                    </span>
+                                </>
+                            )}
+                        </span>
+                        {target.drawnOn && (
+                            <span className="text-text/50">
+                                {tolgee.t(
+                                    "shapes.edit.drawnOn",
+                                    "from {page}",
+                                    {
+                                        page: target.drawnOn,
+                                    },
+                                )}
+                            </span>
                         )}
                     </span>
-                    {target.drawnOn && (
-                        <span className="text-text/50">
-                            {tolgee.t("shapes.edit.drawnOn", "from {page}", {
-                                page: target.drawnOn,
-                            })}
-                        </span>
-                    )}
-                </span>
+                )}
                 {!twoRows && <Divider />}
                 <span
                     ref={doRow}
                     className="flex shrink-0 items-center gap-6"
                     data-editor-row
                 >
-                    <TurnControls
-                        live={live}
-                        degrees={rotationDegrees(
-                            shapeTurn(kind, params, spots),
-                        )}
-                        rotation={frame.rotation}
-                        pivot={pivotOf(params)}
-                        canRecalculate={target.recalculate !== null}
-                        inOrder={
-                            target.order !== undefined &&
-                            target.order.current !== "nearest"
-                        }
-                        empty={target.empty}
-                        canCloseUp={target.closeUp !== undefined}
-                        evenState={evenState}
-                        canShrink={canShrink}
-                        canExpand={canExpand}
-                        asIs={kind.asIs === true}
-                    />
+                    {!target.mirror && (
+                        <TurnControls
+                            live={live}
+                            degrees={rotationDegrees(
+                                shapeTurn(kind, params, spots),
+                            )}
+                            rotation={frame.rotation}
+                            pivot={pivotOf(params)}
+                            canRecalculate={target.recalculate !== null}
+                            inOrder={
+                                target.order !== undefined &&
+                                target.order.current !== "nearest"
+                            }
+                            empty={target.empty}
+                            canCloseUp={target.closeUp !== undefined}
+                            evenState={evenState}
+                            canShrink={canShrink}
+                            canExpand={canExpand}
+                            asIs={kind.asIs === true}
+                        />
+                    )}
                     {/* What doesn't change the shape itself, at the end (owner): its pathways */}
-                    <Divider />
+                    {!target.mirror && <Divider />}
                     <EndControls
                         live={live}
                         canPlace={target.place !== undefined}
                     />
                 </span>
             </div>
-            <FillPill
-                live={live}
-                kind={kind}
-                shown={fillShown(kind, params, spots)}
-                canPlace={target.place !== undefined}
-                order={target.order?.current}
-                keepOffered={target.order?.keepOffered}
-                testId={testId}
-            />
+            {!target.mirror && (
+                <FillPill
+                    live={live}
+                    kind={kind}
+                    shown={fillShown(kind, params, spots)}
+                    canPlace={target.place !== undefined}
+                    order={target.order?.current}
+                    keepOffered={target.order?.keepOffered}
+                    testId={testId}
+                />
+            )}
             {/* An open paste that doesn't fit says so here, beside Place (#961) */}
             {testId === "shape-tool-readout" && <PasteFitNotice />}
         </animated.div>
@@ -733,6 +810,9 @@ function useLiveTarget(target: ShapeEditTarget): ShapeEditTarget {
             },
             get order() {
                 return latest.current.order;
+            },
+            get mirror() {
+                return latest.current.mirror;
             },
             begin: () => latest.current.begin(),
             preview: (params) => latest.current.preview(params),
@@ -1090,6 +1170,39 @@ const RatioLockButton = memo(function RatioLockButton({
             {/* One chain either way, lit in the accent when locked: a broken
                 link didn't read as anything (owner) */}
             <LinkSimpleIcon size={14} />
+        </IconButton>
+    );
+});
+
+/** Recalculate on a mirrored paste's editor, as on any shape's (Paste mirrored) */
+const MirrorRecalculate = memo(function MirrorRecalculate({
+    live: target,
+    canRecalculate,
+}: {
+    live: ShapeEditTarget;
+    canRecalculate: boolean;
+}) {
+    const look = useActionLook(canRecalculate);
+    return (
+        <IconButton
+            label={
+                canRecalculate
+                    ? tolgee.t(
+                          "shapes.edit.recalculate.title",
+                          "Recalculate who goes where, by least travel",
+                      )
+                    : tolgee.t(
+                          "shapes.edit.recalculate.already",
+                          "Who goes where is already least travel",
+                      )
+            }
+            disabled={!canRecalculate}
+            action="shapeRecalculate"
+            className="relative"
+            onClick={() => target.recalculate?.()}
+            testId="shape-editor-recalculate"
+        >
+            <RecalculateFace look={look} />
         </IconButton>
     );
 });
@@ -1543,6 +1656,22 @@ function usePlacement(kind: AnyToolKind, params: unknown, spots: number) {
             hitRadius: HANDLE_REACH_PX / (view.zoom || 1),
             stemUnit: HANDLE_REACH_PX / (view.zoom || 1),
         });
+        // A mirrored paste's pink point (Paste mirrored) is kept clear too: it's what's dragged
+        const tool = useShapeToolStore.getState().tool;
+        const point =
+            tool?.mirror && tool.params === params
+                ? fieldToElement(view, tool.mirror.point.x, tool.mirror.point.y)
+                : null;
+        const clearOfPoint = point
+            ? [
+                  {
+                      left: point.x - MIRROR_POINT_CLEAR_PX,
+                      top: point.y - MIRROR_POINT_CLEAR_PX,
+                      width: 2 * MIRROR_POINT_CLEAR_PX,
+                      height: 2 * MIRROR_POINT_CLEAR_PX,
+                  },
+              ]
+            : [];
         return clearPlacement(
             {
                 outline: outline.map((p) => fieldToElement(view, p.x, p.y)),
@@ -1562,7 +1691,7 @@ function usePlacement(kind: AnyToolKind, params: unknown, spots: number) {
                 fieldWidth: room.fieldWidth,
                 fieldHeight: room.fieldHeight,
             },
-            obstacles.current.all,
+            [...obstacles.current.all, ...clearOfPoint],
             obstacles.current.covers,
             // #936, touch layout: never off the field or under the toolbar panel, so Place and
             // Discard can always be tapped

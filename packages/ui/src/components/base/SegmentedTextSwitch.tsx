@@ -7,6 +7,11 @@ export interface SegmentedTextSwitchOption {
     label: React.ReactNode;
     disabled?: boolean;
     testId?: string;
+    /**
+     * Wraps the option's own item, the focusable button, such as in a tooltip trigger (`asChild`),
+     * so the tooltip opens on focus and describes the item to screen readers
+     */
+    wrap?: (item: React.ReactElement) => React.ReactNode;
 }
 
 interface SegmentedTextSwitchProps {
@@ -48,25 +53,36 @@ export function SegmentedTextSwitch({
             aria-label={ariaLabel}
             data-testid={testId}
         >
-            {options.map((option) => (
-                <RadixToggleGroup.Item
-                    key={option.value}
-                    value={option.value}
-                    disabled={option.disabled}
-                    data-testid={option.testId}
-                    className={clsx(
-                        "border-stroke/0 text-text-subtitle font text-sub border font-thin",
-                        "touch:min-h-40 touch:px-10 touch:text-sub rounded-full px-6 py-2 transition-all duration-150 ease-out outline-none",
-                        "focus-visible:ring-accent focus-visible:ring-offset-bg-1 focus-visible:ring-2 focus-visible:ring-offset-1",
-                        "data-[state=on]:text-text data-[state=on]:bg-fg-2 data-[state=on]:border-accent",
-                        "disabled:cursor-not-allowed disabled:opacity-60",
-                        "hover:text-accent",
-                        itemClassName,
-                    )}
-                >
-                    {option.label}
-                </RadixToggleGroup.Item>
-            ))}
+            {options.map((option) => {
+                const item = (
+                    <RadixToggleGroup.Item
+                        key={option.value}
+                        value={option.value}
+                        disabled={option.disabled}
+                        data-testid={option.testId}
+                        className={clsx(
+                            "border-stroke/0 text-text-subtitle font text-sub border font-thin",
+                            "touch:min-h-40 touch:px-10 touch:text-sub rounded-full px-6 py-2 transition-all duration-150 ease-out outline-none",
+                            "focus-visible:ring-accent focus-visible:ring-offset-bg-1 focus-visible:ring-2 focus-visible:ring-offset-1",
+                            // aria-checked, not data-state: an item wrapped in a tooltip trigger gets the tooltip's
+                            // data-state, while the toggle group always sets aria-checked on a single choice
+                            "aria-checked:text-text aria-checked:bg-fg-2 aria-checked:border-accent",
+                            "disabled:cursor-not-allowed disabled:opacity-60",
+                            "hover:text-accent",
+                            itemClassName,
+                        )}
+                    >
+                        {option.label}
+                    </RadixToggleGroup.Item>
+                );
+                return option.wrap ? (
+                    <React.Fragment key={option.value}>
+                        {option.wrap(item)}
+                    </React.Fragment>
+                ) : (
+                    item
+                );
+            })}
         </RadixToggleGroup.Root>
     );
 }

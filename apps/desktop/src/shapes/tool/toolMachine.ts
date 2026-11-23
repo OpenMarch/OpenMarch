@@ -20,6 +20,17 @@ import {
 import { gapPickAt } from "../distribute/outlineGap";
 import type { ShapeContext, Slot, XY } from "../types";
 import type { AnyToolKind, ToolEnv } from "./toolKind";
+import type { FlipAxis } from "../frame/frame";
+import {
+    mirroredOf,
+    movedBy,
+    pointAfterMove,
+    snapMirrorPoint,
+    toggledMirror,
+    withMirrorPoint,
+    type Mirror,
+    type MirrorAxes,
+} from "./mirror";
 
 /**
  * The shape tool's state machine (docs/timeline/research/shapes/06-box-v1.md,
@@ -59,6 +70,12 @@ export interface ToolSnapshot {
      * picking another kind starts that kind's own pivot. Absent is not moved.
      */
     readonly pivotMoved?: boolean;
+    /**
+     * A paste mirrored through a point (Paste mirrored): while it's here the shape is its
+     * source's mirror image, tied to the point (`mirror.ts`). Absent for any other shape, and once
+     * anything but moving it or its point unties it ({@link keepMirror}).
+     */
+    readonly mirror?: Mirror;
 }
 
 export type Gesture =
@@ -99,6 +116,8 @@ export type Gesture =
       }
     /** A number in the floating editor being dragged: the shape follows it live */
     | { readonly type: "edit"; readonly before: ToolSnapshot }
+    /** A mirrored paste's mirror point being dragged: the shape follows it as its mirror image */
+    | { readonly type: "mirror"; readonly before: ToolSnapshot }
     | (ShapeGesture & {
           readonly before: ToolSnapshot;
           /**
@@ -161,8 +180,18 @@ export function openDrawn(
     ctx: ShapeContext,
     /** Whether its pivot was moved by hand, so it stays where it is */
     pivotMoved = false,
+    /** Paste mirrored: the mirror `params` is the image of, which it stays tied to */
+    mirror?: Mirror,
 ): ToolState {
-    return reassign({ ...openTool(kind, marchers), params, pivotMoved }, ctx);
+    return reassign(
+        {
+            ...openTool(kind, marchers),
+            params,
+            pivotMoved,
+            ...(mirror && { mirror }),
+        },
+        ctx,
+    );
 }
 
 const snapshot = (s: ToolState): ToolSnapshot => ({
@@ -171,6 +200,8 @@ const snapshot = (s: ToolState): ToolSnapshot => ({
     assignment: s.assignment,
     order: s.order,
     pivotMoved: s.pivotMoved,
+    // Always written, so going back to a snapshot without one unties the shape
+    mirror: s.mirror,
 });
 
 /** Whether every marcher has a place along one placed Line, so their order there can be kept */
@@ -255,6 +286,18 @@ export function pressTarget(
     env: ToolEnv,
 ): ShapeTarget | { type: "draw" } {
     if (state.params === null) return { type: "draw" };
+    if (state.mirror) {
+        const target = shapeTargetAt(
+            state.kind,
+            state.params,
+            state.spots,
+            at,
+            env,
+            state.selected,
+            state.pivotMoved ?? false,
+        );
+        return target ? { type: "move" } : { type: "draw" };
+    }
     return (
         shapeTargetAt(
             state.kind,
@@ -275,6 +318,14 @@ export function press(state: ToolState, at: XY, env: ToolEnv): ToolState {
         return pressPoint(state, state.gesture, at, env);
     if (state.gesture) return state;
     const before = snapshot(state);
+    // A mirrored paste's mirror point wins over the shape under it: it's what the paste is about
+    if (onMirrorPoint(state, at, env))
+        return {
+            ...state,
+            gesture: { type: "mirror", before },
+            pointer: at,
+            selected: null,
+        };
     const onShape =
         state.params === null
             ? null
@@ -287,6 +338,31 @@ export function press(state: ToolState, at: XY, env: ToolEnv): ToolState {
                   state.selected,
                   state.pivotMoved ?? false,
               );
+    // A mirrored paste only mirrors (owner on Paste mirrored). Off the paste, a press puts the
+    // mirror point there and drags it: a click places it, with no drag needed (WCAG 2.5.7), and
+    // nothing new is drawn
+    if (state.mirror && !onShape) {
+        const mirror = withMirrorPoint(state.mirror, snapMirrorPoint(at, env));
+        return {
+            ...state,
+            gesture: { type: "mirror", before },
+            pointer: at,
+            selected: null,
+            mirror,
+            params:
+                mirror === state.mirror
+                    ? state.params
+                    : mirroredOf(state.kind, state.spots, mirror),
+        };
+    }
+    // A handle, the knob or the pivot under the press grabs the whole paste to move it, which
+    // moves the point half as far
+    if (state.mirror && onShape && onShape.type !== "move")
+        return {
+            ...state,
+            gesture: { type: "move", base: state.params, grab: at, before },
+            pointer: at,
+        };
     const click =
         onShape?.type === "handle"
             ? (state.kind.clickHandle?.(
@@ -413,6 +489,13 @@ export function pointerMove(state: ToolState, at: XY, env: ToolEnv): ToolState {
     const n = state.spots;
     state = { ...state, pointer: at };
     if (g.type === "points") return previewPoints(state, g, at, env);
+    if (g.type === "mirror") {
+        if (!state.mirror) return state;
+        const mirror = withMirrorPoint(state.mirror, snapMirrorPoint(at, env));
+        return mirror === state.mirror
+            ? state
+            : { ...state, mirror, params: mirroredOf(state.kind, n, mirror) };
+    }
     if (g.type === "draw") {
         // What this drag drew a moment ago, not the shape it replaces
         const previous =
@@ -441,6 +524,14 @@ export function release(
     const g = state.gesture;
     if (!g) return state;
     if (g.type === "points") return releasePoint(state, g, ctx, click);
+    // The mirror point let go: one undo step where it moved. Each marcher keeps their spot, as
+    // when the shape is moved or flipped
+    if (g.type === "mirror") {
+        const ended: ToolState = { ...state, gesture: null };
+        return state.mirror === g.before.mirror
+            ? { ...ended, params: g.before.params }
+            : pushHistory(ended, g.before);
+    }
     // Nothing drawn by a kind drawn by clicking: the press was its first point (#524)
     if (
         g.type === "draw" &&
@@ -570,6 +661,129 @@ function holdsSpots(
     if (was.length !== now.length) return false;
     // The same lattice: each spot keeps its row and file
     return was.every((s, i) => s.row === now[i]!.row && s.col === now[i]!.col);
+}
+
+/** Whether a press at `at` takes a mirrored paste's mirror point */
+export function onMirrorPoint(state: ToolState, at: XY, env: ToolEnv): boolean {
+    const point = state.mirror?.point;
+    return (
+        point !== undefined &&
+        state.params !== null &&
+        Math.hypot(at.x - point.x, at.y - point.y) <= env.hitRadius
+    );
+}
+
+/**
+ * A mirrored paste switched side to side (`across`) or front to back (`deep`): it shows its
+ * source mirrored the new way through the same point. One undo step; each marcher keeps their
+ * spot, as a flip keeps them. Unchanged for a shape that isn't a mirrored paste.
+ */
+export function toggleMirror(state: ToolState, axis: FlipAxis): ToolState {
+    if (!state.mirror || state.gesture || state.params === null) return state;
+    let mirror = toggledMirror(state.mirror, axis);
+    // It always mirrors some way: switching off the last way on switches to the other one
+    if (!mirror.across && !mirror.deep)
+        mirror = toggledMirror(mirror, axis === "across" ? "deep" : "across");
+    return pushHistory(
+        {
+            ...state,
+            mirror,
+            params: mirroredOf(state.kind, state.spots, mirror),
+        },
+        snapshot(state),
+    );
+}
+
+/**
+ * A mirrored paste set to mirror the ways `axes` say (the floating editor's Mirror choice): side
+ * to side, front to back or both, through the same point. One undo step; each marcher keeps their
+ * spot. Unchanged for neither, the ways it mirrors already, or a shape that isn't a mirrored paste.
+ */
+export function setMirrorAxes(state: ToolState, axes: MirrorAxes): ToolState {
+    const was = state.mirror;
+    if (!was || state.gesture || state.params === null) return state;
+    if (!axes.across && !axes.deep) return state;
+    if (was.across === axes.across && was.deep === axes.deep) return state;
+    const mirror: Mirror = { ...was, across: axes.across, deep: axes.deep };
+    return pushHistory(
+        {
+            ...state,
+            mirror,
+            params: mirroredOf(state.kind, state.spots, mirror),
+        },
+        snapshot(state),
+    );
+}
+
+/**
+ * `after`, a change of the open shape `before`, kept tied to its mirror (Paste mirrored). The
+ * mirror itself changed (its point dragged, a direction switched, an undo): as it is. The shape
+ * only moved (dragged, its center dot, a nudge key): the mirror point follows half as far along
+ * the ways it mirrors, and the shape is its mirror image again, so it stays level with the copy
+ * along a way it doesn't mirror. Anything else (a turn, a resize, a number, another kind) unties
+ * it, and it's an ordinary open shape from there.
+ */
+export function keepMirror(before: ToolState, after: ToolState): ToolState {
+    const mirror = after.mirror;
+    if (!mirror || mirror !== before.mirror) return after;
+    if (
+        after.params === before.params &&
+        after.kind === before.kind &&
+        after.spots === before.spots
+    )
+        return after;
+    const untied: ToolState = { ...after, mirror: undefined };
+    if (
+        after.kind !== before.kind ||
+        after.spots !== before.spots ||
+        after.params === null ||
+        before.params === null ||
+        (!mirror.across && !mirror.deep)
+    )
+        return untied;
+    const by = movedBy(after.kind, before.params, after.params, after.spots);
+    if (!by) return untied;
+    const moved = withMirrorPoint(mirror, pointAfterMove(mirror, by));
+    // Moved only along a way it doesn't mirror: nothing changes, and a key leaves no undo step
+    if (moved === mirror)
+        return after.gesture
+            ? { ...after, params: before.params, mirror }
+            : before;
+    return {
+        ...after,
+        mirror: moved,
+        params: mirroredOf(after.kind, after.spots, moved),
+    };
+}
+
+/**
+ * A mirrored paste's mirror point moved `by` (an arrow key, as a marcher is nudged): the paste
+ * shows its source mirrored through where it lands, on the half-step grid with `env.snap`. One
+ * undo step; each marcher keeps their spot. Unchanged for a shape that isn't a mirrored paste.
+ */
+export function nudgeMirrorPoint(
+    state: ToolState,
+    by: XY,
+    env: ToolEnv,
+): ToolState {
+    if (!state.mirror || state.gesture || state.params === null) return state;
+    const at = {
+        x: state.mirror.point.x + by.x,
+        y: state.mirror.point.y + by.y,
+    };
+    const mirror = withMirrorPoint(
+        state.mirror,
+        env.snap ? env.gridSnap(at) : at,
+    );
+    if (mirror === state.mirror) return state;
+    return pushHistory(
+        {
+            ...state,
+            mirror,
+            params: mirroredOf(state.kind, state.spots, mirror),
+        },
+        snapshot(state),
+    );
 }
 
 /** Escape with a handle selected (#557): nothing selected. Unchanged when nothing is. */

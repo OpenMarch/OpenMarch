@@ -1,7 +1,8 @@
 import type { PivotKey } from "../frame/frame";
 import { create } from "zustand";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
-import type { FieldMode } from "@/field/editor/fieldEditor";
+import type { FieldMode, FieldModeDrawing } from "@/field/editor/fieldEditor";
+import { lineCoordinate } from "../field/lineCoordinate";
 import type { PointerKind } from "@/field/editor/pointerThresholds";
 import type { ShapeField } from "../field/shapeField";
 import type { XY } from "../types";
@@ -23,6 +24,7 @@ import { pressShapeKeys, type HeldFieldGesture } from "../field/heldGesture";
 import {
     cancelGesture,
     losePress,
+    onMirrorPoint,
     pickMenu,
     pointerMove,
     press,
@@ -209,7 +211,8 @@ const drawingOf = memoDrawing(
             tool.gesture &&
             tool.gesture.type !== "draw" &&
             tool.gesture.type !== "points" &&
-            tool.gesture.type !== "edit"
+            tool.gesture.type !== "edit" &&
+            tool.gesture.type !== "mirror"
                 ? tool.gesture
                 : null;
         return {
@@ -280,9 +283,43 @@ const drawingOf = memoDrawing(
             ...(hover && !tool.gesture
                 ? { labels: [{ at: hover.at, text: hover.text }] }
                 : {}),
+            ...(tool.mirror && !drawing ? mirrorDrawing(tool) : {}),
+            // A mirrored paste only mirrors: no knob, handles or pivot to turn or resize it
+            ...(tool.mirror && !drawing
+                ? {
+                      handles: [],
+                      addHandles: [],
+                      selectedHandles: [],
+                      barHandles: [],
+                      knob: undefined,
+                      pivotMark: undefined,
+                      pivotPreview: undefined,
+                  }
+                : {}),
         };
     },
 );
+
+/**
+ * A mirrored paste's mirror point (Paste mirrored): the point, a line through it each way, the
+ * one it mirrors across drawn solid, each named as the coordinate sheet writes it
+ */
+function mirrorDrawing(tool: ToolState): Pick<FieldModeDrawing, "mirror"> {
+    const mirror = tool.mirror!;
+    const { point } = mirror;
+    const across = mirror.across ? lineCoordinate("x", point.x) : null;
+    const deep = mirror.deep ? lineCoordinate("y", point.y) : null;
+    return {
+        mirror: {
+            at: point,
+            across: mirror.across,
+            deep: mirror.deep,
+            ...(across ? { acrossLabel: across } : {}),
+            ...(deep ? { deepLabel: deep } : {}),
+            dragging: tool.gesture?.type === "mirror",
+        },
+    };
+}
 
 /**
  * The open shape's marchers glide to their new spots when it changes without a gesture (a press
@@ -563,6 +600,11 @@ export const shapeToolMode: FieldMode = {
         }
         // The editor asks for the cursor as the pointer moves, so this is where hovering is seen
         hoverAt(tool, pointer.field, env.hitRadius);
+        if (tool.gesture?.type === "mirror") return "move";
+        if (onMirrorPoint(tool, pointer.field, env)) {
+            setShapePointerOver(true);
+            return "grab";
+        }
         const target = pressTarget(tool, pointer.field, env);
         setShapePointerOver(target.type !== "draw");
         if (target.type === "draw") return "crosshair";

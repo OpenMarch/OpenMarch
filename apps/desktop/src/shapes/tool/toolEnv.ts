@@ -105,6 +105,9 @@ export function toolEnvFor(
             ...field.drawn(field.marchers().map((m) => m.id)).values(),
             ...(spots?.() ?? []),
         ],
+        marcherSnaps: () => [
+            ...field.drawn(field.marchers().map((m) => m.id)).values(),
+        ],
     };
 }
 

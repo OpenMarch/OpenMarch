@@ -345,8 +345,13 @@ describe("FieldContextMenu", () => {
         }
         expect(groups).toEqual([
             ["editSelectedItem"],
-            // Copy and paste (#961)
-            ["copyFormation", "pasteFormation", "pasteFormationInPlace"],
+            // Copy and paste (#961), and Paste mirrored
+            [
+                "copyFormation",
+                "pasteFormation",
+                "pasteFormationInPlace",
+                "pasteMirrored",
+            ],
             ["editPath", "editLine"],
             ["detachPath", "detachAllPath", "removePath"],
             [

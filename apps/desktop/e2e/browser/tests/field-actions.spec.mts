@@ -178,6 +178,52 @@ test("flip across and down", async ({ show }) => {
     await expectCanvasMatchesShow(show);
 });
 
+test("flip mirrors about the selection's pivot once it's moved", async ({
+    show,
+}) => {
+    const { page } = show;
+    await selectAll(page);
+    const xs = PAGE_0.map(([, x]) => x);
+    const left = Math.min(...xs);
+    // The pivot on the left side's middle: Flip side to side mirrors across that line
+    await page.getByTestId("arrange-pivot-w").click();
+    await press(page, "Alt+F");
+    for (const [id, x, y] of PAGE_0)
+        await expectAt(show, id, { x: 2 * left - x, y });
+    // The pivot stays on that line, so flipping again puts them back
+    await press(page, "Alt+F");
+    for (const [id, x, y] of PAGE_0) await expectAt(show, id, { x, y });
+    // ...and so does an undo and a flip after it
+    await press(page, "Alt+F");
+    await press(page, "ControlOrMeta+z");
+    for (const [id, x, y] of PAGE_0) await expectAt(show, id, { x, y });
+    await press(page, "Alt+F");
+    for (const [id, x, y] of PAGE_0)
+        await expectAt(show, id, { x: 2 * left - x, y });
+    await expectCanvasMatchesShow(show);
+});
+
+test("flip mirrors about a pivot on a marcher outside the selection", async ({
+    show,
+}) => {
+    const { page } = show;
+    await clickMarcher(page, "T1");
+    await clickMarcher(page, "T2", { add: true });
+    await clickMarcher(page, "T3", { add: true });
+    await expect
+        .poll(() => selectedDrillNumbers(page))
+        .toEqual(["T1", "T2", "T3"]);
+    // Pick on field, then T4: the pivot goes on T4, who isn't selected
+    await page.getByTestId("arrange-pick-pivot").click();
+    await clickMarcher(page, "T4");
+    const [, x4] = PAGE_0[3];
+    await press(page, "Alt+F");
+    for (const [id, x, y] of PAGE_0.slice(0, 3))
+        await expectAt(show, id, { x: 2 * x4 - x, y });
+    await expectAt(show, 4, { x: x4, y: PAGE_0[3][2] });
+    await expectCanvasMatchesShow(show);
+});
+
 test("set the selected marcher to the next page", async ({ show }) => {
     const { page } = show;
     await selectPage(show, "Page 1");

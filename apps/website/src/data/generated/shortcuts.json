@@ -497,6 +497,27 @@
                             ]
                         }
                     ]
+                },
+                {
+                    "label": "Paste mirrored",
+                    "other": [
+                        {
+                            "keys": [
+                                "Ctrl",
+                                "Alt",
+                                "V"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "⌥",
+                                "⌘",
+                                "V"
+                            ]
+                        }
+                    ]
                 }
             ]
         },
@@ -2212,6 +2233,27 @@
                         {
                             "keys": [
                                 "⇧",
+                                "⌘",
+                                "V"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Paste mirrored",
+                    "other": [
+                        {
+                            "keys": [
+                                "Ctrl",
+                                "Alt",
+                                "V"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "⌥",
                                 "⌘",
                                 "V"
                             ]

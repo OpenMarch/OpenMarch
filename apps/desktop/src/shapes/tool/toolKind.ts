@@ -67,6 +67,11 @@ export interface ToolEnv {
     readonly pivot?: Pivot;
     /** Where marchers stand, for a dragged pivot to snap to (#350); none when absent */
     readonly pivotSnaps?: () => readonly XY[];
+    /**
+     * Where every marcher stands, and nothing else: what a mirror point snaps to (Paste
+     * mirrored). Not the open shape's spots, which move with the point. None when absent.
+     */
+    readonly marcherSnaps?: () => readonly XY[];
     /** The box's ratio lock: changing one spacing changes the other in proportion */
     readonly ratioLocked?: boolean;
     /** An Arc's lock: changing its width changes its depth in proportion, and back (#634) */

@@ -6,6 +6,8 @@ import {
     checkMarcherPagesAreSamePage,
     evenlyDistributeHorizontally,
     evenlyDistributeVertically,
+    flipHorizontal,
+    flipVertical,
     getRoundCoordinates,
     getRoundCoordinates2,
 } from "../CoordinateActions";
@@ -862,5 +864,30 @@ describe("CoordinateActions", () => {
         });
 
         expect(roundedCoordinates).toEqual(expected);
+    });
+});
+
+describe("flipping around a point", () => {
+    const pages = [
+        { marcher_id: 1, page_id: 7, x: 100, y: 40, notes: null },
+        { marcher_id: 2, page_id: 7, x: 140, y: 80, notes: null },
+    ] as unknown as Parameters<typeof flipHorizontal>[0];
+
+    it("flips about the marchers' own center by default", () => {
+        const out = flipHorizontal(pages);
+        expect(out.map((p) => p.x)).toEqual([140, 100]);
+        expect(out.map((p) => p.y)).toEqual([40, 80]);
+    });
+
+    it("flips side to side about a line through the point given", () => {
+        const out = flipHorizontal(pages, { x: 200, y: 0 });
+        expect(out.map((p) => p.x)).toEqual([300, 260]);
+        expect(out.map((p) => p.y)).toEqual([40, 80]);
+    });
+
+    it("flips front to back about a line through the point given", () => {
+        const out = flipVertical(pages, { x: 0, y: 100 });
+        expect(out.map((p) => p.x)).toEqual([100, 140]);
+        expect(out.map((p) => p.y)).toEqual([160, 120]);
     });
 });

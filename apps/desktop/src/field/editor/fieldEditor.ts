@@ -484,6 +484,24 @@ export type FieldModeDrawing = {
     pivotPreview?: FieldPoint;
     /** While turning: what it turns around, and the pointer */
     pivot?: { at: FieldPoint; to: FieldPoint };
+    /**
+     * A mirrored paste's mirror point (Paste mirrored): a handle that drags, with a line through
+     * it side to side and front to back across the whole canvas. The lines the paste mirrors
+     * across are drawn solid and named; the others faint.
+     */
+    mirror?: {
+        at: FieldPoint;
+        /** Mirrored side to side: across the line through the point that runs like a yard line */
+        across: boolean;
+        /** Mirrored front to back: across the line through the point that runs like the sidelines */
+        deep: boolean;
+        /** The upright line's name as the coordinate sheet writes it ("On 50"), when it mirrors */
+        acrossLabel?: string;
+        /** The level line's name ("12 BE BH"), when it mirrors */
+        deepLabel?: string;
+        /** The point is being dragged */
+        dragging?: boolean;
+    };
     /** A note by the pointer: the angle, or where the shape is in drill terms */
     tip?: { at: FieldPoint; text: string };
     /** The spots are part way to where they're going: a glide is running (#387) */
@@ -1463,6 +1481,16 @@ export class FieldEditor {
         return this.restingPivot(own, true);
     }
 
+    /**
+     * Where the plain selection's pivot was set, when it was moved off its box's center (a cell
+     * picked, dragged onto a marcher or a spot): what Flip mirrors about too. Null on the center.
+     */
+    selectionPivotAnchor(): PivotAnchor | null {
+        if (this.selectionPivot() === null) return null;
+        const anchor = this.currentOwnPivot()?.anchor ?? null;
+        return anchor && !isCenter(anchor) ? anchor : null;
+    }
+
     /** The pivot where it's set; `resting` with no gesture running, so hints and previews show */
     private restingPivot(
         own: OwnPivot | null,
@@ -1540,6 +1568,21 @@ export class FieldEditor {
      * Sets the pivot to point `key` of the selection's box (the inspector's pivot grid); the
      * center puts it back there.
      */
+    /**
+     * The selection's pivot pinned to field point `at` (a spot of its own), so it stays where it is
+     * whatever the marchers do: Flip pins a pivot set on a cell of the box before it mirrors about
+     * it, so flipping again, or undoing, goes about the same line
+     */
+    pinSelectionPivot(at: FieldPoint): void {
+        if (this.selectionPivot() === null) return;
+        const ids = this.ports.selection.get();
+        this.ownPivot = {
+            ids: [...ids],
+            anchor: { kind: "point", at: { x: at.x, y: at.y } },
+        };
+        this.emit();
+    }
+
     setSelectionPivot(key: BoxPointKey): void {
         // None while a shape owns the selection, or a lone marcher: nothing to set
         if (this.selectionPivot() === null) return;

@@ -240,6 +240,16 @@ function shapeOverlayOf(field: ThreeFieldState): FieldTestShapeOverlay | null {
         centerDot: drawing.centerDot ? screen(drawing.centerDot) : null,
         pivotMark: drawing.pivotMark ? screen(drawing.pivotMark) : null,
         pivotPreview: drawing.pivotPreview ? copy(drawing.pivotPreview) : null,
+        mirror: drawing.mirror
+            ? {
+                  at: copy(drawing.mirror.at),
+                  screen: screen(drawing.mirror.at),
+                  across: drawing.mirror.across,
+                  deep: drawing.mirror.deep,
+                  acrossLabel: drawing.mirror.acrossLabel ?? null,
+                  deepLabel: drawing.mirror.deepLabel ?? null,
+              }
+            : null,
         labels: (drawing.labels ?? []).map((l) => l.text),
         tip: drawing.tip?.text ?? null,
         gliding: drawing.gliding === true,

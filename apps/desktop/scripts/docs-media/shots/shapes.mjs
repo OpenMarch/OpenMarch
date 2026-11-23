@@ -1265,6 +1265,59 @@ const shots = [
             return { box: await around(card, 10) };
         },
     },
+    {
+        id: "shapes-paste-mirrored",
+        kind: "still",
+        covers: [
+            "apps/desktop/src/shapes/clipboard",
+            "apps/desktop/src/shapes/tool/mirror.ts",
+        ],
+        // A section copied and pasted mirrored onto itself: its mirror image across the 50, the
+        // pink mirror point with its line and name, and the floating editor's Mirror choice
+        async setup({ page }) {
+            const { bounds } = await start(page);
+            await page.keyboard.press("Control+KeyC");
+            await page.waitForTimeout(400);
+            await page.keyboard.press("Control+Alt+KeyV");
+            await page.getByTestId("shape-tool-readout").waitFor();
+            await page.waitForTimeout(700);
+            await tidy(page);
+            const mirror = await page.evaluate(
+                () =>
+                    window.fieldTest?.shapeOverlay?.()?.mirror?.screen ?? null,
+            );
+            if (!mirror) throw new Error("no mirror point drawn");
+            // The section's mirror image, across the upright line through the point
+            const image = {
+                x: 2 * mirror.x - (bounds.x + bounds.width),
+                y: bounds.y,
+                width: bounds.width,
+                height: bounds.height,
+            };
+            const editor = await page
+                .getByTestId("shape-tool-readout")
+                .boundingBox();
+            const field = await fieldBox(page);
+            // The pointer on the mirror point keeps the floating editor solid, as when using it
+            await page.mouse.move(mirror.x, mirror.y);
+            await page.waitForTimeout(500);
+            return {
+                box: inside(
+                    grow(
+                        unionOf(bounds, image, editor, {
+                            // The mirror line's name, at the top of the field
+                            x: mirror.x - 60,
+                            y: field.y,
+                            width: 120,
+                            height: 30,
+                        }),
+                        30,
+                    ),
+                    field,
+                ),
+            };
+        },
+    },
 ];
 
 export default shots;

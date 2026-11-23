@@ -1265,6 +1265,21 @@
         "category": "edit",
         "bindings": []
     },
+    "mirrorSideToSide": {
+        "label": "Mirrored paste: Mirror side to side",
+        "category": "shape",
+        "bindings": []
+    },
+    "mirrorFrontToBack": {
+        "label": "Mirrored paste: Mirror front to back",
+        "category": "shape",
+        "bindings": []
+    },
+    "mirrorBoth": {
+        "label": "Mirrored paste: Mirror both ways",
+        "category": "shape",
+        "bindings": []
+    },
     "shapeQuarterTurn": {
         "label": "Shape: Turn 90° clockwise",
         "category": "shape",
@@ -1718,6 +1733,44 @@
                     "keys": [
                         "Ctrl",
                         "Shift",
+                        "V"
+                    ]
+                }
+            }
+        ]
+    },
+    "pasteMirrored": {
+        "label": "Paste mirrored",
+        "category": "edit",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⌥",
+                        "⌘",
+                        "V"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "Alt",
+                        "V"
+                    ]
+                }
+            },
+            {
+                "mac": {
+                    "keys": [
+                        "⌃",
+                        "⌥",
+                        "V"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Ctrl",
+                        "Alt",
                         "V"
                     ]
                 }

@@ -881,9 +881,35 @@ const STATIC_ACTIONS = {
         scope: "canvas",
         defaultBindings: [],
     },
+    // A mirrored paste's Mirror choice (Paste mirrored): which ways it mirrors through its point.
+    // No keys: the flip keys switch each way
+    mirrorSideToSide: {
+        labelKey: "actions.shape.mirrorSideToSide",
+        keywordsKey: "actions.shape.mirrorKeywords",
+        category: "shape",
+        scope: "canvas",
+        defaultBindings: [],
+        ignoreRepeat: true,
+    },
+    mirrorFrontToBack: {
+        labelKey: "actions.shape.mirrorFrontToBack",
+        keywordsKey: "actions.shape.mirrorKeywords",
+        category: "shape",
+        scope: "canvas",
+        defaultBindings: [],
+        ignoreRepeat: true,
+    },
+    mirrorBoth: {
+        labelKey: "actions.shape.mirrorBoth",
+        keywordsKey: "actions.shape.mirrorKeywords",
+        category: "shape",
+        scope: "canvas",
+        defaultBindings: [],
+        ignoreRepeat: true,
+    },
     // The floating editor's turn and Recalculate (#429), for the open or selected shape only. While
     // one is shown, Alt+F and Alt+Shift+F (flipHorizontal/flipVertical) flip the shape instead of
-    // the marchers (shapes/editor/ShapeEditorBar)
+    // the marchers, or switch a mirrored paste's Mirror ways (shapes/editor/ShapeEditorBar)
     shapeQuarterTurn: {
         labelKey: "actions.shape.quarterTurn",
         keywordsKey: "actions.shape.keywords",
@@ -1254,6 +1280,18 @@ const STATIC_ACTIONS = {
         category: "edit",
         scope: "canvas",
         defaultBindings: ["$mod+Shift+V", "Control+Shift+V"],
+        ignoreRepeat: true,
+    },
+    // Paste mirrored: the copy where it was copied, mirrored side to side through a point the
+    // user places (the last one used, the 50 the first time). While it's open, its editor's Mirror
+    // choice (the mirror* actions below) and the flip keys pick which ways it mirrors, and the
+    // arrow keys move the point (shapes/tool/mirror.ts)
+    pasteMirrored: {
+        labelKey: "actions.edit.pasteMirrored",
+        keywordsKey: "actions.edit.pasteMirroredKeywords",
+        category: "edit",
+        scope: "canvas",
+        defaultBindings: ["$mod+Alt+V", "Control+Alt+V"],
         ignoreRepeat: true,
     },
 

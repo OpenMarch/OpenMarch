@@ -61,9 +61,9 @@ import {
  *
  * - **Edit <name>**, first, while one item (a prop, front ensemble equipment, a podium) is
  *   selected, as right-clicking one does: it opens the item's edit view.
- * - **Copy**, **Paste** and **Paste exactly** (#961): the selection's formation copied, and
- *   pasted onto the marchers selected as an open shape that Enter places. Unavailable with
- *   nobody selected, and the pastes with nothing copied.
+ * - **Copy**, **Paste**, **Paste exactly** (#961) and **Paste mirrored**: the selection's
+ *   formation copied, and pasted onto the marchers selected as an open shape that Enter places.
+ *   Unavailable with nobody selected, and the pastes with nothing copied.
  * - **Group** or **Ungroup**, each shown only while it's available: Group with two or
  *   more marchers selected that aren't one placed shape (#603), Ungroup with one selected whole.
  *   With one selected whole and the menu opened on one of its marchers, **Select only this
@@ -155,7 +155,12 @@ const GROUPS: readonly (readonly ActionId[])[] = [
     // An item right-clicked: its edit view
     ["editSelectedItem"],
     // #961: a formation copied, and pasted onto the marchers selected
-    ["copyFormation", "pasteFormation", "pasteFormationInPlace"],
+    [
+        "copyFormation",
+        "pasteFormation",
+        "pasteFormationInPlace",
+        "pasteMirrored",
+    ],
     ["shapeGroup", "shapeUngroup", "shapeEnterBox"],
     PATH,
     PATH_END,

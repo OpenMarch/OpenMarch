@@ -74,10 +74,12 @@ Spacing doesn't straighten a line: each marcher keeps its other coordinate. Line
 
 ## Flip a group
 
-The last two <Ui k="inspector.marcher.alignHeading" /> buttons mirror the selection about its own middle:
+The last two <Ui k="inspector.marcher.alignHeading" /> buttons mirror the selection about its pivot, which starts in its middle:
 
 - <Ui k="actions.alignment.flipHorizontal" /> (<Kbd action="flipHorizontal" />) swaps its left and right.
 - <Ui k="actions.alignment.flipVertical" /> (<Kbd action="flipVertical" />) swaps its front and back.
+
+To mirror the group across another line, such as a yard line or a marcher, move the pivot there first (see [Turn a group around another point](#turn-a-group-around-another-point)). To mirror a copy and keep the original, use [Paste mirrored](/guides/shapes/copy-and-paste/#paste-mirrored).
 
 ## Turn and resize a group
 
@@ -99,7 +101,7 @@ To turn the group by an exact angle, type it in the <Ui k="inspector.marcher.rot
 
 ## Turn a group around another point
 
-The pivot is the point a group turns around. It starts in the middle. To move it:
+The pivot is the point a group turns and flips around. It starts in the middle. To move it:
 
 - Select a dot in the pivot grid under <Ui k="inspector.marcher.rotateHeading" /> to put it on a corner, the middle of a side or the center.
 - Select <Ui k="inspector.arrange.pickPivotButton" />, then click a marcher or any spot on the field.

@@ -488,7 +488,7 @@
     "shapes-clipboard-card": {
         "chapter": "shapes",
         "kind": "still",
-        "width": 508,
+        "width": 664,
         "height": 344
     },
     "shapes-curve-bend": {
@@ -578,6 +578,12 @@
         "width": 1280,
         "height": 680,
         "seconds": 6.5
+    },
+    "shapes-paste-mirrored": {
+        "chapter": "shapes",
+        "kind": "still",
+        "width": 1600,
+        "height": 1278
     },
     "shapes-pathways": {
         "chapter": "shapes",

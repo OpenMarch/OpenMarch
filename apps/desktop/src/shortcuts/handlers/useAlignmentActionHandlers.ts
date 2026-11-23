@@ -1,9 +1,48 @@
 import { useTranslate } from "@tolgee/react";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
 import * as CoordinateActions from "@/utilities/CoordinateActions";
+import { activeFieldEditor } from "@/field/editor/activeFieldEditor";
+import { anchorPoint } from "@/field/editor/selectionPivot";
+import { boundsOf } from "@/field/editor/groupTransform";
 import { useActionHandler } from "../useActionHandler";
 import { useEditorReadiness } from "./useEditorReadiness";
 import { useUpdateCoordinates } from "./useUpdateCoordinates";
+
+/**
+ * What Flip mirrors the marchers at `pages` about: the selection's pivot when it was moved off the
+ * center (the Arrange section's pivot grid, or dragged onto a marcher or a spot), worked out from
+ * the positions being flipped; undefined for their own center. A marcher outside the selection
+ * stays where the field draws it.
+ */
+function pivotOf(
+    pages: readonly { marcher_id: number; x: number; y: number }[],
+): { x: number; y: number } | undefined {
+    const editor = activeFieldEditor();
+    const anchor = editor?.selectionPivotAnchor();
+    const box = boundsOf(pages);
+    if (!editor || !anchor || !box) return undefined;
+    const byId = new Map(pages.map((p) => [p.marcher_id, p]));
+    return anchorPoint(
+        anchor,
+        box,
+        (id) => byId.get(id) ?? editor.selectionPivot()?.at,
+    );
+}
+
+/**
+ * What Flip mirrors the marchers at `pages` about (`pivotOf`). A pivot set on a cell of the box is
+ * pinned to that spot on the field first, so it stays put: flipping again, or undoing, goes about
+ * the same line rather than the far edge of the flipped box.
+ */
+function flipPivot(
+    pages: readonly { marcher_id: number; x: number; y: number }[],
+): { x: number; y: number } | undefined {
+    const around = pivotOf(pages);
+    const editor = activeFieldEditor();
+    if (around && editor?.selectionPivotAnchor()?.kind === "box")
+        editor.pinSelectionPivot(around);
+    return around;
+}
 
 // eslint-disable-next-line max-lines-per-function
 export function useAlignmentActionHandlers() {
@@ -133,8 +172,10 @@ export function useAlignmentActionHandlers() {
     useActionHandler(
         "flipHorizontal",
         () => {
+            const pages = getSelectedMarcherPages();
             const flippedCoords = CoordinateActions.flipHorizontal(
-                getSelectedMarcherPages(),
+                pages,
+                flipPivot(pages),
             );
             updateCoordinates(flippedCoords);
         },
@@ -144,8 +185,10 @@ export function useAlignmentActionHandlers() {
     useActionHandler(
         "flipVertical",
         () => {
+            const pages = getSelectedMarcherPages();
             const flippedCoords = CoordinateActions.flipVertical(
-                getSelectedMarcherPages(),
+                pages,
+                flipPivot(pages),
             );
             updateCoordinates(flippedCoords);
         },

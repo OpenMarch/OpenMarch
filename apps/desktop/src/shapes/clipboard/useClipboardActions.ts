@@ -16,7 +16,7 @@ import { fieldPropertiesQueryOptions } from "@/hooks/queries/useFieldProperties"
 import { pictureSummary } from "./picture";
 
 /**
- * Copy, Paste and Paste exactly (#961), for their keys, the field's menu and the command palette
+ * Copy, Paste, Paste exactly (#961) and Paste mirrored, for their keys, the field's menu and the command palette
  * alike. Each needs performers selected (a prop takes no spot), and no shape open and showing:
  * that one is placed or discarded first. The pastes also need something copied. Unavailable,
  * their keys are left alone, so Ctrl/Cmd+C and V keep working on text.
@@ -51,10 +51,11 @@ export function useClipboardActions(): void {
                       : undefined)),
     });
     useActionHandlerGroup(
-        ["pasteFormation", "pasteFormationInPlace"],
+        ["pasteFormation", "pasteFormationInPlace", "pasteMirrored"],
         (id) =>
             void pasteFormation(ids(), {
                 inPlace: id === "pasteFormationInPlace",
+                mirrored: id === "pasteMirrored",
             }),
         {
             enabled: selected && copied,

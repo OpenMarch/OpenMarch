@@ -5,6 +5,7 @@ import {
     drawnMarchers,
     expectCanvasMatchesShow,
     readField,
+    touchDrag,
     waitForField,
     waitForIdle,
 } from "../app.mjs";
@@ -882,4 +883,168 @@ test("an open paste that doesn't fit says so under its editor, and one that fits
     await page.keyboard.press("ControlOrMeta+v");
     await expect(notice).toHaveText("2 marchers have no spot");
     await expect(notice).toHaveAttribute("data-fit", "leftOut");
+});
+
+test("Paste mirrored opens the copy's mirror image across the 50, follows its pink point and its Mirror choice, and Enter places it as one undo step", async ({
+    show,
+}) => {
+    const { page } = show;
+    const grid = await fieldGrid(show);
+    const S = grid.pixelsPerStep;
+    const cf = grid.centerFront;
+    const copied = asPositions(HOME).filter((p) => p.id <= 4);
+    const across = (x: number) =>
+        copied.map((p) => ({ x: 2 * x - p.x, y: p.y }));
+    await select(page, [1, 2, 3, 4]);
+    await page.keyboard.press("ControlOrMeta+c");
+    await expect(chip(page)).toContainText("4 marchers");
+
+    await select(page, [5, 6, 7, 8]);
+    const steps = await undoSteps(show);
+    await page.keyboard.press("ControlOrMeta+Alt+v");
+    await expect(preview(page)).toBeVisible();
+    let overlay = (await shapeOverlay(page))!;
+    // The first time, through the 50, mirrored side to side
+    expect(overlay.mirror).toMatchObject({ across: true, deep: false });
+    expect(overlay.mirror!.at.x).toBeCloseTo(cf.x);
+    expect(overlay.mirror!.acrossLabel).toContain("50");
+    expect(sorted(overlay.spots)).toEqual(sorted(across(cf.x)));
+    await expect(page.getByTestId("fieldShapeMirrorPoint")).toBeVisible();
+
+    // Dragged onto the side 1 45, the paste follows it
+    const from = overlay.mirror!.screen;
+    const to = await toScreen(page, {
+        x: cf.x - 8 * S + 0.2 * S,
+        y: overlay.mirror!.at.y,
+    });
+    await page.mouse.move(from.x, from.y);
+    await page.mouse.down();
+    await page.mouse.move(to.x, to.y, { steps: 12 });
+    await page.mouse.up();
+    overlay = (await shapeOverlay(page))!;
+    expect(overlay.mirror!.at.x).toBeCloseTo(cf.x - 8 * S);
+    expect(overlay.mirror!.acrossLabel).toContain("45");
+    expect(sorted(overlay.spots)).toEqual(sorted(across(cf.x - 8 * S)));
+
+    // The arrow keys move the point a step at a time, as they'd move a marcher
+    await page.keyboard.press("ArrowRight");
+    await expect
+        .poll(async () => (await shapeOverlay(page))!.mirror!.at.x)
+        .toBeCloseTo(cf.x - 7 * S);
+    await page.keyboard.press("ArrowLeft");
+    await expect
+        .poll(async () => (await shapeOverlay(page))!.mirror!.at.x)
+        .toBeCloseTo(cf.x - 8 * S);
+    // A paste that only mirrors can't be turned from the keyboard either
+    await page.keyboard.press("Alt+R");
+    overlay = (await shapeOverlay(page))!;
+    expect(overlay.mirror).not.toBeNull();
+    expect(sorted(overlay.spots)).toEqual(sorted(across(cf.x - 8 * S)));
+
+    // Mirror-only: no knob, handles or flips, and the editor's Mirror choice
+    expect(overlay.knob).toBeNull();
+    expect(overlay.handles).toHaveLength(0);
+    await expect(page.getByTestId("shape-editor-flip-across")).toHaveCount(0);
+    await expect(
+        page.getByTestId("shape-editor-mirror-across"),
+    ).toHaveAttribute("aria-checked", "true");
+    // Each way's tooltip opens on keyboard focus too, not only on hover
+    await page.getByTestId("shape-editor-mirror-deep").focus();
+    await expect(page.getByRole("tooltip")).toContainText("level line");
+    // ...and describes the focused segment to a screen reader
+    await expect(
+        page.getByTestId("shape-editor-mirror-deep"),
+    ).toHaveAccessibleDescription(/level line/);
+    await blur(page);
+    // Front to back mirrors it across the level line through the same point
+    const point = overlay.mirror!.at;
+    await page.getByTestId("shape-editor-mirror-deep").click();
+    await expect
+        .poll(async () => (await shapeOverlay(page))!.mirror?.deep)
+        .toBe(true);
+    overlay = (await shapeOverlay(page))!;
+    expect(overlay.mirror!.across).toBe(false);
+    expect(sorted(overlay.spots)).toEqual(
+        sorted(copied.map((p) => ({ x: p.x, y: 2 * point.y - p.y }))),
+    );
+    // Both: half a turn around the point
+    await page.getByTestId("shape-editor-mirror-both").click();
+    await expect
+        .poll(async () => (await shapeOverlay(page))!.mirror?.across)
+        .toBe(true);
+    overlay = (await shapeOverlay(page))!;
+    const both = copied.map((p) => ({
+        x: 2 * point.x - p.x,
+        y: 2 * point.y - p.y,
+    }));
+    expect(sorted(overlay.spots)).toEqual(sorted(both));
+    // Clicking a way leaves the arrow keys on the mirror point
+    await page.keyboard.press("ArrowRight");
+    await expect
+        .poll(async () => (await shapeOverlay(page))!.mirror!.at.x)
+        .toBeCloseTo(point.x + S);
+    await page.keyboard.press("ArrowLeft");
+    await expect
+        .poll(async () => (await shapeOverlay(page))!.mirror!.at.x)
+        .toBeCloseTo(point.x);
+
+    // A click on the field off the paste puts the point there
+    const clickAt = { x: cf.x - 16 * S, y: point.y };
+    const screenAt = await toScreen(page, clickAt);
+    await page.mouse.click(screenAt.x, screenAt.y);
+    await expect
+        .poll(async () => (await shapeOverlay(page))!.mirror!.at.x)
+        .toBeCloseTo(clickAt.x);
+    await page.keyboard.press("ControlOrMeta+z");
+    await expect
+        .poll(async () => (await shapeOverlay(page))!.mirror!.at.x)
+        .toBeCloseTo(point.x);
+
+    await page.keyboard.press("Enter");
+    await expect(preview(page)).toBeHidden();
+    await expect
+        .poll(async () => sorted(await savedAt(show, [5, 6, 7, 8])))
+        .toEqual(sorted(both));
+    await waitForIdle(page);
+    expect(await undoSteps(show)).toBe(steps + 1);
+    expect(await savedShapes(show)).toBe(0);
+    // The copied marchers stay put
+    expect(await savedAt(show, [1, 2, 3, 4])).toEqual(copied);
+});
+
+test.describe("on a touch screen", () => {
+    test.use({
+        touchScreen: true,
+        initScript: "localStorage.setItem('openmarch:inputMode', 'touch');",
+    });
+
+    test("a finger drags a mirrored paste's mirror point, and the paste follows", async ({
+        show,
+    }) => {
+        const { page } = show;
+        const grid = await fieldGrid(show);
+        const S = grid.pixelsPerStep;
+        const cf = grid.centerFront;
+        await select(page, [1, 2, 3, 4]);
+        await page.keyboard.press("ControlOrMeta+c");
+        await select(page, [5, 6, 7, 8]);
+        await page.keyboard.press("ControlOrMeta+Alt+v");
+        await expect(preview(page)).toBeVisible();
+        const overlay = (await shapeOverlay(page))!;
+        const from = overlay.mirror!.screen;
+        const to = await toScreen(page, {
+            x: cf.x + 8 * S,
+            y: overlay.mirror!.at.y,
+        });
+        await touchDrag(page, from, to, { steps: 8 });
+        await expect
+            .poll(async () => (await shapeOverlay(page))!.mirror!.at.x)
+            .toBeCloseTo(cf.x + 8 * S);
+        const copied = asPositions(HOME).filter((p) => p.id <= 4);
+        expect(sorted((await shapeOverlay(page))!.spots)).toEqual(
+            sorted(
+                copied.map((p) => ({ x: 2 * (cf.x + 8 * S) - p.x, y: p.y })),
+            ),
+        );
+    });
 });

@@ -178,6 +178,14 @@ export function ClipboardCard({
                 >
                     {t("actions.edit.pasteInPlace")}
                 </ActionButton>
+                <ActionButton
+                    action="pasteMirrored"
+                    data-testid="clipboard-paste-mirrored"
+                    hint={t("shapes.clipboard.pasteMirroredHint")}
+                    className={CLIPBOARD_BUTTON_CLASS}
+                >
+                    {t("actions.edit.pasteMirrored")}
+                </ActionButton>
             </div>
             {/* One line about the fit: how it fits the marchers selected, or with none selected
                 how many it takes (Clear is the chip's X). Room for two lines, so the buttons

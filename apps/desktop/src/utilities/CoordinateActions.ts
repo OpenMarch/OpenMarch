@@ -530,10 +530,15 @@ export const getCenterFromCoordinates = (
     return { x: (minX + maxX) / 2, y: (minY + maxY) / 2 };
 };
 
+/**
+ * The marchers mirrored side to side about a line through `around` (the selection's pivot when it
+ * was moved: the Arrange section's pivot, dragged or picked), or through their own center
+ */
 export const flipHorizontal = (
     marcherPages: CoordinateRecord[],
+    around?: { x: number; y: number },
 ): ModifiedMarcherPageArgs[] => {
-    const center = getCenterFromCoordinates(marcherPages);
+    const center = around ?? getCenterFromCoordinates(marcherPages);
 
     return marcherPages.map((marcherPage) => ({
         marcher_id: marcherPage.marcher_id,
@@ -544,10 +549,12 @@ export const flipHorizontal = (
     }));
 };
 
+/** The marchers mirrored front to back about a line through `around`, or their own center */
 export const flipVertical = (
     marcherPages: CoordinateRecord[],
+    around?: { x: number; y: number },
 ): ModifiedMarcherPageArgs[] => {
-    const center = getCenterFromCoordinates(marcherPages);
+    const center = around ?? getCenterFromCoordinates(marcherPages);
 
     return marcherPages.map((marcherPage) => ({
         marcher_id: marcherPage.marcher_id,
