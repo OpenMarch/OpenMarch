@@ -59,7 +59,8 @@ jobs:
   test:
     needs: check-changes
     if: needs.check-changes.outputs.desktop == 'true'
-    runs-on: ubuntu-latest
+    # ubuntu-latest is Ubuntu 26.04, which Playwright 1.60 can't install browser dependencies on
+    runs-on: ubuntu-24.04
     steps:
       - uses: actions/checkout@v4
 
