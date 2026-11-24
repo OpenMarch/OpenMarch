@@ -148,6 +148,13 @@ describe("FieldEditor click selection", () => {
         expect(state.selected).toEqual([3]);
     });
 
+    it("adds a marcher when Shift comes up just before the mouse", () => {
+        const { editor, state } = setup({ selected: [1] });
+        editor.pointerDown(at(300, 100, { shift: true }));
+        editor.pointerUp(at(300, 100));
+        expect(state.selected).toEqual([1, 3]);
+    });
+
     it("clears the selection on a click on empty field", () => {
         const { editor, state } = setup({ selected: [1, 2] });
         click(editor, EMPTY.x, EMPTY.y);

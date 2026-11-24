@@ -1,5 +1,9 @@
 import { isMacPlatform } from "@/shortcuts/platform";
-import { modifierReleaseGraceMs } from "./modifierGrace";
+import {
+    modifierReleaseGraceMs,
+    releasedAgo,
+    type ModifierName,
+} from "./modifierGrace";
 import {
     HELD_ROLES,
     releaseUsedKeys,
@@ -11,6 +15,7 @@ import {
     type RoleKey,
     type RoleMap,
     type Roles,
+    VERSION_A,
 } from "./modifierRoles";
 
 /**
@@ -98,8 +103,34 @@ export function startGestureKeys({
         for (const timer of graced.values()) clearTimeout(timer);
         graced.clear();
     };
+    /** The modifier that holds `role` here, for asking when the keyboard saw it come up */
+    const modifierOf = (role: HeldRole): ModifierName | null => {
+        switch ((map ?? VERSION_A)[context][role]) {
+            case "Shift":
+                return "shift";
+            case "Alt":
+                return "alt";
+            case "$mod":
+                return isMac ? "meta" : "ctrl";
+            default:
+                return null;
+        }
+    };
+    /**
+     * How long a role that just turned off still counts, or 0. A key or toggle change seen here
+     * gets the whole grace. A pointer event that no longer carries a key gets only what's left of
+     * the keyboard's own release, so a key let go before the gesture started listening (held
+     * still inside the click slop) isn't held into the drag.
+     */
+    const graceFor = (role: HeldRole, from: "change" | "pointer") => {
+        if (releaseGraceMs <= 0) return 0;
+        if (from === "change") return releaseGraceMs;
+        const modifier = modifierOf(role);
+        const ago = modifier === null ? null : releasedAgo(modifier);
+        return ago === null ? 0 : Math.max(0, releaseGraceMs - ago);
+    };
     /** Whether the roles changed since they were last read here */
-    const reread = (grace = true) => {
+    const reread = (grace: "change" | "pointer" | false = "change") => {
         const now = actual();
         for (const role of HELD_ROLES) {
             const timer = graced.get(role);
@@ -109,19 +140,16 @@ export function startGestureKeys({
                     clearTimeout(timer);
                     graced.delete(role);
                 }
-            } else if (
-                grace &&
-                lastActual[role] &&
-                timer === undefined &&
-                releaseGraceMs > 0
-            ) {
-                graced.set(
-                    role,
-                    setTimeout(() => {
-                        graced.delete(role);
-                        if (reread()) onRolesChange?.(last);
-                    }, releaseGraceMs),
-                );
+            } else if (grace && lastActual[role] && timer === undefined) {
+                const ms = graceFor(role, grace);
+                if (ms > 0)
+                    graced.set(
+                        role,
+                        setTimeout(() => {
+                            graced.delete(role);
+                            if (reread()) onRolesChange?.(last);
+                        }, ms),
+                    );
             }
         }
         lastActual = now;
@@ -130,19 +158,20 @@ export function startGestureKeys({
         last = next;
         return changed;
     };
-    const apply = (next: HeldKeys, grace: boolean) => {
+    const apply = (next: HeldKeys, grace: "change" | "pointer" | false) => {
         keys = next;
         used = releaseUsedKeys(used, keys, isMac);
         return reread(grace);
     };
-    const update = (next: HeldKeys) => apply(next, true);
+    const update = (next: HeldKeys) => apply(next, "pointer");
     const detachKeys = track
         ? trackHeldKeys(
               (next, cause) => {
                   // The window lost focus: no keyup will come, and nothing is being dropped
                   const blurred = cause === "blur";
                   if (blurred) clearGrace();
-                  if (apply(next, !blurred)) onRolesChange?.(last);
+                  if (apply(next, blurred ? false : "change"))
+                      onRolesChange?.(last);
               },
               () => keys,
           )

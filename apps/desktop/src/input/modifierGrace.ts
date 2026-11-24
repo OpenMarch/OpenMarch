@@ -71,6 +71,15 @@ export function installModifierGrace(): void {
 
 installModifierGrace();
 
+/** How long ago `name` came up, since the last press; null if it hasn't */
+export function releasedAgo(
+    name: ModifierName,
+    at: number = now(),
+): number | null {
+    const released = releasedAt.get(name);
+    return released === undefined ? null : at - released;
+}
+
 /** Whether `name` came up less than the grace ago, since the last press */
 export function wasJustReleased(
     name: ModifierName,

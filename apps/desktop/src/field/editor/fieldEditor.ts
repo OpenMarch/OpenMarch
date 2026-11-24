@@ -1080,7 +1080,11 @@ export class FieldEditor {
             if (this.lastClick) this.lastClick.taken = true;
             return;
         }
-        this.click(press, pointer.shift || press.add === true);
+        // Shift down at the press or the release: people let go of it a moment before the mouse
+        this.click(
+            press,
+            pointer.shift || press.start.shift || press.add === true,
+        );
         this.noteClickSelection();
         if (press.double && press.hit !== null)
             this.ports.doubleClickMarcher?.(press.hit);

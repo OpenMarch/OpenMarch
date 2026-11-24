@@ -13,6 +13,7 @@ describe("startGestureKeys", () => {
     afterEach(() => {
         gesture?.dispose();
         vi.useRealTimers();
+        vi.restoreAllMocks();
     });
 
     it("reads the held roles at the press", () => {
@@ -231,6 +232,39 @@ describe("startGestureKeys", () => {
             vi.advanceTimersByTime(MODIFIER_RELEASE_GRACE_MS * 2);
             expect(onRolesChange).not.toHaveBeenCalled();
             expect(gesture.roles()).toEqual(fine);
+        });
+
+        it("doesn't hold a key let go before the gesture started listening", () => {
+            let now = 1000;
+            vi.spyOn(performance, "now").mockImplementation(() => now);
+            // Ctrl comes up while the pointer sits still inside the click slop
+            key("keyup", { key: "Control" });
+            now += 400;
+            gesture = startGestureKeys({
+                context: "field",
+                press: held({ ctrl: true }),
+                isMac: false,
+            });
+            expect(gesture.roles().constrain).toBe(true);
+            // The first move no longer carries Ctrl: the drag is free at once
+            expect(gesture.update(NO_KEYS)).toBe(true);
+            expect(gesture.roles()).toEqual(none);
+        });
+
+        it("holds only what's left of a release the keyboard saw just before", () => {
+            let now = 1000;
+            vi.spyOn(performance, "now").mockImplementation(() => now);
+            key("keyup", { key: "Control" });
+            now += 100;
+            gesture = startGestureKeys({
+                context: "field",
+                press: held({ ctrl: true }),
+                isMac: false,
+            });
+            gesture.update(NO_KEYS);
+            expect(gesture.roles().constrain).toBe(true);
+            vi.advanceTimersByTime(MODIFIER_RELEASE_GRACE_MS - 100);
+            expect(gesture.roles()).toEqual(none);
         });
 
         it("turns a role on at once: only letting go waits", () => {
