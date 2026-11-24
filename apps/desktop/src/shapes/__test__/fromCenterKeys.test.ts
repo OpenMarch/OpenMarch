@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { setModifierReleaseGraceForTests } from "@/input/modifierGrace";
 import { cleanup } from "@testing-library/react";
 import { QueryClient } from "@tanstack/react-query";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
@@ -21,6 +22,10 @@ import {
 import { toolEnvFor } from "../tool/toolEnv";
 import { openTool } from "../tool/toolMachine";
 import type { XY } from "../types";
+
+// Keys let go mid-drag here redraw at once; the release grace has its own tests
+beforeEach(() => setModifierReleaseGraceForTests(0));
+afterEach(() => setModifierReleaseGraceForTests());
 
 /**
  * Alt (`fromCenter`, version A) through the shape tool and a placed box: held at the press, or

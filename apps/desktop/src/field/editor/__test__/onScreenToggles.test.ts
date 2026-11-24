@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it } from "vitest";
+import { setModifierReleaseGraceForTests } from "@/input/modifierGrace";
+import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
     onScreenToggles,
     useTouchModifierStore,
@@ -13,6 +14,10 @@ import {
 import type { MarcherPosition } from "../moveGesture";
 import { ruledMove } from "../moveRules";
 import { clickOnMarcher } from "@/shapes/placed/boxClick";
+
+// Keys let go mid-drag here redraw at once; the release grace has its own tests
+beforeEach(() => setModifierReleaseGraceForTests(0));
+afterEach(() => setModifierReleaseGraceForTests());
 
 /**
  * The touch pill's toggles on the field (modifier roles, version A, "Touch and Apple Pencil"):

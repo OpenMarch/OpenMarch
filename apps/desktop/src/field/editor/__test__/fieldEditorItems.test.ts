@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { setModifierReleaseGraceForTests } from "@/input/modifierGrace";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
     FieldEditor,
     type DropResult,
@@ -8,6 +9,10 @@ import {
 } from "../fieldEditor";
 import type { MarcherPosition } from "../moveGesture";
 import { MIN_ITEM_SIZE, type ItemFrame, type ItemSize } from "../itemTransform";
+
+// Keys let go mid-drag here redraw at once; the release grace has its own tests
+beforeEach(() => setModifierReleaseGraceForTests(0));
+afterEach(() => setModifierReleaseGraceForTests());
 
 const ZOOM = 2;
 

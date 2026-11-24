@@ -4,9 +4,10 @@ import {
     describe,
     expect,
     it,
-    vi,
     type MockInstance,
+    vi,
 } from "vitest";
+import { setModifierReleaseGraceForTests } from "@/input/modifierGrace";
 import { cleanup, renderHook } from "@testing-library/react";
 import { QueryClient } from "@tanstack/react-query";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
@@ -57,6 +58,10 @@ import { openTool, pointerMove, press, release } from "../tool/toolMachine";
 import type { XY } from "../types";
 import { rowTool, type RowParams } from "./fakeRowKind";
 import { watchKeyListeners } from "./keyListeners";
+
+// Keys let go mid-drag here redraw at once; the release grace has its own tests
+beforeEach(() => setModifierReleaseGraceForTests(0));
+afterEach(() => setModifierReleaseGraceForTests());
 
 /**
  * The shape tool's gestures read held roles (version A: Shift fine, $mod constrain), follow role

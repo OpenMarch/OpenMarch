@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { setModifierReleaseGraceForTests } from "@/input/modifierGrace";
 import {
     act,
     cleanup,
@@ -18,6 +19,10 @@ import { watchKeyListeners } from "../../__test__/keyListeners";
 import type { ShapeEditTarget } from "../editTargets";
 import { ScaleButtons } from "../ScaleButtons";
 import { stubPointerCapture } from "./pointerEvents";
+
+// Keys let go mid-drag here redraw at once; the release grace has its own tests
+beforeEach(() => setModifierReleaseGraceForTests(0));
+afterEach(() => setModifierReleaseGraceForTests());
 
 /**
  * Dragging Expand or Shrink scrubs the shape bigger or smaller (#489), reading held roles

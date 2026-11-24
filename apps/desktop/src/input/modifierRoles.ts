@@ -240,15 +240,15 @@ export const NO_KEYS: HeldKeys = {
  * the drag is a change. Returns a detach.
  */
 export function trackHeldKeys(
-    onChange: (keys: HeldKeys) => void,
+    onChange: (keys: HeldKeys, cause: "key" | "blur") => void,
     initial: HeldKeys | (() => HeldKeys) = NO_KEYS,
 ): () => void {
     // A getter lets the caller own the keys, so keys it learns from pointer events count too
     let stored = typeof initial === "function" ? NO_KEYS : initial;
     const current = typeof initial === "function" ? initial : () => stored;
-    const report = (next: HeldKeys) => {
+    const report = (next: HeldKeys, cause: "key" | "blur") => {
         stored = next;
-        onChange(next);
+        onChange(next, cause);
     };
     const onKey = (event: KeyboardEvent) => {
         const next = heldKeysOf(event);
@@ -261,12 +261,12 @@ export function trackHeldKeys(
         ) {
             return;
         }
-        report(next);
+        report(next, "key");
     };
     const onBlur = () => {
         const now = current();
         if (!now.shift && !now.alt && !now.ctrl && !now.meta) return;
-        report(NO_KEYS);
+        report(NO_KEYS, "blur");
     };
     window.addEventListener("keydown", onKey);
     window.addEventListener("keyup", onKey);
