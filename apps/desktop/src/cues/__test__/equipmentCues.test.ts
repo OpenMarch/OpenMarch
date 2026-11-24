@@ -445,6 +445,25 @@ describe("equipment cues (#992)", () => {
             });
         });
 
+        it("a start edge moves the start and shortens it in one write, its performers winning there", () => {
+            const cues = [
+                stored(1, "rifle", 5, [1, 2], 8),
+                stored(2, "flag", 7, [1], 6),
+            ];
+            expect(
+                planCueChange({
+                    cues,
+                    cueId: 1,
+                    change: { beatId: 7, length: 6 },
+                    relabelFor,
+                }),
+            ).toEqual({
+                ...none,
+                modifiedCues: [{ id: 1, beatId: 7, length: 6 }],
+                deletedCueIds: [2],
+            });
+        });
+
         it("changes nothing when nothing moves, or the cue isn't there", () => {
             const cues = [stored(1, "rifle", 5, [1])];
             for (const [cueId, change] of [
