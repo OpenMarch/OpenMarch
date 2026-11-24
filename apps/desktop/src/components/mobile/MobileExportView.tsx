@@ -15,6 +15,7 @@ import {
     DeviceMobileIcon,
 } from "@phosphor-icons/react";
 import { toast } from "sonner";
+import { reportMilestone } from "@/analytics/usageEvents";
 import {
     Production,
     RevisionPreview,
@@ -373,6 +374,7 @@ export const SubmitRevisionForm = ({
             onSuccess: async () => {
                 setUploadStatus("idle");
                 setRevisionTitle("");
+                reportMilestone("export finished", { kind: "mobile" });
                 toast.success(t("mobileExport.revision.uploadSuccess"));
                 await Promise.all([
                     syncActiveAudioAfterUpload(),
@@ -383,6 +385,7 @@ export const SubmitRevisionForm = ({
                 const errorMessage =
                     error instanceof Error ? error.message : String(error);
                 console.error("Upload error:", error);
+                reportMilestone("export failed", { kind: "mobile" });
                 // 403: the ensemble expired since it was loaded. Refetch so
                 // the expired banner replaces the push button's normal state.
                 if (editorApiStatus(error) === 403) {

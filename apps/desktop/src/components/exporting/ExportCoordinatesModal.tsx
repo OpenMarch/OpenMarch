@@ -1,4 +1,5 @@
 /* eslint-disable no-control-regex */
+import { reportMilestone, sizeBucket } from "@/analytics/usageEvents";
 import { useAudioOffsetSeconds } from "@/tempo/audioOffset";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import MarcherCoordinateSheetPreview from "./MarcherCoordinateSheet";
@@ -302,6 +303,10 @@ function CoordinateSheetExport() {
 
             setProgress(100);
             setCurrentStep(t("exportCoordinates.exportComplete"));
+            reportMilestone("export finished", {
+                kind: "coordinate_sheets",
+                marchers: sizeBucket(processedMarchers.length),
+            });
 
             toast.success(
                 t("exportCoordinates.coordinateSheetsExported", {
@@ -330,6 +335,8 @@ function CoordinateSheetExport() {
             );
         } catch (error) {
             console.error("Export error:", error);
+            if (!isCancelled.current)
+                reportMilestone("export failed", { kind: "coordinate_sheets" });
             setCurrentStep(t("exportCoordinates.exportFailed"));
             toast.error(
                 t("exportCoordinates.exportFailedToast", {
@@ -666,6 +673,7 @@ function DrillChartExport() {
             if (!marchersLoaded) {
                 throw new Error(t("exportCoordinates.marchersNotLoaded"));
             }
+            let chartFilesMade = 0;
             const exportPages = pages.map((page) => {
                 if (!page.notes) return page;
 
@@ -733,6 +741,7 @@ function DrillChartExport() {
                         individualCharts,
                     });
 
+                if (result.success) chartFilesMade += 1;
                 if (!individualCharts) break; // just one PDF for MAIN
 
                 setProgress(50 + (50 * marcher) / svgPages.length);
@@ -760,6 +769,8 @@ function DrillChartExport() {
                     throw new Error(t("exportCoordinates.cancelledByUser"));
                 }
             }
+            // How many PDFs were made: none means the export failed
+            return chartFilesMade;
         },
         [
             includeNotesAppendix,
@@ -833,6 +844,7 @@ function DrillChartExport() {
                 }),
             );
             setCurrentStep(t("exportCoordinates.exportFailed"));
+            reportMilestone("export failed", { kind: "drill_charts" });
             isCancelled.current = true;
             setIsLoading(false);
         }
@@ -865,12 +877,18 @@ function DrillChartExport() {
                 });
             }, 150);
 
-            await exportPromise;
+            const chartFilesMade = await exportPromise;
             clearInterval(finalProgressInterval);
 
             setProgress(100);
             setCurrentStep(t("exportCoordinates.exportComplete"));
 
+            reportMilestone(
+                chartFilesMade > 0 ? "export finished" : "export failed",
+                {
+                    kind: "drill_charts",
+                },
+            );
             toast.success(t("exportCoordinates.drillChartsExported"), {
                 duration: ACTION_TOAST_DURATION_MS,
                 action: {
@@ -880,6 +898,8 @@ function DrillChartExport() {
                 },
             });
         } catch (error) {
+            if (!isCancelled.current)
+                reportMilestone("export failed", { kind: "drill_charts" });
             toast.error(
                 t("exportCoordinates.pdfExportFailed", {
                     error:
@@ -1417,6 +1437,10 @@ function VideoExport() {
 
             setProgress(100);
             setCurrentStep(t("exportCoordinates.exportComplete"));
+            reportMilestone("export finished", {
+                kind: "video",
+                audio: result.hasAudio,
+            });
             if (isWebBuild) {
                 // Saving needs a fresh tap (the share sheet won't open
                 // this long after the Export tap): see "Save video" below
@@ -1437,6 +1461,7 @@ function VideoExport() {
             });
         } catch (error) {
             console.error("Video export failed:", error);
+            reportMilestone("export failed", { kind: "video" });
             setCurrentStep(t("exportCoordinates.exportFailed"));
             toast.error(
                 t("exportCoordinates.videoExportFailed", {

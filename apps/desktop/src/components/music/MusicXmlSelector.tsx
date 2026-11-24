@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { reportMilestone } from "@/analytics/usageEvents";
 import { touchSafeAccept } from "@/utilities/fileAccept";
 import { toast } from "sonner";
 import { Button } from "@openmarch/ui";
@@ -20,6 +21,11 @@ export function showMusicXmlImportResult(
     result: Pick<ImportResult, "message" | "checks">,
 ) {
     const { checks } = result;
+    reportMilestone("music imported", {
+        kind: "musicxml",
+        checks: checks.length,
+        source: "editor",
+    });
     if (checks.length === 0) {
         toast.dismiss(CHECKS_TOAST_ID);
         toast.success(result.message);

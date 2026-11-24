@@ -1,4 +1,5 @@
 import { toast } from "sonner";
+import { reportMilestone } from "@/analytics/usageEvents";
 import { T, useTranslate } from "@tolgee/react";
 import { AlertDialogAction, AlertDialogCancel, Button } from "@openmarch/ui";
 import { CircleNotchIcon } from "@phosphor-icons/react";
@@ -151,6 +152,10 @@ export function useFileActionHandlers() {
                     await window.electron.launchInsertAudioFileDialogue();
                 if (response?.cancelled) return;
                 if (response?.success) {
+                    reportMilestone("music imported", {
+                        kind: "audio",
+                        source: "editor",
+                    });
                     AudioFile.getSelectedAudioFile().then((audioFile) => {
                         const selectedAudioFileWithoutAudio = {
                             ...audioFile,

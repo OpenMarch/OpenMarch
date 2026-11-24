@@ -1,4 +1,5 @@
 import { db } from "@/global/database/db";
+import { forgetNewShow, rememberNewShow } from "@/analytics/usageEvents";
 import { schema } from "@/global/database/db";
 import { asc } from "drizzle-orm";
 import {
@@ -784,14 +785,28 @@ export async function completeNewShow(
     await applyPreviousDotsMarcherTags(form, queryClient);
     await applyFrontEnsemble(form, queryClient);
 
-    const finalizeResult = await window.electron.finalizeNewShowDraft(
-        targetPath,
-        form.projectName,
-    );
+    // Sent by the reloaded window once the show has opened (saving it reloads this one)
+    rememberNewShow({
+        tempo: form.tempo?.method ?? "skip",
+        audio: form.audio?.method ?? "skip",
+        marchers: form.performers?.marchers.length ?? 0,
+        fromPreviousShow: form.previousDotsImport !== undefined,
+    });
+    let finalizeResult: number;
+    try {
+        finalizeResult = await window.electron.finalizeNewShowDraft(
+            targetPath,
+            form.projectName,
+        );
+    } catch (error) {
+        forgetNewShow();
+        throw error;
+    }
     // OPEN_STOPPED_STATUS: the show was saved, but a main-process dialog already explained why
     // it didn't open (convert on open), and the window is reloading.
     if (finalizeResult === OPEN_STOPPED_STATUS) return;
     if (finalizeResult !== 200) {
+        forgetNewShow();
         throw new NewShowError(
             tolgee.t(
                 "launchpage.newShow.errors.saveFailed",

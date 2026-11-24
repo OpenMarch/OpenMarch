@@ -8,6 +8,9 @@
  *   after they ran. Never one event per action.
  * - `action refused`: someone tried an action that can't run now; carries the reason shown.
  * - `palette search found nothing`: a command palette search with no results.
+ * - Milestones (`reportMilestone`): steps of getting a show going, such as `show created`,
+ *   `marchers added`, `music imported` and `export finished`, for the new-user funnel. The
+ *   new-show wizard's own marchers and music go out with `show created` (`rememberNewShow`).
  */
 import type { ActionRunSource } from "@/shortcuts/registry";
 
@@ -79,6 +82,8 @@ export interface UsageTracker {
     actionRan(id: string, source: ActionRunSource): void;
     actionRefused(id: string, source: ActionRunSource, reason: string): void;
     paletteSearchFoundNothing(query: string): void;
+    /** Sends a milestone event as it is (`reportMilestone`). */
+    milestone(event: Milestone, properties?: Record<string, unknown>): void;
     /** Sends the counts gathered so far, if any, and starts a new window (`sendNow`: see `CaptureFn`). */
     flush(sendNow?: boolean): void;
 }
@@ -141,6 +146,9 @@ export function createUsageTracker(
             searchesSent.add(text);
             capture("palette search found nothing", { query: text });
         },
+        milestone(event, properties = {}) {
+            capture(event, properties);
+        },
         flush(sendNow = false) {
             const total = Object.values(actions).reduce((a, b) => a + b, 0);
             const at = now();
@@ -184,6 +192,146 @@ export function usageTracker(): UsageTracker | null {
 /** A palette search that found nothing; no-op until `installUsageEvents` runs. */
 export function reportPaletteSearchFoundNothing(query: string): void {
     installed?.paletteSearchFoundNothing(query);
+}
+
+/** The milestones of getting a show going, for the new-user funnel. */
+export type Milestone =
+    | "show opened"
+    | "show created"
+    | "marchers added"
+    | "music imported"
+    | "export finished"
+    | "export failed";
+
+/**
+ * Milestones that change a show. They count only while a show is open: the new-show wizard
+ * adds marchers and music to a draft before the show exists, and those go out with
+ * `show created` instead (`rememberNewShow`).
+ */
+const SHOW_EDIT_MILESTONES: ReadonlySet<Milestone> = new Set([
+    "marchers added",
+    "music imported",
+]);
+
+let showOpen = false;
+
+/** Whether a show is open in this window (`App`), for `SHOW_EDIT_MILESTONES`. */
+export function setShowOpen(open: boolean): void {
+    showOpen = open;
+}
+
+/**
+ * A milestone, with counts and kinds only (never names, titles or paths); no-op until
+ * `installUsageEvents` runs. Never throws, so analytics can't break the step it reports.
+ */
+export function reportMilestone(
+    event: Milestone,
+    properties?: Record<string, unknown>,
+): void {
+    if (SHOW_EDIT_MILESTONES.has(event) && !showOpen) return;
+    try {
+        installed?.milestone(event, properties);
+    } catch (error) {
+        console.warn("Analytics milestone failed:", error);
+    }
+}
+
+/** What the new-show wizard made, kept across the reload that opens the new show. */
+export interface NewShowMilestones {
+    tempo: "xml" | "tempo_only" | "skip";
+    audio: "audio" | "skip";
+    marchers: number;
+    fromPreviousShow: boolean;
+}
+
+const NEW_SHOW_KEY = "openmarch:analytics:newShow";
+
+/**
+ * Keeps the wizard's choices until the new show has loaded: saving the show reloads the window,
+ * which can cut off events sent just before. `reportWindowLoaded` sends them from the new page.
+ */
+export function rememberNewShow(show: NewShowMilestones): void {
+    try {
+        sessionStorage.setItem(NEW_SHOW_KEY, JSON.stringify(show));
+    } catch {
+        // No storage (private window, tests): the milestones are lost, nothing else
+    }
+}
+
+/** Drops the wizard's choices when saving the show failed. */
+export function forgetNewShow(): void {
+    try {
+        sessionStorage.removeItem(NEW_SHOW_KEY);
+    } catch {
+        // See rememberNewShow
+    }
+}
+
+function takeNewShow(): NewShowMilestones | null {
+    try {
+        const stored = sessionStorage.getItem(NEW_SHOW_KEY);
+        sessionStorage.removeItem(NEW_SHOW_KEY);
+        return stored ? (JSON.parse(stored) as NewShowMilestones) : null;
+    } catch {
+        return null;
+    }
+}
+
+let windowLoadReported = false;
+
+/**
+ * Once per window load (each show open, create or close reloads it): sends `show created` and
+ * the wizard's marchers and music if this load follows the new-show wizard, then `show opened`
+ * if a show is open, with `new_show` saying which.
+ */
+export function reportWindowLoaded(showIsOpen: boolean): void {
+    setShowOpen(showIsOpen);
+    if (windowLoadReported) return;
+    windowLoadReported = true;
+    const newShow = takeNewShow();
+    if (newShow) {
+        reportMilestone("show created", {
+            tempo: newShow.tempo,
+            audio: newShow.audio,
+            marchers: sizeBucket(newShow.marchers),
+            from_previous_show: newShow.fromPreviousShow,
+        });
+        if (showIsOpen) {
+            if (newShow.marchers > 0)
+                reportMilestone("marchers added", {
+                    count: newShow.marchers,
+                    source: "new_show",
+                });
+            if (newShow.tempo === "xml")
+                reportMilestone("music imported", {
+                    kind: "musicxml",
+                    source: "new_show",
+                });
+            if (newShow.audio === "audio")
+                reportMilestone("music imported", {
+                    kind: "audio",
+                    source: "new_show",
+                });
+        }
+    }
+    if (showIsOpen)
+        reportMilestone("show opened", { new_show: newShow !== null });
+}
+
+/** For tests: forget that this window load was reported. */
+export function resetWindowLoadForTests(): void {
+    windowLoadReported = false;
+    showOpen = false;
+}
+
+/** A count in a range, so sizes say how big without saying exactly: "0", "1-9", "10-49", ... */
+export function sizeBucket(count: number): string {
+    if (!(count > 0)) return "0";
+    if (count < 10) return "1-9";
+    if (count < 50) return "10-49";
+    if (count < 150) return "50-149";
+    if (count < 400) return "150-399";
+    return "400+";
 }
 
 /** How often the action counts are sent while the window stays open. */

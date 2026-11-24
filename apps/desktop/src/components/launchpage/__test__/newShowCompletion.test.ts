@@ -158,6 +158,18 @@ describeDbTests("completeNewShow", (it) => {
             "Test Show",
         );
 
+        // Analytics keep only the wizard's choices, never the show's name or path
+        const remembered = sessionStorage.getItem(
+            "openmarch:analytics:newShow",
+        );
+        expect(Object.keys(JSON.parse(remembered ?? "{}")).sort()).toEqual([
+            "audio",
+            "fromPreviousShow",
+            "marchers",
+            "tempo",
+        ]);
+        expect(remembered).not.toMatch(/Test Show|tmp|Designer/);
+
         expect(await getFieldPropertiesImage()).toBeNull();
         expect(await getSectionAppearances({ db })).toEqual([]);
         expect(await getTags({ db })).toEqual([]);
@@ -378,6 +390,10 @@ describeDbTests("completeNewShow", (it) => {
         await expect(completeNewShow(form, queryClient)).rejects.toThrow(
             /failed to save show/i,
         );
+        // A show that wasn't saved isn't reported as created
+        expect(
+            sessionStorage.getItem("openmarch:analytics:newShow"),
+        ).toBeNull();
         await completeNewShow(form, queryClient);
 
         const beats = await queryClient.fetchQuery(

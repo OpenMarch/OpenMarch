@@ -1,4 +1,5 @@
 import { threeZoomControls } from "@/field/three/fieldNavigation";
+import { reportWindowLoaded } from "@/analytics/usageEvents";
 import Toolbar, { PreviewToolbar } from "@/components/toolbar/Toolbar";
 import Inspector from "@/components/inspector/Inspector";
 import SidebarModal from "@/components/sidebar/SidebarModal";
@@ -167,6 +168,9 @@ function App() {
         // Check if database is ready
         void window.electron.databaseIsReady().then((result: boolean) => {
             setDatabaseIsReady(result);
+            // Only here, as the window loads: opening, creating or closing a show reloads it,
+            // and the page being left must not report the show it hands over
+            reportWindowLoaded(result);
         });
     }, []);
 
