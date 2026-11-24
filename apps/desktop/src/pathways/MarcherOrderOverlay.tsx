@@ -105,6 +105,8 @@ import {
 import { usePathPenStore } from "./pathPenStore";
 import OrderCometRings from "./OrderCometRings";
 import { prefersReducedMotion } from "@/components/timeline/reducedMotion";
+import { useFieldQuality } from "@/field/three/useFieldQuality";
+import { cometOnDarkFloor } from "./orderComet";
 import type { FloorSampler } from "./floorSampler";
 import { resolveMarcherLook } from "@/entity-components/appearance";
 
@@ -112,8 +114,29 @@ import { resolveMarcherLook } from "@/entity-components/appearance";
 const LANE_INK = "#1c1f26";
 /** How far the selection box stands clear of the selection's lane and names, in CSS px (step 4j) */
 const SELECTION_CLEARANCE = 5;
-/** Whether known orders run their comet (`OrderCometRings`): not for someone who turned motion down */
-const cometRuns = !prefersReducedMotion();
+/**
+ * Whether known orders run their comet (`OrderCometRings`): not for someone who turned motion down,
+ * nor while the field doesn't animate (Performance mode, a slow machine). Follows either changing.
+ */
+function useCometRuns(): boolean {
+    const reduced = useSyncExternalStore(
+        subscribeReducedMotion,
+        prefersReducedMotion,
+        () => false,
+    );
+    const animates = useFieldQuality().settings.animateView;
+    return !reduced && animates;
+}
+
+function subscribeReducedMotion(onChange: () => void): () => void {
+    const query =
+        typeof window === "undefined"
+            ? undefined
+            : window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    if (!query) return () => {};
+    query.addEventListener("change", onChange);
+    return () => query.removeEventListener("change", onChange);
+}
 
 /**
  * A guessed order's colors on a light or a dark field (its hollow dashed outline has no ground of
@@ -283,6 +306,10 @@ interface DrawnLine {
     readonly box: Box;
     /** What the lane covers as drawn: its points as wide as the lane, and the tip */
     readonly extent: Box;
+    /** Who the line is, so its comet starts again at the leader when another line shows instead */
+    readonly who?: string;
+    /** Its comet is drawn light: the floor under it is dark */
+    readonly cometLight?: boolean;
 }
 
 /**
@@ -530,6 +557,7 @@ export default function MarcherOrderOverlay({
         ),
     );
     const alt = useAltHeld(showing);
+    const cometRuns = useCometRuns();
 
     // The lines in force (Always) follow the forms and the beat, never a fill
     const inForce = useMemo(
@@ -688,8 +716,8 @@ export default function MarcherOrderOverlay({
             dotRadius,
         );
         const busy = busyOf(lineIds, linesAt);
-        return shown.map((line, l) =>
-            drawLine({
+        return shown.map((line, l) => ({
+            ...drawLine({
                 points: pointsOf[l]!,
                 marchers: pointsOf[l]!.length,
                 guessed: line.guessed,
@@ -706,7 +734,9 @@ export default function MarcherOrderOverlay({
                 floorAt,
                 labels: allLabels,
             }),
-        );
+            who: line.order.join(","),
+            cometLight: cometOnDarkFloor(pointsOf[l]!.map(floorAt)),
+        }));
     }, [
         marchers,
         floor,
@@ -722,6 +752,7 @@ export default function MarcherOrderOverlay({
         labels,
         labelBox,
         selectedSet,
+        cometRuns,
     ]);
     // What the selection's own line covers (its lane, tip and names), for the selection box to stand
     // clear of (step 4j): in field units, CLEARANCE screen px out. None for a guess (Alt shows it only
@@ -842,13 +873,13 @@ export default function MarcherOrderOverlay({
         zoom,
     ]);
 
-    // The names the halos and the comet are cut away from, as the lanes are: a halo or the comet's
-    // ring reaches out to where a name sits above its dot
+    // The names the halos are cut away from, as the lanes are: a selected dot's halo reaches out to
+    // where its name sits above it (the comet cuts its own)
     const nameCut = useMemo(() => {
         const names = [...new Set(drawn.flatMap((line) => line.labelHoles))];
         if (names.length === 0) return null;
-        // Wide enough for the comet's widest ring round the outermost dots
-        const margin = 60;
+        // Clear of the halos round the outermost dots
+        const margin = 20;
         return {
             names,
             minX: Math.min(...drawn.map((l) => l.box.minX)) - margin,
@@ -899,6 +930,35 @@ export default function MarcherOrderOverlay({
                     ))}
                 </g>
             </svg>
+            {/*
+              The comets in a layer of their own, under the marks: redrawn every frame while they
+              run, without repainting the halos and their cut-out names
+            */}
+            {!sweep && cometRuns && (
+                <svg
+                    className="pointer-events-none absolute inset-0 z-[5] h-full w-full"
+                    style={{ willChange: "transform" }}
+                    data-testid="marcherOrderComets"
+                >
+                    <g transform={`translate(${view.panX} ${view.panY})`}>
+                        {drawn.map(
+                            (line, i) =>
+                                !line.guessed &&
+                                line.points.length >= 2 && (
+                                    <OrderCometRings
+                                        key={line.who ?? `comet-${i}`}
+                                        id={`${prefix}-comet${i}`}
+                                        points={line.points}
+                                        radius={reach + haloWidth(dotRadius)}
+                                        dotRadius={dotRadius}
+                                        light={line.cometLight ?? false}
+                                        names={line.labelHoles}
+                                    />
+                                ),
+                        )}
+                    </g>
+                </svg>
+            )}
             <svg
                 className="pointer-events-none absolute inset-0 z-[5] h-full w-full"
                 data-testid="marcherOrderOverlay"
@@ -964,22 +1024,6 @@ export default function MarcherOrderOverlay({
                                 data-tone={tone}
                             />
                         ))}
-                        {!sweep &&
-                            drawn.map(
-                                (line, i) =>
-                                    !line.guessed &&
-                                    line.points.length >= 2 && (
-                                        <OrderCometRings
-                                            key={`comet-${i}`}
-                                            points={line.points}
-                                            radius={
-                                                reach + haloWidth(dotRadius)
-                                            }
-                                            dotRadius={dotRadius}
-                                            light={isDarkField(fieldBackground)}
-                                        />
-                                    ),
-                            )}
                     </g>
                     {drawn.flatMap((line, l) =>
                         line.numbers.map((badge, i) => (

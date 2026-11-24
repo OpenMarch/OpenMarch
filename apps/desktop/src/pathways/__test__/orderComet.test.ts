@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { cometHead, cometStrength, cometTiming } from "../orderComet";
+import {
+    cometHead,
+    cometOnDarkFloor,
+    cometRingSize,
+    cometStrength,
+    cometTiming,
+} from "../orderComet";
 
 describe("cometTiming", () => {
     it("keeps short lines from flashing and long lines from crawling", () => {
@@ -49,5 +55,33 @@ describe("cometStrength", () => {
 
     it("is dark while the comet rests", () => {
         expect(cometStrength(0, null, 4)).toBe(0);
+    });
+});
+
+describe("cometRingSize", () => {
+    it("reaches past the lit ring's glow", () => {
+        const { grow, width, reach } = cometRingSize(10, 4);
+        expect(grow).toBe(3);
+        expect(width).toBe(1.6);
+        expect(reach).toBeGreaterThanOrEqual(10 + 1.5 + grow + width * 2.4);
+    });
+
+    it("grows with the dot when zoomed in", () => {
+        expect(cometRingSize(60, 40).reach).toBeGreaterThan(60 + 20 + 12 * 2.4);
+    });
+});
+
+describe("cometOnDarkFloor", () => {
+    it("is light rings on a dark floor and dark rings on a light one", () => {
+        expect(cometOnDarkFloor([0.1, 0.2, 0.3])).toBe(true);
+        expect(cometOnDarkFloor([0.9, 0.8, 1])).toBe(false);
+    });
+
+    it("goes by the floor under most of the line", () => {
+        expect(cometOnDarkFloor([0.1, 0.9, 0.9, 0.9])).toBe(false);
+    });
+
+    it("is dark rings with nothing to go by", () => {
+        expect(cometOnDarkFloor([])).toBe(false);
     });
 });

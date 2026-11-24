@@ -65,3 +65,27 @@ export function cometStrength(
     if (behind < 0) return 1 + behind;
     return 1 - behind / tail;
 }
+
+/**
+ * How a comet ring is drawn round a dot of `dotRadius` on screen, sitting at `radius`: how much it
+ * grows when lit, its stroke width, and how far its outer glow reaches from the dot's center
+ */
+export function cometRingSize(
+    radius: number,
+    dotRadius: number,
+): { grow: number; width: number; reach: number } {
+    const grow = Math.max(3, dotRadius * 0.5);
+    const width = Math.max(1.6, dotRadius * 0.3);
+    // The glow's circle sits 1.6 widths out and is up to 1.6 widths wide
+    return { grow, width, reach: radius + 1.5 + grow + width * 2.4 + 1 };
+}
+
+/**
+ * Whether a line's comet is drawn in light rings: the floor under its marchers (`brightness`, 0
+ * dark to 1 light, one per marcher) is dark on the whole
+ */
+export function cometOnDarkFloor(brightness: readonly number[]): boolean {
+    if (brightness.length === 0) return false;
+    const mean = brightness.reduce((sum, b) => sum + b, 0) / brightness.length;
+    return mean < 0.4;
+}
