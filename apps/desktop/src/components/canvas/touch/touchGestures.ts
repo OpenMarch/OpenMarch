@@ -31,10 +31,7 @@ export interface GesturePoint {
 
 export interface PointerInput<
     T extends "down" | "move" | "up" | "cancel" =
-        | "down"
-        | "move"
-        | "up"
-        | "cancel",
+        "down" | "move" | "up" | "cancel",
 > {
     type: T;
     id: number;

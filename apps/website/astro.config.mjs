@@ -10,6 +10,9 @@ import tailwindcss from "@tailwindcss/vite";
 
 // https://astro.build/config
 export default defineConfig({
+    // Astro 7 defaults to "jsx", which drops the space between inline
+    // elements and the text on the next line (e.g. the download count).
+    compressHTML: true,
     redirects: {
         "/alexdumo": "/about/alexdumo",
         "/developers/contributing": "/developers/codebase",

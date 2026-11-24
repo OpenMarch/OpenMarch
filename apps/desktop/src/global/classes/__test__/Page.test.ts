@@ -11,6 +11,11 @@ import Beat from "../Beat";
 import { conToastError } from "@/utilities/utils";
 import { DatabasePage, FIRST_BEAT_ID, FIRST_PAGE_ID } from "@/db-functions";
 
+// Mock the conToastError function
+vi.mock("@/utilities/utils", () => ({
+    conToastError: vi.fn(),
+}));
+
 describe("Page", () => {
     describe("generatePageNames", () => {
         it('should generate a list with just "0" when input is empty', () => {
@@ -893,11 +898,6 @@ describe("Page", () => {
     vi.spyOn(console, "error").mockImplementation(() => {});
 
     describe("yankOrPushPagesAfterIndex", () => {
-        // Mock the conToastError function
-        vi.mock("@/utilities/utils", () => ({
-            conToastError: vi.fn(),
-        }));
-
         // Helper function to create test data
         const createTestData = (
             numPages: number = 3,

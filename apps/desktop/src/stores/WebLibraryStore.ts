@@ -13,9 +13,7 @@ import type {
 interface WebLibraryStoreState {
     /** Where shows are kept: "opfs" (browser storage) or "memory" (this tab only). */
     storage:
-        | { kind: "opfs" }
-        | { kind: "memory"; problem: StorageProblem }
-        | null;
+        { kind: "opfs" } | { kind: "memory"; problem: StorageProblem } | null;
     /** Whether the browser agreed to keep the shows when space runs low. */
     persisted: boolean | null;
     library: LibraryState | null;

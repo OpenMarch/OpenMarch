@@ -216,7 +216,8 @@ test("Delete page", async ({ electronApp }) => {
         button: "right",
     });
     await page.getByRole("button", { name: "In Place" }).click();
-    for (const pageName of ["0", "1"]) // page is renamed to 1
+    for (const pageName of ["0", "1"])
+        // page is renamed to 1
         await expect(page.locator("#pages")).toContainText(pageName);
     await expect(page.locator("#pages")).not.toContainText("2");
 });

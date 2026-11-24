@@ -4,7 +4,7 @@ import {
     defaultSettings,
     useUiSettingsStore,
 } from "../UiSettingsStore";
-import { ElectronApi } from "electron/preload";
+import type { ElectronApi } from "electron/preload";
 import { describe, expect, it, vi, beforeEach } from "vitest";
 
 window.electron = {

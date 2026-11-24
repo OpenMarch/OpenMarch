@@ -8,7 +8,7 @@ import {
 } from "@testing-library/react";
 import { ThemeProvider, useTheme } from "@/context/ThemeContext";
 import "@testing-library/jest-dom/vitest";
-import { ElectronApi } from "electron/preload";
+import type { ElectronApi } from "electron/preload";
 import { TolgeeProvider } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
 

@@ -669,8 +669,7 @@ describe("DatabaseSync Repair", () => {
             const utility = newDb
                 .prepare("SELECT * FROM utility WHERE id = 0")
                 .get() as
-                | { id: number; last_page_counts: number | null }
-                | undefined;
+                { id: number; last_page_counts: number | null } | undefined;
 
             // The new database should have initialized utility table
             expect(utility).toBeDefined();

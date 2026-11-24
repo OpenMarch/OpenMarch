@@ -85,8 +85,7 @@ const generateBeats = (numberOfBeats: number): DatabaseBeat[] => {
         position: 1,
         include_in_measure: true,
         notes: faker.helpers.arrayElement([faker.lorem.word(), null]) as
-            | string
-            | null,
+            string | null,
         created_at: faker.date.recent().toISOString(),
         updated_at: faker.date.recent().toISOString(),
     });
@@ -95,8 +94,7 @@ const generateBeats = (numberOfBeats: number): DatabaseBeat[] => {
     for (let i = 2; i < numberOfBeats; i++) {
         const duration = faker.helpers.arrayElement(commonDurations);
         const notes = faker.helpers.arrayElement([faker.lorem.word(), null]) as
-            | string
-            | null;
+            string | null;
 
         beats.push({
             id: i,
@@ -381,8 +379,7 @@ const createMarcherPage = (
     });
 
     const notes = faker.helpers.arrayElement([faker.lorem.sentence(), null]) as
-        | string
-        | null;
+        string | null;
 
     return {
         id,

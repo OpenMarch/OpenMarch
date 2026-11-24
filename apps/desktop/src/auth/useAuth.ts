@@ -5,6 +5,7 @@
 
 import { useEffect, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useShallow } from "zustand/react/shallow";
 import { useAuthStore } from "@/auth/AuthStore";
 import { isSignInEnabled } from "@/global/auth/constants";
 import type { AuthState } from "../../electron/main/auth/types";
@@ -62,12 +63,15 @@ export function useAuth() {
     const { setAuthState, setLoading, setError } = useAuthStore();
 
     // Get reactive state from Zustand
-    const authState = useAuthStore((state) => ({
-        isAuthenticated: state.isAuthenticated,
-        isLoading: state.isLoading,
-        user: state.user,
-        error: state.error,
-    }));
+    // useShallow keeps the object stable between renders; zustand 5 loops on a fresh object.
+    const authState = useAuthStore(
+        useShallow((state) => ({
+            isAuthenticated: state.isAuthenticated,
+            isLoading: state.isLoading,
+            user: state.user,
+            error: state.error,
+        })),
+    );
 
     // Initial fetch of auth state
     const {

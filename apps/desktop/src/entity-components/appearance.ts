@@ -215,8 +215,7 @@ const shapeTypeToSchemaShape = (
  */
 export function resolveAppearanceFromStack(
     appearancesInput:
-        | AppearanceComponentOptional
-        | AppearanceComponentOptional[],
+        AppearanceComponentOptional | AppearanceComponentOptional[],
     fieldTheme: FieldTheme,
 ): ResolvedPerformerAppearance {
     const appearances = Array.isArray(appearancesInput)
