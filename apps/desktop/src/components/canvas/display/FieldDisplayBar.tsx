@@ -4,9 +4,10 @@ import { TooltipClassName } from "@openmarch/ui";
 import { useFieldLayerRef } from "@/components/canvas/fieldLayers";
 import {
     BoundingBoxIcon,
+    HandGrabbingIcon,
     ListNumbersIcon,
     QuestionIcon,
-    TagIcon,
+    TextAaIcon,
     type Icon,
 } from "@phosphor-icons/react";
 import { useTranslate } from "@tolgee/react";
@@ -16,7 +17,6 @@ import {
     ShortcutTooltip,
     TransportTooltipProvider,
 } from "@/components/timeline/ShortcutTooltip";
-import { SECTION_ICONS } from "@/components/marcher/sectionIcons/SectionIcon";
 import {
     useUiSettingsStore,
     type EquipmentIconPlace,
@@ -104,7 +104,8 @@ export default function FieldDisplayBar() {
                         setting="marcherLabels"
                         fallback="auto"
                         choices={LABEL_CHOICES}
-                        icon={TagIcon}
+                        // Drill-number text on the field
+                        icon={TextAaIcon}
                         labelKey="toolbar.view.labels"
                         testId="field-display-labels"
                     />
@@ -113,7 +114,8 @@ export default function FieldDisplayBar() {
                         setting="equipmentIcons"
                         fallback="changed"
                         choices={EQUIPMENT_CHOICES}
-                        icon={SECTION_ICONS.Trumpet}
+                        // What each performer holds
+                        icon={HandGrabbingIcon}
                         labelKey="toolbar.view.equipment"
                         testId="field-display-equipment"
                         keepOpen

@@ -12,18 +12,19 @@ import {
 import { heldValueAt } from "./equipment";
 import { itemKeyOf } from "./equipmentItems";
 
-/** An icon the field can draw: a section's, or the marching (bell-front) tuba. */
-export type EquipmentIconKey = SectionKey | "MarchingTuba";
+/** An icon the field can draw: a section's, the marching (bell-front) tuba, or the sabre. */
+export type EquipmentIconKey = SectionKey | "MarchingTuba" | "Sabre";
 
 /**
- * Each catalog item's icon. Swing flags take the Flag icon, the nearest drawn; items without
- * one take "Other" (`ITEMS_WITHOUT_ICON`).
+ * Each catalog item's icon. Swing flags take the Flag icon, the nearest drawn; the sabre has its
+ * own (`SabreIcon`); values without one take "Other" (`ITEMS_WITHOUT_ICON`).
  */
 const ITEM_ICON: Readonly<Record<string, EquipmentIconKey>> = {
     flag: "Flag",
     swingFlag: "Flag",
     doubleSwingFlag: "Flag",
     rifle: "Rifle",
+    sabre: "Sabre",
     trumpet: "Trumpet",
     mellophone: "Mellophone",
     baritone: "Baritone",
@@ -49,7 +50,6 @@ const ITEM_ICON: Readonly<Record<string, EquipmentIconKey>> = {
 
 /** Catalog items and values with no icon of their own: they show "Other". */
 export const ITEMS_WITHOUT_ICON: readonly string[] = [
-    "sabre",
     "none",
     // Older shows' generic values: a wind instrument, a drum
     "winds",
@@ -85,8 +85,9 @@ export type EquipmentIconPlace = "beside" | "dot" | "label";
 
 /**
  * Each performer's icon at `count`. A performer holding something other than their section's
- * usual item gets that item's icon; with `everyone`, the others get their section's own icon
- * (a section's icon, such as Marimba, says more than its usual item, which some sections lack).
+ * usual item gets that item's icon; with `everyone`, the others get the icon of what they hold
+ * too: their usual item's (a flag for the Color Guard). Only a usual with no item icon of its own
+ * (a section without a catalog item, such as Marimba) takes the section's icon.
  */
 export function equipmentIconsAt({
     compiled,
@@ -107,8 +108,13 @@ export function equipmentIconsAt({
     for (const [id, usual] of usualValue) {
         const held = heldValueAt(compiled, id, count);
         if (held !== usual) icons.set(id, iconOfValue(held));
-        else if (shown === "everyone")
-            icons.set(id, sectionIconKey(sectionOf(id) ?? ""));
+        else if (shown === "everyone") {
+            const own = iconOfValue(usual);
+            icons.set(
+                id,
+                own !== "Other" ? own : sectionIconKey(sectionOf(id) ?? ""),
+            );
+        }
     }
     return icons;
 }

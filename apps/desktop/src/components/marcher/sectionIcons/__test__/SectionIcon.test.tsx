@@ -3,6 +3,7 @@ import { render } from "@testing-library/react";
 import { SECTIONS } from "@/global/classes/Sections";
 import SectionIcon, {
     MarchingTubaIcon,
+    SabreIcon,
     SECTION_ICONS,
     getSectionIcon,
 } from "../SectionIcon";
@@ -51,6 +52,24 @@ describe("section icons", () => {
         const { container } = render(<MarchingTubaIcon size={24} />);
         expect(container.querySelector("svg")).not.toBeNull();
         expect(MarchingTubaIcon).not.toBe(SECTION_ICONS.Tuba);
+    });
+
+    it("draws the Equipment catalog's sabre, its own icon in the same style (#992)", () => {
+        const { container } = render(<SabreIcon size={24} weight="bold" />);
+        const svg = container.querySelector("svg");
+        expect(svg?.getAttribute("viewBox")).toBe("0 0 256 256");
+        expect(svg?.getAttribute("width")).toBe("24");
+        // Lying flat, shown at 45 degrees like the Rifle, with bold's strokes
+        const drawing = svg?.querySelector("g");
+        expect(drawing?.getAttribute("transform")).toBe("rotate(-45 128 128)");
+        const [main, detail] = [...(drawing?.children ?? [])];
+        expect(main?.getAttribute("stroke-width")).toBe("20");
+        expect(detail?.getAttribute("stroke-width")).toBe("12");
+        expect(
+            main?.querySelectorAll("path, line, circle").length,
+        ).toBeGreaterThan(0);
+        expect(SabreIcon).not.toBe(SECTION_ICONS.Other);
+        expect(SabreIcon).not.toBe(SECTION_ICONS.ColorGuard);
     });
 
     it("follows the weight prop", () => {

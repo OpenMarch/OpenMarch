@@ -103,6 +103,12 @@ export const MarchingTubaIcon = createSectionIcon(
     ALTERNATE_SECTION_ICON_GLYPHS.MarchingTuba,
 );
 
+/** A color guard sabre, for the Equipment catalog's Sabre item; no section holds one. */
+export const SabreIcon = createSectionIcon(
+    "Sabre",
+    ALTERNATE_SECTION_ICON_GLYPHS.Sabre,
+);
+
 /**
  * Gets the icon for a section by the name stored on a marcher, e.g. "Bass Drum".
  * Unknown names get the "Other" icon, the same fallback as {@link getSectionObjectByName}.

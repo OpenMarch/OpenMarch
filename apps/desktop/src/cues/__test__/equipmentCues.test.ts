@@ -108,10 +108,9 @@ describe("equipment cues (#992)", () => {
             cue(8, "trumpet", [14]),
         ];
         const show = compileShowCues(MARCHERS, BEATS, cues);
-        // A sabre has no icon of its own: Other
         expect([...iconsAt(show, 8)]).toEqual([
             [7, "Trumpet"],
-            [13, "Other"],
+            [13, "Sabre"],
         ]);
         expect(whoHolds(show.compiled, "winds", 8)).toContain(7);
     });
@@ -123,8 +122,9 @@ describe("equipment cues (#992)", () => {
         const everyone = iconsAt(show, 8, "everyone");
         expect(everyone.size).toBe(MARCHERS.length);
         expect(everyone.get(1)).toBe("MarchingTuba");
+        // Their own instrument's icon: the Color Guard's flag, not the section's crossed icon
         expect(everyone.get(2)).toBe("Rifle");
-        expect(everyone.get(7)).toBe("ColorGuard");
+        expect(everyone.get(7)).toBe("Flag");
         expect(everyone.get(13)).toBe("Trumpet");
     });
 

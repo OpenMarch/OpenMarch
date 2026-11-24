@@ -763,4 +763,26 @@ export const ALTERNATE_SECTION_ICON_GLYPHS = {
             </>
         ),
     },
+    /**
+     * A color guard sabre, for the Equipment catalog's Sabre (no section holds one): a slightly
+     * curved blade to its point, a cross guard, a knuckle bow and the grip, lying flat like the
+     * Rifle and shown at 45 degrees.
+     */
+    Sabre: {
+        main: (
+            <>
+                <path d="M88 108Q172 102 244 80Q186 136 88 148Z" />
+                <line x1="72" y1="92" x2="72" y2="164" />
+                <line x1="26" y1="128" x2="72" y2="128" />
+                <circle cx="16" cy="128" r="8" />
+            </>
+        ),
+        detail: (
+            <>
+                <path d="M100 128Q170 122 226 98" />
+                <path d="M72 164Q42 172 26 140" />
+            </>
+        ),
+        diagonal: true,
+    },
 } satisfies Record<string, SectionIconGlyph>;

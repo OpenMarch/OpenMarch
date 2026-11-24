@@ -19,6 +19,7 @@ import {
 } from "three";
 import {
     MarchingTubaIcon,
+    SabreIcon,
     SECTION_ICONS,
 } from "@/components/marcher/sectionIcons/SectionIcon";
 import type { EquipmentIconKey } from "@/cues/equipmentIcons";
@@ -40,6 +41,7 @@ const ICONS: ReadonlyMap<EquipmentIconKey, typeof MarchingTubaIcon> = new Map([
         typeof MarchingTubaIcon,
     ][]),
     ["MarchingTuba", MarchingTubaIcon],
+    ["Sabre", SabreIcon],
 ]);
 
 let loading: Promise<IconAtlas> | null = null;
