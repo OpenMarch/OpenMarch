@@ -6,7 +6,8 @@
  * on a white field), a faint rim, and a halo round each of its dots in the tone that sets that dot's
  * color apart. The fade is multiplied onto the field, so it reads as ink. An order that runs back over its own
  * marchers loses the tip and shows its numbers; one whose legs cross thins to a thread with darts and
- * shows its numbers. A guessed order isn't drawn at rest; while Alt is held it shows hollow and
+ * shows its numbers. A known order also runs a comet (`OrderComet`): a ring that lights each dot in
+ * turn from the leader, with a fading tail behind it. A guessed order isn't drawn at rest; while Alt is held it shows hollow and
  * dashed. Position badges show while Alt is held, and always while Set order is on (touch has no
  * Alt). Set order draws the lane it has picked so far, growing behind the pointer, with the bar that
  * says how to go on and keeps or cancels it.
@@ -102,6 +103,7 @@ import {
     type PlacedBadge,
 } from "./orderLane";
 import { usePathPenStore } from "./pathPenStore";
+import OrderComet from "./OrderComet";
 import type { FloorSampler } from "./floorSampler";
 import { resolveMarcherLook } from "@/entity-components/appearance";
 
@@ -900,6 +902,20 @@ export default function MarcherOrderOverlay({
                             data-tone={tone}
                         />
                     ))}
+                    {!sweep &&
+                        drawn.map(
+                            (line, i) =>
+                                !line.guessed &&
+                                line.points.length >= 2 && (
+                                    <OrderComet
+                                        key={`comet-${i}`}
+                                        points={line.points}
+                                        radius={reach + haloWidth(dotRadius)}
+                                        dotRadius={dotRadius}
+                                        light={isDarkField(fieldBackground)}
+                                    />
+                                ),
+                        )}
                     {drawn.flatMap((line, l) =>
                         line.numbers.map((badge, i) => (
                             <OrderBadge
