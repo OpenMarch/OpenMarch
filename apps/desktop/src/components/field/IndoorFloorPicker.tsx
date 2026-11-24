@@ -131,7 +131,10 @@ function NumberField({
                     const filtered = e.target.value.replace(/[^\d.]/g, "");
                     setDraft(filtered.replace(/\.+/g, "."));
                 }}
-                onBlur={commit}
+                // Saved once focus has moved on: saving during the blur changes the page while
+                // nothing has focus, and the dialog's focus trap then takes focus from the
+                // next field
+                onBlur={() => setTimeout(commit)}
                 onKeyDown={(e) => {
                     if (e.key === "Enter") commit();
                 }}
