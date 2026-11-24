@@ -53,6 +53,12 @@ export function trackShape(f: Frame): {
 /**
  * Point on a stadium outline at parameter `t` in [0, 1), starting at the side-1
  * end of the back straight. World x, z.
+ *
+ * `t` is measured along the outline of radius `ref` (default `r`). Passing the
+ * same `ref` for several radii keeps their points side by side: the same spot
+ * on a straight, or the same angle on a bend. Without it, each radius spends a
+ * different share of `t` on its straights, so the inner and outer edges of a
+ * ribbon drift apart by meters around the bends.
  */
 export function stadiumAt(
     cx: number,
@@ -60,9 +66,10 @@ export function stadiumAt(
     straight: number,
     r: number,
     t: number,
+    ref: number = r,
 ): Vector2 {
     const L = 2 * straight;
-    const arc = Math.PI * r;
+    const arc = Math.PI * ref;
     const total = 2 * L + 2 * arc;
     let s = (((t % 1) + 1) % 1) * total;
     if (s < L) return new Vector2(cx - straight + s, cz - r);
@@ -105,17 +112,19 @@ function samples(
 export function buildTrackRibbon(f: Frame, high: boolean): Built {
     const { straight, inner, outer } = trackShape(f);
     const q = new QuadBuilder();
-    const ts = samples(straight, inner, high ? 6 : 100, high ? 48 : 24);
     const mid = (inner + outer) / 2;
+    // Both edges are sampled against the lane center line, so each quad
+    // spans the track square to its lanes.
+    const ts = samples(straight, mid, high ? 6 : 100, high ? 48 : 24);
     const total = 4 * straight + 2 * Math.PI * mid;
     const up = new Vector3(0, 1, 0);
     for (let i = 0; i < ts.length; i++) {
         const t0 = ts[i];
         const t1 = i + 1 < ts.length ? ts[i + 1] : 1;
-        const a0 = stadiumAt(f.cx, f.cz, straight, inner, t0);
-        const a1 = stadiumAt(f.cx, f.cz, straight, inner, t1);
-        const b0 = stadiumAt(f.cx, f.cz, straight, outer, t0);
-        const b1 = stadiumAt(f.cx, f.cz, straight, outer, t1);
+        const a0 = stadiumAt(f.cx, f.cz, straight, inner, t0, mid);
+        const a1 = stadiumAt(f.cx, f.cz, straight, inner, t1, mid);
+        const b0 = stadiumAt(f.cx, f.cz, straight, outer, t0, mid);
+        const b1 = stadiumAt(f.cx, f.cz, straight, outer, t1, mid);
         const u0 = (t0 * total) / TRACK_TILE;
         const u1 = (t1 * total) / TRACK_TILE;
         q.quad(
