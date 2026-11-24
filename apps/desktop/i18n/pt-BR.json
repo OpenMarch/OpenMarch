@@ -1673,12 +1673,8 @@
             "medium": "Médio",
             "large": "Grande",
             "summary": {
-                "small": "2 marimbas, 2 vibrafones, um rack, um sintetizador e 2 caixas de som",
-                "medium": "4 marimbas, 3 vibrafones, xilofone, glockenspiel, rack, bateria, sintetizador e 4 caixas de som",
-                "large": "6 marimbas, 4 vibrafones, xilofone, glockenspiel, 2 racks, bateria, 2 sintetizadores e 6 caixas de som",
                 "none": "Sem pit. Você pode montar um depois no painel Integrantes."
             },
-            "always": "Cada um também adiciona um pódio na linha de 50 e uma mesa de som atrás do pit.",
             "addPerformers": "Adicionar também os integrantes",
             "apply": "Aplicar",
             "replaces": "Substitui os equipamentos adicionados pela última predefinição. Os músicos vão para as novas posições; os que ficarem sem instrumento são removidos, a menos que tenham movimentos mais adiante no show. Desfazer restaura tudo. Os equipamentos que você adicionou continuam.",
