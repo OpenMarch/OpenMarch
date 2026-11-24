@@ -11,6 +11,7 @@ import {
     tagAppearanceByPageIdMapQueryOptions,
 } from "@/hooks/queries";
 import { buildMarcherAppearancesByPageId } from "./utils/exportAppearances";
+import { makeDrillChartFiles } from "./utils/drillChartFiles";
 import {
     buildCoordinateSheets,
     coordinateSheetMarchers,
@@ -660,6 +661,7 @@ function DrillChartExport() {
 
     /**
      * Exports the generated SVGs as PDF files for each marcher or a single overview PDF.
+     * Throws when no PDF was made, with the reason as the message.
      * @param svgPages - 2D array of SVG strings for each marcher.
      * @param readableCoords - 2D array of readable coordinates for each marcher.
      */
@@ -673,7 +675,6 @@ function DrillChartExport() {
             if (!marchersLoaded) {
                 throw new Error(t("exportCoordinates.marchersNotLoaded"));
             }
-            let chartFilesMade = 0;
             const exportPages = pages.map((page) => {
                 if (!page.notes) return page;
 
@@ -705,27 +706,23 @@ function DrillChartExport() {
                       }))
                 : [];
 
-            // Generate PDFs for each marcher or MAIN if individual charts are not selected
-            for (let marcher = 0; marcher < svgPages.length; marcher++) {
+            // One PDF per marcher, or one combined "MAIN" chart. Throws when the combined
+            // chart fails, at the first save error, or when no individual chart was made,
+            // so the export shows as failed
+            return await makeDrillChartFiles({
+                count: individualCharts ? svgPages.length : 1,
+                individualCharts,
                 // Index i is always marchers[i]. A marcher missing a position on some page
                 // has no pages here: skip its PDF rather than draw an incomplete one
-                if (individualCharts && svgPages[marcher].length === 0) {
-                    const drillNumber = marchers[marcher]?.drill_number ?? "";
+                skipReason: (marcher) => {
+                    if (svgPages[marcher].length > 0) return undefined;
                     console.warn(
-                        `Drill charts: no positions for ${drillNumber} on every page; skipped`,
+                        `Drill charts: no positions for ${marchers[marcher]?.drill_number ?? ""} on every page; skipped`,
                     );
-                    toast.error(
-                        t("exportCoordinates.svgExportFailed", {
-                            drillNumber,
-                            error: t(
-                                "exportCoordinates.marcherPositionsMissing",
-                            ),
-                        }),
-                    );
-                    continue;
-                }
-                const result =
-                    await window.electron.export.generateDocForMarcher({
+                    return t("exportCoordinates.marcherPositionsMissing");
+                },
+                makePdf: (marcher) =>
+                    window.electron.export.generateDocForMarcher({
                         svgPages: svgPages[marcher],
                         drillNumber: individualCharts
                             ? marchers[marcher].drill_number
@@ -739,38 +736,30 @@ function DrillChartExport() {
                         showName: exportName,
                         exportDir,
                         individualCharts,
-                    });
-
-                if (result.success) chartFilesMade += 1;
-                if (!individualCharts) break; // just one PDF for MAIN
-
-                setProgress(50 + (50 * marcher) / svgPages.length);
-                setCurrentStep(
-                    t("exportCoordinates.generatingPDF", {
-                        drillNumber: marchers[marcher]?.drill_number ?? "MAIN",
                     }),
-                );
-
-                // Individual PDF failed, log error and continue
-                if (!result.success) {
-                    console.error(
-                        "SVG export failed with error:",
-                        result.error,
-                    );
-                    toast.error(
-                        t("exportCoordinates.svgExportFailed", {
+                onAttempted: (marcher) => {
+                    setProgress(50 + (50 * marcher) / svgPages.length);
+                    setCurrentStep(
+                        t("exportCoordinates.generatingPDF", {
                             drillNumber:
                                 marchers[marcher]?.drill_number ?? "MAIN",
-                            error: result.error,
                         }),
                     );
-                }
-                if (isCancelled.current) {
-                    throw new Error(t("exportCoordinates.cancelledByUser"));
-                }
-            }
-            // How many PDFs were made: none means the export failed
-            return chartFilesMade;
+                },
+                onFailed: (marcher, error) => {
+                    console.error("Drill chart PDF failed with error:", error);
+                    toast.error(
+                        t("exportCoordinates.svgExportFailed", {
+                            drillNumber: marchers[marcher]?.drill_number ?? "",
+                            error,
+                        }),
+                    );
+                },
+                isCancelled: () => isCancelled.current,
+                cancelledMessage: t("exportCoordinates.cancelledByUser"),
+                noneMadeMessage: t("exportCoordinates.noDrillChartsMade"),
+                unknownErrorMessage: t("exportCoordinates.unknownError"),
+            });
         },
         [
             includeNotesAppendix,
@@ -877,18 +866,17 @@ function DrillChartExport() {
                 });
             }, 150);
 
-            const chartFilesMade = await exportPromise;
-            clearInterval(finalProgressInterval);
+            // Throws when no PDF was made, so reaching here means at least one was
+            try {
+                await exportPromise;
+            } finally {
+                clearInterval(finalProgressInterval);
+            }
 
             setProgress(100);
             setCurrentStep(t("exportCoordinates.exportComplete"));
 
-            reportMilestone(
-                chartFilesMade > 0 ? "export finished" : "export failed",
-                {
-                    kind: "drill_charts",
-                },
-            );
+            reportMilestone("export finished", { kind: "drill_charts" });
             toast.success(t("exportCoordinates.drillChartsExported"), {
                 duration: ACTION_TOAST_DURATION_MS,
                 action: {

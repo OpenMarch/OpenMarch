@@ -412,6 +412,7 @@
     "exportCoordinates.noMarcher": "Line in the coordinate sheet preview error list: no marcher was provided to build the sheet for.",
     "exportCoordinates.noMarcherPages": "Line in the coordinate sheet preview error list: the marcher has no positions on any page.",
     "exportCoordinates.noPages": "Line in the coordinate sheet preview error list: the show has no pages.",
+    "exportCoordinates.noDrillChartsMade": "Reason shown in the drill chart export failure notification (\"PDF Export failed: {error}\") when individual charts were chosen and not one marcher's PDF could be saved. Each marcher's own reason is shown in its own notification.",
     "exportCoordinates.showInFolder": "Button in a success notification that opens the folder holding the files that were just exported on the user's computer.",
     "exportCoordinates.openExportDirectoryError": "Error notification when the exported folder could not be opened. {error} is the system's message, usually English, for example \"Path not found\".",
     "exportCoordinates.organizeBySection": "Checkbox label in the Coordinate Sheets tab of the Export dialog. When checked, the PDFs are grouped into folders by section (a group of marchers who play the same instrument).",
