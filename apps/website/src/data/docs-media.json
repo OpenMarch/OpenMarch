@@ -304,6 +304,24 @@
         "height": 364,
         "seconds": 4.5
     },
+    "marchers-equipment-icons": {
+        "chapter": "marchers",
+        "kind": "still",
+        "width": 1472,
+        "height": 592
+    },
+    "marchers-equipment-icons-everyone": {
+        "chapter": "marchers",
+        "kind": "still",
+        "width": 1472,
+        "height": 592
+    },
+    "marchers-equipment-icons-setting": {
+        "chapter": "marchers",
+        "kind": "still",
+        "width": 364,
+        "height": 452
+    },
     "marchers-equipment-lane": {
         "chapter": "marchers",
         "kind": "still",
@@ -313,8 +331,8 @@
     "marchers-equipment-menu": {
         "chapter": "marchers",
         "kind": "still",
-        "width": 1516,
-        "height": 1060
+        "width": 1468,
+        "height": 1404
     },
     "marchers-inspector": {
         "chapter": "marchers",

@@ -633,6 +633,21 @@
         "category": "timeline",
         "bindings": []
     },
+    "equipmentIconsOff": {
+        "label": "Equipment icons: Off",
+        "category": "field",
+        "bindings": []
+    },
+    "equipmentIconsChanged": {
+        "label": "Equipment icons: Changed only",
+        "category": "field",
+        "bindings": []
+    },
+    "equipmentIconsEveryone": {
+        "label": "Equipment icons: Everyone",
+        "category": "field",
+        "bindings": []
+    },
     "toggleEquipmentLane": {
         "label": "Show or hide the Equipment lane",
         "category": "timeline",

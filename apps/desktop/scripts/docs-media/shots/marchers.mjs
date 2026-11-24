@@ -145,6 +145,38 @@ const hideToasts = (page) =>
         )
         .catch(() => {});
 
+/** Sets the field display bar's Equipment icons choice (`changed`, `everyone`, `off`). */
+async function setEquipmentIcons(page, value, wait) {
+    await page.getByTestId("field-display-equipment").click();
+    await page.getByTestId(`field-display-equipment-${value}`).click();
+    await wait(800);
+}
+
+/**
+ * The guard given sabres and tubas at the end of Page 1, at the field's normal zoom, with the
+ * Equipment icons choice `value`: the field around them, nothing selected.
+ */
+async function equipmentIconsField(page, wait, value) {
+    await toPage1(page, wait);
+    await setEquipment(page, SABRES, "guard", "equipmentSabre", wait);
+    await setEquipment(page, TUBAS, "brass", "equipmentTuba", wait);
+    await page.keyboard.press("Escape");
+    await setEquipmentIcons(page, value, wait);
+    await page.keyboard.press("Escape");
+    await page.mouse.move(800, 990);
+    await wait(1000);
+    await hideToasts(page);
+    const all = await marchers(page);
+    const b = bounds(named(all, [...SABRES, ...TUBAS]));
+    const box = {
+        x: b.left - 70,
+        y: b.top - 50,
+        width: b.right - b.left + 160,
+        height: b.bottom - b.top + 90,
+    };
+    return { box };
+}
+
 const SABRES = range("G", 6, 10);
 /** Guard who stand apart at the end of Page 1, for the Tuba */
 const TUBAS = ["G14", "G19", "G22"];
@@ -813,6 +845,36 @@ const shots = [
                     height: Math.min(1000, lane.y + lane.height + 8) - top,
                 },
             };
+        },
+    },
+    {
+        id: "marchers-equipment-icons",
+        kind: "still",
+        // Changed only (the default): an icon after the drill numbers of the guard holding sabres
+        // (Other, no icon of its own) and tubas, none on everyone else
+        async setup({ page, wait }) {
+            return await equipmentIconsField(page, wait, "changed");
+        },
+    },
+    {
+        id: "marchers-equipment-icons-everyone",
+        kind: "still",
+        // Everyone: the same guard, and every other performer's own instrument too
+        async setup({ page, wait }) {
+            return await equipmentIconsField(page, wait, "everyone");
+        },
+    },
+    {
+        id: "marchers-equipment-icons-setting",
+        kind: "still",
+        // The field display bar's Equipment icons choices, open beside the bar
+        async setup({ page, wait, union, around }) {
+            await toPage1(page, wait);
+            await page.getByTestId("field-display-equipment").click();
+            await wait(800);
+            const bar = page.getByTestId("field-display-bar");
+            const pop = page.getByRole("dialog", { name: "Equipment icons" });
+            return { box: union(await around(bar, 12), await around(pop, 12)) };
         },
     },
     {

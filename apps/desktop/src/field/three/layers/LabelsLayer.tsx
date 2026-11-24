@@ -30,9 +30,12 @@ const LABEL_SIZE = 14;
 const DOT_RADIUS = 5;
 const LABEL_LIFT = DOT_RADIUS * 2.2;
 const LABEL_BESIDE = DOT_RADIUS * 1.6;
-/** An equipment icon's height, and the gap before it after the drill number, in em. */
-const ICON_EM = 1.05;
-const ICON_GAP_EM = 0.25;
+/**
+ * An equipment icon's box, and the gap before it after the drill number, in em. The drawings fill
+ * about two thirds of their box, so 1.6 em draws them a little taller than the digits.
+ */
+const ICON_EM = 1.6;
+const ICON_GAP_EM = 0.1;
 /** How much wider an icon makes a label, in em (for Auto's spacing). */
 const ICON_WIDTH_EM = ICON_EM + ICON_GAP_EM;
 
