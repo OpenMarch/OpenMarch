@@ -9,7 +9,11 @@ import {
 import clsx from "clsx";
 import { useTranslate } from "@tolgee/react";
 import { START_INK } from "./startFlagInk";
-import { beatToX, TIMELINE_HEADROOM_HEIGHT } from "./TimelineGeometry";
+import {
+    beatToX,
+    isPageSnapDisabled,
+    TIMELINE_HEADROOM_HEIGHT,
+} from "./TimelineGeometry";
 import type { TimelineBeatRange } from "./TimelineViewModel";
 import { fingerDragSlop } from "./timelineGestures";
 import { touchGrabOffset } from "./touchTargets";
@@ -92,7 +96,7 @@ export const TimelineLoopBar = memo(function TimelineLoopBar({
     const beatAt = (clientX: number, surface: Element, altKey: boolean) => {
         const raw =
             (clientX - surface.getBoundingClientRect().left) / pixelsPerBeat;
-        if (!altKey) {
+        if (!isPageSnapDisabled({ altKey })) {
             let best: number | null = null;
             for (const beat of snapBeats)
                 if (

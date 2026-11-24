@@ -21,7 +21,7 @@ import {
 } from "three";
 import { GLTFLoader } from "three/addons/loaders/GLTFLoader.js";
 import { mergeGeometries } from "three/addons/utils/BufferGeometryUtils.js";
-import { fieldFootprint, type FieldProperties } from "@openmarch/core";
+import { FieldProperties, fieldFootprint } from "@openmarch/core";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import {
     brandArtReady,
@@ -34,7 +34,11 @@ import { buildFieldSurface, venueFootprint } from "@/view3d/core/field";
 import {
     DEFAULT_CROWD_DENSITY,
     KIT_BUILDERS,
-    KIT_FIELD_STYLE,
+    KIT_FIELD_ART,
+    KIT_FIELD_TURF,
+    kitFieldProperties,
+    placeKitField,
+    kitFieldStyle,
 } from "@/view3d/core/kits";
 import { defaultVenueForKit } from "@/view3d/core/venueSettings";
 import type {
@@ -55,7 +59,34 @@ const FIELDS: Record<string, FieldProperties> = {
         FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES,
     pro: FieldPropertiesTemplates.PRO_FOOTBALL_FIELD_WITH_END_ZONES,
     indoor: FieldPropertiesTemplates.INDOOR_50x80_8to5,
+    /** The pro field drawn 6 to 5: 30 in steps, yard lines 6 steps apart. */
+    pro6to5: sixToFive(
+        FieldPropertiesTemplates.PRO_FOOTBALL_FIELD_WITH_END_ZONES,
+    ),
 };
+
+function sixToFive(fp: FieldProperties): FieldProperties {
+    const k = 22.5 / 30;
+    const y = fp.yardNumberCoordinates;
+    return new FieldProperties({
+        ...fp,
+        stepSizeInches: 30,
+        xCheckpoints: fp.xCheckpoints.map((c) => ({
+            ...c,
+            stepsFromCenterFront: c.stepsFromCenterFront * k,
+        })),
+        yCheckpoints: fp.yCheckpoints.map((c) => ({
+            ...c,
+            stepsFromCenterFront: c.stepsFromCenterFront * k,
+        })),
+        yardNumberCoordinates: y && {
+            homeStepsFromFrontToOutside: y.homeStepsFromFrontToOutside * k,
+            homeStepsFromFrontToInside: y.homeStepsFromFrontToInside * k,
+            awayStepsFromFrontToInside: y.awayStepsFromFrontToInside * k,
+            awayStepsFromFrontToOutside: y.awayStepsFromFrontToOutside * k,
+        },
+    });
+}
 
 /** Which field a kit is shown on unless `field` is given. */
 const KIT_FIELD: Record<string, keyof typeof FIELDS> = {
@@ -132,6 +163,10 @@ export interface LoadOptions {
     field?: keyof typeof FIELDS;
     quality?: "low" | "high";
     crowd?: boolean;
+    /** Whose lines a venue with its own field paints; the show's by default. */
+    fieldLines?: "show" | "stadium";
+    /** A field background image (a data URL); none by default. */
+    image?: string;
     /** Credits for the kit's video boards; a sample show by default. */
     credits?: ShowCredits;
 }
@@ -148,30 +183,40 @@ async function load(options: LoadOptions): Promise<LoadResult> {
     const quality = options.quality ?? "high";
     const fp = FIELDS[options.field ?? KIT_FIELD[options.kit] ?? "football"];
     const params = defaultVenueForKit(options.kit).params;
+    const style = kitFieldStyle(options.kit, fp);
+    const image = options.image
+        ? await createImageBitmap(await (await fetch(options.image)).blob())
+        : null;
     renderer.shadowMap.enabled = quality === "high";
     renderer.shadowMap.needsUpdate = true;
 
     const env = createEnvironment({ quality });
     scene.add(env.root);
     scene.fog = env.fog;
+    const footprint = venueFootprint(fp, style);
     const built = KIT_BUILDERS[options.kit]({
-        footprint: venueFootprint(fp, KIT_FIELD_STYLE[options.kit]),
+        footprint,
         params,
         quality,
+        fieldStyle: style,
     });
     kit = built;
     built.setShowCredits?.(options.credits ?? SAMPLE_CREDITS);
     await brandArtReady();
     scene.add(built.root);
+    const painted = kitFieldProperties(options.kit, fp, options.fieldLines);
     const surface = buildFieldSurface({
-        fieldProperties: fp,
+        fieldProperties: painted,
         theme: fp.theme,
-        style: KIT_FIELD_STYLE[options.kit],
+        style,
+        centerArt: KIT_FIELD_ART[options.kit],
+        turf: KIT_FIELD_TURF[options.kit],
         params,
-        image: null,
+        image,
         maxTextureSize: renderer.capabilities.maxTextureSize,
         anisotropy: renderer.capabilities.getMaxAnisotropy(),
     });
+    placeKitField(surface.mesh, painted, fp, footprint);
     scene.add(surface.mesh);
     await surface.ready.catch(() => undefined);
     const crowd =
@@ -181,6 +226,7 @@ async function load(options: LoadOptions): Promise<LoadResult> {
                   density: built.crowdDensity ?? DEFAULT_CROWD_DENSITY,
                   palette: defaultCrowdPalette(params),
                   quality,
+                  ...built.crowd,
               });
     if (crowd) built.root.add(crowd.mesh);
     const block = performers(fp);
@@ -215,11 +261,11 @@ function setLighting(preset: LightingPreset): void {
     if (!kit || !current) return;
     // Optional so the gallery also runs on older core code, for comparisons.
     current.env.setSurroundings?.(kit.surroundings !== false);
-    current.env.setLighting(preset, kit.focus);
+    current.env.setLighting(preset, kit.focus, kit.lightingVenue);
     renderer.toneMappingExposure = current.env.exposure;
     kit.setLighting(preset);
     if (renderer.capabilities.isWebGL2) {
-        const map = createEnvironmentMap(renderer, preset);
+        const map = createEnvironmentMap(renderer, preset, kit.lightingVenue);
         scene.environment = map.texture;
         scene.environmentIntensity = 0.6;
         current.setEnvMap(map);

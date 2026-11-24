@@ -132,10 +132,13 @@ export function getActionPaletteItems(
                                       ...param,
                                       label: t(labelKey),
                                   })),
-                                  (values) => runAction(id, values),
+                                  (values) => runAction(id, values, "palette"),
                               ),
                           }
-                        : { run: () => runAction(id, def.paletteArgs) }),
+                        : {
+                              run: () =>
+                                  runAction(id, def.paletteArgs, "palette"),
+                          }),
                 };
             })
             // A command that can't run and can't say why isn't listed: a dimmed row with no reason

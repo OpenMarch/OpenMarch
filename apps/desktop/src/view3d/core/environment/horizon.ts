@@ -199,7 +199,7 @@ void main() {
 export interface Horizon {
     mesh: Mesh;
     /** Recolors for a preset (and shows or hides with the sky). */
-    setPreset(preset: LightingPreset): void;
+    setPreset(preset: LightingPreset, venue?: string): void;
     /** Centers the rings on the venue (only x and z are used). */
     setCenter(center: Vector3Tuple): void;
     dispose(): void;
@@ -228,8 +228,8 @@ export function createHorizon(): Horizon {
     const u = material.uniforms;
     return {
         mesh,
-        setPreset(preset) {
-            const v = lightingValues(preset);
+        setPreset(preset, venue) {
+            const v = lightingValues(preset, venue);
             u.uNear.value.setHex(v.sky.nearLand);
             u.uFar.value.setHex(v.sky.farLand);
             u.uHaze.value.setHex(v.fog);

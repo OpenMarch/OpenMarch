@@ -18,8 +18,7 @@
             "snapOn": "สแนปปิดอยู่: กดเพื่อเปิดอีกครั้ง",
             "snapToCustomFraction": "สแนปเข้ากับกริด",
             "toggleSnap": "เปิด/ปิดสแนป",
-            "toggleSnapKeywords": "สแนป แม่เหล็ก กริด ตาราง อิสระ snap magnet grid free",
-            "propsOnly": "เลือกไว้เฉพาะพร็อพ: พร็อพไม่ถูกจัดแนวหรือกระจายระยะ"
+            "toggleSnapKeywords": "สแนป แม่เหล็ก กริด ตาราง อิสระ snap magnet grid free"
         },
         "batchEdit": {
             "clearPage": "ล้างหน้า {page}",
@@ -798,8 +797,6 @@
         "marcher": {
             "drillNumber": "หมายเลขดริล",
             "errorLoadingCoords": "เกิดข้อผิดพลาดในการโหลดพิกัด",
-            "itemsSelected": "{count, plural, other {เลือกพร็อพแล้ว # รายการ แก้ไขได้ในแผงพร็อพ}}",
-            "equipmentSelected": "{count, plural, =1 {เลือกอุปกรณ์ # ชิ้น คลิกขวาที่อุปกรณ์เพื่อแก้ไข} other {เลือกอุปกรณ์ # ชิ้น คลิกขวาที่ชิ้นใดชิ้นหนึ่งเพื่อแก้ไข}}",
             "playing": "กำลังเล่น หยุดชั่วคราวเพื่อดูและแก้ไขผู้แสดงที่เลือก",
             "maxStepSize": "ขนาดก้าวที่ใหญ่ที่สุด",
             "minStepSize": "ขนาดก้าวที่เล็กที่สุด",

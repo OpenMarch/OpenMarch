@@ -14,9 +14,8 @@ import { runActionWhenReady } from "@/test/runActionWhenReady";
 import { createItems } from "@/db-functions/items";
 
 /**
- * A prop selected with marchers (a click on it, then Shift-clicks) isn't one more dot to the
- * formation tools (C2.2): align works on the selected performers and leave the prop
- * where it is.
+ * A prop is a marcher with a size and a rotation (props epic, fork #1239): selected with marchers,
+ * the formation tools move it like one more marcher. A locked item stays where it is.
  */
 
 const app = vi.hoisted(() => ({ client: (): unknown => null }));
@@ -40,7 +39,7 @@ afterEach(() => {
 const PAGE = 3;
 
 /** A riser off to the side of the formation, made at the first counted beat */
-const createRiser = async (db: DbConnection) => {
+const createRiser = async (db: DbConnection, locked = false) => {
     const [item] = await createItems({
         db,
         newItems: [
@@ -50,6 +49,7 @@ const createRiser = async (db: DbConnection) => {
                 surfaceType: "platform",
                 home: [40, 40],
                 beatId: 1,
+                locked,
                 geometry: {
                     outlineType: "rectangle",
                     width: 2.4,
@@ -73,29 +73,50 @@ const setUp = (ids: readonly number[]) =>
     );
 
 describeDbTests("formation tools with a prop selected", (it) => {
-    it("align lines up the selected performers and leaves the prop", async ({
+    it("align lines up the selected marchers and the prop alike", async ({
         db,
         marchersAndPages,
     }) => {
         const prop = await createRiser(db);
-        const performers = marchersAndPages.expectedMarchers
+        const marchers = marchersAndPages.expectedMarchers
             .slice(2, 5)
             .map((m) => m.id);
-        const { page } = await setUp([...performers, prop]);
-        const before = await positionsOn(db, page, performers);
-        const [propBefore] = await positionsOn(db, page, [prop]);
+        const ids = [...marchers, prop];
+        const { page } = await setUp(ids);
+        const before = await positionsOn(db, page, ids);
         expect(new Set(before.map(([x]) => x)).size).toBeGreaterThan(1);
         const meanX = before.reduce((sum, [x]) => sum + x, 0) / before.length;
 
         await runActionWhenReady("alignHorizontally");
 
         await waitFor(async () => {
-            const after = await positionsOn(db, page, performers);
+            const after = await positionsOn(db, page, ids);
             after.forEach(([x, y], i) => {
                 expect(x).toBeCloseTo(meanX, 6);
                 expect(y).toBeCloseTo(before[i]![1], 6);
             });
         });
-        expect(await positionsOn(db, page, [prop])).toEqual([propBefore]);
+    });
+
+    it("align leaves a locked item where it is", async ({
+        db,
+        marchersAndPages,
+    }) => {
+        const locked = await createRiser(db, true);
+        const marchers = marchersAndPages.expectedMarchers
+            .slice(2, 5)
+            .map((m) => m.id);
+        const { page } = await setUp([...marchers, locked]);
+        const before = await positionsOn(db, page, marchers);
+        const [lockedBefore] = await positionsOn(db, page, [locked]);
+        const meanX = before.reduce((sum, [x]) => sum + x, 0) / before.length;
+
+        await runActionWhenReady("alignHorizontally");
+
+        await waitFor(async () => {
+            const after = await positionsOn(db, page, marchers);
+            after.forEach(([x]) => expect(x).toBeCloseTo(meanX, 6));
+        });
+        expect(await positionsOn(db, page, [locked])).toEqual([lockedBefore]);
     });
 });

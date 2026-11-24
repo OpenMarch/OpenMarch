@@ -33,6 +33,7 @@ describe("kit registry", () => {
             bighs: "turf",
             college: "turf",
             pro: "turf",
+            markDiesel: "turf",
             gym: "tarp",
             arena: "tarp",
             blank: "theme",

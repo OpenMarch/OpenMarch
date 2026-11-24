@@ -2,8 +2,7 @@ import tolgee from "@/global/singletons/Tolgee";
 import clsx from "clsx";
 import { T } from "@tolgee/react";
 import Shortcut from "@/components/ui/Shortcut";
-import { useMemo } from "react";
-import { performersOnly } from "@/global/classes/Marcher";
+import { useUnlockedOnly } from "@/items/lockedItems";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import ActionButton from "@/shortcuts/ActionButton";
 import { getEffectiveBindings } from "@/shortcuts/keymap";
@@ -34,10 +33,8 @@ const PREVIEW_SIZE = 26;
  */
 export default function ShapesTab() {
     const selected = useSelectedMarchers()?.selectedMarchers;
-    const performers = useMemo(
-        () => performersOnly(selected ?? []),
-        [selected],
-    );
+    // Marchers and props alike; a locked item takes no spot
+    const performers = useUnlockedOnly(selected);
     // A shape waiting away from its moment isn't picked: a kind starts over (#416)
     const shown = useShapeShown();
     const openKind = useShapeToolStore((s) => s.tool?.kind ?? null);

@@ -422,6 +422,12 @@ aliases, never shown as labels [owner, 2026-10-12, Q39–Q41, Q44].
   coordinate sheets, mobile export, drill numbers, Visuals mode's Who list.
   Props may fill formation slots; band and section cue targets never reach
   items [24].
+- **A prop is a marcher with a size and a rotation** (owner, 2026-11-23,
+  fork #1239). Every marcher tool takes unlocked props and equipment in the
+  selection: shapes, the shape clipboard, paths and the Path pen, the order
+  lane, align and distribute, tags, select-all and the marquee. Locked items
+  stay out of all of them. The type filters above stay only where the loop
+  means people: exports, drill order, cues and uniforms.
 - **Hidden** is a per-user view preference (`UiSettingsStore.hiddenPropIds`),
   never show data [05].
 

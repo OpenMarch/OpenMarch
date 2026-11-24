@@ -1,4 +1,5 @@
 import * as DropdownMenu from "@radix-ui/react-dropdown-menu";
+import { isModifierHeld } from "@/input/modifierGrace";
 import * as Popover from "@radix-ui/react-popover";
 import {
     ArrowsOutLineHorizontalIcon,
@@ -1264,7 +1265,8 @@ const TimelinePageBox = memo(function TimelinePageBox({
             onClick={(event) => {
                 if (scrub.consumeClick(event)) return;
                 // macOS ctrl+click opens the context menu (UI-9: no selection change)
-                if (!event.ctrlKey) onSelectPage(page, event.shiftKey);
+                if (!event.ctrlKey)
+                    onSelectPage(page, isModifierHeld(event, "shift"));
             }}
             className={clsx(
                 "border-stroke text-text focus-visible:ring-accent text-sub absolute top-0 flex h-full items-center justify-end border-r px-8 outline-hidden focus-visible:z-10 focus-visible:ring-2 focus-visible:ring-inset aria-pressed:z-10 aria-pressed:ring-1 aria-pressed:ring-[var(--color-accent)] aria-pressed:ring-inset",
@@ -1993,7 +1995,9 @@ export const TimelineTrackClip = memo(function TimelineTrackClip({
                     if (!dragged && !event.ctrlKey && !isRangeModifier(event))
                         onSelect?.(
                             track.id,
-                            event.shiftKey ? { extend: true } : undefined,
+                            isModifierHeld(event, "shift")
+                                ? { extend: true }
+                                : undefined,
                         );
                 }}
                 onKeyDown={(event) => {

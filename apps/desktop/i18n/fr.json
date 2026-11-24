@@ -18,8 +18,7 @@
             "snapOn": "Magnétisme désactivé : le réactiver",
             "snapToCustomFraction": "Aligner sur la grille",
             "toggleSnap": "Activer ou désactiver le magnétisme",
-            "toggleSnapKeywords": "magnétisme aimant grille libre snap magnet grid free",
-            "propsOnly": "Seuls des accessoires sont sélectionnés : les accessoires ne sont ni alignés ni espacés"
+            "toggleSnapKeywords": "magnétisme aimant grille libre snap magnet grid free"
         },
         "batchEdit": {
             "clearPage": "Effacer la page {page}",
@@ -798,8 +797,6 @@
         "marcher": {
             "drillNumber": "Numéro de drill",
             "errorLoadingCoords": "Erreur de chargement des coordonnées",
-            "itemsSelected": "{count, plural, one {# accessoire sélectionné. Modifiez-le dans le panneau Accessoires.} other {# accessoires sélectionnés. Modifiez-les dans le panneau Accessoires.}}",
-            "equipmentSelected": "{count, plural, =1 {# équipement sélectionné. Faites un clic droit dessus pour le modifier.} other {# équipements sélectionnés. Faites un clic droit sur l’un d’eux pour le modifier.}}",
             "playing": "Lecture en cours. Mettez en pause pour voir et modifier les marcheurs sélectionnés.",
             "maxStepSize": "Plus grande longueur de pas",
             "minStepSize": "Plus petite longueur de pas",

@@ -1,4 +1,8 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import {
+    MODIFIER_RELEASE_GRACE_MS,
+    setModifierReleaseGraceForTests,
+} from "@/input/modifierGrace";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import {
     CLICK_SLOP,
     DOUBLE_CLICK_MS,
@@ -14,6 +18,10 @@ import type { MarcherPosition, MoveTransform } from "../moveGesture";
 import { ruledMove, type MoveRules } from "../moveRules";
 import { watchKeyListeners } from "@/shapes/__test__/keyListeners";
 import { useShapeEditorStore } from "@/shapes/frame/shapeEditorStore";
+
+// Keys let go mid-drag here redraw at once; the release grace has its own tests
+beforeEach(() => setModifierReleaseGraceForTests(0));
+afterEach(() => setModifierReleaseGraceForTests());
 
 /**
  * Marchers 1 to 4 in a row 100 field units apart, at zoom 2 (2 CSS px per
@@ -138,6 +146,13 @@ describe("FieldEditor click selection", () => {
         expect(state.selected).toEqual([1, 3]);
         click(editor, 100, 100, { shift: true });
         expect(state.selected).toEqual([3]);
+    });
+
+    it("adds a marcher when Shift comes up just before the mouse", () => {
+        const { editor, state } = setup({ selected: [1] });
+        editor.pointerDown(at(300, 100, { shift: true }));
+        editor.pointerUp(at(300, 100));
+        expect(state.selected).toEqual([1, 3]);
     });
 
     it("clears the selection on a click on empty field", () => {
@@ -1385,6 +1400,54 @@ describe("FieldEditor modifier roles (version A)", () => {
         // The release where the pointer was drops what's drawn
         editor.pointerUp(at(137, 121));
         expect(state.drops[0].positions).toEqual([{ id: 1, x: 137, y: 121 }]);
+    });
+
+    describe("a key let go just before the drop (release grace)", () => {
+        beforeEach(() => {
+            setModifierReleaseGraceForTests();
+            vi.useFakeTimers();
+        });
+        afterEach(() => vi.useRealTimers());
+
+        const constrained = () => {
+            const { editor, state } = setup({
+                moveTransform: rulesOn({ rounding: undefined }),
+            });
+            running = editor;
+            editor.pointerDown(at(100, 100));
+            editor.pointerMove(at(137, 121));
+            key("keydown", { key: "Control", ctrlKey: true });
+            expect(shown(state)).toEqual({ 1: { x: 137, y: 100 } });
+            key("keyup", { key: "Control" });
+            return { editor, state };
+        };
+
+        it("drops what's drawn, still constrained, when the mouse comes up right after the key", () => {
+            const { editor, state } = constrained();
+            expect(shown(state)).toEqual({ 1: { x: 137, y: 100 } });
+            editor.pointerUp(at(137, 121));
+            expect(state.drops[0].positions).toEqual([
+                { id: 1, x: 137, y: 100 },
+            ]);
+        });
+
+        it("keeps the key for a release that moved too", () => {
+            const { editor, state } = constrained();
+            editor.pointerUp(at(150, 125));
+            expect(state.drops[0].positions).toEqual([
+                { id: 1, x: 150, y: 100 },
+            ]);
+        });
+
+        it("lets the key go once the grace runs out, so letting go on purpose still frees the axis", () => {
+            const { editor, state } = constrained();
+            vi.advanceTimersByTime(MODIFIER_RELEASE_GRACE_MS);
+            expect(shown(state)).toEqual({ 1: { x: 137, y: 121 } });
+            editor.pointerUp(at(137, 121));
+            expect(state.drops[0].positions).toEqual([
+                { id: 1, x: 137, y: 121 },
+            ]);
+        });
     });
 
     it("re-anchors on the snapped spot when fine turns on from a keydown, with no pointer move", () => {

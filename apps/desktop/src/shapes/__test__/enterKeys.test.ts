@@ -45,7 +45,9 @@ const marchers = Array.from({ length: 5 }, (_, i) => ({
 }));
 
 let place: ReturnType<typeof vi.fn>;
+let placeLoose: ReturnType<typeof vi.fn>;
 let unregisterPlace: () => void;
+let unregisterPlaceLoose: () => void;
 
 beforeEach(() => {
     setShapeField({
@@ -60,11 +62,17 @@ beforeEach(() => {
         run: place,
         isEnabled: () => true,
     });
+    placeLoose = vi.fn();
+    unregisterPlaceLoose = registerActionHandler("applyShapeLoose", {
+        run: placeLoose,
+        isEnabled: () => true,
+    });
 });
 
 afterEach(() => {
     cleanup();
     unregisterPlace();
+    unregisterPlaceLoose();
     closeShapeTool();
     setShapeField(null);
 });
@@ -100,5 +108,33 @@ describe("Enter with the shape tool open", () => {
         expect(useShapeToolStore.getState().tool?.gesture).toBeNull();
         act(() => void runAction("applyShape"));
         expect(place).toHaveBeenCalledTimes(1);
+    });
+});
+
+describe("Shift+Enter with the shape tool open", () => {
+    it("places a drawn shape without keeping it, not through Place", () => {
+        const env = toolEnvFor(field());
+        let t = openTool(rowTool, marchers);
+        t = press(t, FROM, env);
+        t = pointerMove(t, { x: FROM.x + 8 * STEP, y: FROM.y }, env);
+        t = release(t, shapeContextFor(field()));
+        openShapeTool(t, null, null);
+        renderHook(() => ShapeToolKeys());
+        expect(runAction("applyShapeLoose")).toBe(true);
+        expect(placeLoose).toHaveBeenCalledTimes(1);
+        expect(place).not.toHaveBeenCalled();
+    });
+
+    it("finishes a line's points first, as Enter does, and never places half a line", () => {
+        let t = click(openTool(polyTool, marchers), FROM);
+        t = click(t, { x: FROM.x + 8 * STEP, y: FROM.y });
+        openShapeTool(t, null, null);
+        renderHook(() => ShapeToolKeys());
+        act(() => void runAction("applyShapeLoose"));
+        expect(placeLoose).not.toHaveBeenCalled();
+        expect(useShapeToolStore.getState().tool?.gesture).toBeNull();
+        act(() => void runAction("applyShapeLoose"));
+        expect(placeLoose).toHaveBeenCalledTimes(1);
+        expect(place).not.toHaveBeenCalled();
     });
 });

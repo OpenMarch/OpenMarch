@@ -40,11 +40,11 @@ export function warmLightingPresets(
     const pending: Promise<Object3D>[] = [];
     for (const preset of kit.lightingPresets) {
         if (preset === current) continue;
-        env.setLighting(preset, kit.focus);
+        env.setLighting(preset, kit.focus, kit.lightingVenue);
         kit.setLighting(preset);
         pending.push(gl.compileAsync(scene, camera));
     }
-    env.setLighting(current, kit.focus);
+    env.setLighting(current, kit.focus, kit.lightingVenue);
     kit.setLighting(current);
     return Promise.all(pending).then(() => undefined);
 }

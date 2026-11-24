@@ -18,8 +18,7 @@
             "snapOn": "Snap nonaktif: aktifkan kembali",
             "snapToCustomFraction": "Snap ke kisi",
             "toggleSnap": "Aktifkan/nonaktifkan snap",
-            "toggleSnapKeywords": "snap jepret magnet kisi grid bebas free",
-            "propsOnly": "Hanya properti yang dipilih: properti tidak diratakan atau diberi jarak"
+            "toggleSnapKeywords": "snap jepret magnet kisi grid bebas free"
         },
         "batchEdit": {
             "clearPage": "Kosongkan Halaman {page}",
@@ -798,8 +797,6 @@
         "marcher": {
             "drillNumber": "Nomor drill",
             "errorLoadingCoords": "Gagal memuat koordinat",
-            "itemsSelected": "{count, plural, other {# properti dipilih. Edit di panel Properti.}}",
-            "equipmentSelected": "{count, plural, =1 {# peralatan dipilih. Klik kanan untuk mengeditnya.} other {# peralatan dipilih. Klik kanan salah satunya untuk mengeditnya.}}",
             "playing": "Sedang diputar. Jeda untuk melihat dan mengedit pemain yang dipilih.",
             "maxStepSize": "Ukuran langkah terbesar",
             "minStepSize": "Ukuran langkah terkecil",

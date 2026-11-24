@@ -165,25 +165,19 @@ describe("selectionAfterArea", () => {
 });
 
 describe("areaPicks", () => {
-    const isItem = (id: number) => id >= 100;
-
-    it("leaves out items when performers are inside too, as select-all does", () => {
-        expect(areaPicks([1, 100, 2, 101], isItem)).toEqual([1, 2]);
-    });
-
-    it("takes the items when nothing else is inside", () => {
-        expect(areaPicks([100, 101], isItem)).toEqual([100, 101]);
+    it("takes marchers and props alike", () => {
+        expect(areaPicks([1, 100, 2, 101])).toEqual([1, 100, 2, 101]);
     });
 
     it("takes nothing from nothing", () => {
-        expect(areaPicks([], isItem)).toEqual([]);
+        expect(areaPicks([])).toEqual([]);
     });
 
     it("never takes a locked item, even alone", () => {
         const isLocked = (id: number) => id === 101;
-        expect(areaPicks([100, 101], isItem, isLocked)).toEqual([100]);
-        expect(areaPicks([101], isItem, isLocked)).toEqual([]);
-        expect(areaPicks([1, 101], isItem, isLocked)).toEqual([1]);
+        expect(areaPicks([100, 101], isLocked)).toEqual([100]);
+        expect(areaPicks([101], isLocked)).toEqual([]);
+        expect(areaPicks([1, 101], isLocked)).toEqual([1]);
     });
 });
 

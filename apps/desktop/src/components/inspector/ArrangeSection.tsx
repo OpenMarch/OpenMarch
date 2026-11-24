@@ -7,7 +7,7 @@ import { isMacPlatform } from "@/shortcuts/platform";
 import { InspectorCollapsible } from "@/components/inspector/InspectorCollapsible";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useIsPlaying } from "@/context/IsPlayingContext";
-import { performersOnly } from "@/global/classes/Marcher";
+import { useUnlockedOnly } from "@/items/lockedItems";
 import {
     activeFieldEditor,
     subscribeActiveFieldEditor,
@@ -27,7 +27,8 @@ import MarcherRotationInput from "./marcher/MarcherRotationInput";
 export function ArrangeSection() {
     const { selectedMarchers } = useSelectedMarchers()!;
     const { isPlaying } = useIsPlaying()!;
-    if (performersOnly(selectedMarchers).length < 2 || isPlaying) return null;
+    const editable = useUnlockedOnly(selectedMarchers);
+    if (editable.length < 2 || isPlaying) return null;
     return (
         <InspectorCollapsible
             defaultOpen

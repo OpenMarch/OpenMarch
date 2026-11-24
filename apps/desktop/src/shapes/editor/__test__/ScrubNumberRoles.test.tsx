@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { setModifierReleaseGraceForTests } from "@/input/modifierGrace";
 import {
     act,
     cleanup,
@@ -15,6 +16,10 @@ import { SPACING_FINE_RATE, spacingRate } from "../scrub";
 import { ScrubNumber, type ScrubMove } from "../ScrubNumber";
 import { watchKeyListeners } from "../../__test__/keyListeners";
 import { stubPointerCapture } from "./pointerEvents";
+
+// Keys let go mid-drag here redraw at once; the release grace has its own tests
+beforeEach(() => setModifierReleaseGraceForTests(0));
+afterEach(() => setModifierReleaseGraceForTests());
 
 /**
  * A number in the floating editor reads held roles (version A): Shift is fine, hundredths of a step

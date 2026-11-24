@@ -148,7 +148,7 @@ describe("view3dSyncStore", () => {
         };
         const stop = startView3dSync(api, new QueryClient());
         expect(calls.at(-1)).toBe("hello");
-        expect(calls).toHaveLength(5);
+        expect(calls).toHaveLength(7);
 
         listeners.get(VIEW3D_CLOCK_CHANNEL)?.({ seq: "bad" });
         expect(useView3dSyncStore.getState().clock).toBeNull();
@@ -165,6 +165,13 @@ describe("view3dSyncStore", () => {
         expect([...useView3dSyncStore.getState().hiddenItemIds]).toEqual([
             3, 5,
         ]);
+        listeners.get("view3d:camera-wanted")?.({ wanted: true });
+        expect(useView3dSyncStore.getState().cameraWanted).toBe(true);
+        listeners.get("view3d:camera-move")?.({ position: [0, 1] });
+        expect(useView3dSyncStore.getState().cameraMove).toBeNull();
+        const move = { position: [0, 15, 20], target: [0, 0, -20] };
+        listeners.get("view3d:camera-move")?.(move);
+        expect(useView3dSyncStore.getState().cameraMove).toEqual(move);
 
         stop();
         expect(listeners.size).toBe(0);

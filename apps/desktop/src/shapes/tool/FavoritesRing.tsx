@@ -1,9 +1,9 @@
 import tolgee from "@/global/singletons/Tolgee";
 import clsx from "clsx";
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useRef } from "react";
 import { createPortal } from "react-dom";
 import { create } from "zustand";
-import { performersOnly } from "@/global/classes/Marcher";
+import { useUnlockedOnly } from "@/items/lockedItems";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useActionHandler } from "@/shortcuts/useActionHandler";
 import { useEditorReadiness } from "@/shortcuts/handlers/useEditorReadiness";
@@ -78,10 +78,8 @@ function ringCenter(from = pointer): { x: number; y: number } {
 export default function FavoritesRing() {
     const { ready } = useEditorReadiness();
     const selected = useSelectedMarchers()?.selectedMarchers;
-    const performers = useMemo(
-        () => performersOnly(selected ?? []),
-        [selected],
-    );
+    // Marchers and props alike; a locked item takes no spot
+    const performers = useUnlockedOnly(selected);
     const slots = SLOTS;
     const gate = kindPickGate(useShapeShown(), performers);
     const ring = useRingStore((s) => s.ring);

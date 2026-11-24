@@ -61,6 +61,8 @@ export interface ShapeEditTarget {
     readonly empty: number;
     /** Place, for a new shape; absent for a placed one */
     readonly place?: () => void;
+    /** Place keeping no shape (Shift+Enter, Shift-click on Place); absent for a placed one */
+    readonly placeLoose?: () => void;
     /** "Page 3", when a placed shape was drawn on an earlier page than the one shown */
     readonly drawnOn: string | null;
     /** A number's drag starts, moves and ends: one change when it's kept */
@@ -141,6 +143,7 @@ export function useToolEditTarget(): ShapeEditTarget | null {
             spots: tool.spots,
             empty: 0,
             place: () => void place(),
+            placeLoose: () => void place(true),
             drawnOn: null,
             begin: () => updateTool(beginEdit),
             preview: (params) => updateTool((t) => previewEdit(t, params)),

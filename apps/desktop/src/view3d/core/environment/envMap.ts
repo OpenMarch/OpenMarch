@@ -36,9 +36,9 @@ import {
 } from "./skyShader";
 
 /** The procedural sky (`skyShader.ts`), untouched by tone mapping, on a small sphere. */
-function skyMaterial(preset: LightingPreset): ShaderMaterial {
+function skyMaterial(preset: LightingPreset, venue?: string): ShaderMaterial {
     const uniforms = createSkyUniforms();
-    applySkyPreset(uniforms, preset);
+    applySkyPreset(uniforms, preset, venue);
     return new ShaderMaterial({
         side: BackSide,
         depthWrite: false,
@@ -64,10 +64,16 @@ const glow = (color: number, scale: number) =>
  * The scene the environment map is rendered from: sky dome and ground, a
  * dark ring of stands at the horizon, and the preset's bright sources.
  */
-export function environmentScene(preset: LightingPreset): Scene {
-    const v = lightingValues(preset);
+export function environmentScene(
+    preset: LightingPreset,
+    venue?: string,
+): Scene {
+    const v = lightingValues(preset, venue);
     const scene = new Scene();
-    const sky = new Mesh(new SphereGeometry(50, 32, 16), skyMaterial(preset));
+    const sky = new Mesh(
+        new SphereGeometry(50, 32, 16),
+        skyMaterial(preset, venue),
+    );
     sky.name = "env-sky";
     const ground = new Mesh(
         new CircleGeometry(60, 32),
@@ -191,8 +197,9 @@ export interface EnvironmentMap {
 export function createEnvironmentMap(
     renderer: WebGLRenderer,
     preset: LightingPreset,
+    venue?: string,
 ): EnvironmentMap {
-    const scene = environmentScene(preset);
+    const scene = environmentScene(preset, venue);
     const generator = new PMREMGenerator(renderer);
     const target = generator.fromScene(scene, 0.04);
     generator.dispose();

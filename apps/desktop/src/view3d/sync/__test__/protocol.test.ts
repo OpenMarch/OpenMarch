@@ -1,13 +1,20 @@
 // @vitest-environment node
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
     hiddenPropsOf,
+    isView3dCameraWanted,
     isView3dClock,
     isView3dHiddenProps,
     isView3dInvalidate,
     isView3dSelection,
     newerClock,
+    parseCameraMove,
+    parseCameraPose,
     showTimeAt,
+    VIEW3D_CAMERA_MOVE_CHANNEL,
+    VIEW3D_CAMERA_WANTED_CHANNEL,
     VIEW3D_HIDDEN_PROPS_CHANNEL,
     VIEW3D_PUBLISH_CHANNELS,
     type View3dClock,
@@ -128,4 +135,72 @@ describe("hidden props", () => {
     it("is a channel the editor publishes", () => {
         expect(VIEW3D_PUBLISH_CHANNELS).toContain(VIEW3D_HIDDEN_PROPS_CHANNEL);
     });
+});
+
+describe("parseCameraPose", () => {
+    const pose = {
+        position: [1, 2, 3],
+        direction: [0, -0.5, -0.8],
+        fov: 50,
+        aspect: 1.6,
+    };
+
+    it("accepts a pose", () => {
+        expect(parseCameraPose(pose)).toEqual(pose);
+    });
+
+    it("rejects anything else", () => {
+        for (const bad of [
+            null,
+            "pose",
+            { ...pose, position: [1, 2] },
+            { ...pose, direction: [0, Number.NaN, 1] },
+            { ...pose, fov: 0 },
+            { ...pose, fov: 180 },
+            { ...pose, aspect: -1 },
+            { ...pose, aspect: Number.POSITIVE_INFINITY },
+        ])
+            expect(parseCameraPose(bad)).toBeNull();
+    });
+});
+
+describe("parseCameraMove", () => {
+    it("accepts a move", () => {
+        expect(
+            parseCameraMove({ position: [0, 15, 20], target: [0, 0, -20] }),
+        ).toEqual({ position: [0, 15, 20], target: [0, 0, -20] });
+    });
+
+    it("rejects a camera looking at itself, or anything else", () => {
+        expect(
+            parseCameraMove({ position: [1, 2, 3], target: [1, 2, 3] }),
+        ).toBeNull();
+        expect(
+            parseCameraMove({ position: [0, 1], target: [0, 0, 0] }),
+        ).toBeNull();
+        expect(parseCameraMove(null)).toBeNull();
+    });
+
+    it("is a channel the editor publishes, with camera-wanted", () => {
+        expect(VIEW3D_PUBLISH_CHANNELS).toContain(VIEW3D_CAMERA_MOVE_CHANNEL);
+        expect(VIEW3D_PUBLISH_CHANNELS).toContain(VIEW3D_CAMERA_WANTED_CHANNEL);
+        expect(isView3dCameraWanted({ wanted: true })).toBe(true);
+        expect(isView3dCameraWanted({ wanted: "yes" })).toBe(false);
+    });
+});
+
+describe("the preloads' copies of the publish channels", () => {
+    // Preloads keep their own list (they can't import the app's code at run time): a channel
+    // missing there throws in the 3D View, or never reaches it
+    it.each(["index.ts", "view3d.ts"])(
+        "electron/preload/%s lists every channel",
+        (file) => {
+            const source = readFileSync(
+                resolve(__dirname, "../../../../electron/preload", file),
+                "utf8",
+            );
+            for (const channel of VIEW3D_PUBLISH_CHANNELS)
+                expect(source).toContain(`"${channel}"`);
+        },
+    );
 });

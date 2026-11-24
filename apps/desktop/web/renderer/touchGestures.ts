@@ -1,14 +1,21 @@
 // cspell:words gesturestart gesturechange gestureend
 /**
- * Stops the browser zooming or bouncing the whole page on a tablet, so a
- * pinch meant for the field or the timeline never zooms the app itself.
+ * Stops the browser zooming or bouncing the whole page, so a pinch meant for
+ * the field or the timeline never zooms the app itself.
  *
  * - Double-tap zoom is off in CSS (`touch-action: manipulation` on html and
  *   body, src/styles/index.css), and so is the rubber band and
  *   pull-to-refresh (`overscroll-behavior: none`).
- * - iOS Safari ignores `user-scalable=no` and `maximum-scale` for pinches,
- *   so its own `gesture*` events are cancelled, and so is any two-finger
- *   move outside an element that handles its gestures itself.
+ * - Safari ignores `user-scalable=no` and `maximum-scale` for pinches, so
+ *   its own `gesture*` events are cancelled (this also covers a trackpad
+ *   pinch in Safari on a Mac), and so is any two-finger move outside an
+ *   element that handles its gestures itself.
+ * - In Chrome, Edge and Firefox on a computer, a trackpad pinch (and Ctrl +
+ *   scroll wheel) arrives as a wheel event with `ctrlKey` set. The field and
+ *   the timeline zoom themselves on it; anywhere else it is cancelled, so a pinch over a panel or a toolbar can't zoom the
+ *   page. Keyboard zoom (Cmd/Ctrl with + and −)
+ *   and the browser's zoom menu still work, as WCAG 1.4.4 (Resize Text)
+ *   needs.
  *
  * Electron needs none of this: its visual zoom is off by default (see
  * electron/main/index.ts).
@@ -49,6 +56,18 @@ export function shouldBlockTouchMove(
     return cancelable && touchCount > 1 && !startedOnOwner;
 }
 
+/**
+ * Whether a wheel event is a pinch or a Ctrl + wheel that would zoom the
+ * page. Cmd + wheel scrolls in browsers, so a panel still scrolls while Cmd
+ * is held (say, during Cmd-click selection).
+ */
+export function shouldBlockWheel(event: {
+    ctrlKey: boolean;
+    cancelable: boolean;
+}): boolean {
+    return event.ctrlKey && event.cancelable;
+}
+
 /** Starts guarding the page; returns the stop. */
 export function startTouchGestureGuard(doc: Document = document): () => void {
     const cancel = (event: Event) => event.preventDefault();
@@ -69,6 +88,10 @@ export function startTouchGestureGuard(doc: Document = document): () => void {
         )
             event.preventDefault();
     };
+    // Bubble phase, after the field and the timeline have zoomed on it
+    const onWheel = (event: WheelEvent) => {
+        if (shouldBlockWheel(event)) event.preventDefault();
+    };
 
     const gestureEvents = ["gesturestart", "gesturechange", "gestureend"];
     for (const type of gestureEvents)
@@ -81,10 +104,13 @@ export function startTouchGestureGuard(doc: Document = document): () => void {
         capture: true,
         passive: false,
     });
+    // Browsers make document wheel listeners passive unless told otherwise
+    doc.addEventListener("wheel", onWheel, { passive: false });
 
     return () => {
         for (const type of gestureEvents) doc.removeEventListener(type, cancel);
         doc.removeEventListener("touchstart", onTouchStart, { capture: true });
         doc.removeEventListener("touchmove", onTouchMove, { capture: true });
+        doc.removeEventListener("wheel", onWheel);
     };
 }

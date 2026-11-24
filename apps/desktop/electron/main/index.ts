@@ -84,7 +84,18 @@ import {
     clearMissingRecentFiles,
 } from "./services/recent-files-service";
 import type AudioFile from "../../src/global/classes/AudioFile";
-import { init, captureException, captureMessage } from "@sentry/electron/main";
+import {
+    init,
+    captureException,
+    captureMessage,
+    makeElectronOfflineTransport,
+    makeElectronTransport,
+} from "@sentry/electron/main";
+import { scrubUserPaths } from "@/utilities/scrubUserPaths";
+import {
+    consentGatedTransport,
+    errorReportsAllowedFor,
+} from "./errorReportConsent";
 
 import {
     automaticUpdatesAreEnabled,
@@ -220,14 +231,23 @@ function isNewShowDraftPath(filePath: string): boolean {
 export const isCodegen = !!process.env.PLAYWRIGHT_CODEGEN;
 const isMacOS = process.platform === "darwin";
 
-const enableSentry =
-    process.env.NODE_ENV !== "development" && !store.get("optOutAnalytics");
-console.log("Sentry error reporting enabled:", enableSentry);
+/** Whether error reports may leave the app now (`errorReportsAllowedFor`); read at each send. */
+const errorReportsAllowed = () =>
+    errorReportsAllowedFor(process.env.NODE_ENV, store.get("optOutAnalytics"));
+console.log("Sentry error reporting allowed:", errorReportsAllowed());
+
 init({
     dsn: "https://72e6204c8e527c4cb7a680db2f9a1e0b@o4509010215239680.ingest.us.sentry.io/4509010222579712",
-    enabled: enableSentry,
-    // The app's own diagnostics go without the console breadcrumbs, which name files.
-    beforeSend: stripDiagnosticBreadcrumbs,
+    // Enabled to catch crashes; nothing is sent until the person opts in. The gate sits under the
+    // offline queue, so reports saved earlier and re-sent at launch are checked too.
+    enabled: process.env.NODE_ENV !== "development",
+    transport: makeElectronOfflineTransport(
+        consentGatedTransport(makeElectronTransport, errorReportsAllowed),
+    ),
+    // The app's own diagnostics go without the console breadcrumbs, which name files, and event
+    // text doesn't name the computer's user (paths under C:\Users\<name>, /Users/<name>,
+    // /home/<name>). Crash dump attachments aren't scrubbed; they too wait for consent.
+    beforeSend: (event) => scrubUserPaths(stripDiagnosticBreadcrumbs(event)),
 });
 
 /**
@@ -235,9 +255,7 @@ init({
  * analytics after launch.
  */
 const diagnosticsAllowed = () =>
-    enableSentry &&
-    !store.get("optOutAnalytics") &&
-    !process.env.PLAYWRIGHT_SESSION;
+    errorReportsAllowed() && !process.env.PLAYWRIGHT_SESSION;
 
 /** The person's Discord status (Settings > Privacy). Tests never touch a real Discord. */
 const discordPresence = createDiscordPresence({

@@ -1,3 +1,4 @@
+import { isModifierHeld } from "@/input/modifierGrace";
 import tolgee from "@/global/singletons/Tolgee";
 import type {
     BeatPosition,
@@ -584,10 +585,11 @@ export const getPageSnapBeats = (
 
 /**
  * Whether a pointer event turns page snapping off for this step of a drag. Holding Alt (Option on
- * macOS) places boundaries on any whole beat.
+ * macOS) places boundaries on any whole beat. Alt let go just before the drop still counts
+ * (`MODIFIER_RELEASE_GRACE_MS`).
  */
 export const isPageSnapDisabled = (event: { readonly altKey: boolean }) =>
-    event.altKey;
+    isModifierHeld(event, "alt");
 
 const nearestSnapBeat = (
     beat: BeatPosition,

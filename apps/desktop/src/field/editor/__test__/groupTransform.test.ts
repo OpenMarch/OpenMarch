@@ -1,4 +1,5 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { setModifierReleaseGraceForTests } from "@/input/modifierGrace";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { FieldPointer } from "../fieldEditor";
 import { fieldKeys } from "../fieldKeys";
 import {
@@ -22,6 +23,10 @@ import {
     onScreenToggles,
     useTouchModifierStore,
 } from "@/stores/TouchModifierStore";
+
+// Keys let go mid-drag here redraw at once; the release grace has its own tests
+beforeEach(() => setModifierReleaseGraceForTests(0));
+afterEach(() => setModifierReleaseGraceForTests());
 
 // A formation 100 wide and 50 tall, from (100, 200) to (200, 250).
 const FORMATION: MarcherPosition[] = [

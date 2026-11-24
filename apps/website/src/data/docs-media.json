@@ -135,7 +135,7 @@
         "chapter": "3d-view",
         "kind": "still",
         "width": 752,
-        "height": 1088
+        "height": 728
     },
     "3d-silk-artwork": {
         "chapter": "3d-view",
@@ -160,6 +160,12 @@
         "kind": "still",
         "width": 1280,
         "height": 640
+    },
+    "3d-venue-mark-diesel": {
+        "chapter": "3d-view",
+        "kind": "still",
+        "width": 1280,
+        "height": 800
     },
     "3d-window": {
         "chapter": "3d-view",
@@ -958,6 +964,24 @@
         "width": 1280,
         "height": 296,
         "seconds": 6.9
+    },
+    "venue-camera-on-field": {
+        "chapter": "3d-view",
+        "kind": "still",
+        "width": 1600,
+        "height": 924
+    },
+    "venue-on-field": {
+        "chapter": "3d-view",
+        "kind": "still",
+        "width": 1600,
+        "height": 924
+    },
+    "venue-on-field-stands": {
+        "chapter": "3d-view",
+        "kind": "still",
+        "width": 1600,
+        "height": 924
     },
     "window-command-palette": {
         "chapter": "workspace",

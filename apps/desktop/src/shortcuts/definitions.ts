@@ -886,6 +886,25 @@ const STATIC_ACTIONS = {
         scope: "canvas",
         defaultBindings: ["M"],
     },
+    // The show's 3D venue under the 2D grid (#1207), back in the look last picked. Unbound: a
+    // view picked now and then, from the display bar's Venue button or the palette
+    toggleFieldVenue: {
+        labelKey: "actions.ui.toggleFieldVenue",
+        keywordsKey: "actions.ui.toggleFieldVenueKeywords",
+        toggleOnKey: "actions.ui.showFieldVenue",
+        toggleOffKey: "actions.ui.hideFieldVenue",
+        category: "ui",
+        scope: "canvas",
+        defaultBindings: [],
+    },
+    toggleView3dCameraOnField: {
+        labelKey: "actions.ui.toggleView3dCameraOnField",
+        toggleOnKey: "actions.ui.showView3dCameraOnField",
+        toggleOffKey: "actions.ui.hideView3dCameraOnField",
+        category: "ui",
+        scope: "canvas",
+        defaultBindings: [],
+    },
     // #315: the field's right-click menu, from the keyboard, at the selection. Enabled only with
     // a selection
     openFieldMenu: {
@@ -1106,6 +1125,14 @@ const STATIC_ACTIONS = {
         category: "shape",
         scope: "canvas",
         defaultBindings: ["Enter"],
+    },
+    // Place without keeping the shape: the marchers go to their spots as a plain move does, and
+    // no shape is saved, as Place then Ungroup would leave them. Shift-click on Place does the same
+    applyShapeLoose: {
+        labelKey: "actions.shape.applyLoose",
+        category: "shape",
+        scope: "canvas",
+        defaultBindings: ["Shift+Enter"],
     },
     // While drawing a line point by point, the last point taken back (owner, option A on #522).
     // Handled only then (shapes/tool/ShapeToolKeys), so the keys do nothing else meanwhile
@@ -1944,4 +1971,43 @@ export const EXPORT_ACTION_IDS = [
 
 export function getActionDefinition(id: ActionId): ActionDefinition {
     return ACTIONS[id];
+}
+
+/** Categories of actions that don't change the show (for usage analytics: what an undo right after can blame). */
+const NON_EDIT_CATEGORIES: ReadonlySet<ActionCategory> = new Set([
+    "file",
+    "navigation",
+    "playback",
+    "ui",
+    "cursor",
+    "select",
+]);
+
+/** Actions in edit categories that still don't change the show: views, modes and copying. */
+const NON_EDIT_ACTIONS: ReadonlySet<string> = new Set([
+    "timelineZoomIn",
+    "timelineZoomOut",
+    "timelineFit",
+    "toggleSnap",
+    "toggleEditorMode",
+    "toggleTempoMode",
+    "copyFormation",
+    "followPreview",
+    "toggleMarcherOrder",
+]);
+
+/**
+ * Whether the action changes the show, judged by its category, less views, modes, copying and
+ * selecting. Unknown ids are not edits.
+ */
+export function isEditAction(id: string): boolean {
+    const action = (
+        ACTIONS as Partial<Record<string, { category: ActionCategory }>>
+    )[id];
+    return (
+        action !== undefined &&
+        !NON_EDIT_CATEGORIES.has(action.category) &&
+        !NON_EDIT_ACTIONS.has(id) &&
+        !id.startsWith("fieldEditSelectAll")
+    );
 }

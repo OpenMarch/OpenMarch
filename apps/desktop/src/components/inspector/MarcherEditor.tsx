@@ -12,7 +12,8 @@ import MarcherPositionsMenu from "@/components/toolbar/MarcherPositionsMenu";
 import { Button, getButtonClassName, Input } from "@openmarch/ui";
 import StepSizeWarningBadge from "./StepSizeWarningBadge";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
-import { performersOnly } from "@/global/classes/Marcher";
+import { useUnlockedOnly } from "@/items/lockedItems";
+import { isPerformer } from "@/global/classes/Marcher";
 import { useSelectedPage } from "@/context/SelectedPageContext";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { clsx } from "clsx";
@@ -446,23 +447,26 @@ function MarcherEditor() {
     const { t } = useTranslate();
     const { selectedMarchers: selection, setSelectedMarchers } =
         useSelectedMarchers()!;
-    // Performers: items are edited in their panels, not as marchers: props in the Props panel,
-    // equipment, edited from its right-click menu
-    const selectedMarchers = useMemo(
-        () => performersOnly(selection),
-        [selection],
-    );
+    // Marchers and props alike (props epic, fork #1239); a locked item keeps its place and is
+    // edited from its right-click menu
+    const selectedMarchers = useUnlockedOnly(selection);
     const { data: items } = useQuery(allItemsQueryOptions());
-    const selectedEquipmentCount = useMemo(() => {
-        const equipment = new Set(
-            items
-                ?.filter((item) => item.kind === "equipment")
-                .map((item) => item.marcher_id),
+    // The notes over the section: where a prop's size and look are edited, and why a locked
+    // item isn't in the section
+    const { selectedPropCount, selectedLockedCount } = useMemo(() => {
+        const kinds = new Map(
+            (items ?? []).map((item) => [item.marcher_id, item]),
         );
-        return selection.filter((m) => equipment.has(m.id)).length;
+        let props = 0;
+        let locked = 0;
+        for (const m of selection) {
+            const item = kinds.get(m.id);
+            if (!item) continue;
+            if (item.locked) locked++;
+            else if (item.kind === "prop") props++;
+        }
+        return { selectedPropCount: props, selectedLockedCount: locked };
     }, [items, selection]);
-    const selectedPropCount =
-        selection.length - selectedMarchers.length - selectedEquipmentCount;
     const { selectedPage } = useSelectedPage()!;
     /**
      * Playback (UI-19 review): the section keeps its place and shows a note instead of the
@@ -545,20 +549,17 @@ function MarcherEditor() {
                     className="text-sub text-text/60 px-6"
                     data-testid="inspector-items-selected"
                 >
-                    <T
-                        keyName="inspector.marcher.itemsSelected"
-                        params={{ count: selectedPropCount }}
-                    />
+                    <T keyName="inspector.marcher.propsLook" />
                 </p>
             )}
-            {selectedEquipmentCount > 0 && (
+            {selectedLockedCount > 0 && (
                 <p
                     className="text-sub text-text/60 px-6"
-                    data-testid="inspector-equipment-selected"
+                    data-testid="inspector-locked-selected"
                 >
                     <T
-                        keyName="inspector.marcher.equipmentSelected"
-                        params={{ count: selectedEquipmentCount }}
+                        keyName="inspector.marcher.lockedSelected"
+                        params={{ count: selectedLockedCount }}
                     />
                 </p>
             )}
@@ -569,8 +570,17 @@ function MarcherEditor() {
                         <InspectorCollapsible
                             defaultOpen
                             translatableTitle={{
-                                keyName: "inspector.marcher.title",
-                                parameters: { count: selectedMarchers.length },
+                                keyName:
+                                    selectedPropCount > 0
+                                        ? "inspector.marcher.titleWithProps"
+                                        : "inspector.marcher.title",
+                                parameters: {
+                                    count: selectedMarchers.length,
+                                    marchers:
+                                        selectedMarchers.length -
+                                        selectedPropCount,
+                                    props: selectedPropCount,
+                                },
                             }}
                             className="mt-12 flex flex-col gap-16"
                         >
@@ -706,9 +716,14 @@ function MarcherEditor() {
                         <InspectorCollapsible
                             defaultOpen
                             translatableTitle={{
-                                keyName: "inspector.marcher.titleSingle",
+                                keyName: isPerformer(selectedMarchers[0])
+                                    ? "inspector.marcher.titleSingle"
+                                    : "inspector.marcher.titleProp",
                                 parameters: {
                                     drillNumber:
+                                        selectedMarchers[0].drill_number,
+                                    name:
+                                        selectedMarchers[0].name?.trim() ||
                                         selectedMarchers[0].drill_number,
                                 },
                             }}

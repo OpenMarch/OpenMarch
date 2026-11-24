@@ -951,6 +951,25 @@
                     ]
                 },
                 {
+                    "label": "Place marchers without keeping the shape",
+                    "other": [
+                        {
+                            "keys": [
+                                "Shift",
+                                "Enter"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "⇧",
+                                "↩"
+                            ]
+                        }
+                    ]
+                },
+                {
                     "label": "Shape: Remove the last point while drawing",
                     "other": [
                         {
@@ -2686,6 +2705,25 @@
                     "mac": [
                         {
                             "keys": [
+                                "↩"
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "label": "Place marchers without keeping the shape",
+                    "other": [
+                        {
+                            "keys": [
+                                "Shift",
+                                "Enter"
+                            ]
+                        }
+                    ],
+                    "mac": [
+                        {
+                            "keys": [
+                                "⇧",
                                 "↩"
                             ]
                         }

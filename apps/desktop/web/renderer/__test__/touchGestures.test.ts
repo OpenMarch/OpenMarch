@@ -3,6 +3,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import {
     ownsGestures,
     shouldBlockTouchMove,
+    shouldBlockWheel,
     startTouchGestureGuard,
 } from "../touchGestures";
 
@@ -45,6 +46,21 @@ describe("shouldBlockTouchMove", () => {
     });
 });
 
+describe("shouldBlockWheel", () => {
+    const wheel = (ctrlKey: boolean, metaKey: boolean, cancelable = true) =>
+        shouldBlockWheel(
+            new WheelEvent("wheel", { ctrlKey, metaKey, cancelable }),
+        );
+    it("blocks pinches and Ctrl + wheel", () => {
+        expect(wheel(true, false)).toBe(true);
+    });
+    it("leaves plain scrolling, Cmd + scroll and uncancelable wheels alone", () => {
+        expect(wheel(false, false)).toBe(false);
+        expect(wheel(false, true)).toBe(false);
+        expect(wheel(true, false, false)).toBe(false);
+    });
+});
+
 describe("startTouchGestureGuard", () => {
     it("cancels Safari's gesture events until stopped", () => {
         const stop = startTouchGestureGuard();
@@ -55,5 +71,49 @@ describe("startTouchGestureGuard", () => {
         const after = new Event("gesturestart", { cancelable: true });
         document.dispatchEvent(after);
         expect(after.defaultPrevented).toBe(false);
+    });
+    it("cancels a pinch over a panel but not a plain scroll", () => {
+        document.body.innerHTML = `<div id="panel"></div>`;
+        const stop = startTouchGestureGuard();
+        const panel = document.getElementById("panel")!;
+        const pinch = new WheelEvent("wheel", {
+            ctrlKey: true,
+            bubbles: true,
+            cancelable: true,
+        });
+        panel.dispatchEvent(pinch);
+        expect(pinch.defaultPrevented).toBe(true);
+        const scroll = new WheelEvent("wheel", {
+            bubbles: true,
+            cancelable: true,
+        });
+        panel.dispatchEvent(scroll);
+        expect(scroll.defaultPrevented).toBe(false);
+        stop();
+        const after = new WheelEvent("wheel", {
+            ctrlKey: true,
+            bubbles: true,
+            cancelable: true,
+        });
+        panel.dispatchEvent(after);
+        expect(after.defaultPrevented).toBe(false);
+    });
+    it("lets the field and the timeline see a pinch before cancelling it", () => {
+        document.body.innerHTML = `<canvas id="field"></canvas>`;
+        const stop = startTouchGestureGuard();
+        const field = document.getElementById("field")!;
+        let cancelledBeforeField = true;
+        field.addEventListener("wheel", (event) => {
+            cancelledBeforeField = event.defaultPrevented;
+        });
+        const pinch = new WheelEvent("wheel", {
+            ctrlKey: true,
+            bubbles: true,
+            cancelable: true,
+        });
+        field.dispatchEvent(pinch);
+        stop();
+        expect(cancelledBeforeField).toBe(false);
+        expect(pinch.defaultPrevented).toBe(true);
     });
 });

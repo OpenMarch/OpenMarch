@@ -640,6 +640,41 @@ const shots = [
         },
     },
     {
+        id: "3d-venue-mark-diesel",
+        kind: "still",
+        // Narrower than the usual 1600 pixels, like the arena: the crowd is busy
+        width: 1280,
+        covers: [
+            "apps/desktop/src/view3d/core/kits/markDiesel.ts",
+            "apps/desktop/src/view3d/core/kits/markDiesel",
+        ],
+        // Mark Diesel Stadium with its roof closed, from its first camera
+        async setup(ctx) {
+            await seekInPage(ctx.page, 3, 0.5);
+            const { view, baked } = await open3d(ctx);
+            await view.getByTestId("view3d-settings-button").click();
+            await view.getByTestId("view3d-settings").waitFor();
+            await view
+                .getByTestId("view3d-venue-picker")
+                .locator('[data-value="markDiesel"]')
+                .click();
+            await baked(2);
+            await ctx.wait(1500);
+            // The sample show's Day carries over, and Day opens the roof
+            await view
+                .getByTestId("view3d-lighting-picker")
+                .locator('[data-value="roofClosed"]')
+                .click();
+            await ctx.wait(1500);
+            await view.getByTestId("view3d-settings-button").click();
+            await tidy(view);
+            await view.keyboard.press("Digit1");
+            await view.mouse.move(ctx.window.width - 4, ctx.window.height / 2);
+            await ctx.wait(3000);
+            return { box: ctx.whole, target: view };
+        },
+    },
+    {
         id: "3d-silk-settings",
         kind: "still",
         // The flag silk rows of 3D View settings › Performers: the shapes, and imported Artwork
@@ -1311,6 +1346,132 @@ const shots = [
                     height: r.y + r.height - panel.y,
                 },
             };
+        },
+    },
+    {
+        id: "venue-on-field",
+        kind: "still",
+        // The editor's field with the venue on it (Faint), and the Venue button's menu open
+        // beside the display bar (fork #1207)
+        covers: [
+            "apps/desktop/src/components/canvas/display/VenueButton.tsx",
+            "apps/desktop/src/field/three/venueUnderlay",
+        ],
+        async setup(ctx) {
+            const { page } = ctx;
+            await tidy(page);
+            const button = page.getByTestId("field-display-venue");
+            await button.click();
+            await page.getByTestId("field-display-venue-faint").click();
+            await page.getByTestId("field-display-venue-around-edge").click();
+            await page.mouse.move(4, ctx.window.height / 2);
+            await ctx.wait(1500);
+            const menu = page
+                .locator("[data-radix-popper-content-wrapper]")
+                .first();
+            return {
+                box: ctx.union(
+                    await ctx.around(
+                        page.getByTestId("fieldCanvas").first(),
+                        0,
+                    ),
+                    await ctx.around(menu, 12),
+                ),
+            };
+        },
+    },
+    {
+        id: "venue-on-field-stands",
+        kind: "still",
+        // Zoomed out with Soft and Stands: the stadium around the field, from above
+        async setup(ctx) {
+            const { page } = ctx;
+            await tidy(page);
+            await page.getByTestId("field-display-venue").click();
+            await page.getByTestId("field-display-venue-soft").click();
+            await page.getByTestId("field-display-venue-around-stands").click();
+            await page.keyboard.press("Escape");
+            // No tooltip on the button the menu closed back to
+            await ctx.wait(400);
+            await page.evaluate(() =>
+                /** @type {HTMLElement | null} */ (
+                    document.activeElement
+                )?.blur(),
+            );
+            const canvas = page.getByTestId("fieldCanvas").first();
+            const c = await canvas.boundingBox();
+            // Out about three times (ctrl-wheel, as a trackpad pinch)
+            await page.evaluate(
+                ([x, y]) => {
+                    const target = document.elementFromPoint(x, y);
+                    for (let i = 0; i < 6; i++)
+                        target.dispatchEvent(
+                            new WheelEvent("wheel", {
+                                deltaY: 100,
+                                ctrlKey: true,
+                                clientX: x,
+                                clientY: y,
+                                bubbles: true,
+                                cancelable: true,
+                            }),
+                        );
+                },
+                [c.x + c.width / 2, c.y + c.height / 2],
+            );
+            await page.mouse.move(4, ctx.window.height / 2);
+            await page.keyboard.press("Escape");
+            await ctx.wait(2000);
+            return { box: await ctx.around(canvas, 0) };
+        },
+    },
+    {
+        id: "venue-camera-on-field",
+        kind: "still",
+        // The 3D View's camera on the 2D field (#1227): the camera chip, its wedge and the ring it
+        // looks at, zoomed out, with the 3D View open on its default camera
+        covers: [
+            "apps/desktop/src/field/three/venueUnderlay/CameraHandle.tsx",
+            "apps/desktop/src/field/three/venueUnderlay/CameraMarkerLayer.tsx",
+        ],
+        async setup(ctx) {
+            const { page } = ctx;
+            await tidy(page);
+            await page.getByTestId("field-display-venue").click();
+            await page.getByTestId("field-display-venue-faint").click();
+            await page.getByTestId("field-display-venue-around-edge").click();
+            await page.getByTestId("field-display-venue-camera").click();
+            await page.keyboard.press("Escape");
+            await open3d(ctx);
+            await page.bringToFront();
+            await page.evaluate(() =>
+                /** @type {HTMLElement | null} */ (
+                    document.activeElement
+                )?.blur(),
+            );
+            const canvas = page.getByTestId("fieldCanvas").first();
+            const c = await canvas.boundingBox();
+            // Out (ctrl-wheel, as a trackpad pinch), so the camera in front of the field shows
+            await page.evaluate(
+                ([x, y]) => {
+                    const target = document.elementFromPoint(x, y);
+                    for (let i = 0; i < 5; i++)
+                        target.dispatchEvent(
+                            new WheelEvent("wheel", {
+                                deltaY: 100,
+                                ctrlKey: true,
+                                clientX: x,
+                                clientY: y,
+                                bubbles: true,
+                                cancelable: true,
+                            }),
+                        );
+                },
+                [c.x + c.width / 2, c.y + c.height / 2],
+            );
+            await page.getByTestId("fieldView3dCameraMove").waitFor();
+            await page.mouse.move(4, ctx.window.height / 2);
+            await ctx.wait(1500);
+            return { box: await ctx.around(canvas, 0) };
         },
     },
 ];

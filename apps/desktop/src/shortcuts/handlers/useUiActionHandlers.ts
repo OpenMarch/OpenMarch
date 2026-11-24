@@ -19,6 +19,21 @@ export function useUiActionHandlers() {
     useActionHandler("toggleNextPagePaths", () =>
         setUiSettings({ ...settings(), nextPaths: !settings().nextPaths }),
     );
+    // Show or hide venue on field is the field's (useFieldVenueAction), which knows the venue
+    const cameraOn = () => settings().view3dCameraOnField === true;
+    useActionHandler(
+        "toggleView3dCameraOnField",
+        () =>
+            setUiSettings({ ...settings(), view3dCameraOnField: !cameraOn() }),
+        {
+            label: () =>
+                tolgee.t(
+                    cameraOn()
+                        ? "actions.ui.hideView3dCameraOnField"
+                        : "actions.ui.showView3dCameraOnField",
+                ),
+        },
+    );
     // Start flag positions (#331): N shows the Hold N state while held, and a quick tap latches
     // it. A lost key (the window lost focus) lets go without counting as a tap. The palette has
     // no key to let go, so it toggles the latch.

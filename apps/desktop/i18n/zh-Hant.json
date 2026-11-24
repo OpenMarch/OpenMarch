@@ -18,8 +18,7 @@
             "snapOn": "貼齊已關閉：按下即可重新開啟",
             "snapToCustomFraction": "貼齊格線",
             "toggleSnap": "切換貼齊",
-            "toggleSnapKeywords": "貼齊 磁鐵 吸附 格線 網格 自由 snap magnet grid free",
-            "propsOnly": "只選取了道具：道具無法對齊或均分"
+            "toggleSnapKeywords": "貼齊 磁鐵 吸附 格線 網格 自由 snap magnet grid free"
         },
         "batchEdit": {
             "clearPage": "清除第{page}頁",
@@ -790,8 +789,6 @@
         "marcher": {
             "drillNumber": "隊形編號",
             "errorLoadingCoords": "載入座標時發生錯誤",
-            "itemsSelected": "{count, plural, other {已選取 # 個道具。請在「道具」面板中編輯。}}",
-            "equipmentSelected": "{count, plural, =1 {已選取#件器材。在器材上按右鍵即可編輯。} other {已選取#件器材。在其中一件上按右鍵即可編輯。}}",
             "playing": "正在播放。暫停即可查看及編輯所選的隊員。",
             "maxStepSize": "最大步幅",
             "minStepSize": "最小步幅",

@@ -1,5 +1,11 @@
 import { isMacPlatform } from "@/shortcuts/platform";
 import {
+    modifierReleaseGraceMs,
+    releasedAgo,
+    type ModifierName,
+} from "./modifierGrace";
+import {
+    HELD_ROLES,
     releaseUsedKeys,
     rolesOf,
     trackHeldKeys,
@@ -9,12 +15,18 @@ import {
     type RoleKey,
     type RoleMap,
     type Roles,
+    VERSION_A,
 } from "./modifierRoles";
 
 /**
  * The held roles of one gesture, from its press to its release. Keeps the press rule (a key the
  * press used is no role until it's released) and follows keys pressed or released mid-drag, so a
  * gesture only asks `roles()` and re-runs its last move when told to.
+ *
+ * A role turns off only once its key (or on-screen toggle) has been up for the release grace
+ * (`MODIFIER_RELEASE_GRACE_MS` in `modifierGrace.ts`): people let go of Shift a moment before the mouse, and that drop
+ * should keep Shift. Turning a role on is immediate; holding a role a little longer is the whole
+ * cost, so letting go on purpose to cancel it still works, the preview just changes after the grace.
  */
 export interface GestureKeys {
     /** The held roles now */
@@ -42,6 +54,7 @@ export function startGestureKeys({
     track = true,
     map,
     isMac = isMacPlatform(),
+    releaseGraceMs = modifierReleaseGraceMs(),
 }: {
     context: GestureContext;
     /** The keys held at the press (`heldKeysOf` the pointer-down) */
@@ -61,33 +74,104 @@ export function startGestureKeys({
     track?: boolean;
     map?: RoleMap;
     isMac?: boolean;
+    /** How long a released role still counts; 0 turns it off at once */
+    releaseGraceMs?: number;
 }): GestureKeys {
     let keys = press;
     let used: ReadonlySet<RoleKey> = new Set(usedByPress);
-    const roles = () =>
+    /** Roles whose key came up and that still count until their timer runs out */
+    const graced = new Map<HeldRole, ReturnType<typeof setTimeout>>();
+    const actual = () =>
         rolesOf(keys, context, {
             map,
             isMac,
             onScreen: onScreen?.(),
             usedByPress: used,
         });
-    let last = roles();
+    const withGrace = (now: Roles): Roles => {
+        if (graced.size === 0) return now;
+        const out = { ...now };
+        for (const role of graced.keys()) out[role] = true;
+        return out;
+    };
+    /** The roles as the keys and toggles have them, before the grace */
+    let lastActual = actual();
+    /** The roles last reported, with the grace */
+    let last = lastActual;
+    const roles = () => withGrace(actual());
+    const clearGrace = () => {
+        for (const timer of graced.values()) clearTimeout(timer);
+        graced.clear();
+    };
+    /** The modifier that holds `role` here, for asking when the keyboard saw it come up */
+    const modifierOf = (role: HeldRole): ModifierName | null => {
+        switch ((map ?? VERSION_A)[context][role]) {
+            case "Shift":
+                return "shift";
+            case "Alt":
+                return "alt";
+            case "$mod":
+                return isMac ? "meta" : "ctrl";
+            default:
+                return null;
+        }
+    };
+    /**
+     * How long a role that just turned off still counts, or 0. A key or toggle change seen here
+     * gets the whole grace. A pointer event that no longer carries a key gets only what's left of
+     * the keyboard's own release, so a key let go before the gesture started listening (held
+     * still inside the click slop) isn't held into the drag.
+     */
+    const graceFor = (role: HeldRole, from: "change" | "pointer") => {
+        if (releaseGraceMs <= 0) return 0;
+        if (from === "change") return releaseGraceMs;
+        const modifier = modifierOf(role);
+        const ago = modifier === null ? null : releasedAgo(modifier);
+        return ago === null ? 0 : Math.max(0, releaseGraceMs - ago);
+    };
     /** Whether the roles changed since they were last read here */
-    const reread = () => {
-        const now = roles();
-        const changed = !sameRoles(now, last);
-        last = now;
+    const reread = (grace: "change" | "pointer" | false = "change") => {
+        const now = actual();
+        for (const role of HELD_ROLES) {
+            const timer = graced.get(role);
+            if (now[role]) {
+                // Held again (or still): the pending release is off
+                if (timer !== undefined) {
+                    clearTimeout(timer);
+                    graced.delete(role);
+                }
+            } else if (grace && lastActual[role] && timer === undefined) {
+                const ms = graceFor(role, grace);
+                if (ms > 0)
+                    graced.set(
+                        role,
+                        setTimeout(() => {
+                            graced.delete(role);
+                            if (reread()) onRolesChange?.(last);
+                        }, ms),
+                    );
+            }
+        }
+        lastActual = now;
+        const next = withGrace(now);
+        const changed = !sameRoles(next, last);
+        last = next;
         return changed;
     };
-    const update = (next: HeldKeys) => {
+    const apply = (next: HeldKeys, grace: "change" | "pointer" | false) => {
         keys = next;
         used = releaseUsedKeys(used, keys, isMac);
-        return reread();
+        return reread(grace);
     };
+    const update = (next: HeldKeys) => apply(next, "pointer");
     const detachKeys = track
         ? trackHeldKeys(
-              (next) => {
-                  if (update(next)) onRolesChange?.(last);
+              (next, cause) => {
+                  // The window lost focus: no keyup will come, and nothing is being dropped
+                  const blurred = cause === "blur";
+                  if (blurred) clearGrace();
+                  if (apply(next, blurred ? false : "change"))
+                      onRolesChange?.(last);
               },
               () => keys,
           )
@@ -103,6 +187,7 @@ export function startGestureKeys({
         dispose: () => {
             detachKeys();
             detachScreen();
+            clearGrace();
         },
     };
 }

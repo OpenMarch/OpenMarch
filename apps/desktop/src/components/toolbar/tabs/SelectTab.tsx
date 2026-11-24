@@ -7,10 +7,12 @@ import {
 } from "@/global/classes/Sections";
 import {
     allMarchersQueryOptions,
+    allMarcherRowsQueryOptions,
     allTagsQueryOptions,
     marcherIdsForAllTagIdsQueryOptions,
 } from "@/hooks/queries";
 import { useQuery } from "@tanstack/react-query";
+import { useUnlockedOnly } from "@/items/lockedItems";
 import ToolbarSection from "../ToolbarSection";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import {
@@ -349,10 +351,13 @@ function SelectTapModeSwitch({
 }
 
 function SelectTabContents() {
-    // Performers: props and equipment aren't selected by section, tag or prefix
+    // Sections, prefixes and tags take props too (props epic, fork #1239), never a locked item;
+    // families are the performers'
     const { data: marchers, isSuccess: marchersLoaded } = useQuery(
         allMarchersQueryOptions(),
     );
+    const { data: rows } = useQuery(allMarcherRowsQueryOptions());
+    const tagged = useUnlockedOnly(rows ?? marchers);
     const isTouch = useIsTouchMode();
     const [tapModeChoice, setTapModeChoice] =
         useState<SelectTapMode>("replace");
@@ -380,13 +385,13 @@ function SelectTabContents() {
     let Selector: React.JSX.Element;
     switch (selectByOption) {
         case "section":
-            Selector = <SectionSelector marchers={marchers ?? []} />;
+            Selector = <SectionSelector marchers={tagged} />;
             break;
         case "tag":
-            Selector = <TagSelector marchers={marchers ?? []} />;
+            Selector = <TagSelector marchers={tagged} />;
             break;
         case "drillPrefix":
-            Selector = <DrillPrefixSelector marchers={marchers ?? []} />;
+            Selector = <DrillPrefixSelector marchers={tagged} />;
             break;
         case "family":
             Selector = <FamilySelector marchers={marchers ?? []} />;

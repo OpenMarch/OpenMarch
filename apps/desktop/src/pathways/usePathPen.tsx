@@ -3,11 +3,11 @@ import { useQuery } from "@tanstack/react-query";
 import { useShallow } from "zustand/react/shallow";
 import { toast } from "sonner";
 import { translateTimelineText } from "@/timeline/translateTimelineText";
-import { allMarchersQueryOptions } from "@/hooks/queries";
+import { allMarcherRowsQueryOptions } from "@/hooks/queries";
 import { readGroupPaths } from "@/db-functions/timelineGroupRoutes";
 import tolgee from "@/global/singletons/Tolgee";
 import { db } from "@/global/database/db";
-import { performersOnly } from "@/global/classes/Marcher";
+import { useUnlockedOnly } from "@/items/lockedItems";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useActionHandler } from "@/shortcuts/useActionHandler";
@@ -114,10 +114,11 @@ export function usePathPenActions(): void {
     const selectedContext = useSelectedMarchers();
     const selected = selectedContext?.selectedMarchers;
     const isPlaying = useIsPlaying()?.isPlaying ?? false;
-    const performers = performersOnly(selected ?? []);
+    // Marchers and props alike; a locked item has no moves to draw
+    const performers = useUnlockedOnly(selected);
     const one = performers.length === 1 ? performers[0]! : null;
-    // Every marcher's drill number, as a group path's members are named
-    const { data: allMarchers } = useQuery(allMarchersQueryOptions());
+    // Every marcher's and prop's drill number, as a group path's members are named
+    const { data: allMarchers } = useQuery(allMarcherRowsQueryOptions());
     const drills = useMemo(
         () => new Map((allMarchers ?? []).map((m) => [m.id, m.drill_number])),
         [allMarchers],

@@ -247,7 +247,7 @@ function fights(id: KitId, quality: "high" | "low"): string[] {
 }
 
 describe("stadium surfaces", () => {
-    for (const id of ["hs", "bighs", "college", "pro"] as const) {
+    for (const id of ["hs", "bighs", "college", "pro", "markDiesel"] as const) {
         for (const quality of ["high", "low"] as const) {
             it(`${id} (${quality}) has no flush surfaces that fight`, () => {
                 expect(fights(id, quality)).toEqual([]);

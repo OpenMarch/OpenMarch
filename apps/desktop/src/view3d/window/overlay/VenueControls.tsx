@@ -11,7 +11,9 @@ import type { LightingPreset, VenueKitId } from "@/view3d/core/types";
 import {
     KIT_LIGHTING,
     VENUE_KIT_IDS,
+    fieldLinesFor,
     lightingForKit,
+    type FieldLines,
     type VenueSettings,
 } from "@/view3d/core/venueSettings";
 import {
@@ -111,6 +113,38 @@ export function LightingControl() {
             label={t("view3d.overlay.lighting")}
             testId="view3d-lighting-picker"
         />
+    );
+}
+
+/**
+ * Whose lines a venue with its own field paints: the show's field, or the
+ * stadium's own, as they are on its turf. Marchers stay where they are.
+ */
+export function FieldLinesControl() {
+    const { t } = useTranslate();
+    const { settings, request } = useVenueRequest();
+    if (!settings) return null;
+    const lines = fieldLinesFor(settings.kit, settings.fieldLines);
+    return (
+        <div className="flex flex-col gap-6">
+            <Segmented
+                value={lines}
+                options={(["show", "stadium"] as const).map((value) => ({
+                    value,
+                    label: t(`view3d.settings.fieldLinesOption.${value}`),
+                }))}
+                onChange={(fieldLines: FieldLines) =>
+                    request({ kind: "fieldLines", fieldLines })
+                }
+                label={t("view3d.settings.fieldLines")}
+                testId="view3d-field-lines-picker"
+            />
+            <p className="text-sub text-text/60">
+                {lines === "stadium"
+                    ? t("view3d.settings.fieldLinesStadiumNote")
+                    : t("view3d.settings.fieldLinesShowNote")}
+            </p>
+        </div>
     );
 }
 

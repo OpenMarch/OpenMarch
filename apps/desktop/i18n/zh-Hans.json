@@ -18,8 +18,7 @@
             "snapOn": "吸附已关闭：点击重新开启",
             "snapToCustomFraction": "吸附到网格",
             "toggleSnap": "开关吸附",
-            "toggleSnapKeywords": "吸附 磁铁 网格 自由 对齐 snap magnet grid free",
-            "propsOnly": "仅选择了道具：道具不参与对齐或分布"
+            "toggleSnapKeywords": "吸附 磁铁 网格 自由 对齐 snap magnet grid free"
         },
         "batchEdit": {
             "clearPage": "清除第{page}页",
@@ -790,8 +789,6 @@
         "marcher": {
             "drillNumber": "队形编号",
             "errorLoadingCoords": "加载坐标时出错",
-            "itemsSelected": "{count, plural, other {已选择#个道具。请在“道具”面板中编辑。}}",
-            "equipmentSelected": "{count, plural, =1 {已选择#件器材。右键点击可编辑。} other {已选择#件器材。右键点击其中一件可编辑。}}",
             "playing": "正在播放。暂停后可查看和编辑所选队员。",
             "maxStepSize": "最大步幅",
             "minStepSize": "最小步幅",

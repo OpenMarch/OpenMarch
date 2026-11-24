@@ -89,11 +89,11 @@ export class FieldDrag<T> {
             shown.at.x === pointer.field.x &&
             shown.at.y === pointer.field.y;
         if (!still) this.keys.update(pointer);
+        // Read before disposing: a key let go just before the drop still counts until then
+        const roles = this.keys.roles();
         this.keys.dispose();
         clearGestureChip(this);
-        return still
-            ? shown.drawn
-            : this.draw(pointer.field, this.keys.roles());
+        return still ? shown.drawn : this.draw(pointer.field, roles);
     }
 
     /** Stops following the keys; nothing is dropped. */

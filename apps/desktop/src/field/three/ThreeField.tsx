@@ -134,6 +134,19 @@ import { fieldObstacleSource } from "./fieldObstacles";
 import { createThreeFieldTestApi } from "./threeFieldTestApi";
 import FieldLayer from "./layers/FieldLayer";
 import BackgroundImageLayer from "./layers/BackgroundImageLayer";
+import VenueUnderlayLayer from "./venueUnderlay/VenueUnderlayLayer";
+import CameraMarkerLayer from "./venueUnderlay/CameraMarkerLayer";
+import CameraHandle from "./venueUnderlay/CameraHandle";
+import {
+    styleBaseColor,
+    venueAround,
+    venueLook,
+    washedColor,
+    withLightLines,
+} from "./venueUnderlay/fieldVenue";
+import { useFieldVenueAction } from "./venueUnderlay/useFieldVenueAction";
+import { useVenueSettings } from "@/hooks/queries/useVenueSettings";
+import { KIT_FIELD_STYLE, kitFieldStyle } from "@/view3d/core/kits/fieldStyle";
 import MarchersLayer from "./layers/MarchersLayer";
 import ItemsLayer from "./layers/ItemsLayer";
 import LabelsLayer, { type LabelStyle } from "./layers/LabelsLayer";
@@ -252,15 +265,41 @@ function ThreeFieldView() {
         [fieldProperties, fieldImage],
     );
     const { theme: appTheme } = useTheme();
-    // How bright the floor is under the order lanes (step 4i): background and field image, read once
+    // The venue on the field (#1207): off unless the View setting picks a look
+    const { fieldVenue, fieldVenueAround } = useUiSettingsStore(
+        useShallow((s) => ({
+            fieldVenue: s.uiSettings.fieldVenue,
+            fieldVenueAround: s.uiSettings.fieldVenueAround,
+        })),
+    );
+    const { data: venue } = useVenueSettings();
+    const venueKit = venue?.kit ?? "hs";
+    const venueStyle = fieldProperties
+        ? kitFieldStyle(venueKit, fieldProperties)
+        : KIT_FIELD_STYLE[venueKit];
+    const venue3d = venueLook(fieldVenue, venueStyle);
+    useFieldVenueAction(venueStyle);
+    // Full color draws the grid in light ink over the dark turf
+    const lineFieldProperties = useMemo(
+        () =>
+            fieldProperties && venue3d?.keepMarkings
+                ? withLightLines(fieldProperties)
+                : fieldProperties,
+        [fieldProperties, venue3d?.keepMarkings],
+    );
+    // How bright the floor is under the order lanes (step 4i): background (washed with the
+    // venue's color when it shows) and field image, read once
+    const background = fieldProperties?.theme.background;
+    const floorBackground = useMemo(() => {
+        const bg = background ?? { r: 255, g: 255, b: 255 };
+        return venue3d
+            ? washedColor(bg, styleBaseColor(venueStyle, bg), venue3d)
+            : bg;
+    }, [background, venue3d, venueStyle]);
     const orderFloor = useMemo(
         () =>
             makeFloorSampler({
-                background: fieldProperties?.theme.background ?? {
-                    r: 255,
-                    g: 255,
-                    b: 255,
-                },
+                background: floorBackground,
                 image: fieldImage,
                 placement: fieldImagePlan,
                 width: fieldProperties?.width ?? 0,
@@ -272,7 +311,13 @@ function ThreeFieldView() {
             }),
         // `appTheme` is what the dark class follows
         // eslint-disable-next-line react-hooks/exhaustive-deps
-        [fieldProperties, fieldImage, fieldImagePlan, appTheme],
+        [
+            fieldProperties,
+            floorBackground,
+            fieldImage,
+            fieldImagePlan,
+            appTheme,
+        ],
     );
     const appearanceSteps = useMarcherAppearanceSteps(true);
     const { mutateAsync: moveMarchers } = useMutation(
@@ -793,8 +838,17 @@ function ThreeFieldView() {
                             clock={countGrid}
                             appearanceSteps={appearanceSteps}
                         />
-                        <FieldLayer
+                        <VenueUnderlayLayer
                             fieldProperties={fieldProperties}
+                            look={venue3d}
+                            around={venueAround(fieldVenueAround, venueStyle)}
+                        />
+                        <CameraMarkerLayer fieldProperties={fieldProperties} />
+                        <FieldLayer
+                            // `??` narrows: fieldProperties is set here
+                            fieldProperties={
+                                lineFieldProperties ?? fieldProperties
+                            }
                             strips={strips}
                             numberAtlas={atlases.number}
                             labelAtlas={atlases.checkpoint}
@@ -868,6 +922,9 @@ function ThreeFieldView() {
                         editor={editor}
                         theme={fieldProperties.theme}
                     />
+                )}
+                {fieldProperties && (
+                    <CameraHandle fieldProperties={fieldProperties} />
                 )}
                 {/* A line's order, and Set order's sweep (pathways step 4g): only with
                     Follow-the-leader on (#1095) */}

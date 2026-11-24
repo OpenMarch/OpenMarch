@@ -87,7 +87,8 @@ export default function RecoverableShows({
                     key={show.id}
                     className="flex items-center justify-between gap-12"
                 >
-                    <div className="flex min-w-0 flex-col">
+                    {/* ph-no-capture: the paths in `title` would name the user in replays */}
+                    <div className="ph-no-capture flex min-w-0 flex-col">
                         <p className="text-body truncate" title={show.showPath}>
                             {fileNameOf(show.showPath)}
                         </p>

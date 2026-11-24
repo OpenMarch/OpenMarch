@@ -29,6 +29,7 @@ import type { ActionId } from "@/shortcuts/definitions";
 import { DISPLAY_BUTTON_CLASS, DisplayCaption } from "./displayButton";
 import { StartFlagPositionsButton } from "./StartFlagPositionsButton";
 import SelectToolBar from "./SelectToolBar";
+import VenueButton from "./VenueButton";
 import { MENU_BUTTON_CLASS } from "@/components/ui/popupClasses";
 import { useShowsSelectTool } from "@/field/fieldSelectTool";
 import { useFollowTheLeader } from "@/pathways/followTheLeader";
@@ -74,8 +75,8 @@ const ORDER_CHOICES: readonly Choice<ShapeOutlines>[] = [
 /**
  * How the field is displayed, apart from the timeline: a small bar at the field's top right (the
  * zoom controls hold the bottom right). It replaced the toolbar's View tab. Path overlays, marcher
- * labels, equipment icons (fork #992), placed shapes' outlines and a line's order (pathways step
- * 4g). The Select tool's Box
+ * labels, equipment icons (fork #992), placed shapes' outlines, the venue under the field (#1207)
+ * and a line's order (pathways step 4g). The Select tool's Box
  * and Lasso sit above it in a bar of their own, outside the touch layout (whose pill has its own
  * drag modes).
  */
@@ -130,6 +131,8 @@ export default function FieldDisplayBar() {
                         labelKey="toolbar.view.shapes"
                         testId="field-display-shapes"
                     />
+                    {/* The show's 3D venue under the grid (#1207) */}
+                    <VenueButton />
                     {/* A line's order (pathways step 4g): Show order, Alt+O. Only with
                         Follow-the-leader on (#1095) */}
                     {followTheLeader && (

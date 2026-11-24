@@ -343,15 +343,16 @@ describe("trackHeldKeys", () => {
         detach = trackHeldKeys(onChange);
 
         key("keydown", { key: "Shift", shiftKey: true });
-        expect(onChange).toHaveBeenLastCalledWith(held({ shift: true }));
+        expect(onChange).toHaveBeenLastCalledWith(held({ shift: true }), "key");
 
         key("keydown", { key: "Alt", shiftKey: true, altKey: true });
         expect(onChange).toHaveBeenLastCalledWith(
             held({ shift: true, alt: true }),
+            "key",
         );
 
         key("keyup", { key: "Shift", altKey: true });
-        expect(onChange).toHaveBeenLastCalledWith(held({ alt: true }));
+        expect(onChange).toHaveBeenLastCalledWith(held({ alt: true }), "key");
         expect(onChange).toHaveBeenCalledTimes(3);
     });
 
@@ -368,10 +369,10 @@ describe("trackHeldKeys", () => {
         detach = trackHeldKeys(onChange, held({ shift: true }));
 
         key("keyup", { key: "Shift" });
-        expect(onChange).toHaveBeenLastCalledWith(NONE);
+        expect(onChange).toHaveBeenLastCalledWith(NONE, "key");
 
         key("keydown", { key: "Shift", shiftKey: true });
-        expect(onChange).toHaveBeenLastCalledWith(held({ shift: true }));
+        expect(onChange).toHaveBeenLastCalledWith(held({ shift: true }), "key");
         expect(onChange).toHaveBeenCalledTimes(2);
     });
 
@@ -387,7 +388,7 @@ describe("trackHeldKeys", () => {
         detach = trackHeldKeys(onChange);
         key("keydown", { key: "Meta", metaKey: true, shiftKey: true });
         window.dispatchEvent(new Event("blur"));
-        expect(onChange).toHaveBeenLastCalledWith(NONE);
+        expect(onChange).toHaveBeenLastCalledWith(NONE, "blur");
     });
 
     it("stops listening once detached", () => {

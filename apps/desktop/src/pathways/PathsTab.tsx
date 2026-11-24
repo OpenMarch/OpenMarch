@@ -1,6 +1,5 @@
-import { useMemo } from "react";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
-import { performersOnly } from "@/global/classes/Marcher";
+import { useUnlockedOnly } from "@/items/lockedItems";
 import { PathPenButton } from "./PathPenButton";
 import { OrderButtons } from "./OrderButtons";
 import { useFollowTheLeader } from "./followTheLeader";
@@ -13,10 +12,8 @@ import { useFollowTheLeader } from "./followTheLeader";
  */
 export default function PathsTab() {
     const selected = useSelectedMarchers()?.selectedMarchers;
-    const performers = useMemo(
-        () => performersOnly(selected ?? []),
-        [selected],
-    );
+    // Marchers and props alike; a locked item takes no spot
+    const performers = useUnlockedOnly(selected);
     const followTheLeader = useFollowTheLeader();
     return (
         <div className="flex w-full flex-wrap items-center gap-8">

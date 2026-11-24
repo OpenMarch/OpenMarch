@@ -339,9 +339,29 @@ export const SECTIONS: { [key: string]: Section } = {
  * @param name The name of the section to get. E.g. "Bass Drum"
  * @returns
  */
+/**
+ * The sections of props and equipment, which are marchers rows too (props epic, fork #1239). Kept
+ * out of {@link SECTIONS}, the sections a performer can be given; select by section offers them.
+ */
+export const ITEM_SECTIONS: { [key: string]: Section } = {
+    Prop: new Section({
+        family: FAMILIES.Other,
+        name: "Prop",
+        tName: "section.prop",
+        prefix: "PROP",
+    }),
+    Equipment: new Section({
+        family: FAMILIES.Other,
+        name: "Equipment",
+        tName: "section.equipment",
+        prefix: "EQUIP",
+    }),
+};
+
 export function getSectionObjectByName(name: string): Section {
     const section =
         Object.values(SECTIONS).find((section) => section.name === name) ||
+        Object.values(ITEM_SECTIONS).find((section) => section.name === name) ||
         SECTIONS.Other;
     return section;
 }

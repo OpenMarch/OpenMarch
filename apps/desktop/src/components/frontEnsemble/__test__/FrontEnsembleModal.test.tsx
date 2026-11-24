@@ -687,7 +687,7 @@ describeDbTests("Front ensemble panel", (it) => {
         expect(await screen.findByText(/No props yet/)).toBeInTheDocument();
     });
 
-    it("tells the inspector's reader selected equipment is edited with a right-click", async ({
+    it("tells the inspector's reader a locked item stays put and where a prop's look is edited", async ({
         db,
         marchersAndPages,
     }) => {
@@ -702,12 +702,12 @@ describeDbTests("Front ensemble panel", (it) => {
             prop.marcher_id,
         ]);
         expect(
-            await screen.findByTestId("inspector-equipment-selected"),
+            await screen.findByTestId("inspector-locked-selected"),
         ).toHaveTextContent(
-            "1 piece of equipment selected. Right-click it to edit it.",
+            "1 locked item selected. It stays where it is: right-click it to edit it.",
         );
         expect(
             screen.getByTestId("inspector-items-selected"),
-        ).toHaveTextContent("1 prop selected. Edit it in the Props panel.");
+        ).toHaveTextContent("Prop size and look: Props panel");
     });
 });

@@ -55,6 +55,8 @@ const VIEW3D_PUBLISH_CHANNELS: readonly string[] = [
     "view3d:selection",
     "view3d:invalidate",
     "view3d:hidden-props",
+    "view3d:camera-wanted",
+    "view3d:camera-move",
 ] satisfies View3dPublishChannel[];
 
 function domReady(
@@ -616,6 +618,15 @@ const APP_API = {
         ipcRenderer.on("view3d:venue-change-request", listener);
         return () => {
             ipcRenderer.removeListener("view3d:venue-change-request", listener);
+        };
+    },
+    /** The 3D View's camera moved. The payload is unchecked (`parseCameraPose`). */
+    onView3dCamera: (callback: (pose: unknown) => void) => {
+        const listener = (_event: IpcRendererEvent, pose: unknown) =>
+            callback(pose);
+        ipcRenderer.on("view3d:camera", listener);
+        return () => {
+            ipcRenderer.removeListener("view3d:camera", listener);
         };
     },
     /** The 3D View asks for a playback action. The payload is unchecked. */
