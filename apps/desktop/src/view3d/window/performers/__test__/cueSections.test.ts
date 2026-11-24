@@ -1,27 +1,27 @@
 // @vitest-environment node
 import { describe, expect, it } from "vitest";
-import { cueSectionsOf, flagEquipmentOf } from "../cueSections";
+import { cueSectionsOf } from "../cueSections";
 
 describe("cueSectionsOf", () => {
-    it("gives a section whose performers all carry one flag that flag", () => {
+    it("gives a section whose performers all carry one model that model's catalog item", () => {
         const sections = cueSectionsOf([
-            { section: "Trumpet", family: "trumpet" },
-            { section: "Color Guard", family: "flag" },
-            { section: "Color Guard", family: "flag" },
-            { section: "Swing", family: "swingFlag" },
-            { section: "Mixed", family: "flag" },
-            { section: "Mixed", family: "rifle" },
+            { section: "Trumpet", model: "trumpet" },
+            { section: "Color Guard", model: "flag6" },
+            { section: "Color Guard", model: "flag6" },
+            { section: "Swing", model: "swingFlag" },
+            { section: "Tuba", model: "contra" },
+            { section: "Mixed", model: "flag6" },
+            { section: "Mixed", model: "rifle" },
+            { section: "Drum Major", model: null },
         ]);
 
         expect(sections.map((s) => [s.name, s.equipment?.id])).toEqual([
-            ["Color Guard", "builtin:model.flag6"],
-            ["Swing", "builtin:model.swingFlag"],
+            ["Trumpet", "builtin:equipment.trumpet"],
+            ["Color Guard", "builtin:equipment.flag"],
+            ["Swing", "builtin:equipment.swingFlag"],
+            ["Tuba", "builtin:equipment.tuba"],
         ]);
-        expect(sections[0]!.equipment).toMatchObject({ holds: "flag" });
-    });
-
-    it("gives no equipment for anything but a flag", () => {
-        expect(flagEquipmentOf("rifle")).toBeUndefined();
-        expect(flagEquipmentOf(null)).toBeUndefined();
+        expect(sections[1]!.equipment).toMatchObject({ holds: "flag" });
+        expect(sections[0]!.equipment).toMatchObject({ holds: "winds" });
     });
 });

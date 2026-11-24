@@ -9,6 +9,7 @@ import tolgee from "@/global/singletons/Tolgee";
 import {
     createCues,
     deleteCues,
+    editCues,
     getCues,
     updateCues,
     type DatabaseCue,
@@ -70,5 +71,36 @@ export const deleteCuesMutationOptions = (qc: QueryClient) =>
         },
         onError: (e, variables) => {
             conToastError(tolgee.t("cues.errors.delete"), e, variables);
+        },
+    });
+
+/** Deletes, updates and creates cues as one undoable edit (setting equipment, moving a cue). */
+export interface CueEdit {
+    readonly deletedCueIds: readonly number[];
+    readonly modifiedCues: readonly ModifiedCueArgs[];
+    readonly newCues: readonly NewCueArgs[];
+}
+
+export const editCuesMutationOptions = (qc: QueryClient) =>
+    mutationOptions({
+        mutationFn: ({ deletedCueIds, modifiedCues, newCues }: CueEdit) =>
+            editCues({
+                db,
+                cueIds: new Set(deletedCueIds),
+                modifiedCues,
+                newCues,
+            }),
+        onSuccess: async () => {
+            await qc.invalidateQueries({ queryKey: cueKeys.all() });
+        },
+        onError: (e, variables) => {
+            // Named for what the edit mostly did
+            const key =
+                variables.newCues.length > 0
+                    ? "cues.errors.create"
+                    : variables.modifiedCues.length > 0
+                      ? "cues.errors.update"
+                      : "cues.errors.delete";
+            conToastError(tolgee.t(key), e, variables);
         },
     });

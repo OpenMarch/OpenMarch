@@ -18,7 +18,9 @@ export function getActionLabel(id: ActionId, t: Translate): string {
     const def = getActionDefinition(id);
     const base = def.labelHoldTerms
         ? t(def.labelKey, { ...holdTerms() })
-        : t(def.labelKey);
+        : def.labelItemKey
+          ? t(def.labelKey, { item: t(def.labelItemKey) })
+          : t(def.labelKey);
     return def.labelSuffixKey
         ? t("actions.labelWithVariant", {
               label: base,

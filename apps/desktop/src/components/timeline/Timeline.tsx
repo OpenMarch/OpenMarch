@@ -179,6 +179,12 @@ export interface TimelineProps {
     readonly hideStartFlag?: boolean;
     /** Lanes drawn in place of the clip rows, under the waveform (tempo mode's lanes) */
     readonly band?: TimelineBand;
+    /** Lanes under the clip rows (the cue lanes, ADR 0015 D-7) */
+    readonly lanes?: TimelineBand;
+    /** The Moves lane's heading, over the move tracks while they show */
+    readonly movesHeader?: React.ReactNode;
+    /** The strip where the move tracks were while Moves is hidden */
+    readonly movesHiddenStrip?: React.ReactNode;
     readonly mode: TimelineMode;
     readonly beats: readonly Beat[];
     readonly pages: readonly Page[];
@@ -1106,8 +1112,17 @@ export function Timeline(props: TimelineProps) {
                   ? undefined
                   : readOnlyStartFlag(selection),
               band: props.band,
+              lanes: props.lanes,
+              movesHeader: props.movesHeader,
+              movesHiddenStrip: props.movesHiddenStrip,
           }
-        : { ...commonProps, band: props.band };
+        : {
+              ...commonProps,
+              band: props.band,
+              lanes: props.lanes,
+              movesHeader: props.movesHeader,
+              movesHiddenStrip: props.movesHiddenStrip,
+          };
 
     return props.mode === "basic" ? (
         <BasicTimeline {...shownProps} />

@@ -11,7 +11,9 @@
  *   plume out.
  * - A look that carries an instrument gets a second `InstancedMesh` over
  *   the same instances: the horn, posed by the look's hold, in a smooth
- *   metallic material (docs/3d/instruments.md §4).
+ *   metallic material (docs/3d/instruments.md §4). A slot whose Equipment
+ *   cues change what it holds gets each piece, and draws the one in hand
+ *   (`setHeld`).
  * - Built once per marcher set, look set, bake and quality; per frame the
  *   caller writes positions and the count clock, then `compose`s.
  * - Dispose with {@link MarcherBodies.dispose}: the instanced geometries
@@ -51,7 +53,7 @@ import { STAND_Y } from "../performerData";
 import { holdId } from "@/view3d/core/instruments/holds";
 import type { LoadedBody } from "./marcherAssets";
 import { instrumentMaterial } from "./instrumentGeometry";
-import { HornSet } from "./hornSet";
+import { HornSet, heldLooks } from "./hornSet";
 import { SilkSet, silkMaterial, type SilkMotionFrame } from "./silkSet";
 import {
     PlumeSet,
@@ -238,6 +240,14 @@ export interface MarcherSlotLook {
      * section's 2D fill, else its preset's color and silk pattern.
      */
     silkColor?: number;
+    /**
+     * Every look the slot's hands take over the show, when Equipment cues
+     * change what it holds (ADR 0015 D-6): the same uniform carrying each
+     * piece (or nothing), the first being `uniform`. Each piece gets its
+     * instrument and silks; {@link MarcherBodies.setHeld} picks the one
+     * drawn. Without it the slot holds `uniform`'s carry all show.
+     */
+    held?: readonly UniformLook[];
 }
 
 export type MarcherQuality = "low" | "high";
@@ -346,9 +356,9 @@ export class MarcherBodies {
     private readonly entries: MeshEntry[] = [];
     private readonly materials: THREE.Material[] = [];
     /** The instruments, one group per look, near and far detail (`hornSet.ts`). */
-    private readonly horns: HornSet | null = null;
+    private readonly horns: HornSet | null;
     /** The flags' silks, one cloth mesh per tier (`silkSet.ts`). */
-    private readonly silks: SilkSet | null = null;
+    private readonly silks: SilkSet | null;
     /** The shakos' plumes, one mesh for the band (`plumeSet.ts`). */
     private readonly plumes: PlumeSet | null = null;
     private readonly blockSource: THREE.BufferGeometry | null = null;
@@ -359,6 +369,8 @@ export class MarcherBodies {
     private readonly scaleOf: Float32Array;
     /** The hold id each slot plays (`slotHoldId`). */
     private readonly holdIds: string[];
+    /** Per slot: which of its held looks draws (`heldLooks`). */
+    private readonly heldOf: Uint8Array;
     /** The count clock of the last `writeFrame`. */
     private count = 0;
     private headIndex: number | null = null;
@@ -388,6 +400,7 @@ export class MarcherBodies {
         this.instanceOf = new Int32Array(looks.length);
         this.scaleOf = new Float32Array(looks.length);
         this.holdIds = looks.map((l) => slotHoldId(l.uniform));
+        this.heldOf = new Uint8Array(looks.length);
 
         this.contact = createContactMesh(looks.length);
         this.group.add(this.contact);
@@ -439,21 +452,35 @@ export class MarcherBodies {
             this.group.add(mesh);
         }
         this.plumes = this.buildPlumes(bodies, looks, quality);
-        if (looks.some((l) => l.uniform.options.carry)) {
-            // in `materials` so dispose frees it
-            const material = instrumentMaterial(this.composer);
-            this.materials.push(material);
-            this.horns = new HornSet(bodies, looks, quality, material);
-            for (const m of this.horns.meshes) this.group.add(m);
-            const skeleton = bodies.values().next().value!.mesh.skeleton;
-            const cloth = silkMaterial(this.composer);
-            const silks = new SilkSet(skeleton, looks, quality, cloth);
-            if (silks.count > 0) {
-                this.materials.push(cloth);
-                this.silks = silks;
-                for (const m of silks.meshes) this.group.add(m);
-            } else cloth.dispose();
+        [this.horns, this.silks] = this.buildCarried(bodies, looks, quality);
+    }
+
+    /**
+     * The instruments and the flags' silks of every piece the looks hold,
+     * added to the group; null for each when nobody holds one.
+     */
+    private buildCarried(
+        bodies: ReadonlyMap<BodyType, LoadedBody>,
+        looks: readonly MarcherSlotLook[],
+        quality: MarcherQuality,
+    ): [HornSet | null, SilkSet | null] {
+        if (!looks.some((l) => heldLooks(l).some((u) => u.options.carry)))
+            return [null, null];
+        // in `materials` so dispose frees it
+        const material = instrumentMaterial(this.composer);
+        this.materials.push(material);
+        const horns = new HornSet(bodies, looks, quality, material);
+        for (const m of horns.meshes) this.group.add(m);
+        const skeleton = bodies.values().next().value!.mesh.skeleton;
+        const cloth = silkMaterial(this.composer);
+        const silks = new SilkSet(skeleton, looks, quality, cloth);
+        if (silks.count === 0) {
+            cloth.dispose();
+            return [horns, null];
         }
+        this.materials.push(cloth);
+        for (const m of silks.meshes) this.group.add(m);
+        return [horns, silks];
     }
 
     /**
@@ -559,6 +586,14 @@ export class MarcherBodies {
         this.composer.writeChannel(slot, "horn", play);
     }
 
+    /**
+     * Sets which of slot `slot`'s held looks (`heldLooks`) draws its
+     * instrument and silks, from the next `writeFrame`; 0 is its own.
+     */
+    setHeld(slot: number, held: number): void {
+        this.heldOf[slot] = held;
+    }
+
     /** Composes this frame's bones (after `setClip`, `setHorn` and `writeFrame`). */
     compose(gl: THREE.WebGLRenderer, force = false): void {
         this.composer.update(gl, this.count, force);
@@ -644,9 +679,25 @@ export class MarcherBodies {
             mesh.instanceMatrix.needsUpdate = true;
         }
         this.plumes?.writeFrame(xz, heading, placed, this.scaleOf, lift);
-        this.horns?.writeFrame(xz, heading, placed, this.scaleOf, camera, lift);
+        this.horns?.writeFrame(
+            xz,
+            heading,
+            placed,
+            this.scaleOf,
+            camera,
+            lift,
+            this.heldOf,
+        );
         if (silk) this.silks?.writeMotion(silk);
-        this.silks?.writeFrame(xz, heading, placed, this.scaleOf, camera, lift);
+        this.silks?.writeFrame(
+            xz,
+            heading,
+            placed,
+            this.scaleOf,
+            camera,
+            lift,
+            this.heldOf,
+        );
         const discs = this.contact.instanceMatrix.array as Float32Array;
         for (let i = 0; i < placed.length; i++) {
             const o = i * 16;

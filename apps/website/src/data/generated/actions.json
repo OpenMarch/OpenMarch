@@ -598,6 +598,81 @@
         "category": "batchEdit",
         "bindings": []
     },
+    "cueAddSelected": {
+        "label": "Add selected to this cue",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "cueRemoveSelected": {
+        "label": "Remove selected from this cue",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "cueMakeLasting": {
+        "label": "Make cue lasting",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "cueMakeMomentary": {
+        "label": "Make cue momentary",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "cueMoveToPlayhead": {
+        "label": "Move cue to playhead",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "cueDelete": {
+        "label": "Delete cue",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "toggleMovesLane": {
+        "label": "Show or hide the Moves lane",
+        "category": "timeline",
+        "bindings": []
+    },
+    "equipmentIconsOff": {
+        "label": "Equipment icons: Off",
+        "category": "field",
+        "bindings": []
+    },
+    "equipmentIconsChanged": {
+        "label": "Equipment icons: Changed only",
+        "category": "field",
+        "bindings": []
+    },
+    "equipmentIconsEveryone": {
+        "label": "Equipment icons: Everyone",
+        "category": "field",
+        "bindings": []
+    },
+    "equipmentIconsBeside": {
+        "label": "Equipment icons: Next to the number",
+        "category": "field",
+        "bindings": []
+    },
+    "equipmentIconsOnDot": {
+        "label": "Equipment icons: In place of the dot",
+        "category": "field",
+        "bindings": []
+    },
+    "equipmentIconsOnNumber": {
+        "label": "Equipment icons: In place of the number",
+        "category": "field",
+        "bindings": []
+    },
+    "cueEndAtPlayhead": {
+        "label": "End cue at playhead",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "toggleEquipmentLane": {
+        "label": "Show or hide the Equipment lane",
+        "category": "timeline",
+        "bindings": []
+    },
     "setAllMarchersToNextPage": {
         "label": "Move to next page's spots (all marchers)",
         "category": "batchEdit",
@@ -3334,5 +3409,290 @@
                 }
             }
         ]
+    },
+    "equipmentUsual": {
+        "label": "Equipment: Their own instrument",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "equipmentNone": {
+        "label": "Equipment: Nothing",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "selectHoldingNone": {
+        "label": "Select empty hands",
+        "category": "select",
+        "bindings": []
+    },
+    "equipmentFlag": {
+        "label": "Equipment: Flag",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "selectHoldingFlag": {
+        "label": "Select Flags",
+        "category": "select",
+        "bindings": []
+    },
+    "equipmentSwingFlag": {
+        "label": "Equipment: Swing flag",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "selectHoldingSwingFlag": {
+        "label": "Select Swing flags",
+        "category": "select",
+        "bindings": []
+    },
+    "equipmentDoubleSwingFlag": {
+        "label": "Equipment: Double swing flags",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "selectHoldingDoubleSwingFlag": {
+        "label": "Select Double swing flags",
+        "category": "select",
+        "bindings": []
+    },
+    "equipmentRifle": {
+        "label": "Equipment: Rifle",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "selectHoldingRifle": {
+        "label": "Select Rifles",
+        "category": "select",
+        "bindings": []
+    },
+    "equipmentSabre": {
+        "label": "Equipment: Sabre",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "selectHoldingSabre": {
+        "label": "Select Sabres",
+        "category": "select",
+        "bindings": []
+    },
+    "equipmentTrumpet": {
+        "label": "Equipment: Trumpet",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "selectHoldingTrumpet": {
+        "label": "Select Trumpets",
+        "category": "select",
+        "bindings": []
+    },
+    "equipmentMellophone": {
+        "label": "Equipment: Mellophone",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "selectHoldingMellophone": {
+        "label": "Select Mellophones",
+        "category": "select",
+        "bindings": []
+    },
+    "equipmentBaritone": {
+        "label": "Equipment: Baritone",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "selectHoldingBaritone": {
+        "label": "Select Baritones",
+        "category": "select",
+        "bindings": []
+    },
+    "equipmentEuphonium": {
+        "label": "Equipment: Euphonium",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "selectHoldingEuphonium": {
+        "label": "Select Euphoniums",
+        "category": "select",
+        "bindings": []
+    },
+    "equipmentTrombone": {
+        "label": "Equipment: Trombone",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "selectHoldingTrombone": {
+        "label": "Select Trombones",
+        "category": "select",
+        "bindings": []
+    },
+    "equipmentBassTrombone": {
+        "label": "Equipment: Bass trombone",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "selectHoldingBassTrombone": {
+        "label": "Select Bass trombones",
+        "category": "select",
+        "bindings": []
+    },
+    "equipmentTuba": {
+        "label": "Equipment: Tuba",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "selectHoldingTuba": {
+        "label": "Select Tubas",
+        "category": "select",
+        "bindings": []
+    },
+    "equipmentSousaphone": {
+        "label": "Equipment: Sousaphone",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "selectHoldingSousaphone": {
+        "label": "Select Sousaphones",
+        "category": "select",
+        "bindings": []
+    },
+    "equipmentPiccolo": {
+        "label": "Equipment: Piccolo",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "selectHoldingPiccolo": {
+        "label": "Select Piccolos",
+        "category": "select",
+        "bindings": []
+    },
+    "equipmentFlute": {
+        "label": "Equipment: Flute",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "selectHoldingFlute": {
+        "label": "Select Flutes",
+        "category": "select",
+        "bindings": []
+    },
+    "equipmentClarinet": {
+        "label": "Equipment: Clarinet",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "selectHoldingClarinet": {
+        "label": "Select Clarinets",
+        "category": "select",
+        "bindings": []
+    },
+    "equipmentBassClarinet": {
+        "label": "Equipment: Bass clarinet",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "selectHoldingBassClarinet": {
+        "label": "Select Bass clarinets",
+        "category": "select",
+        "bindings": []
+    },
+    "equipmentSopranoSax": {
+        "label": "Equipment: Soprano sax",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "selectHoldingSopranoSax": {
+        "label": "Select Soprano saxes",
+        "category": "select",
+        "bindings": []
+    },
+    "equipmentAltoSax": {
+        "label": "Equipment: Alto sax",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "selectHoldingAltoSax": {
+        "label": "Select Alto saxes",
+        "category": "select",
+        "bindings": []
+    },
+    "equipmentTenorSax": {
+        "label": "Equipment: Tenor sax",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "selectHoldingTenorSax": {
+        "label": "Select Tenor saxes",
+        "category": "select",
+        "bindings": []
+    },
+    "equipmentBariSax": {
+        "label": "Equipment: Bari sax",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "selectHoldingBariSax": {
+        "label": "Select Bari saxes",
+        "category": "select",
+        "bindings": []
+    },
+    "equipmentSnare": {
+        "label": "Equipment: Snare",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "selectHoldingSnare": {
+        "label": "Select Snares",
+        "category": "select",
+        "bindings": []
+    },
+    "equipmentTenors": {
+        "label": "Equipment: Tenors",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "selectHoldingTenors": {
+        "label": "Select Tenors",
+        "category": "select",
+        "bindings": []
+    },
+    "equipmentBassDrum": {
+        "label": "Equipment: Bass drum",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "selectHoldingBassDrum": {
+        "label": "Select Bass drums",
+        "category": "select",
+        "bindings": []
+    },
+    "equipmentCymbals": {
+        "label": "Equipment: Cymbals",
+        "category": "batchEdit",
+        "bindings": []
+    },
+    "selectHoldingCymbals": {
+        "label": "Select Cymbals",
+        "category": "select",
+        "bindings": []
+    },
+    "selectHoldingFamilyGuard": {
+        "label": "Select all guard equipment",
+        "category": "select",
+        "bindings": []
+    },
+    "selectHoldingFamilyBrass": {
+        "label": "Select all brass",
+        "category": "select",
+        "bindings": []
+    },
+    "selectHoldingFamilyWoodwinds": {
+        "label": "Select all woodwinds",
+        "category": "select",
+        "bindings": []
+    },
+    "selectHoldingFamilyDrums": {
+        "label": "Select all drums",
+        "category": "select",
+        "bindings": []
     }
 }

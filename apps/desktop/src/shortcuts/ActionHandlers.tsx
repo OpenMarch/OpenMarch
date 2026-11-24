@@ -19,6 +19,7 @@ import { PlacedBoxKeys } from "@/shapes/placed/PlacedBoxKeys";
 import { useBoxSelectionStore } from "@/shapes/placed/boxSelectionStore";
 import { useUnsetActionHandlers } from "./handlers/useUnsetActionHandlers";
 import { useHoldActionHandlers } from "./handlers/useHoldActionHandlers";
+import { useCueActionHandlers } from "./handlers/useCueActionHandlers";
 import { PathPenKeys, usePathPenActions } from "@/pathways/usePathPen";
 import { usePathPenStore } from "@/pathways/pathPenStore";
 import {
@@ -55,6 +56,7 @@ export function EditorActionHandlers() {
     useClipboardActions();
     useUnsetActionHandlers();
     useHoldActionHandlers();
+    useCueActionHandlers();
     useFieldEditActionHandlers();
     useItemActionHandlers();
     useFieldEditModeEntry();

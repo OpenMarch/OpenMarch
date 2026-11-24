@@ -14,6 +14,10 @@ covers:
   - i18n:timeline.readout
   - i18n:timeline.windowLine
   - i18n:timeline.terms
+  - i18n:timeline.lanes
+  - apps/desktop/src/components/timeline/cues/MovesLaneHeader.tsx
+  - action:toggleMovesLane
+  - action:toggleEquipmentLane
 sidebar:
   order: 1
 ---
@@ -27,7 +31,7 @@ The timeline is the show in time. You set where marchers are at a count, and Ope
 
 <Media
   id="timeline-parts"
-  alt="The timeline in Expert with Page 3 selected. Along the top, the playback controls and the readout Pg 3 · ct 10/10, m11 beat 1. Below, the page boxes numbered at their right ends, the start flag with its pennant four counts into Page 3, the playhead at Page 3's end with a label beside it reading counts 5–10, the counts between them shaded, a bar named Move 1 under them, and the measure numbers over the music's waveform. The first page box after home is 0A."
+  alt="The timeline in Expert with Page 3 selected. Along the top, the playback controls and the readout Pg 3 · ct 10/10, m11 beat 1. Below, the page boxes numbered at their right ends, the start flag with its pennant four counts into Page 3, the playhead at Page 3's end with a label beside it reading counts 5–10, the counts between them shaded, a bar named Move 1 under them, and the measure numbers over the music's waveform. The first page box after home is 0A. At the left, the Moves heading with an eye-slash button, and under it the Lanes row."
 />
 
 The pictures in this chapter show Expert. Basic has the same timeline without the start flag and without bars for moves; [Basic and Expert](/guides/start/basic-and-expert/) compares the two modes.
@@ -91,6 +95,37 @@ A position you set for a marcher at a count is a keyframe. On each page, a march
 A move is a stretch of time in which marchers go from one place to another. Each page has a move of its own, which takes everyone who moves on that page from the page before to the page's set. It has no bar: the page's box stands for it.
 
 In Expert, a move can also start or end in the middle of a page, run across several pages, or cover only some marchers. Such a move has a bar of its own under the music, with a name such as "Move 1". For its marchers and counts it takes over from the page's move; the page's move still covers everyone else. See [Make and change moves](/guides/timeline/moves/).
+
+## Lanes
+
+Under the page row and the count ruler, the timeline's rows are **lanes**: the move bars (<Ui k="timeline.lanes.moves" />) and a lane for each kind of cue the show uses, such as Equipment, who holds what over the show. The page row and the ruler always show: they're how you read time.
+
+Only the lanes the show uses appear: Moves (in Expert, where moves have bars) and each cue lane the show has cues for. Giving performers equipment for the first time makes the Equipment lane appear.
+
+Under the lane names on the left is the <Ui k="cues.lane.lanes" /> row. When some of the show's lanes are hidden, it says how many, such as "Lanes · 2 hidden". Click it for the list of lanes:
+
+- Type in <Ui k="cues.lane.find" plain /> to filter the list.
+- Under <Ui k="cues.lane.inThisShow" />, each lane has a check mark: clear it to hide the lane, tick it to show it again. Cue lanes show how many cues they have.
+- Under <Ui k="cues.lane.addLane" />, the kinds of cue lanes the show doesn't use yet, grouped by family. Tick one to add it, empty and ready for cues. This part is left out when there's nothing to add.
+
+<Media
+  id="timeline-lanes-menu"
+  alt="The timeline with Page 3 selected and a move bar, Move 1, under the music. Over the left end of the move row is the heading Moves with an eye-slash button. Under the lanes is the Lanes row, and its menu is open above it: a Find a lane box, then In this show with Moves ticked, then Add a lane with an Equipment family."
+/>
+
+You can also right-click a lane's name, or press and hold it on a tablet: Hide and the lane's name, such as <Ui k="cues.lane.hideNamed" values={{ lane: "Equipment" }} plain />, hides it, <Ui k="cues.lane.collapseRows" plain /> collapses a cue lane's rows into one and <Ui k="cues.lane.expandRows" plain /> brings them back, and <Ui k="cues.lane.lanes" plain /> opens the same list.
+
+- Hiding Moves folds the move bars into a thin strip where they were, labeled <Ui k="timeline.lanes.movesHidden" />: click or tap the strip to show them again. The moves are still there, and the field shows and edits the drill as before.
+- Any other lane, hidden, leaves nothing behind. A hidden lane with no cues goes back under <Ui k="cues.lane.addLane" plain />.
+- Each lane's heading also has an eye-slash button that hides the lane where it is.
+- The same choices are in the View menu and the command palette (<Kbd action="openCommandPalette" />), such as <Ui k="actions.cues.toggleMovesLane" />, where you can give each one a shortcut.
+
+<Media
+  id="timeline-moves-hidden"
+  alt="The timeline with the Moves lane hidden: under the music, where the move bar was, a thin dashed strip with an eye and the words Moves hidden, and under it the Lanes row reading Lanes, 1 hidden."
+/>
+
+Which lanes show is kept on your computer, for every show you open.
 
 ## On a tablet
 

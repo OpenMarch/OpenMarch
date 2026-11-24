@@ -1,13 +1,17 @@
 import * as Popover from "@radix-ui/react-popover";
+import * as Tooltip from "@radix-ui/react-tooltip";
+import { TooltipClassName } from "@openmarch/ui";
 import { useFieldLayerRef } from "@/components/canvas/fieldLayers";
 import {
     BoundingBoxIcon,
+    HandGrabbingIcon,
     ListNumbersIcon,
-    TagIcon,
+    QuestionIcon,
+    TextAaIcon,
     type Icon,
 } from "@phosphor-icons/react";
 import { useTranslate } from "@tolgee/react";
-import { useId, useState } from "react";
+import { useId, useState, type ReactNode } from "react";
 import clsx from "clsx";
 import {
     ShortcutTooltip,
@@ -15,6 +19,8 @@ import {
 } from "@/components/timeline/ShortcutTooltip";
 import {
     useUiSettingsStore,
+    type EquipmentIconPlace,
+    type EquipmentIcons,
     type MarcherLabelForm,
     type ShapeOutlines,
     type UiSettings,
@@ -46,6 +52,20 @@ const SHAPE_CHOICES: readonly Choice<ShapeOutlines>[] = [
     { value: "off", key: "toolbar.view.shapesOff" },
 ];
 
+/** Who shows an equipment icon after their drill number (fork #992); the palette's names */
+const EQUIPMENT_CHOICES: readonly Choice<EquipmentIcons>[] = [
+    { value: "changed", key: "toolbar.view.equipmentChanged" },
+    { value: "everyone", key: "toolbar.view.equipmentEveryone" },
+    { value: "off", key: "toolbar.view.equipmentOff" },
+];
+
+/** Where those icons go (fork #992); the palette's names */
+const EQUIPMENT_PLACE_CHOICES: readonly Choice<EquipmentIconPlace>[] = [
+    { value: "beside", key: "toolbar.view.equipmentBeside" },
+    { value: "dot", key: "toolbar.view.equipmentOnDot" },
+    { value: "label", key: "toolbar.view.equipmentOnNumber" },
+];
+
 const ORDER_CHOICES: readonly Choice<ShapeOutlines>[] = [
     { value: "selected", key: "toolbar.view.orderSelected" },
     { value: "always", key: "toolbar.view.orderAlways" },
@@ -55,8 +75,8 @@ const ORDER_CHOICES: readonly Choice<ShapeOutlines>[] = [
 /**
  * How the field is displayed, apart from the timeline: a small bar at the field's top right (the
  * zoom controls hold the bottom right). It replaced the toolbar's View tab. Path overlays, marcher
- * labels, placed shapes' outlines, the venue under the field (#1207) and a line's order (pathways
- * step 4g). The Select tool's Box
+ * labels, equipment icons (fork #992), placed shapes' outlines, the venue under the field (#1207)
+ * and a line's order (pathways step 4g). The Select tool's Box
  * and Lasso sit above it in a bar of their own, outside the touch layout (whose pill has its own
  * drag modes).
  */
@@ -85,9 +105,22 @@ export default function FieldDisplayBar() {
                         setting="marcherLabels"
                         fallback="auto"
                         choices={LABEL_CHOICES}
-                        icon={TagIcon}
+                        // Drill-number text on the field
+                        icon={TextAaIcon}
                         labelKey="toolbar.view.labels"
                         testId="field-display-labels"
+                    />
+                    {/* What performers hold, as an icon after their drill numbers (fork #992) */}
+                    <ChoiceButton
+                        setting="equipmentIcons"
+                        fallback="changed"
+                        choices={EQUIPMENT_CHOICES}
+                        // What each performer holds
+                        icon={HandGrabbingIcon}
+                        labelKey="toolbar.view.equipment"
+                        testId="field-display-equipment"
+                        keepOpen
+                        more={<EquipmentPlaceChoices />}
                     />
                     {/* Placed boxes' outlines (docs/timeline/research/shapes/07-placed-boxes.md) */}
                     <ChoiceButton
@@ -129,7 +162,9 @@ interface Choice<T extends string> {
  * choices beside the bar as radio buttons, dimmed while the setting is off. Picking one closes
  * them, as the View tab's select did.
  */
-function ChoiceButton<K extends "marcherLabels" | "shapes" | "lineOrder">({
+function ChoiceButton<
+    K extends "marcherLabels" | "shapes" | "lineOrder" | "equipmentIcons",
+>({
     setting,
     fallback,
     choices,
@@ -137,6 +172,8 @@ function ChoiceButton<K extends "marcherLabels" | "shapes" | "lineOrder">({
     labelKey,
     testId,
     action,
+    more,
+    keepOpen = false,
 }: {
     setting: K;
     fallback: NonNullable<UiSettings[K]>;
@@ -146,6 +183,10 @@ function ChoiceButton<K extends "marcherLabels" | "shapes" | "lineOrder">({
     testId: string;
     /** The action that toggles it, whose shortcut the tooltip shows */
     action?: ActionId;
+    /** More choices under these, in the same popup */
+    more?: ReactNode;
+    /** Picking one leaves the popup open (with `more`, to pick there too) */
+    keepOpen?: boolean;
 }) {
     const { t } = useTranslate();
     const value = useUiSettingsStore((s) => s.uiSettings[setting] ?? fallback);
@@ -157,7 +198,7 @@ function ChoiceButton<K extends "marcherLabels" | "shapes" | "lineOrder">({
     const choose = (next: NonNullable<UiSettings[K]>) => {
         const { uiSettings, setUiSettings } = useUiSettingsStore.getState();
         setUiSettings({ ...uiSettings, [setting]: next });
-        setOpen(false);
+        if (!keepOpen) setOpen(false);
     };
     return (
         <Popover.Root open={open} onOpenChange={setOpen}>
@@ -227,8 +268,98 @@ function ChoiceButton<K extends "marcherLabels" | "shapes" | "lineOrder">({
                             </button>
                         ))}
                     </div>
+                    {more}
                 </Popover.Content>
             </Popover.Portal>
         </Popover.Root>
+    );
+}
+
+/**
+ * The Equipment icons popup's second row: where the icons go. Greyed out while the icons are
+ * off, with the reason behind a ? (a press on a choice shows it too, rather than doing nothing).
+ */
+function EquipmentPlaceChoices() {
+    const { t } = useTranslate();
+    const shown = useUiSettingsStore(
+        (s) => s.uiSettings.equipmentIcons ?? "changed",
+    );
+    const place = useUiSettingsStore(
+        (s) => s.uiSettings.equipmentIconPlace ?? "beside",
+    );
+    const [tip, setTip] = useState(false);
+    const headingId = useId();
+    const reasonId = useId();
+    const off = shown === "off";
+    const reason = t("toolbar.view.equipmentPlaceOffReason");
+    const choose = (next: EquipmentIconPlace) => {
+        if (off) return setTip(true);
+        const { uiSettings, setUiSettings } = useUiSettingsStore.getState();
+        setUiSettings({ ...uiSettings, equipmentIconPlace: next });
+    };
+    return (
+        <>
+            <div className="text-sub text-text-subtitle flex items-center px-8 pt-8 pb-2">
+                <h3 id={headingId}>{t("toolbar.view.equipmentPlace")}</h3>
+                {off && (
+                    <Tooltip.Provider delayDuration={0}>
+                        <Tooltip.Root open={tip} onOpenChange={setTip}>
+                            <Tooltip.Trigger asChild>
+                                <button
+                                    type="button"
+                                    aria-label={reason}
+                                    data-testid="field-display-equipment-place-reason"
+                                    className="hover:text-text ml-auto rounded-full"
+                                    onClick={() => setTip(true)}
+                                >
+                                    <QuestionIcon size={14} />
+                                </button>
+                            </Tooltip.Trigger>
+                            <Tooltip.Portal>
+                                <Tooltip.Content
+                                    side="left"
+                                    sideOffset={8}
+                                    className={`${TooltipClassName} text-body max-w-[240px]`}
+                                >
+                                    {reason}
+                                </Tooltip.Content>
+                            </Tooltip.Portal>
+                        </Tooltip.Root>
+                    </Tooltip.Provider>
+                )}
+            </div>
+            <div
+                role="radiogroup"
+                aria-labelledby={headingId}
+                aria-describedby={off ? reasonId : undefined}
+                aria-disabled={off || undefined}
+                className="flex flex-col gap-4"
+            >
+                {EQUIPMENT_PLACE_CHOICES.map((choice) => (
+                    <button
+                        key={choice.value}
+                        type="button"
+                        role="radio"
+                        aria-checked={place === choice.value}
+                        aria-disabled={off || undefined}
+                        data-testid={`field-display-equipment-place-${choice.value}`}
+                        onClick={() => choose(choice.value)}
+                        className={clsx(
+                            MENU_BUTTON_CLASS,
+                            off
+                                ? "text-text-disabled"
+                                : place === choice.value && "text-accent",
+                        )}
+                    >
+                        {t(choice.key)}
+                    </button>
+                ))}
+            </div>
+            {off && (
+                <span id={reasonId} hidden>
+                    {reason}
+                </span>
+            )}
+        </>
     );
 }

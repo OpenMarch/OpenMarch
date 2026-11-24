@@ -20,6 +20,9 @@ import type { FieldDimming } from "../fieldDimming";
 import { useFieldDraw } from "../fieldDrawContext";
 import { MARCHER_SHAPE, writeMarcherLooks } from "../marcherLooks";
 import { dotSizes, SELECTION_RGBA01 } from "../selectionRing";
+import type { LabelIcons } from "@/cues/useEquipmentIcons";
+import type { EquipmentIconPlace } from "@/cues/equipmentIcons";
+import { useIconAtlas } from "../iconBatch";
 
 /**
  * Every marcher's dot in one instanced draw, shaded in the fragment shader so
@@ -221,6 +224,8 @@ type Drawn = {
     lookVersion: number;
     selectionVersion: number;
     theme: FieldTheme | null;
+    /** Who has an icon in place of their dot, as `LabelIcons` keys it ("" for nobody) */
+    iconDotsKey: string;
 };
 
 /** The marchers' dots, each in its appearance at the beat drawn, with a ring on each selected one. */
@@ -229,6 +234,8 @@ export default function MarchersLayer({
     dimming,
     look,
     theme,
+    icons = null,
+    iconPlace = "beside",
 }: {
     marchers: FieldMarchers;
     /** Marchers drawn dimmed (#201). */
@@ -236,8 +243,14 @@ export default function MarchersLayer({
     /** Marchers drawn Not defined (#478, `NOT_DEFINED_LOOK`); dimming wins. */
     look: FieldNotDefined;
     theme: FieldTheme;
+    /** What each performer holds at the beat drawn (fork #992) */
+    icons?: LabelIcons | null;
+    /** In place of the dot, a performer with an icon has only its selection ring drawn here */
+    iconPlace?: EquipmentIconPlace;
 }) {
     const invalidate = useThree((s) => s.invalidate);
+    // In place of the dot: the icons' atlas, which the dots wait for
+    const iconAtlas = useIconAtlas(iconPlace === "dot" && icons !== null);
     const draw = useFieldDraw();
     const drawn = useRef<Drawn>({
         version: -1,
@@ -247,6 +260,7 @@ export default function MarchersLayer({
         lookVersion: -1,
         selectionVersion: -1,
         theme: null,
+        iconDotsKey: "",
     });
 
     const mesh = useMemo(() => {
@@ -284,7 +298,7 @@ export default function MarchersLayer({
     }, []);
 
     // A new theme restyles the dots on the next frame
-    useEffect(() => invalidate(), [theme, invalidate]);
+    useEffect(() => invalidate(), [theme, iconAtlas, invalidate]);
     // New dimming redraws them on the next frame
     useEffect(() => dimming.subscribe(invalidate), [dimming, invalidate]);
     useEffect(() => look.subscribe(invalidate), [look, invalidate]);
@@ -310,8 +324,15 @@ export default function MarchersLayer({
 
         const last = drawn.current;
         const resized = marchers.idsVersion !== last.idsVersion;
+        // Only once the icons can be drawn: until then (or if they can't be) the dots stay
+        const iconDots =
+            iconPlace === "dot" && iconAtlas
+                ? (icons?.at(marchers.drawnBeat) ?? null)
+                : null;
+        const iconDotsKey = iconDots?.key ?? "";
         const restyled =
             resized ||
+            iconDotsKey !== last.iconDotsKey ||
             marchers.appearanceVersion !== last.appearanceVersion ||
             theme !== last.theme;
         const dimChanged =
@@ -369,6 +390,16 @@ export default function MarchersLayer({
             marchers.isItem.forEach((item, i) => {
                 if (item) shapes[i] = MARCHER_SHAPE.hidden;
             });
+            // An icon stands in for the dot: the shape stays, so its selection ring still draws
+            if (iconDots) {
+                const fills = fill.array as Float32Array;
+                const outlines = outline.array as Float32Array;
+                marchers.ids.forEach((id, i) => {
+                    if (!iconDots.icons.has(id) || marchers.isItem[i]) return;
+                    fills[i * 4 + 3] = 0;
+                    outlines[i * 4 + 3] = 0;
+                });
+            }
             fill.needsUpdate = true;
             outline.needsUpdate = true;
             shape.needsUpdate = true;
@@ -401,6 +432,7 @@ export default function MarchersLayer({
             lookVersion: look.version,
             selectionVersion: marchers.selectionVersion,
             theme,
+            iconDotsKey,
         };
     });
 

@@ -288,6 +288,42 @@
             "placeImportedModel": "Place an imported model",
             "placeImportedModelKeywords": "place imported model prop 3d custom glb"
         },
+        "cues": {
+            "equipmentNone": "Equipment: Nothing",
+            "equipmentKeywords": "equipment cue hold holds carry prop guard rifle flag sabre horn drum instrument",
+            "selectHoldingNone": "Select empty hands",
+            "selectHoldingKeywords": "select who holds holding equipment rifles flags sabres playhead",
+            "addSelected": "Add selected to this cue",
+            "removeSelected": "Remove selected from this cue",
+            "makeLasting": "Make cue lasting",
+            "makeMomentary": "Make cue momentary",
+            "params": {
+                "length": "Counts"
+            },
+            "delete": "Delete cue",
+            "cueKeywords": "cue equipment performers add remove momentary lasting delete",
+            "toggleEquipmentLane": "Show or hide the Equipment lane",
+            "equipmentIconsOff": "Equipment icons: Off",
+            "equipmentIconsChanged": "Equipment icons: Changed only",
+            "equipmentIconsEveryone": "Equipment icons: Everyone",
+            "equipmentIconsBeside": "Equipment icons: Next to the number",
+            "equipmentIconsOnDot": "Equipment icons: In place of the dot",
+            "equipmentIconsOnNumber": "Equipment icons: In place of the number",
+            "equipmentIconsKeywords": "show equipment icons instrument field labels holds",
+            "laneKeywords": "equipment lane cues timeline row show hide",
+            "selectHoldingFamily": {
+                "guard": "Select all guard equipment",
+                "brass": "Select all brass",
+                "woodwinds": "Select all woodwinds",
+                "drums": "Select all drums"
+            },
+            "setEquipment": "Equipment: {item}",
+            "selectHolding": "Select {item}",
+            "equipmentUsual": "Equipment: Their own instrument",
+            "moveToPlayhead": "Move cue to playhead",
+            "endAtPlayhead": "End cue at playhead",
+            "toggleMovesLane": "Show or hide the Moves lane"
+        },
         "path": {
             "pen": "Path pen",
             "remove": "Remove path",
@@ -707,6 +743,10 @@
             "add": "{count, plural, one {+# marcher} other {+# marchers}}",
             "select": "{count, plural, one {# marcher} other {# marchers}}",
             "subtract": "{count, plural, one {−# marcher} other {−# marchers}}"
+        },
+        "menu": {
+            "equipment": "Equipment",
+            "selectByEquipment": "Select by equipment"
         },
         "view3dCamera": {
             "name": "3D View camera",
@@ -3351,6 +3391,11 @@
         },
         "clearPage": {
             "error": "Couldn't clear the page"
+        },
+        "lanes": {
+            "moves": "Moves",
+            "movesHidden": "Moves hidden",
+            "showMoves": "Show Moves"
         }
     },
     "titlebar": {
@@ -3424,6 +3469,15 @@
             "labelsNames": "Drill numbers",
             "labelsNumbers": "Numbers only",
             "labelsOff": "Off",
+            "equipment": "Equipment icons",
+            "equipmentChanged": "Changed only",
+            "equipmentEveryone": "Everyone",
+            "equipmentOff": "Off",
+            "equipmentPlace": "Where",
+            "equipmentBeside": "Next to the number",
+            "equipmentOnDot": "In place of the dot",
+            "equipmentOnNumber": "In place of the number",
+            "equipmentPlaceOffReason": "Equipment icons are off. Choose Changed only or Everyone to show them.",
             "nextPaths": "Next paths",
             "shapes": "Shapes",
             "shapesAlways": "Always",
@@ -4160,7 +4214,9 @@
             "resetZoom": "Actual Size",
             "zoomIn": "Zoom In",
             "zoomOut": "Zoom Out",
-            "toggleFullScreen": "Toggle Full Screen"
+            "toggleFullScreen": "Toggle Full Screen",
+            "movesLane": "Show or Hide Moves Lane",
+            "equipmentLane": "Show or Hide Equipment Lane"
         },
         "playback": {
             "title": "Playback",
@@ -4241,6 +4297,118 @@
             "create": "Couldn't add the cue",
             "delete": "Couldn't delete the cue",
             "update": "Couldn't change the cue"
+        },
+        "label": {
+            "performers": "{count, plural, one {# performer} other {# performers}}"
+        },
+        "carry": {
+            "movedTo": "{count, plural, one {# cue moved} other {# cues moved}} to {where}",
+            "moved": "{count, plural, one {# cue moved} other {# cues moved}} to the counts after the ones you deleted",
+            "dropped": "{count, plural, one {# cue was deleted with those counts} other {# cues were deleted with those counts}}"
+        },
+        "value": {
+            "winds": "Horn",
+            "battery": "Drum",
+            "none": "Nothing",
+            "usual": "Their own instrument"
+        },
+        "lane": {
+            "equipment": "Equipment",
+            "foldedCount": "{groups, plural, one {# group} other {# groups}} · {count}",
+            "empty": "No equipment cues yet. Select performers, then right-click › Equipment.",
+            "selectRow": "Select these performers",
+            "selectPerformers": "Select its performers",
+            "markLabel": "{name}: {value}, {where}",
+            "forCounts": "{count, plural, one {For # count} other {For # counts}}",
+            "dragStart": "Drag to change where it starts",
+            "dragEnd": "Drag to change where it ends",
+            "hide": "Hide this lane",
+            "lanes": "Lanes",
+            "hiddenCount": "· {count} hidden",
+            "find": "Find a lane…",
+            "inThisShow": "In this show",
+            "addLane": "Add a lane",
+            "cueCount": "{count, plural, one {# cue} other {# cues}}",
+            "noMatch": "No lanes match",
+            "hideNamed": "Hide {lane}",
+            "collapseRows": "Collapse rows",
+            "expandRows": "Expand rows"
+        },
+        "item": {
+            "flag": "Flag",
+            "swingFlag": "Swing flag",
+            "doubleSwingFlag": "Double swing flags",
+            "rifle": "Rifle",
+            "sabre": "Sabre",
+            "trumpet": "Trumpet",
+            "mellophone": "Mellophone",
+            "baritone": "Baritone",
+            "euphonium": "Euphonium",
+            "trombone": "Trombone",
+            "bassTrombone": "Bass trombone",
+            "tuba": "Tuba",
+            "sousaphone": "Sousaphone",
+            "piccolo": "Piccolo",
+            "flute": "Flute",
+            "clarinet": "Clarinet",
+            "bassClarinet": "Bass clarinet",
+            "sopranoSax": "Soprano sax",
+            "altoSax": "Alto sax",
+            "tenorSax": "Tenor sax",
+            "bariSax": "Bari sax",
+            "snare": "Snare",
+            "tenors": "Tenors",
+            "bassDrum": "Bass drum",
+            "cymbals": "Cymbals"
+        },
+        "plural": {
+            "flag": "Flags",
+            "swingFlag": "Swing flags",
+            "doubleSwingFlag": "Double swing flags",
+            "rifle": "Rifles",
+            "sabre": "Sabres",
+            "trumpet": "Trumpets",
+            "mellophone": "Mellophones",
+            "baritone": "Baritones",
+            "euphonium": "Euphoniums",
+            "trombone": "Trombones",
+            "bassTrombone": "Bass trombones",
+            "tuba": "Tubas",
+            "sousaphone": "Sousaphones",
+            "piccolo": "Piccolos",
+            "flute": "Flutes",
+            "clarinet": "Clarinets",
+            "bassClarinet": "Bass clarinets",
+            "sopranoSax": "Soprano saxes",
+            "altoSax": "Alto saxes",
+            "tenorSax": "Tenor saxes",
+            "bariSax": "Bari saxes",
+            "snare": "Snares",
+            "tenors": "Tenors",
+            "bassDrum": "Bass drums",
+            "cymbals": "Cymbals"
+        },
+        "family": {
+            "guard": "Guard equipment",
+            "brass": "Brass",
+            "woodwinds": "Woodwinds",
+            "drums": "Drums"
+        },
+        "laneFamily": {
+            "equipment": "Equipment"
+        },
+        "reason": {
+            "paused": "Pause to change equipment",
+            "pausedSelect": "Pause to select by equipment",
+            "noCount": "Move the playhead onto a count",
+            "noCue": "Pick a cue in the Equipment lane first",
+            "allIn": "The selected performers are already in this cue",
+            "noneIn": "None of the selected performers is in this cue",
+            "atPlayhead": "The cue is already on the playhead's count",
+            "endBeforeStart": "Move the playhead after the cue's start first.",
+            "endsAtPlayhead": "The cue already ends at the playhead.",
+            "endPastNext": "The playhead is past these performers' next change. End the cue before it.",
+            "movesBasic": "Moves have bars in Expert only"
         }
     },
     "coordinates": {

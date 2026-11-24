@@ -20,6 +20,11 @@ export type FieldTestMarcher = {
     id: number;
     /** The marcher's label text, as drawn on the field (its drill number). */
     label: string;
+    /**
+     * The equipment icon drawn after the label at the beat shown ("Rifle"), for whom the
+     * Equipment icons setting shows one (#992); "" for none.
+     */
+    equipmentIcon: string;
     /** Where the dot is drawn, in field units. */
     x: number;
     y: number;

@@ -7,6 +7,7 @@ import {
     CHECK_FOR_UPDATES_MENU_ACTION,
     HELP_MENU_ACTIONS,
     PLAYBACK_MENU_ACTIONS,
+    VIEW_MENU_ACTIONS,
     type MenuAction,
 } from "../../src/global/menuActions";
 import { SITE_URL, siteUrl } from "../../src/global/siteUrl";
@@ -218,6 +219,11 @@ export function applicationMenuTemplate({
                         openView3dWindow();
                     },
                 },
+                { type: "separator" },
+                // The timeline's lanes (fork #992), as the Lanes menu shows and hides them
+                ...VIEW_MENU_ACTIONS.filter(
+                    (item) => !(basic && item.expertOnly),
+                ).map(rendererActionItem(isMacOS)),
                 { type: "separator" },
                 { role: "reload", label: t("menu.view.reload") },
                 { role: "forceReload", label: t("menu.view.forceReload") },

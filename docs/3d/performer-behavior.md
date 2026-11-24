@@ -1,66 +1,73 @@
 # Performer behavior: cues
 
-<!-- cspell:words retargeting Choreo recompiles rebakes rebaked rebake playhead lerp lerps texel texels -->
+<!-- cspell:words rebakes playhead lerp lerps texel texels -->
 
-- Status: draft for owner review. Convergence (2026-11-03): the compiler
-  shipped and the 3D View plays its show defaults (stand on holds, unless a
-  Held hold's style or Show settings ask for mark time, ADR 0015 D-5; face
-  the front; horns up). Cue storage, Visuals mode
-  (section 7) and item placement are parked on branch
-  `archive/pre-convergence`; the sections about them describe that branch.
-- Date: 2026-10-10
-- Decision record: [ADR 0004](../adr/0004-performer-cues.md) (proposed)
-- Builds on: `timeline-try-2` (ADR 0012, the timeline motion model) and
-  [ADR 0010](../adr/0010-3d-view.md) (the 3D View)
+- Status: describes [ADR 0015](../adr/0015-cue-model.md) (accepted
+  2026-11-15), the source of truth. Where this file and the ADR disagree,
+  the ADR wins.
+- Date: 2026-11-16 (first written 2026-10-10 for ADR 0004's channels)
+- Earlier design: [ADR 0004](../adr/0004-performer-cues.md). ADR 0015
+  replaces its D-1 to D-3 and its channels. Its compile module (D-6), its 3D
+  View amendments (D-7) and its beat deletion rule (2026-10-15) stand.
+- Builds on: [ADR 0010](../adr/0010-3d-view.md) (the 3D View) and the
+  timeline motion model.
 
-The show tells performers what to do, not only where to stand: step style,
-horn state and angle, equipment work and choreography. A designer places
-**cues** on counts; a pure **compile** step turns them into each marcher's
-behavior over time; the 3D View plays that behavior in layers, one per
-**channel**; and a **Visuals mode** in the editor is where cues are authored.
+**Built now:**
 
-The owner (Trevor) set the behavior rules below between 2026-10-09 and
-2026-10-10. Marching technique lives in [technique.md](technique.md); this
-file points there instead of restating it. The engineering calls the owner
-left to the spec are marked **Spec call** so they can be reviewed on their
-own.
+- Core's cue module, `packages/core/src/cues/`: the six cue types, lasting
+  and momentary cues, transitions, the compile step and its queries
+  (`compileCues`, `traceCue`, `cueValueAt`, `whoHasValue`, `heldAt`,
+  `whoHolds`). Hold style comes from holds, not cues (`holdStyle.ts`).
+- Storage: the `cues` and `cue_marchers` tables
+  (`apps/desktop/src/db-functions/cues.ts`), with undo and the beat deletion
+  carry.
+- Equipment, end to end (fork #992): set it for the selection, see it on the
+  2D field and in the 3D View, select by what's held at the playhead, and the
+  timeline's Equipment lane.
+- In the 3D View, Position cues drive the arms and Facing cues turn the
+  performer.
+
+**Not built yet:** editors for Position, Facing, Silk, Look and Posture
+(ADR 0015 build order step 4 and on), their lanes, ripples, logistics, and
+animations for battery and guard positions, tosses and kneel.
+
+The show tells performers what to do, not only where to stand. A designer
+places **cues** on counts for the selected performers; a pure **compile** step
+turns them into each performer's values over time; the 2D field, the timeline
+and the 3D View read that one result. Marching technique lives in
+[technique.md](technique.md); this file points there instead of restating it.
 
 ## 1. Glossary
 
-These words mean one thing everywhere in the UI, the code and these docs.
+These words mean one thing everywhere in the UI, the code and these docs. The
+"Cues" section of `CONTEXT.md` has the short forms.
 
-- **Cue**: an instruction, placed on a count, that tells some performers what
-  to do on one channel.
-- **State**: a cue that holds until a later cue changes it ("horns up").
-- **Phrase**: a cue that plays for a length in counts and then ends, falling
-  back to the state underneath ("3-count toss"). Not "move": the timeline
-  uses move for marcher motion.
-- **Channel**: one part of a performer's behavior that cues set
-  independently: Feet, Horn/Equipment, Facing, Body.
-- **Target**: who a cue applies to: the band, a section, a tag, or a
-  hand-picked set of marchers.
-- **Count**: one beat of the show. Cues sit on counts.
-- **Default**: what a performer does on a channel before any cue applies.
-  Built in, never stored.
-- **Specificity**: how narrow a target is: band, then section, then tag, then
-  hand-picked set. It only breaks ties between cues on the same count.
-- **Transition**: the motion into a new state, landing on the state's count.
-  (The timeline also uses the word for page-to-page motion.)
-- **Take over**: a phrase or state overriding other channels while it applies.
-- **Pace**: how often the feet step: single, half or double. It sets the
-  stride; the dots set the distance.
-- **Technique**: how the feet step: straight leg, bent leg, high step while
-  moving; stand, mark time, high mark time while holding.
-- **Dot mode**: what a set's dot marks: the landing foot or the body's
-  center.
-- **Phrase asset**: what a phrase is made of, whatever its source.
+- **Cue**: a value set for some performers at a count, for one cue type. Only
+  things that change independently of the drill are cues.
+- **Cue type**: what a cue controls, exactly one parameter of a performer:
+  Equipment, Position, Silk, Look, Facing or Posture (Lights later).
+- **Lasting**: a cue that holds until that performer's next lasting cue of the
+  type ("rifle from count 40").
+- **Momentary**: a cue that applies for a length in counts (1 by default),
+  then the lasting value shows again ("sabre for 8 counts, then back", a
+  toss). It never changes the lasting value.
+- **Transition length**: how many counts a cue's change takes, landing on its
+  count. Each value has a default; some values cut instead.
 - **Snap**: a transition keyed in fixed time (about 0.2 s), not counts.
-- **Ripple**: one cue staggered across its marchers over a span of counts.
-- **Hold**: counts where a marcher's dot doesn't move (the timeline's
+- **Default**: a parameter's value before a performer's first cue of the type,
+  from a show setting or the section. Never stored as a cue.
+- **Label**: a cue's display-only name for how its performers were picked
+  ("Trumpets", "Rifles"). It never decides who. Values also have a short label
+  for the timeline ("HU").
+- **Count**: one beat of the show. Cues sit on counts, stored by beat id.
+- **Hold**: counts where a performer's dot doesn't move (the timeline's
   meaning).
+- **Hold style**: what the feet do on a hold: stand, mark time or high mark
+  time. A property of the hold, not a cue.
 - **Set** (equipment): the guard's resting equipment position between work.
-- **Label**: the short name of a state value or phrase ("HU"). Every value
-  and phrase has a full name and a label.
+- **Render channel**: the 3D renderer's internal bone groups (Feet, Body,
+  Horn/Equipment; section 8.3). Not a cue word.
+- **Ripple**: one cue staggered across its performers. Later (section 2.4).
 
 ## 2. Cues
 
@@ -68,180 +75,156 @@ These words mean one thing everywhere in the UI, the code and these docs.
 
 A cue has:
 
-- a **channel**;
-- a **target**: the band, one section, one tag, or a hand-picked set of
-  marchers (exactly those marchers, not a live rule);
+- a **type** (section 3);
+- a **value** of that type: a built-in id (`builtin:...`) or one the show
+  adds;
 - a **count**: one beat, stored by beat id;
-- a **kind**: state or phrase;
-- a **value**: a state value or a phrase, from the built-in library or the
-  show's own phrase assets;
-- **settings** for that value (horn angle, facing target, pace and so on);
-- for a state, an optional **transition length** in counts (empty means the
-  value's library default);
-- for a phrase, a **length** in counts;
-- an optional **ripple**: a span in counts and an order;
-- optional **notes**.
+- its **performers**: the ones selected when it was made. The list is fixed;
+  it doesn't follow later changes to sections or tags;
+- **settings** for the value (horn angle, facing angle or point);
+- a **length**: empty for a lasting cue, a number of counts for a momentary
+  one;
+- a **transition** length in counts (empty means the value's default);
+- a display-only **label** and optional **notes**.
 
-There are no priority numbers and no sub-count timing on the cue itself.
-Timing finer than a count lives inside phrase assets (a release on the "and")
-and in ripples.
+There are no priority numbers and no timing finer than a count on a cue.
+
+Groups (a section, a tag, "holding a rifle at the playhead", a hand-picked
+set) are **selection tools only**. Making a cue "for the Trumpets" means
+selecting the Trumpets and making a cue; the cue stores those performers. A
+marcher added to the section later doesn't inherit its earlier cues (an
+accepted cost, ADR 0015 D-4).
 
 ### 2.2 When a count happens
 
-**Owner-confirmed (2026-10-10; corrects an earlier call):** a cue's instant
-is the **click of its count**: the start of its beat row, the same moment the
-3D marchers' heel lands (technique.md, "Heel on the beat" and "Counts and
-clicks"; `STEP_AHEAD` in `marcherMotion.ts`). The anchoring decision had put
-it at the end of the beat row, where page flags sit. That is one count late
-against the feet and the music: "horns up on 7" would land on the click of 8.
-Page flags keep their meaning; only cues use the click.
+**Owner-confirmed (2026-10-10):** a cue's instant is the **click of its
+count**: the start of its beat row, the same moment the 3D marchers' heel
+lands (technique.md, "Heel on the beat" and "Counts and clicks"; `STEP_AHEAD`
+in `marcherMotion.ts`). Page flags keep their meaning; only cues use the
+click.
 
 Counting is inclusive, the way staff count (technique.md, "Counting and
 facing"):
 
-- A state "on 7" is in position on the click of 7. Its transition of length
-  `L` runs from the click of `7 - L + 1` to the click of 7. "Ends on 7, takes
-  3 counts" moves from the click of 5 to the click of 7. Length 1 is a snap
+- A cue "on 7" is in place on the click of 7. Its transition of length `L`
+  runs from the click of `7 - L + 1` to the click of 7. "Ends on 7, takes 3
+  counts" moves from the click of 5 to the click of 7. Length 1 is a snap
   that ends on the click.
-- A phrase "on 1, 3 counts" covers counts 1, 2, 3: a toss releases on the
-  click of 1 and catches on the click of 3, and the state underneath owns the
-  channel again from count 4. A phrase is at least 2 counts long.
+- A momentary cue "on 1, 3 counts" covers counts 1, 2 and 3, and the lasting
+  value shows again from count 4.
 - All timing between clicks follows the tempo map, so a 3-count transition at
   a slow tempo takes longer in seconds. Snaps are the exception: fixed time.
 
-Confirmed by the owner (2026-10-10), with the click as the instant: under
-this counting a 1-count transition is a snap. The library defaults set
-earlier ("1 count facing, 2 counts kneel") are written below as lengths 2 and
-3, so they keep one and two counts of motion. A drop spin "one turn per
-count" over `L` counts makes `L - 1` turns between its first and last clicks.
+Under this counting the built-in defaults are written as lengths that include
+the landing count: a facing change is 2 (one count of turning), a kneel 3.
 
 ### 2.3 Resolution
 
-For each marcher, channel and count:
+For each performer, type and count:
 
 1. Start from the **default** (section 3).
-2. The **latest** applicable state cue at or before this count wins. A
-   band-wide cue on count 33 overrides a section cue on count 17.
-3. On the **same count**, the most specific target wins:
-   band < section < tag < hand-picked set.
-4. Still tied (same count, same specificity), the **newest** cue wins, and
-   the editor flags the clash.
-5. A **phrase** overlays the state for its length. A state cue that lands
-   during a phrase shows when the phrase ends. A later phrase on the same
-   channel that starts during an earlier one takes over on its own count, and
-   the overlap is flagged.
-6. A phrase or state that **takes over** other channels (a choreography
-   phrase over Horn/Equipment, kneel over Feet) wins those channels while it
-   applies.
-7. A cue applies only to the performers it **fits**. A horn state skips the
-   guard; a rifle state fits any guard performer (and puts a rifle in their
-   hands). A cue that fits none of its targets is flagged. Fit is checked at
-   the count where the cue reaches the performer: for a ripple, where it
-   lands for them, not the authored count (owner, 2026-10-15).
-8. Section names match ignoring case and outer spaces, in section targets
-   and in the section defaults (owner, 2026-10-15).
+2. The **latest** lasting cue at or before this count wins. There are no
+   precedence rules between groups: a cue for the whole band on count 33
+   wins over a cue for the trumpets on count 17.
+3. Two cues of one type and kind on one count for the same performer: the
+   newer wins, and compile flags the clash.
+4. A **momentary** cue shows over the lasting value for its length. One that
+   starts inside an earlier momentary cue ends it, and the overlap is
+   flagged.
+5. A cue reaches only the performers its value **fits**. A Position value
+   fits only the equipment it names (horns up skips a rifle), checked against
+   what Equipment gives on the cue's count. A cue that fits none of its
+   performers is flagged.
+6. When Equipment changes, Position returns to the new equipment's default
+   until its next cue, and a momentary Position cue under the change ends.
+7. A value that shows only on holds (kneel) shows while the dot holds; on a
+   count where the dot travels it is flagged and the default shows.
+8. A cue of a type this build doesn't know is kept and ignored. A value it
+   doesn't know is flagged and ignored. A lasting cue on a momentary-only
+   value (a toss), or the reverse, is flagged and ignored.
+9. Section names match ignoring case and outer spaces in the section defaults
+   (owner, 2026-10-15).
 
 ### 2.4 Ripples
 
-A ripple is a setting on one cue, not a set of copies, so marchers added to
-or reordered in the target slot in automatically.
-
-- **Span** in counts and an **order**: drill order, left to right, right to
-  left, or down the form. More orders come later.
-- The first marcher lands (a state) or starts (a phrase) on the cue's count.
-- Starts are spread evenly in time (seconds) over the span, inclusive: with
-  `n` marchers, marcher `i` (from 0) starts `i/(n-1)` of the way from the
-  click of the cue's count to the click of its last count, following the
-  tempo map. A span that runs past the show's last count stops there. This is
-  the only timing between counts. **Owner to check:** evenly in seconds, not
-  evenly in counts; they differ when the tempo changes inside the span.
-- Positional orders (left to right, down the form) read positions at the
-  cue's count. **Down the form** runs along the form's long axis, starting
-  from the end nearest the first marcher in drill order (**owner to check**).
-- The order counts only the performers the cue fits; each is then checked
-  again where the ripple lands for them (rule 7).
-- Ties are settled where the cue was authored: a section cue and a rippled
-  band cue on the same count go to the section cue for every section member,
-  not only the first in the ripple.
-- Every channel can ripple except Feet.
+Later, as one design for moves and cues (ADR 0015 D-8): an order through the
+performers and a delay per step. A cue already stores its performers, so a
+ripple will add an order and a delay to that list without changing existing
+cues. Until then, a ripple is several cues on successive counts.
 
 ### 2.5 Editing over time
 
-- A cue lives on its beat. Inserting counts inside a page or dragging a page
-  flag leaves it on the same music (its page:count label may change).
+- A cue lives on its beat. Inserting counts or dragging a page flag leaves it
+  on the same music (its page:count label may change).
 - Deleting counts (beats or a measure) carries their cues forward, in the
-  same transaction and undo step as the deletion (owner, 2026-10-15; ADR
-  0004 amendment of that date):
-  - per channel and target, only the **last** cue on the deleted counts is
-    kept, the state in effect at the end of the deleted span; it moves to the
-    first count after the deletion and the earlier ones are dropped;
-  - if that count already has a cue on the same channel and target, the
-    existing cue wins and the moved one is dropped;
-  - a phrase moves its start and keeps its length; if it now overlaps the
-    next cue on that channel and target it is shortened to fit, and dropped
-    if that leaves it under 2 counts;
+  same transaction and undo step as the deletion (ADR 0004 amendment of
+  2026-10-15, per type and performer as ADR 0015 D-9 has it):
+  - for each performer and type, only the **last** cue on the deleted counts
+    keeps them, the value in effect at the end of the span; it moves to the
+    first count after the deletion. Lasting and momentary cues are kept apart;
+  - if the performer already has a cue of that type and kind on that count,
+    the existing cue wins;
+  - a moved cue keeps its length, transition and settings; a cue that keeps
+    no performer is dropped;
   - deleting the end of the show (no count after) drops the cues;
-  - ripples move with their cue unchanged;
-  - no blocking popup: afterwards a notice with Undo says what moved, such
-    as "2 cues moved to count 17".
-- Deleting a marcher drops them from hand-picked sets; a set left empty
-  deletes its cue in the same transaction.
-- Deleting a tag deletes the cues that target it. The tag delete
-  confirmation says how many cues will go.
-- After any of these deletes the cue queries and the 3D window refresh.
-- Pruning the show's Library keeps the phrase assets and Library Versions
-  that cues reference.
-- Copying or duplicating a page or a timeline move does not copy cues (v1).
-  Cue copy and paste lives in the Visuals mode (section 7.4).
+  - no blocking popup: afterwards a notice with Undo says what moved.
+- Replacing all the beats (a tempo edit in the audio editor, a MusicXML
+  import) moves each cue to the surviving beat nearest its time, by the same
+  rules.
+- Deleting a marcher drops them from every cue; a cue left with no performers
+  is deleted in the same transaction.
+- After any of these the cue queries and the 3D window refresh.
 - Drill edits never rewrite cues. Their effects (a kneel that now falls on a
   moving count) show up as flags.
 
-## 3. Channels
+## 3. Cue types
 
-Each channel owns body parts outright in v1; cues on different channels
-stack. There is no additive blending.
+Each type controls one parameter and is one lane on the timeline (section
+7.3). Cues of different types never touch each other: a Position cue leaves
+Facing alone.
 
-### Feet
+| Group     | Cue type  | Parameter                 | Values                                                                     | Default                | Built                                     |
+| --------- | --------- | ------------------------- | -------------------------------------------------------------------------- | ---------------------- | ----------------------------------------- |
+| Equipment | Equipment | What the performer holds  | A catalog item (guard, brass, woodwinds, drums), their own, nothing        | The section's usual    | End to end (fork #992)                    |
+| Equipment | Position  | How it is held            | Horn up, down, trail; sticks playing, in, down; set, port, present; tosses | Up, playing or set     | Compile; 3D horn holds. No editor         |
+| Equipment | Silk      | A held flag's design      | Plain color; artwork later                                                 | The section's color    | Compile only                              |
+| Looks     | Look      | Which uniform look        | A look from #972                                                           | The band or guard look | Compile only; waits on #972               |
+| Facing    | Facing    | Where the performer faces | Front, back, side 1, side 2, direction of travel, an angle, toward a point | Front                  | Compile; 3D headings. No editor           |
+| Body      | Posture   | The body's posture        | Neutral, kneel; body visuals later                                         | Neutral                | Compile; the 3D feet stand. No kneel pose |
 
-Legs, hips and travel. Default: from the dots.
+- Equipment, Look and Facing are naturally lasting; a toss is momentary only.
+  The choice stays open wherever it makes sense.
+- **Lights** will be its own on/off type under Looks. Hats and capes can
+  become their own types once garments exist (#971).
+- No take-overs: which body parts a value moves is the renderer's business.
 
-- A Feet state has three settings: **pace** (single, half, double);
-  **moving technique** (straight leg; bent leg and high step play straight
-  leg until animated); **on holds** (stand, the default; mark time; high mark
-  time, which plays mark time for now). Plus the **step-off foot**, defaulting
-  to the show's setting (left).
-- The dots say where, not how. Pace sets the stride: 8-to-5 dots in half time
-  are 4-to-5 strides. No stride warnings yet.
-- "Stand" on holds replaces today's automatic mark time while the band
-  moves.
-- No Feet phrases in v1. A future Feet phrase travels along the dot path with
-  the legs animated on top; a standing-only phrase on moving counts is
-  flagged.
-- Dot mode is a setting on each **set** (page), not a cue: foot on the dot
-  (the default) or body center, reverting to the show default on the next
-  set (technique.md, "Foot on the dot and body center").
-- Feet does not ripple.
+### Equipment
 
-### Horn / Equipment
+- Equipment belongs to the performer: "G3 holds a rifle from count 40". The
+  default comes from the section: each section holds its own catalog item (a
+  trumpet, a tuba, a 6 ft flag, a rifle; `cueSections.ts`).
+- The values are a fixed catalog of real items (`equipmentCatalog` in core),
+  grouped by family: guard equipment (flag, swing flag, double swing flags,
+  rifle, sabre), brass, woodwinds and drums. Any performer can hold any item.
+  Each lines up with a 3D View model (`cues/equipmentItems.ts`).
+  `builtin:equipment.usual` is "their own instrument", which compile resolves
+  to the performer's section default; `builtin:equipment.none` is nothing.
+  Imported equipment will be a family of its own later.
+- The swap cuts on the count, with no animation.
+- The 2D field and the 3D View both show what each performer holds at the
+  playhead (section 7).
 
-Shoulders, arms, hands and what they hold. One channel, labeled by what the
-performer carries: **Horn** for winds, **Equipment** for guard and
-percussion. Default: horn up, or the section's carry (technique.md).
+### Position
 
-- Horn angle (the box, or 10 degrees above it) is a setting on the up state.
-- Horn transitions (snap, or a sweep spread over the transition's counts) are
+- Horn angle (the box, or 10 degrees above it) is a setting on horns up.
+- Horn transitions (snap, or a sweep over the transition's counts) are
   generated between the holds each instrument already solves, so they work
   for every instrument.
 - The guard's resting position is **set** (not "hold"); "carry" stays a horn
-  state.
+  word.
 
 ### Facing
 
-Where the whole performer faces, feet included at rest. States only.
-Default: the audience (front).
-
-- Values: front, back, side 1, side 2, direction of travel, custom angle, and
-  toward a fixed point on the field.
 - A point is in field coordinates, the same space as dot positions, not
   world meters; it converts to world space where positions do (owner,
   2026-10-15).
@@ -251,237 +234,218 @@ Default: the audience (front).
   With the front facing, today's slide rules stand (technique.md, "Slides").
 - "Direction of travel" on a hold keeps the last direction of travel.
 
-### Body
+### Posture
 
-Spine and head. States and phrases. Default: neutral.
+- Kneel (right knee down, left foot flat) is valid only while the dot holds
+  (rule 7). The 3D View stands a kneeling performer's feet still; the kneel
+  pose isn't animated yet.
 
-- Kneel (right knee down, left foot flat) is a Body state that also takes
-  over Feet. It is valid only while the dot holds; on a moving count it is
-  flagged.
-- The choreography phrase takes over Horn/Equipment while it plays.
+### Not cues: the feet and the rest
 
-### Not channels
+Only things that change independently of the drill are cues (ADR 0015 D-1).
 
-- No head channel: Body owns the head.
-- No visibility cue: the 3D View honors the 2D `visible` appearance. A
-  walk-off can be a phrase later.
+- **Hold style** (stand, mark time, high mark time) is set on each Held hold
+  (`timeline_held_marks.style`). Without one, the show setting decides:
+  **Stand** by default; set to Mark time, a holding performer marks time
+  while anyone in the band travels and stands when the whole band holds (ADR
+  0015 D-5). High mark time plays mark time for now.
+- **Pace** (single, half, double) and **step style** (straight leg, bent leg,
+  high step) will be properties of the move. They aren't built, so every
+  count plays the defaults: single time, straight leg.
+- **Step-off foot** is a show setting (left by default).
+- **Dot mode** (foot on the dot or body center) is a show setting. Per-set
+  dot mode stays parked (technique.md, "Foot on the dot and body center").
+- **Visibility** is the 2D `visible` appearance, which the 3D View honors.
 - Drum majors hold their hands in front; conducting is a later effort.
 
-## 4. Library v1
+## 4. Built-in values
 
-Every value and phrase has a stable id, a **name** and a **label**. Built-in
-ids are `builtin:<channel>.<family>.<value>`. Labels below are proposals for
-the owner to adjust.
+Every value has a stable id, a **name** and a short **label**. Built-in ids are
+`builtin:<family>.<value>` (`builtin:horn.up`, `builtin:equipment.rifle`). The
+catalog is plain data in `@openmarch/core` (`library.ts`): type, who it fits,
+natural kind and lock, default length and transition, whether it shows only
+on holds, and its settings with defaults. The editor and the compile step read
+it without the 3D assets; the animation data lives with the 3D View. A show
+can add values of its own, such as a section's equipment.
 
-**Spec call:** the catalog's metadata (ids, names, labels, kind, channels
-taken over, who it fits, length range, default transition, settings schema)
-is plain data in `@openmarch/core`, so the editor and the compile step read it
-without the 3D assets. The animation data lives with the 3D View.
+- **Equipment:** the catalog's items by family (section 3), nothing
+  ("None") and their own instrument ("Own"). Horn and drum stay only as the
+  default of a section with no catalog item. Cuts on its count.
+- **Position, winds:** horns up ("HU"; angle box or +10°), horns down ("HD"),
+  trail ("Trail"). Snap by default.
+- **Position, battery:** playing ("Play"), sticks in ("In"), sticks down
+  ("Down").
+- **Position, guard:** flag set ("Set"), port ("Port"); rifle port arms
+  ("Port"), present ("Pres"); sabre set ("Set"). Tosses, momentary only and 2
+  counts by default: flag drop spin and single toss; rifle drop spin, single
+  and double toss; sabre single toss.
+- **Silk:** plain ("Plain"), in the section's 2D color by default.
+- **Look:** band ("Band"), guard ("Guard").
+- **Facing:** front, back, side 1 ("S1"), side 2 ("S2"), direction of travel,
+  an angle, toward a point. 2 counts by default.
+- **Posture:** neutral ("—"), kneel (3 counts by default; shows only on holds).
 
-Horn (winds):
-
-- States: up ("HU"; angle: box or +10°), down/carry ("HD"), trail ("Trail").
-- Transitions: snap (default) or sweep over the transition's counts.
-
-Equipment (battery):
-
-- States: playing ("Play", have), sticks in ("In"), sticks down ("Down").
-
-Equipment (guard):
-
-- Flag: set ("Set", have), port ("Port"); phrases drop spin ("Drop"), single
-  toss ("1x").
-- Rifle: port arms ("Port", have), present ("Pres"); phrases drop spin
-  ("Drop"), single toss ("1x"), double toss ("2x").
-- Sabre: set ("Set", have); phrase single toss ("1x", like the rifle's).
-- Positions are in technique.md. Flag port, spin and toss and rifle present
-  and toss are first takes to check against video.
-
-Body:
-
-- States: neutral ("—"), kneel ("Kneel"; default transition 3 counts).
-- Phrase: one generic 8-count choreography phrase ("Choreo") with energy low,
-  medium or high; takes over Horn/Equipment.
-
-Facing:
-
-- States only (section 3); default transition 2 counts (one count of turning).
-
-Feet:
-
-- One state value with the settings in section 3; label from its settings
-  ("½", "2×", "MT").
+In the 3D View only the horn holds animate so far. Battery and guard positions
+and tosses keep the hold underneath (`hornChannel.ts`). Guard positions are in
+technique.md; flag port, spin and toss and rifle present and toss are first
+takes to check against video.
 
 Later additions (out of scope here): sit, lie down, horn flourishes, swing
-flag work, exchanges, Feet phrases, battery motion from percussion files.
+flag work, exchanges, battery motion from percussion files.
 
-## 5. Phrase assets
+## 5. Dropped from ADR 0004, and later
 
-A phrase asset is data the 3D bake turns into channel rows. Built-in, posed
-and imported phrases share one versioned format from day one.
+ADR 0015 drops these; they no longer apply anywhere:
 
-- **Contents:** bone rotations for the channels it takes over; an optional
-  prop path in body space (so a prop can leave the hand); an optional facing
-  turn. Never travel across the field: the dots own position.
-- **Timing:** keyed in counts and stretched with the tempo, except snaps,
-  keyed in fixed time.
-- **Lengths:** one asset covers a range of lengths. It marks one stretchable
-  section (a toss's time in the air); a cue's length stretches only that
-  section. Transitions stretch evenly.
-- **Retargeting:** horn transitions are generated per instrument (section 3).
-  Hand-keyed horn phrases (flourishes, later) are authored per family. No
-  mirror setting.
-- **Built-ins** ship with the app and are referenced, so improvements reach
-  existing shows. "Copy into show" freezes one as a show phrase asset, with
-  an editable label that defaults to its name.
-- **Show phrase assets** live in the show file (ADR 0004). No export between
-  shows in v1.
-- **Spec call:** each asset carries `formatVersion`; readers migrate older
-  versions on load and never write back silently.
+- **Channels as body regions** (`feet`, `horn_equipment`, `body`), where the
+  latest cue won a whole channel and reset its other settings.
+- **Phrases** and **phrase assets** (and "copy into show"). Momentary cues
+  replace phrases. An authoring format for tosses and choreography can return
+  with them.
+- **Take-overs** (kneel over Feet, choreography over Horn/Equipment).
+- **Live targets and precedence** (band, section, tag, hand-picked, with the
+  narrower winning a tie).
+- **Feet cues**: their settings are hold style, move properties or show
+  settings (section 3).
+- **Visuals mode** as a separate workspace: lanes live in the main timeline
+  (section 7.3).
+
+**Logistics comes later** (ADR 0015 D-6), through one optional item link on
+the Equipment cue to an `items` row of kind `equipment`. The item's
+whereabouts will be derived from the cue: in the performer's hands while the
+cue lasts, at its placed spot otherwise. Nothing is reserved in storage now.
+Item placement, holders, crew and artwork slots stay parked on
+`archive/pre-convergence` until then.
 
 ## 6. Compile
 
-**Spec call:** a pure module, `packages/core/src/cues/`, exported from
-`@openmarch/core` beside the timeline resolver. No React, Electron or
-database. The editor (result row, "why" readout, flags) and the 3D window
-(playback) both call it; later printing reads the same output.
+A pure module, `packages/core/src/cues/`, exported from `@openmarch/core`. No
+React, Electron or database. The editor (`apps/desktop/src/cues/showCues.ts`)
+and the 3D window both call it, and later printing can read the same output.
 
 Input (`CompileInput`):
 
-- the cues, with hand-picked set members inlined, and the show's phrase
-  assets (metadata: name, label, channels);
-- marchers with section, tag ids, drill order and what each carries (from
-  the section, as today);
 - the beat grid: the timed beats in order, with durations;
-- optional `travels(marcher, count)` and `positionAt(marcher, count)`, from
-  whichever resolver the caller has (the timeline resolver in timeline mode,
-  `marcher_pages` in page mode);
-- the show defaults (`stepOffFoot`).
+- the marchers, with section, what each usually carries, and whether each is
+  a performer or an item (a cue never reaches an item);
+- the cues, each with its performers;
+- each section's usual equipment and 2D color, and an equipment fallback by
+  section name;
+- the hold styles the holds carry, and `travels` (and optionally
+  `bandTravels`) from whichever resolver the caller has;
+- show defaults: the hold style while the band moves, and the band and guard
+  looks;
+- values the show adds to the built-in catalog.
 
-Dot mode per set is not a compile input: it doesn't depend on cues, so the
-planner reads it from the set directly. The library catalog is built in.
+Output (`CompiledCues`):
 
-Every library value describes its **settings** as plain data (a choice with
-options, or a number, each with a default): horn angle, Feet pace, moving
-technique, on holds and step-off foot, facing angle and point, choreography
-energy. Segments carry the cue's settings filled in from those defaults (and
-the show's step-off foot). Validating stored settings against the
-descriptors is the storage layer's job.
+- `segments(marcher, type)`: what the parameter is over `[from, to)` counts,
+  each `{ kind: "default" | "lasting" | "transition" | "momentary", value,
+label, settings, cueId | null, snap? }`. A snap is a zero-length
+  transition;
+- `holdStyle(marcher)`: what the feet do on holds over the show (not a cue);
+- **flags**, each with the cue ids and performers involved: clash, momentary
+  overlap, a standing-only value on a moving count, fits nobody, a kind the
+  value doesn't allow, an unknown value, and a transition cut short because
+  it would start before the cue before it;
+- **notes**: things done quietly, such as a Position cue ignored for a
+  performer whose equipment doesn't match.
 
-Output (`CompiledCues`), per marcher and channel, a list of **segments**:
-`{ from, to, kind: "default" | "state" | "transition" | "phrase", value,
-settings, label, cueId | null, snap?, takenOverFrom? }`, with `from` and `to`
-in counts (fractional only where a ripple puts them between clicks). A snap is
-a zero-length transition. Feet labels come from the settings ("½", "2×",
-"MT"). Plus:
+Queries on the result:
 
-- `traceCue(compiled, marcher, channel, count)`: the winning cue, whether it
-  is another channel's take-over, and the applicable cues it beat, latest
-  first, then most specific;
-- **flags**, each with the cue ids and marchers involved: clash (rule 4),
-  phrase overlap (rule 5), take-over on a moving count (kneel), fits nobody
-  (rule 7), a phrase on a states-only channel (Facing, Feet; ignored), and a
-  transition cut short because it would start before the previous state
-  lands.
+- `traceCue(compiled, marcher, type, count)`: the cue in effect (or where the
+  default comes from) and the performer's other cues it beat, latest first;
+- `cueValueAt`: the value at a count's click (a transition hasn't landed until
+  its count);
+- `whoHasValue`: who has a value of a type at a count;
+- `heldAt` and `whoHolds`: what a performer holds at a count, and who holds a
+  kind of equipment ("Select Rifles").
 
-Incremental use: `compileCues(input, { previous, channels })` resolves only
-the listed channels again and reuses the rest from `previous`, so an edit to
-Horn cues recompiles and rebakes only Horn rows. Take-overs and the flags that
-cross channels are always redone. It is valid only when nothing but those
-channels' cues changed.
+Incremental use: `compileCues(input, { previous, types })` resolves only the
+listed types again and reuses the rest. An Equipment edit also resolves
+Position and Silk again, since what is held decides what fits. It is valid
+only when nothing but those types' cues changed.
 
-The Feet segments become the planner's new inputs (section 8.2).
+## 7. Editor
 
-## 7. Editor: Visuals mode
+### 7.1 Equipment commands (built)
 
-Authoring follows the Light Designer on `origin/lighting`, as a throwaway
-prototype settled (its variant D, owner: "pretty close").
-Polish is for the build.
+These are commands (`shortcuts/definitions.ts`, `cues/useCueCommands.ts`),
+so the command bar finds them. The field's right-click menu has an
+**Equipment** submenu (their own instrument; the last four items picked; a
+submenu per family; Nothing) and a **Select by equipment** submenu grouped the
+same way. The Equipment lane's cue menu offers the cue edits:
 
-### 7.1 Layout
+- **Equipment: <item>**, one per catalog item, **their own instrument** and
+  **Nothing:** what the selected performers hold from the paused playhead on,
+  as one lasting cue that stores them. The menu checks what every selected
+  performer already holds, and keeps the last four items picked (UI settings,
+  per device).
+- **Add selected to this cue, Remove selected from this cue:** change who the
+  picked cue applies to (picked in the lane, else the one Equipment cue on the
+  playhead's count). After a change the cue's label names its performers
+  again (`cueLabel.ts`).
+- **Make lasting, Make momentary** (8 counts by default), **Move cue to
+  playhead** and **Delete cue** for the picked cue.
+- **Select <items>** for each item, **Select all <family>** for each family,
+  and **Select empty hands:** select whoever holds it at the playhead,
+  whatever their section (`whoHasValue`).
 
-- A workspace mode beside Editor and Light Designer. Switching swaps the
-  toolbar, timeline and inspector together.
-- One **tab per channel** (Feet, Horn/Equipment, Facing, Body) with a cue
-  count. The Horn/Equipment tab names itself by who is focused.
-- A **Who list** in the inspector: band, sections, tags, hand-picked groups,
-  and the canvas selection. Clicking focuses that who and dims everyone else
-  on the field; hovering highlights them. "Marchers in this move" is a picker
-  that fills a hand-picked group with a timeline move's current members (no
-  live link).
-- On the timeline, **below Alex's clip rows** (inside `TimelineSurface`,
-  after the clip band; collapsible, since the timeline should stay calm):
-  - one editable lane for the focused who on the current tab, titled
-    "Editing: Equipment for Color Guard";
-  - read-only grey rows: broader cues above, exceptions inside below; click
-    one to go there;
-  - a **result row**: what the who does, colored by where it came from,
-    hatched where the group is mixed.
-- The inspector shows the **why** readout (value, how many of the group, the
-  cue that set it, the trace) and the selected cue's settings (who, counts,
-  transition, ripple, facing wheel, pick a point on the field). No popovers.
-- The field previews only the current tab.
+### 7.2 The 2D field (built)
 
-> **Owner note (2026-10-17): Visuals mode is its own workspace.** "All of
-> these needs to be behind a ui like lighting. Where it is a deeper editing
-> experience separate from the normal 2d editing of the timeline." This
-> replaces "below Alex's clip rows" above: the drill timeline stays exactly
-> as it is, and Visuals mode has a timeline of its own, as the Light Designer
-> prototype does. It keeps the drill timeline's ruler, page boxes, measures,
-> waveform, playhead, transport and zoom, read-only: page boxes and scrubs
-> go to a page or a count, but there are no drill clips, no page flag drags,
-> no **+**, no window and no drawn ranges. The cue lanes above are its main
-> lanes, always open (not collapsible), and scroll if tall. The field edits
-> no drill there either: clicks, the marquee and the lasso select (the
-> selection is a who), but nothing drags, scales, rotates or lines up, and
-> the drill edits' shortcuts (nudge, alignment, shapes, K) are off. Playback,
-> page navigation, the view and undo stay. A tint on the workspace says
-> which mode is on; the Editor/Visuals switch stays where it is, and Basic
-> still has no Visuals mode.
+The field tags a drill number with what the performer holds when it isn't
+their own instrument: a short abbreviation per item, such as **R** rifle, **F**
+flag, **Tp** trumpet, **Tu** tuba, **SD** snare, **N** nothing (`ITEM_TAG` in
+`cues/equipmentItems.ts`; ASCII only, for the field's glyph atlas). Shows
+without Equipment cues draw no tags.
 
-### 7.2 Gestures
+### 7.3 Timeline lanes
 
-- Click empty lane space: add a state on that count. Drag: add a phrase of
-  that length.
-- Drag a cue to move it; drag a phrase's end for its length; drag a state's
-  ramp for its transition (start count or length, ending on the cue's
-  count).
-- Ctrl/Cmd+drag keeps the timeline's meaning everywhere (draw a range or
-  loop); cue gestures don't reuse it.
-- Facing: a wheel for an angle, or click a point on the field.
-- Clash, overlap and take-over flags draw on the lane and the result row.
+One lane per cue type in the main timeline, under the drill rows, grouped as
+in section 3. Each can be shown or hidden from the timeline's Lanes button, a
+checklist of the lanes that are built (`timeline/timelineLanes.ts`), from its
+own eye button, the View menu or its command; all are hidden by default. The
+move tracks are a lane too (Moves, shown by default); the page row and the
+count ruler always show. A
+lasting cue draws as a bar to the next one and a momentary cue as a block of
+its length. There is no separate workspace: cues are timed against the drill,
+so the drill stays in view (ADR 0015 D-7).
 
-### 7.3 Snapping (spec call)
+The **Equipment lane** is built (`cues/equipmentLane.ts`,
+`components/timeline/cues/EquipmentLane.tsx`; fork #991's option E):
 
-Cue drags snap to counts, always (there is nothing between counts). They use
-the timeline's existing snapping helpers (`snapSeekBeat`,
-`isPageSnapDisabled`) so page flags, measure downbeats and rehearsal marks
-pull the same way they do for the playhead, and the same modifier turns that
-pull off.
+- one row per group of performers with the same Equipment history, folding
+  into a stacked summary of how many hold each thing;
+- only performers with an Equipment cue are in it; a section's usual (not a
+  cue) draws as a dashed bar;
+- click a cue to pick it for the commands above; right-click or long-press it
+  for its menu; click a row's name to select its performers;
+- drag a cue sideways to move it to another count, as a move's clip moves
+  (whole beats, pulled to page lines, `snapRangeOffset`), and drag a momentary
+  cue's end to change its length; each drag is one undo step, and a cue that
+  spans rows moves in all of them.
 
-### 7.4 Copy and paste (spec call)
+The other lanes come with their editors. The parked branch's who list and why
+readout are starting points (ADR 0015, "What comes back").
 
-- Copy the selected cues in the lane (Cmd/Ctrl+C). Paste (Cmd/Ctrl+V) at the
-  playhead onto the **focused who**, keeping the cues' spacing in counts,
-  their values, settings, transitions and ripples. One history group.
-- Pasting onto a different who is how a section's work is reused for
-  another; pasting across channels isn't allowed.
-- Copying pages or timeline moves still doesn't carry cues (section 2.5).
+### 7.4 Not built yet
 
-### 7.5 What goes away
+- Setting Position, Facing, Silk, Look and Posture, with transition lengths
+  (ADR 0015 build order steps 4 and 5).
+- Showing a cue's flags and its why readout (`traceCue`) in the editor.
+- Copying and pasting cues.
 
-The 3D window's `hornState` and `guardEquipment` toggles become cues; the
-step-off foot becomes the show default plus the Feet setting. Each window
-control is removed, or kept only as a clearly labeled preview override that
-is never saved.
+### 7.5 The 3D window's old toggles
+
+The 3D window's horn state, guard equipment and step-off foot toggles are
+gone. The window draws what the compiled cues and Show settings say.
 
 ### 7.6 The 2D appearance cascade
 
-Appearances (look, per page, first non-empty value by tag priority) and cues
-(behavior over time, latest wins) stay separate models with their own rules.
-They share targets and the section and tag pickers. The dormant
-`equipment_name` and `equipment_state` appearance columns are left alone and
-unread; the spec asks Alex to approve dropping them later.
+Appearances (colors, per page, first non-empty value by tag priority) and cues
+(values over time, latest wins) stay separate models. The dormant
+`equipment_name` and `equipment_state` appearance columns stay unread (ADR
+0015 D-6).
 
 ## 8. 3D View runtime
 
@@ -490,37 +454,32 @@ unread; the spec asks Alex to approve dropping them later.
 In timeline mode `marcher_pages` is frozen and stale, and timeline edits
 invalidate no query keys. So:
 
-- `positions.ts` (ADR 0010 D-6) gains a timeline-mode path: the window
-  cold-builds its own resolver from the timeline tables (as
-  `acquireExportResolver` does) and samples `positionsAt(beat)` at every
-  count boundary. Page mode keeps the `marcher_pages` path until the
-  timeline's Phase 10.
-- The editor relays a synthetic `["timeline"]` key on `view3d:invalidate`
-  after each delivered change batch or reset (ADR 0010 D-4 keeps its shape;
-  no new channel). The window rebuilds its resolver on that key.
-- Cue tables have real query keys, so cue edits reach the window through the
-  existing invalidation. Deleting beats, measures, tags or marchers also
-  invalidates and relays `["cues"]` (owner, 2026-10-15).
-- The selection payload stops depending on `selectedPageId`, which timeline
-  mode deprecates.
+- `positions.ts` (ADR 0010 D-6) has a timeline-mode path: the window
+  cold-builds its own resolver from the timeline tables
+  (`acquireExportResolver`) and samples it at every count boundary.
+- The editor sends an invalidation of `VIEW3D_TIMELINE_QUERY_KEY` on
+  `view3d:invalidate` after every committed timeline change (ADR 0010 D-4
+  keeps its shape; no new channel). The window rebuilds its resolver on that
+  key.
+- The window reads the stored cues (`useStoredCues`). Cue tables have real
+  query keys, and the editor relays every query it invalidates, so a cue
+  edit, an undo or a beat or marcher deletion refreshes them.
 
-### 8.2 Planner (Feet and Facing)
+### 8.2 Planner (feet and facing)
 
-`core/marchers/planner.ts` stays pure and per count. New inputs, from the
-compiled Feet and Facing segments:
+`core/marchers/planner.ts` stays pure and per count. `cueInputs.ts` turns a
+performer's compile result into its inputs:
 
-- pace per count (sets the clip rate and the stride from the dots);
-- moving technique and on-holds technique per count; stand is the hold
-  default;
-- step-off foot per move (mirrored clips, as today);
-- dot mode per set;
+- the feet per count: the defaults (single time, straight leg), the show's
+  step-off foot, and the compile's hold style (stand under a kneel);
+- dot mode, from the show setting;
 - a heading per count from Facing. The whole instance turns to it (feet
   included at rest); while moving the legs pick forward, backward or slide
   relative to it. Turning eases over the transition on the CPU, through the
-  instance matrix it already writes every frame.
+  instance matrix it already writes every frame; a snap turns in fixed time.
 
-ADR 0010 D-7's "the upper body always faces the front sideline" becomes the
-Facing default.
+ADR 0010 D-7's "the upper body always faces the front sideline" is the Facing
+default.
 
 ### 8.3 Layered animation
 
@@ -528,12 +487,18 @@ Keep the baked-texture instanced renderer, with no per-marcher animation
 mixers. Compose each performer's bones **once per frame in a GPU pre-pass**,
 not per vertex (measured 2026-10-11, findings.md).
 
+The renderer layers three **render channels**: Feet (legs, hips and travel),
+Body (spine and head) and Horn/Equipment (shoulders, arms, hands and what they
+hold). These are the renderer's own bone groups, not cue types. Position cues
+drive Horn/Equipment (`hornChannel.ts`), Equipment decides which piece is in
+the hands (`equipmentSpans.ts`), Facing turns the instance, and the feet come
+from the planner.
+
 - **Bake per channel**, not per combination: feet clips, horn and equipment
-  rows, body rows. Rows add up across channels instead of multiplying (today
-  every clip is rebaked per hold). The hold's arm pose becomes the
-  Horn/Equipment default row. Measured on the Fall Show: 828 of 4096 texels
-  wide (27.1 MB, Feet bake 0.23 s), against 3,864 wide (126.6 MB, 1.04 s)
-  today.
+  rows, body rows. Rows add up across channels instead of multiplying. The
+  hold's arm pose is the Horn/Equipment default row. Measured on the Fall
+  Show: 828 of 4096 texels wide (27.1 MB, Feet bake 0.23 s), against 3,864
+  wide (126.6 MB, 1.04 s) before.
 - **Compose pass**: each frame, one render-to-texture pass (WebGL2 with
   `EXT_color_buffer_float`) writes every performer's final skinning matrices
   into a small float texture: 4 texels per bone, 24 bones (23 plus a prop
@@ -542,85 +507,80 @@ not per vertex (measured 2026-10-11, findings.md).
   re-anchors upper-body chains to the torso the Feet or Body channel is
   moving.
 - **Skinning reads one matrix per influence** from that texture, for bodies
-  and instruments alike. That is fewer fetches than today's two-row lerp, so
+  and instruments alike. That is fewer fetches than the old two-row lerp, so
   the frame gets cheaper: −0.8 to −1.2 ms at 300 marchers and −3.4 to −3.9 ms
   at 600 on full quality (M1 Pro). Composing per vertex instead cost +5.8 to
-  +7.4 ms at 300, because every instrument vertex paid for it. Composing on
-  the CPU and uploading also fit, but its main-thread time grows with the
-  band (0.8 ms at 300, 1.5 ms at 600), so the GPU pass is the choice.
-- **Per-instance channel state** (row, phase, rate for each channel) moves to
+  +7.4 ms at 300, and composing on the CPU grows with the band (0.8 ms at 300,
+  1.5 ms at 600), so the GPU pass is the choice.
+- **Per-instance channel state** (row, phase, rate for each channel) lives in
   a small float data texture read by `gl_InstanceID`, written only when a
   segment changes. Vertex attribute slots (14 of 16 used) stay free.
-- **Transitions are baked rows**, not matrix lerps, so a horn snap or rifle
-  flip doesn't shrink bones.
+- **Transitions are baked rows**, not matrix lerps, so a horn snap doesn't
+  shrink bones.
 - **Props as virtual bones** on the Horn/Equipment channel: held, a prop bone
-  is the hand times a grip offset; in a toss it follows the phrase's prop
-  path in body space. No per-frame CPU work.
-- **Ripples** are per-instance phase offsets, so they cost nothing extra.
-- The one-marcher editor (shaping phrases, a later effort) can use three's
-  `AnimationMixer` with track-filtered clips. A parity test compares that
-  with the compose pass.
+  is the hand times a grip offset. A toss, once animated, can move it in body
+  space. No per-frame CPU work.
+- **Equipment swaps** cut on the cue's count: the piece in the hands changes,
+  and Position returns to the new piece's default hold.
 
-### 8.4 om-pose (spec call)
+### 8.4 om-pose
 
-**Move the renderer into the repo** as owned code instead of patching the
-vendored copy. The channel layering is OpenMarch-specific and will change
-often while it's built. om-pose's README forbids app-side shader edits, and
-round-tripping every change through om-pose slows the work. Bring its pixel
-parity suite along, record the source commit, and leave om-pose as the
-reference for single-clip behavior. The shadow pass stays unpatched (no
-change from today). A WebGPU move later rewrites the shader in TSL either way.
+The renderer lives in the repo as owned code (`view3d/render/README.md`)
+instead of a patched vendored copy. The channel layering is OpenMarch-specific
+and changes often; om-pose stays the reference for single-clip behavior. The
+shadow pass stays unpatched. A WebGPU move later rewrites the shader in TSL
+either way.
 
-### 8.5 Performance budget (spec call)
+### 8.5 Performance budget
 
-Measured on 2026-10-10 and 2026-10-11 (findings.md), on an Apple M1 Pro
-with the high school kit:
+Measured on 2026-10-10 and 2026-10-11 (findings.md), on an Apple M1 Pro with
+the high school kit:
 
 - **Channel layering at most +1 ms at 300 marchers, full quality:** pass with
-  the compose pass (the frame is cheaper than today). Composing per vertex
-  failed (+5.8 to +7.4 ms), and so did its two-channel fallback.
+  the compose pass (the frame is cheaper than before).
 - **The bake inside 4096 × 2048:** pass (828 texels wide); Horn/Equipment
   needs no texture of its own.
 - **Full show bake under 1.5 s:** pass (0.23 s for Feet). **A cue edit
-  rebakes only its channel in under 100 ms:** pass for Horn (under 1 ms);
-  Feet's partial rebake isn't built yet.
+  rebakes only what changed in under 100 ms:** pass for Horn (under 1 ms).
 - **60 fps at 1080p with 300 performers in `pro` on an integrated GPU**
-  (design.md section 9): not yet measured. A base M1, an Intel Iris Xe and
-  the `pro` kit still need numbers, and so does the compose pass's own GPU
-  time on its own. Measure them before step 6 merges.
+  (design.md section 9): not yet measured. A base M1, an Intel Iris Xe and the
+  `pro` kit still need numbers, and so does the compose pass's own GPU time.
 
 ## 9. Storage
 
-The schema, the file format and the ADR 0010 amendments are in
-[ADR 0004](../adr/0004-performer-cues.md). In short: new tables `cues`,
-`cue_marchers`, `phrase_assets` and `page_performer_settings`; show defaults
-in workspace settings; additive, no conversion step, numbered after the
-timeline's migrations.
+ADR 0015 D-9 has the schema; the write rules are ADR 0004's.
 
-## 10. Build order (for writing-plans)
+- `cues`: `id`, `type`, `beat_id`, `value`, `settings_json`, `length` (null
+  for a lasting cue), `transition` (null for the value's default), `label`,
+  `notes` and the shared timestamps (migration `0022_cues.sql`).
+- `cue_marchers`: `cue_id`, `marcher_id`. Every cue has its performers here.
+- `timeline_held_marks.style`: the hold style, nullable (`stand`, `markTime`,
+  `highMarkTime`; migration `0021_held_mark_style.sql`).
+- `type` and `value` are checked in code, not by a CHECK constraint. A build
+  that doesn't know a type keeps its cues, writes them back untouched and
+  ignores them, so a new type needs no migration.
+- Write paths, undo and the beat deletion carry are in
+  `apps/desktop/src/db-functions/cues.ts`; the query hooks are `useCues`.
 
-Each item is one or more PRs into AlexDumo `main`, each on its own branch
-off `main`. The timeline and `3d-async` have both landed on `main`; bring a
-branch up to date by merging `main` into it (no rebase), and regenerate a
-migration with the repo scripts if `main` gained one first.
+## 10. Build order
 
-1. **Measure** (section 8.5). Done for the M1 Pro: per-vertex composition
-   failed, the compose pass passed (branches `3d/cue-layering-measure`,
-   `3d/cue-compose-pass`). A base M1, Iris Xe and `pro` remain.
-2. **Storage**: migration, schema, db-functions, query hooks, history and
-   repair (ADR 0004). History tests.
-3. **Library catalog and compile** in `@openmarch/core`, with unit tests for
-   every resolution rule, counting, ripples, take-overs and flags.
-4. **Window positions and sync** (section 8.1), the ADR 0010 amendment.
-5. **Planner**: pace, techniques, stand on holds, step-off, dot mode per
-   set, Facing.
-6. **Renderer in the repo, then layering**: per-channel bake, per-bone
-   composition, channel state texture, baked transitions, prop bones.
-7. **Library v1 assets**: horn transitions, battery and guard states and
-   phrases, kneel, the choreography phrase. Owner review against video.
-8. **Visuals mode**: tabs, Who list, lanes, result row, why readout,
-   inspector, gestures, snapping, copy and paste, flags.
-9. **Retire the window toggles** (section 7.5).
+ADR 0015's build order, with where it stands:
+
+1. **Mark time:** holds stand by default, with a style on each Held hold.
+   Built.
+2. **Cue foundations:** core types, storage and undo. Built.
+3. **Equipment, end to end:** set it for a selection, see it on the 2D field
+   and in 3D, select by equipment at the playhead, and its lane. Built (fork
+   #992).
+4. **Facing and Position,** with transition lengths. Compile and the 3D View
+   handle them; the editor and lanes are next.
+5. **Look,** after the looks model (#972).
+6. **Later, in no fixed order:** tosses and other momentary values, Lights,
+   ripples, logistics.
+
+The 3D runtime work in section 8 (window positions, planner inputs, the
+renderer in the repo, the per-channel bake and the compose pass) is built.
+Animations for battery and guard positions, tosses and kneel are not.
 
 Owner verdicts on looks go in findings.md, and new technique rules in
 technique.md, as each lands.
@@ -630,26 +590,24 @@ technique.md, as each lands.
 - Printing cues anywhere (coordinate sheets, drill charts, the mobile dot
   book, the video overlay). The compiled segments carry labels so it can be
   added later.
-- Shaping phrases in the 3D window (posing keys, trimming and retargeting
-  imports); exporting and importing phrases between shows; motion capture
-  from video.
+- Shaping tosses and choreography in the 3D window, importing motion, and
+  motion capture from video.
 - Form-relative behavior: facing down the line or along a curve, follow the
-  leader, ripple orders beyond the four above.
-- Guessing cues from the drill beyond footwork.
+  leader.
+- Guessing cues from the drill.
 - Animating bent leg, high step and high mark time; step-size warnings.
 - Drum major conducting.
-- Battery motion driven by percussion files; sit, lie down, horn
-  flourishes, stick visuals, swing flag work patterns and exchanges.
+- Battery motion driven by percussion files; sit, lie down, horn flourishes,
+  stick visuals, swing flag work patterns and exchanges.
 
 ## 12. Risks
 
-- `timeline-try-2` is still moving (UI decisions daily). Re-check the
-  timeline's tables, `TimelineSurface` layout and snapping helpers when the
-  plan starts.
-- Migration numbering: the 3D branch's `view3d_venue` and the timeline both
-  use 0017 today. Never open one show file in builds of both until the 3D
-  branch rebases.
-- The GPU and texture budgets are unmeasured (section 8.5).
+- `@openmarch/core`'s cue types are a public package API; changing them
+  changes the 3D View's compile call with them.
+- A marcher added to a section later doesn't pick up that section's earlier
+  cues; fixing them is by hand (ADR 0015 D-4).
+- The GPU budget on integrated GPUs is unmeasured (section 8.5).
 - Older builds that rewrite workspace settings drop keys they don't know, so
   show defaults saved by a newer build can revert to left foot and foot on
-  the dot. The timeline's `timelineMode` key has the same exposure.
+  the dot. The timeline's `timelineMode` key has the same
+  exposure.

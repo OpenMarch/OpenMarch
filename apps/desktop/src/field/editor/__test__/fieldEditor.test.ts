@@ -943,6 +943,21 @@ describe("FieldEditor hover", () => {
         editor.pointerMove(at(EMPTY.x, EMPTY.y));
         expect(listener).toHaveBeenCalledTimes(1);
     });
+    it("reports the marcher under the pointer, and tells only its own subscribers (#992)", () => {
+        const { editor } = setup();
+        const hovered = vi.fn();
+        editor.subscribeHoveredMarcher(hovered);
+        editor.pointerMove(at(100, 100));
+        expect(editor.hoveredMarcher()).not.toBeNull();
+        editor.pointerMove(at(101, 100));
+        expect(hovered).toHaveBeenCalledTimes(1);
+        editor.pointerMove(at(EMPTY.x, EMPTY.y));
+        expect(editor.hoveredMarcher()).toBeNull();
+        editor.pointerMove(at(100, 100));
+        editor.pointerLeave();
+        expect(editor.hoveredMarcher()).toBeNull();
+        expect(hovered).toHaveBeenCalledTimes(4);
+    });
 });
 
 describe("FieldEditor select all", () => {

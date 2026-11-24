@@ -20,6 +20,7 @@ import {
     silkPatternTexture,
 } from "../marchers/silkSet";
 import { UNIFORM_PRESETS } from "@/view3d/core/marchers/uniformPresets";
+import { guardCarry } from "@/view3d/core/instruments/catalog";
 import { SilkMotion } from "../marchers/silkMotion";
 import type { ShowPlans } from "../marchers/marcherMotion";
 import type { MarcherSlotLook } from "../marchers/marcherBodies";
@@ -280,6 +281,69 @@ describe("SilkSet", () => {
             expect(set.meshes[0].count).toBe(40);
             set.dispose();
         }
+    });
+
+    it("draws a slot's silk only while it holds the flag (Equipment cues)", async () => {
+        const sk = await skeleton();
+        const withCarry = (
+            section: string,
+            carry: ReturnType<typeof guardCarry> | null,
+        ) =>
+            sectionUniform(
+                section,
+                "up",
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                undefined,
+                { carry },
+            );
+        const guard = look(1, "Color Guard");
+        const trumpet = look(2, "Trumpet");
+        const set = new SilkSet(
+            sk,
+            [
+                // a guard who swaps the flag for a rifle
+                {
+                    ...guard,
+                    held: [
+                        guard.uniform,
+                        withCarry("Color Guard", guardCarry("rifle")),
+                    ],
+                },
+                // a trumpet who's given a flag
+                {
+                    ...trumpet,
+                    held: [
+                        trumpet.uniform,
+                        withCarry("Trumpet", guardCarry("flag6")),
+                    ],
+                },
+            ],
+            "low",
+            new THREE.MeshStandardMaterial(),
+        );
+        expect(set.count).toBe(2);
+        expect(set.slots).toEqual([0, 1]);
+        const f = frame(2);
+        const drawn = (held: number[]) => {
+            set.writeFrame(
+                f.xz,
+                f.heading,
+                f.placed,
+                f.scale,
+                null,
+                null,
+                Uint8Array.from(held),
+            );
+            const slots = set.meshes[0].geometry.attributes.aSlot.array;
+            return Array.from(slots.subarray(0, set.meshes[0].count));
+        };
+        expect(drawn([0, 0])).toEqual([0]);
+        expect(drawn([1, 1])).toEqual([1]);
+        expect(drawn([0, 1])).toEqual([0, 1]);
+        set.dispose();
     });
 
     it("rides the prop bone, and the left hand for a double swing's second silk", async () => {

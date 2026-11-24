@@ -44,12 +44,18 @@ import {
     hornEventAt,
     type HornEvent,
 } from "@/view3d/core/marchers/hornChannel";
+import type { HeldHornEvent } from "@/view3d/core/marchers/equipmentSpans";
 import { hornPlay } from "./hornRows";
 
-/** One slot's Horn/Equipment channel over the show. */
+/**
+ * One slot's Horn/Equipment channel over the show. An event that names its
+ * own family and piece (`HeldHornEvent`, from Equipment cues) plays in that
+ * family and draws that piece; the others play in `family`. No family
+ * leaves the arms on the Feet.
+ */
 export interface HornSlot {
-    family: HoldFamily;
-    events: readonly HornEvent[];
+    family: HoldFamily | null;
+    events: readonly (HornEvent | HeldHornEvent)[];
 }
 
 export interface ShowPlans {
@@ -552,9 +558,10 @@ export class MarcherMotion {
     }
 
     /**
-     * Switches each slot's Horn/Equipment channel where its event changes.
-     * Horn timing is the show's own clock: a state lands on its count's
-     * click, not on the plan clock the feet run a count ahead on.
+     * Switches each slot's Horn/Equipment channel where its event changes,
+     * and the piece it draws where an Equipment cue changes it. Horn timing
+     * is the show's own clock: a state lands on its count's click, not on
+     * the plan clock the feet run a count ahead on.
      */
     private updateHorns(count: number): void {
         const rows = this.bodies.bake.rows;
@@ -564,7 +571,10 @@ export class MarcherMotion {
             const index = hornEventAt(h.events, count, this.hornCursor[i]);
             if (index === this.hornCursor[i]) continue;
             this.hornCursor[i] = index;
-            this.bodies.setHorn(i, hornPlay(h.events[index], h.family, rows));
+            const e = h.events[index];
+            const family = "held" in e ? e.family : h.family;
+            this.bodies.setHorn(i, family ? hornPlay(e, family, rows) : null);
+            if ("held" in e) this.bodies.setHeld(i, e.held);
         }
     }
 }

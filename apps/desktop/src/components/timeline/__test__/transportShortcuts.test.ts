@@ -9,6 +9,7 @@ import {
 import {
     HELP_MENU_ACTIONS,
     PLAYBACK_MENU_ACTIONS,
+    VIEW_MENU_ACTIONS,
     isMenuAction,
 } from "@/global/menuActions";
 import { shortcutGroups } from "@/components/ShortcutsDialog";
@@ -51,7 +52,11 @@ describe("transport shortcuts (UI-17)", () => {
 });
 
 describe("app menu actions (docs/adr/0003-menu-actions-ipc.md)", () => {
-    const items = [...PLAYBACK_MENU_ACTIONS, ...HELP_MENU_ACTIONS];
+    const items = [
+        ...PLAYBACK_MENU_ACTIONS,
+        ...VIEW_MENU_ACTIONS,
+        ...HELP_MENU_ACTIONS,
+    ];
 
     it("lists Play, Play from Playhead / Pause and Loop (Play On and Loop Expert only), plus the shortcuts list (UI-17)", () => {
         expect(PLAYBACK_MENU_ACTIONS).toEqual([

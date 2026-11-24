@@ -7,6 +7,9 @@
  * so an instrument at the boundary doesn't flicker between them.
  *
  * Every v4 body shares one skeleton, so one geometry serves all body types.
+ * A slot whose Equipment cues change what it holds has an instance in the
+ * group of each piece it holds (`heldLooks`), drawn only while it holds that
+ * piece.
  */
 import * as THREE from "three";
 import { writeMatrix } from "@/view3d/render/instanced-marchers.js";
@@ -46,6 +49,11 @@ export function isNearCarrier(
     return was ? d < HORN_FAR_M : d < HORN_NEAR_M;
 }
 
+/** The looks a slot's hands take (`MarcherSlotLook.held`), the first being its own. */
+export function heldLooks(look: MarcherSlotLook): readonly UniformLook[] {
+    return look.held && look.held.length > 0 ? look.held : [look.uniform];
+}
+
 interface Tier {
     mesh: THREE.InstancedMesh;
     /** Slots in instance order this frame. */
@@ -54,6 +62,8 @@ interface Tier {
 
 interface HornGroup {
     slots: number[];
+    /** Per slot of the group: which of its held looks this group draws. */
+    held: number[];
     /** Full detail first when there are two. */
     tiers: Tier[];
     /** Per slot of the group: whether it was near last frame. */
@@ -72,18 +82,21 @@ export class HornSet {
         const skeleton = bodies.values().next().value!.mesh.skeleton;
         const byLook = new Map<
             string,
-            { look: UniformLook; slots: number[] }
+            { look: UniformLook; slots: number[]; held: number[] }
         >();
-        looks.forEach((l, i) => {
-            if (!l.uniform.options.carry) return;
-            const key = uniformKey(l.uniform);
-            let g = byLook.get(key);
-            if (!g) byLook.set(key, (g = { look: l.uniform, slots: [] }));
-            g.slots.push(i);
-        });
+        looks.forEach((l, i) =>
+            heldLooks(l).forEach((u, k) => {
+                if (!u.options.carry) return;
+                const key = uniformKey(u);
+                let g = byLook.get(key);
+                if (!g) byLook.set(key, (g = { look: u, slots: [], held: [] }));
+                g.slots.push(i);
+                g.held.push(k);
+            }),
+        );
         const details: Detail[] =
             quality === "high" ? ["high", "low"] : ["low"];
-        for (const { look, slots } of byLook.values()) {
+        for (const { look, slots, held } of byLook.values()) {
             const carry = look.options.carry!;
             const h = holdFor(carry.family, look.options.hold);
             const pose = poseArms(skeleton, h);
@@ -118,7 +131,7 @@ export class HornSet {
                 this.meshes.push(mesh);
             }
             if (tiers.length > 0)
-                this.groups.push({ slots, tiers, near: new Map() });
+                this.groups.push({ slots, held, tiers, near: new Map() });
         }
     }
 
@@ -131,7 +144,9 @@ export class HornSet {
      * Places every placed slot's instrument in its tier's mesh, packed, and
      * points each instance at its slot when the packing changed. `camera`
      * null draws everything at full detail. `lift` raises each slot (m), as
-     * onto a platform; null stands them all on the ground.
+     * onto a platform; null stands them all on the ground. `held` is which
+     * of each slot's held looks it holds (`MarcherBodies.setHeld`); null
+     * holds each slot's own.
      */
     writeFrame(
         xz: Float32Array,
@@ -140,11 +155,14 @@ export class HornSet {
         scale: Float32Array,
         camera: [number, number, number] | null,
         lift: Float32Array | null = null,
+        held: Uint8Array | null = null,
     ): void {
         for (const g of this.groups) {
             const lists: number[][] = g.tiers.map(() => []);
-            for (const slot of g.slots) {
-                if (!placed[slot]) continue;
+            for (let n = 0; n < g.slots.length; n++) {
+                const slot = g.slots[n];
+                if (!placed[slot] || (held?.[slot] ?? 0) !== g.held[n])
+                    continue;
                 let tier = 0;
                 if (g.tiers.length > 1 && camera) {
                     const near = isNearCarrier(

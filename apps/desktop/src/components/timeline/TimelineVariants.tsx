@@ -867,7 +867,10 @@ const TimelineSurface = memo(function TimelineSurface({
     const stretch = useContext(TimelinePaneStretchContext);
     // Lanes in place of the clip rows (tempo mode's lanes)
     const band = basic ? undefined : props.band;
-    const contentHeight = band ? trackTop + band.height : timelineHeight;
+    // Lanes under the clip rows (the cue lanes), in Basic too
+    const lanes = props.lanes;
+    const lanesTop = band ? trackTop + band.height : timelineHeight;
+    const contentHeight = lanesTop + (lanes?.height ?? 0);
     const surfaceHeight = stretch
         ? Math.max(contentHeight, viewportHeight)
         : contentHeight;
@@ -1306,6 +1309,42 @@ const TimelineSurface = memo(function TimelineSurface({
                         )}
                         {band?.render({
                             top: trackTop,
+                            width,
+                            pixelsPerBeat,
+                            beatCount: model.beatCount,
+                            snapBeats: seekSnapBeats,
+                            leadingInset: initialPageWidth,
+                        })}
+                        {!basic &&
+                            !band &&
+                            rows.length > 0 &&
+                            props.movesHeader && (
+                                // The Moves lane's heading, at the visible left edge over the first
+                                // row of move tracks
+                                <div
+                                    className="pointer-events-none absolute left-0 z-[4] h-0"
+                                    style={{ top: trackTop, width }}
+                                >
+                                    <div className="pointer-events-auto sticky left-0 w-fit">
+                                        {props.movesHeader}
+                                    </div>
+                                </div>
+                            )}
+                        {!basic && !band && props.movesHiddenStrip && (
+                            // Moves is hidden: it folds into a strip where its tracks were
+                            <div
+                                className="absolute left-0 z-[4]"
+                                style={{
+                                    top: trackTop,
+                                    width,
+                                    height: rowPitch,
+                                }}
+                            >
+                                {props.movesHiddenStrip}
+                            </div>
+                        )}
+                        {lanes?.render({
+                            top: lanesTop,
                             width,
                             pixelsPerBeat,
                             beatCount: model.beatCount,

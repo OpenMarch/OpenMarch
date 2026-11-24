@@ -81,16 +81,22 @@ export function hornPlay(
     };
 }
 
-/** The rows `events` play for `family`: hold and transition row names. */
+/**
+ * The rows `events` play: hold and transition row names, in `family`, or
+ * in the family an event names (an Equipment cue's piece, `HeldHornEvent`).
+ * An event in no family (empty hands) plays no row.
+ */
 export function hornRowsOf(
-    events: readonly HornEvent[],
-    family: HoldFamily,
+    events: readonly (HornEvent & { family?: HoldFamily | null })[],
+    family: HoldFamily | null,
 ): string[] {
     const out = new Set<string>();
     for (const e of events) {
-        out.add(holdRowName(holdId(family, e.state)));
+        const f = e.family !== undefined ? e.family : family;
+        if (!f) continue;
+        out.add(holdRowName(holdId(f, e.state)));
         if (e.fromState !== null)
-            out.add(transitionRowName(family, e.fromState, e.state));
+            out.add(transitionRowName(f, e.fromState, e.state));
     }
     return [...out];
 }

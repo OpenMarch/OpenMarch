@@ -52,6 +52,21 @@ export function carryForSection(section: string): Carry | null {
     return SECTIONS[section.trim().toLowerCase()] ?? null;
 }
 
+/**
+ * Carrying `model` whatever the section: the hold family a section carrying it uses (the 6 ft
+ * flag the flag hold, every other guard piece and the tubas a hold of their own name). For a
+ * piece an Equipment cue hands someone (fork #992).
+ */
+export function carryForModel(model: ModelId): Carry {
+    if ((GUARD_EQUIPMENT as readonly ModelId[]).includes(model))
+        return guardCarry(model as GuardModelId);
+    if (model === "contra" || model === "sousaphone") return tubaCarry(model);
+    const section = Object.values(SECTIONS).find((c) => c.model === model);
+    return section
+        ? { model, family: section.family }
+        : { model, family: model as HoldFamily };
+}
+
 /** The Tuba section carrying `model`: each has a hold of its own name. */
 export function tubaCarry(model: TubaModelId): Carry {
     return { model, family: model };

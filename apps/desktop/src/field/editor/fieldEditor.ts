@@ -749,6 +749,8 @@ export class FieldEditor {
     private gestureButton = 0;
     private hover: FieldCursor = "default";
     private hoverHandle: HandleId | null = null;
+    private hoverMarcherId: number | null = null;
+    private readonly hoverMarcherListeners = new Set<() => void>();
     /** The selection box's cover when a rotation started: the box turns with it until the release */
     private rotateCovers: FieldRect | null = null;
     /**
@@ -955,6 +957,7 @@ export class FieldEditor {
         if (this.ignoredButton !== null) return;
         const press = this.press;
         if (!press) {
+            this.setHoverMarcher(this.marcherAt(pointer));
             const modeCursor =
                 this.mode?.cursorAt(pointer, {
                     onDot: () => this.marcherAt(pointer) !== null,
@@ -1288,6 +1291,7 @@ export class FieldEditor {
     pointerLeave(): void {
         this.mode?.leave?.();
         this.setHoverHandle(null);
+        this.setHoverMarcher(null);
         this.setPivotHover(null);
         if (this.pickAt) {
             this.pickAt = null;
@@ -1502,6 +1506,23 @@ export class FieldEditor {
      */
     hoveredHandle(): HandleId | null {
         return this.hoverHandle;
+    }
+
+    /**
+     * The marcher the pointer rests on with no button down, or null: the field shows a drill
+     * number an equipment icon stands in for while it's pointed at (#992).
+     */
+    hoveredMarcher(): number | null {
+        return this.hoverMarcherId;
+    }
+
+    /**
+     * Calls `listener` when {@link hoveredMarcher} changes (apart from {@link subscribe}, which a
+     * marcher pointed at doesn't wake). Returns the unsubscribe.
+     */
+    subscribeHoveredMarcher(listener: () => void): () => void {
+        this.hoverMarcherListeners.add(listener);
+        return () => this.hoverMarcherListeners.delete(listener);
     }
 
     /**
@@ -2574,6 +2595,12 @@ export class FieldEditor {
         this.gesture = null;
         gesture.cancel();
         this.emit();
+    }
+
+    private setHoverMarcher(id: number | null) {
+        if (id === this.hoverMarcherId) return;
+        this.hoverMarcherId = id;
+        for (const listener of this.hoverMarcherListeners) listener();
     }
 
     private setHoverHandle(handle: HandleId | null) {

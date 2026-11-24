@@ -1,4 +1,5 @@
 import {
+    EQUIPMENT_USUAL,
     GUARD_CARRIES,
     cueSettings,
     cueValueLookup,
@@ -805,6 +806,29 @@ function resolve(
 }
 
 /**
+ * "Their own instrument" (`EQUIPMENT_USUAL`) is the performer's section
+ * default: the segments show that default's value, so every reader (who
+ * holds what, the 2D tags, the 3D View) sees the real item. The cue stays
+ * the segment's cue.
+ */
+function resolveUsual(
+    segments: CueSegment[],
+    defaults: PerformerDefaults,
+    lookup: CueValueLookup,
+): void {
+    const usual = defaults.equipment.value;
+    const value = usual !== null ? lookup(usual) : undefined;
+    segments.forEach((seg, i) => {
+        if (seg.value !== EQUIPMENT_USUAL) return;
+        segments[i] = {
+            ...seg,
+            value: usual,
+            label: value?.label ?? seg.label,
+        };
+    });
+}
+
+/**
  * One performer's type from their cues: the lasting timeline with the
  * momentary cues laid over it. A cue's fit is checked on its count, against
  * what Equipment gives the performer there.
@@ -840,6 +864,7 @@ function resolveType(
                 : Infinity,
         ),
     );
+    if (type === "equipment") resolveUsual(resolved, defaults, lookup);
     return {
         placed,
         segments: input.travels

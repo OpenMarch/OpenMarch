@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import type { EquipmentIconPlace, EquipmentIcons } from "@/cues/equipmentIcons";
 import { parseTimelineHeight } from "@/components/timeline/timelineSplit";
 import { syncFromStorage } from "@/stores/syncFromStorage";
 import {
@@ -50,6 +51,15 @@ export interface UiSettings {
     timelineZoomFitted: boolean;
     /** How the timeline draws the waveform: simplified rounded bars or precise per-beat detail */
     timelineWaveformStyle: WaveformStyle;
+    /**
+     * The timeline's lanes the user showed (true) or hid (false), by lane; a lane not here takes
+     * its default (`timeline/timelineLanes.ts`: Moves shows, the cue lanes are hidden)
+     */
+    timelineLanes: Record<string, boolean>;
+    /** The cue lanes folded into their summary row (fork #991, option E), by cue type */
+    timelineFoldedCueLanes: string[];
+    /** The Equipment items last chosen, newest first, at most four (the field menu's recent) */
+    recentEquipment: string[];
     /** The current audio volume percentage for timeline playback */
     audioVolume: number;
     /** Whether all app audio is muted */
@@ -96,6 +106,13 @@ export interface UiSettings {
      */
     lineOrder?: ShapeOutlines;
     /**
+     * Who shows an icon after their drill number on the field for what they hold (fork #992):
+     * performers holding something other than their own instrument, everyone, or nobody
+     */
+    equipmentIcons?: EquipmentIcons;
+    /** Where those icons go: after the drill number, in place of the dot, or of the number */
+    equipmentIconPlace?: EquipmentIconPlace;
+    /**
      * Whether an open shape shows its walks and start rings (#403): the floating editor's
      * Pathways toggle. Off by default.
      */
@@ -132,6 +149,8 @@ export interface UiSettings {
 export type MarcherLabelForm = "auto" | "names" | "numbers" | "off";
 export type MarcherLabelSize = "small" | "normal" | "large";
 export type ShapeOutlines = "selected" | "always" | "off";
+export type { EquipmentIconPlace, EquipmentIcons };
+
 export const FIELD_VENUE_LOOKS = [
     "off",
     "faint",
@@ -177,6 +196,9 @@ export const defaultSettings: UiSettings = {
     timelineHeight: null,
     timelineZoomFitted: false,
     timelineWaveformStyle: "simplified",
+    timelineLanes: {},
+    timelineFoldedCueLanes: [],
+    recentEquipment: [],
     audioVolume: 100,
     audioMuted: false,
     mouseSettings: {
@@ -193,6 +215,8 @@ export const defaultSettings: UiSettings = {
     marcherLabels: "auto",
     shapes: "selected",
     lineOrder: "off",
+    equipmentIcons: "changed",
+    equipmentIconPlace: "beside",
     shapeWalks: false,
     followTheLeader: false,
     fieldVenue: "off",
@@ -211,6 +235,20 @@ const clampZoomSensitivity = (value: number): number =>
     Math.min(4.0, Math.max(0.5, value));
 
 // Helper function to parse settings from a JSON string
+/** A saved map of booleans, keeping only its boolean entries. */
+const booleanMap = (value: unknown): Record<string, boolean> =>
+    value !== null && typeof value === "object" && !Array.isArray(value)
+        ? Object.fromEntries(
+              Object.entries(value).filter(([, v]) => typeof v === "boolean"),
+          )
+        : {};
+
+/** A saved list of strings, or an empty one for anything else. */
+const stringList = (value: unknown): string[] =>
+    Array.isArray(value)
+        ? value.filter((v): v is string => typeof v === "string")
+        : [];
+
 // Throws on bad JSON or invalid structure. Exported for tests
 export const parseSettings = (raw: string): UiSettings => {
     // Dropped: `previousPaths` (Previous paths) gave way to start flag positions (#331),
@@ -246,6 +284,11 @@ export const parseSettings = (raw: string): UiSettings => {
         snap: defaultSettings.snap,
         timelineHeight: parseTimelineHeight(parsed.timelineHeight),
         timelineWaveformStyle: parseWaveformStyle(parsed.timelineWaveformStyle),
+        timelineLanes: booleanMap(parsed.timelineLanes),
+        timelineFoldedCueLanes: stringList(parsed.timelineFoldedCueLanes),
+        recentEquipment: stringList(parsed.recentEquipment).slice(0, 4),
+        equipmentIcons: parseEquipmentIcons(parsed.equipmentIcons),
+        equipmentIconPlace: parseEquipmentIconPlace(parsed.equipmentIconPlace),
         startFlagPositions: parseStartFlagPositions(parsed.startFlagPositions),
         fieldVenue: oneOf(FIELD_VENUE_LOOKS, parsed.fieldVenue, "off"),
         fieldVenueLast: oneOf(
@@ -267,6 +310,14 @@ export const parseSettings = (raw: string): UiSettings => {
             : defaultSettings.coordinateRounding,
     };
 };
+
+/** A stored Equipment icons choice, or the default for anything else. */
+const parseEquipmentIcons = (value: unknown): EquipmentIcons =>
+    value === "off" || value === "everyone" ? value : "changed";
+
+/** A stored Equipment icons place, or the default for anything else. */
+const parseEquipmentIconPlace = (value: unknown): EquipmentIconPlace =>
+    value === "dot" || value === "label" ? value : "beside";
 
 // Helper function to load settings from localStorage
 const loadSettings = (): UiSettings => {
