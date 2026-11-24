@@ -34,6 +34,8 @@ import {
 } from "./sources";
 import { getPaletteUsageScores, recordPaletteUsage } from "./usage";
 import Shortcut from "@/components/ui/Shortcut";
+import { reportPaletteSearchFoundNothing } from "@/analytics/usageEvents";
+import { reportRefusedAction } from "../registry";
 import "./CommandPalette.css";
 
 interface Section {
@@ -223,6 +225,15 @@ export default function CommandPalette() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
         [open, path, query, usage, overrides, sourcesVersion, tolgeeT],
     );
+    // A search that finds nothing, once the typing settles: what people look for and don't find
+    useEffect(() => {
+        if (!open || items.length > 0 || query.trim() === "") return;
+        const timer = setTimeout(
+            () => reportPaletteSearchFoundNothing(query),
+            1500,
+        );
+        return () => clearTimeout(timer);
+    }, [open, items.length, query]);
     const selectable = useMemo(
         () => items.flatMap((item, index) => (item.disabled ? [] : [index])),
         [items],
@@ -278,6 +289,13 @@ export default function CommandPalette() {
 
     const pendingDock = useRef(false);
     const choose = (item: PaletteItem | undefined) => {
+        if (item?.disabled && item.disabledReason)
+            reportRefusedAction(
+                // The bare action id, as keys and buttons report it
+                item.id.replace(/^action:/, "").replace(/:filled$/, ""),
+                "palette",
+                item.disabledReason,
+            );
         if (!item || item.disabled) return;
         const choice = choices.get(item) ?? {};
         const above = choice.path ?? path;

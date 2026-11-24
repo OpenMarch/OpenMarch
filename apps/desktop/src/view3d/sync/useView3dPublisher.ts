@@ -504,7 +504,8 @@ export function useView3dPlaybackRequests() {
                     request.release === true ? "keyup" : "lost",
                 );
                 if (request.release === true) return;
-                const release = pressAction(request.action);
+                // The 3D View's keys and buttons arrive the same way
+                const release = pressAction(request.action, "other");
                 if (release) held.set(request.action, release);
             }),
         ];

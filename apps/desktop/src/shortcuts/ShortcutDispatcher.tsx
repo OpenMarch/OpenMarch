@@ -20,6 +20,7 @@ import {
     hasActionHandler,
     isActionEnabled,
     notifyRefusedPress,
+    reportRefusedAction,
     pressAction,
     type ReleaseReason,
 } from "./registry";
@@ -106,9 +107,14 @@ export default function ShortcutDispatcher({
                     context,
                     (id) => available(id) && hasActionHandler(id),
                 );
+                const reason = refused
+                    ? actionDisabledReason(refused.id)
+                    : undefined;
+                if (refused && reason !== undefined && !event.repeat)
+                    reportRefusedAction(refused.id, "key", reason);
                 if (
                     refused &&
-                    actionDisabledReason(refused.id) !== undefined &&
+                    reason !== undefined &&
                     // A held key keeps it lit
                     notifyRefusedPress(refused.id)
                 )

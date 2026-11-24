@@ -1708,3 +1708,42 @@ export const EXPORT_ACTION_IDS = [
 export function getActionDefinition(id: ActionId): ActionDefinition {
     return ACTIONS[id];
 }
+
+/** Categories of actions that don't change the show (for usage analytics: what an undo right after can blame). */
+const NON_EDIT_CATEGORIES: ReadonlySet<ActionCategory> = new Set([
+    "file",
+    "navigation",
+    "playback",
+    "ui",
+    "cursor",
+    "select",
+]);
+
+/** Actions in edit categories that still don't change the show: views, modes and copying. */
+const NON_EDIT_ACTIONS: ReadonlySet<string> = new Set([
+    "timelineZoomIn",
+    "timelineZoomOut",
+    "timelineFit",
+    "toggleSnap",
+    "toggleEditorMode",
+    "toggleTempoMode",
+    "copyFormation",
+    "followPreview",
+    "toggleMarcherOrder",
+]);
+
+/**
+ * Whether the action changes the show, judged by its category, less views, modes, copying and
+ * selecting. Unknown ids are not edits.
+ */
+export function isEditAction(id: string): boolean {
+    const action = (
+        ACTIONS as Partial<Record<string, { category: ActionCategory }>>
+    )[id];
+    return (
+        action !== undefined &&
+        !NON_EDIT_CATEGORIES.has(action.category) &&
+        !NON_EDIT_ACTIONS.has(id) &&
+        !id.startsWith("fieldEditSelectAll")
+    );
+}

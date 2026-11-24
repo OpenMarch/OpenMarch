@@ -28,6 +28,16 @@ import {
 import tolgee from "@/global/singletons/Tolgee";
 import { installClickFocusMarker } from "@/utilities/clickFocus";
 import { initEditorModeStore } from "@/stores/EditorModeStore";
+import {
+    installUsageEvents,
+    setKnownWords,
+    wordsOf,
+} from "@/analytics/usageEvents";
+import { isEditAction } from "@/shortcuts/definitions";
+import {
+    subscribeToActionRefusals,
+    subscribeToActionRuns,
+} from "@/shortcuts/registry";
 import { initAnalyticsQuestionStore } from "@/stores/AnalyticsQuestionStore";
 import { startInputModeTracking } from "@/stores/InputModeStore";
 
@@ -92,6 +102,23 @@ function mountEditor() {
         posthog.init(import.meta.env.VITE_PUBLIC_POSTHOG_KEY, options);
         forgetStoredUserPaths(posthog);
         registerAnalyticsContext(posthog);
+        // Which actions people use and where they get stuck (sent only after an opt-in)
+        if (!isSettingsWindow)
+            installUsageEvents(
+                (event, properties, options) =>
+                    posthog.capture(
+                        event,
+                        properties,
+                        options?.sendNow ? { send_instantly: true } : undefined,
+                    ),
+                isEditAction,
+                { subscribeToActionRuns, subscribeToActionRefusals },
+            );
+        // Palette searches keep only words the app's own text uses
+        if (!isSettingsWindow)
+            void import("../i18n/en.json").then((english) =>
+                setKnownWords(wordsOf(english.default)),
+            );
     }
 
     // The model import worker, for end-to-end tests until the import screen uses it (fork #998)

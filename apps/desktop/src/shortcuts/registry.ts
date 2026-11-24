@@ -45,7 +45,13 @@ export interface ActionHandler {
 
 const handlers = new Map<ActionId, ActionHandler[]>();
 const listeners = new Set<() => void>();
-const runListeners = new Set<(id: ActionId) => void>();
+/** How an action was started: a key, an action button, the command palette, or anything else */
+export type ActionRunSource = "key" | "button" | "palette" | "other";
+
+const runListeners = new Set<(id: ActionId, source: ActionRunSource) => void>();
+const refusalListeners = new Set<
+    (id: string, source: ActionRunSource, reason: string) => void
+>();
 
 function notify() {
     listeners.forEach((listener) => listener());
@@ -150,11 +156,12 @@ function runHandler(
     id: ActionId,
     byKey: boolean,
     args?: ActionArgs,
+    source: ActionRunSource = "other",
 ): ActionHandler | null {
     const handler = top(id);
     if (!handler || !handler.isEnabled() || isActionOffInWorkspace(id))
         return null;
-    runListeners.forEach((listener) => listener(id));
+    runListeners.forEach((listener) => listener(id, source));
     const run = byKey && handler.press ? handler.press : handler.run;
     const own = getActionDefinition(id).args;
     run(args ? { ...own, ...args } : own);
@@ -162,8 +169,12 @@ function runHandler(
 }
 
 /** Runs the action with its definition's `args`, and `args` (a command's answers) over them */
-export function runAction(id: ActionId, args?: ActionArgs): boolean {
-    return runHandler(id, false, args) !== null;
+export function runAction(
+    id: ActionId,
+    args?: ActionArgs,
+    source: ActionRunSource = "other",
+): boolean {
+    return runHandler(id, false, args, source) !== null;
 }
 
 /**
@@ -172,8 +183,9 @@ export function runAction(id: ActionId, args?: ActionArgs): boolean {
  */
 export function pressAction(
     id: ActionId,
+    source: ActionRunSource = "key",
 ): ((reason: ReleaseReason) => void) | null {
-    const release = runHandler(id, true)?.release;
+    const release = runHandler(id, true, undefined, source)?.release;
     if (!release) return null;
     return (reason) => release(reason);
 }
@@ -193,12 +205,34 @@ export function subscribeToActionHandlers(listener: () => void): () => void {
     };
 }
 
-/** Calls `listener` with each action's id just before the action runs. */
+/** Calls `listener` with each action's id, and how it was started, just before the action runs. */
 export function subscribeToActionRuns(
-    listener: (id: ActionId) => void,
+    listener: (id: ActionId, source: ActionRunSource) => void,
 ): () => void {
     runListeners.add(listener);
     return () => {
         runListeners.delete(listener);
+    };
+}
+
+/**
+ * Someone tried to run an action that can't run now and says why (`reason`): a key press, a click
+ * on its button, or a dimmed palette row. `id` is the palette item's id for the palette.
+ */
+export function reportRefusedAction(
+    id: string,
+    source: ActionRunSource,
+    reason: string,
+): void {
+    refusalListeners.forEach((listener) => listener(id, source, reason));
+}
+
+/** Calls `listener` for each refused action (`reportRefusedAction`). */
+export function subscribeToActionRefusals(
+    listener: (id: string, source: ActionRunSource, reason: string) => void,
+): () => void {
+    refusalListeners.add(listener);
+    return () => {
+        refusalListeners.delete(listener);
     };
 }

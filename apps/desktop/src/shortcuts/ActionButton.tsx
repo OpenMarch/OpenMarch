@@ -23,6 +23,7 @@ import {
     actionDisabledReason,
     isActionEnabled,
     onRefusedPress,
+    reportRefusedAction,
     runAction,
     subscribeToActionHandlers,
 } from "./registry";
@@ -253,13 +254,14 @@ export default function ActionButton({
                     // Pressing it shows why instead, as the menus' entries do: a press closes
                     // the tooltip, and a finger has no hover
                     event.preventDefault();
+                    reportRefusedAction(action, "button", reason);
                     openHint();
                     return;
                 }
                 // A caller's onClick can take the click over with preventDefault
                 onClick?.(event);
                 if (event.defaultPrevented) return;
-                runAction(action, args);
+                runAction(action, args, "button");
                 onRun?.();
             }}
             className={twMerge(
