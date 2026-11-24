@@ -870,7 +870,7 @@
         "indoorFloor": {
             "image": "Floor image",
             "addImage": "Add floor image",
-            "imageHint": "The art printed on your floor. It shows under the grid, and the floor size with the same shape is picked for you.",
+            "imageHint": "The art printed on your floor, shown under the grid. If it has the shape of one of the floor sizes below, that size is picked for you.",
             "unreadable": "That file isn't an image OpenMarch can read. Try a PNG or JPEG.",
             "replaceImage": "Replace",
             "removeImage": "Remove",
