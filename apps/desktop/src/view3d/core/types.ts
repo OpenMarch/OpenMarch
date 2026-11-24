@@ -18,6 +18,7 @@ export type VenueKitId =
     | "college"
     | "pro"
     | "markDiesel"
+    | "nightpound"
     | "gym"
     | "arena"
     | "blank";
@@ -142,6 +143,18 @@ export interface KitCrowdOptions {
      * that hold up at arm's length can stay closer than the blocks do.
      */
     clearRadius?: number;
+    /**
+     * The floor a camera in a seat sees whole, in the seat rows' frame:
+     * while the camera sits in the stands, the people whose heads would
+     * hide any of it from there are hidden too, and shown again when it
+     * leaves. Without it only `clearRadius` round the camera is cleared.
+     */
+    keepInView?: {
+        minX: number;
+        maxX: number;
+        minZ: number;
+        maxZ: number;
+    };
     /** People between aisles along a row, for rows already split at aisles. */
     aisleEvery?: number;
 }

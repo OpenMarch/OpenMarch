@@ -11,6 +11,7 @@ import { KIT_FIELD_STYLE, kitFieldStyle } from "./fieldStyle";
 import { buildGym } from "./gym";
 import { buildHs } from "./hs";
 import { buildMarkDiesel } from "./markDiesel";
+import { buildNightpound } from "./nightpound";
 import { buildProKit } from "./pro";
 
 /**
@@ -23,6 +24,7 @@ export const KIT_BUILDERS: Readonly<Record<VenueKitId, KitBuilder>> = {
     college: buildCollege,
     pro: buildProKit,
     markDiesel: buildMarkDiesel,
+    nightpound: buildNightpound,
     gym: buildGym,
     arena: buildArena,
     blank: buildBlank,

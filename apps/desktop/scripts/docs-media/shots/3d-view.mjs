@@ -679,6 +679,62 @@ const shots = [
         },
     },
     {
+        id: "3d-venue-nightpound",
+        kind: "still",
+        // Narrower than the usual 1600 pixels, like the arena: the crowd is busy
+        width: 1280,
+        covers: [
+            "apps/desktop/src/view3d/core/kits/nightpound.ts",
+            "apps/desktop/src/view3d/core/kits/nightpound",
+        ],
+        // Nightpound, OH under Show lights from its Floor camera. Its floor is fixed, so the
+        // sample show's football field is switched to an indoor floor first; the band's spots
+        // stay where they were, off that floor, so the floor is empty
+        async setup(ctx) {
+            const { page } = ctx;
+            await ctx.wait(3000);
+            await tidy(page);
+            await page.locator("#sidebar-launcher-field").click();
+            await page.getByTestId("field-edit-panel").waitFor();
+            await ctx.wait(800);
+            await page.getByTestId("field-template-select").click();
+            await page
+                .getByRole("option", { name: "Indoor 50x90 - 6 to 5 Steps" })
+                .click();
+            await page.getByTestId("field-template-apply").click();
+            await ctx.wait(1500);
+            await page.keyboard.press("Escape");
+            await seekInPage(page, 3, 0.5);
+            const { view, baked } = await open3d(ctx);
+            await view.getByTestId("view3d-settings-button").click();
+            await view.getByTestId("view3d-settings").waitFor();
+            await view
+                .getByTestId("view3d-venue-picker")
+                .locator('[data-value="nightpound"]')
+                .click();
+            await baked(2);
+            await ctx.wait(1500);
+            await view
+                .getByTestId("view3d-lighting-picker")
+                .locator('[data-value="show"]')
+                .click()
+                .catch(() => {});
+            await ctx.wait(1500);
+            await view.getByTestId("view3d-settings-button").click();
+            await tidy(view);
+            // The Floor camera (fifth): no crowd in front of it, unlike the seats
+            await view.keyboard.press("Digit5");
+            await view.mouse.move(ctx.window.width - 4, ctx.window.height / 2);
+            await ctx.wait(3000);
+            // The flags, the stands and the drape, with a strip of the floor, under the camera bar
+            const { width, height } = ctx.window;
+            return {
+                box: { x: 0, y: 96, width, height: Math.round(height * 0.58) },
+                target: view,
+            };
+        },
+    },
+    {
         id: "3d-silk-settings",
         kind: "still",
         // The flag silk rows of 3D View settings › Performers: the shapes, and imported Artwork

@@ -135,7 +135,7 @@
         "chapter": "3d-view",
         "kind": "still",
         "width": 752,
-        "height": 728
+        "height": 928
     },
     "3d-silk-artwork": {
         "chapter": "3d-view",
@@ -166,6 +166,12 @@
         "kind": "still",
         "width": 1280,
         "height": 800
+    },
+    "3d-venue-nightpound": {
+        "chapter": "3d-view",
+        "kind": "still",
+        "width": 1280,
+        "height": 464
     },
     "3d-window": {
         "chapter": "3d-view",

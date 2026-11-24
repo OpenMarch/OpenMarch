@@ -5,8 +5,14 @@
  * must not import React, React Three Fiber, drei, Electron or the database.
  */
 import * as z from "zod";
-import type { FieldProperties } from "@openmarch/core";
-import type { LightingPreset, VenueKitId, VenueParams } from "./types";
+import { fieldFootprint, type FieldProperties } from "@openmarch/core";
+import { ft } from "./environment/units";
+import type {
+    FieldFootprint,
+    LightingPreset,
+    VenueKitId,
+    VenueParams,
+} from "./types";
 import {
     GUARD_UNIFORM_PRESET_IDS,
     UNIFORM_PRESET_IDS,
@@ -36,6 +42,7 @@ export const VENUE_KIT_IDS = [
     "college",
     "pro",
     "markDiesel",
+    "nightpound",
     "gym",
     "arena",
     "blank",
@@ -215,6 +222,7 @@ export const KIT_LIGHTING: Readonly<
         presets: ["roofClosed", "day", "night"],
         defaultLighting: "roofClosed",
     },
+    nightpound: { presets: ["show", "house"], defaultLighting: "show" },
     gym: { presets: ["house", "show"], defaultLighting: "house" },
     arena: { presets: ["house", "show"], defaultLighting: "show" },
     blank: { presets: ["day", "dusk", "night"], defaultLighting: "day" },
@@ -240,6 +248,83 @@ export function defaultVenueForKit(kit: VenueKitId): VenueSettings {
         crowd: true,
         params: defaultParamsForKit(kit),
     };
+}
+
+/**
+ * Venues built round a floor of fixed size, in meters: `width` along the
+ * front sideline, `depth` front to back. Only a field that fits inside it
+ * can be shown there.
+ *
+ * Nightpound's is the WGI World Championships competition area at UD Arena
+ * in Dayton, 106 ft by 78 ft, which is also the largest area WGI rules
+ * allow anywhere (research in docs/3d/nightpound.md).
+ */
+export const KIT_FIXED_FLOOR: Readonly<
+    Partial<
+        Record<VenueKitId, { readonly width: number; readonly depth: number }>
+    >
+> = {
+    nightpound: { width: ft(106), depth: ft(78) },
+};
+
+/**
+ * Venues modeled on a real building at its real size, with the field or
+ * floor they're built round. The venue picker lists them apart from the
+ * venues that are sized to the show's field, and shows their size.
+ */
+export const REAL_VENUES: Readonly<
+    Partial<
+        Record<
+            VenueKitId,
+            {
+                readonly surface: "field" | "floor";
+                readonly width: number;
+                readonly depth: number;
+            }
+        >
+    >
+> = {
+    // Built round a football field with end zones (`fixedFieldFootprint`).
+    markDiesel: { surface: "field", width: ft(360), depth: ft(160) },
+    nightpound: { surface: "floor", width: ft(106), depth: ft(78) },
+};
+
+/** Whether a venue is a real building (`REAL_VENUES`) or sized to the show's field. */
+export type VenueKind = "fitted" | "real";
+
+export function venueKind(kit: VenueKitId): VenueKind {
+    return REAL_VENUES[kit] ? "real" : "fitted";
+}
+
+/** The venue a show sees when its field doesn't fit its own venue's floor. */
+export const KIT_FIXED_FLOOR_FALLBACK: VenueKitId = "arena";
+
+/** Leeway for rounding in field sizes: a centimeter. */
+const FIT_TOLERANCE = 0.01;
+
+/** Whether a field fits the kit's floor. Kits without a fixed floor fit any field. */
+export function kitFitsField(
+    kit: VenueKitId,
+    footprint: FieldFootprint,
+): boolean {
+    const floor = KIT_FIXED_FLOOR[kit];
+    if (!floor) return true;
+    return (
+        footprint.maxX - footprint.minX <= floor.width + FIT_TOLERANCE &&
+        footprint.maxZ - footprint.minZ <= floor.depth + FIT_TOLERANCE
+    );
+}
+
+/**
+ * The kit the 3D View builds for a show: its chosen kit, or the indoor
+ * arena when the field is too big for a fixed-floor venue (the field changed
+ * after the venue was chosen).
+ */
+export function kitForField(
+    kit: VenueKitId,
+    footprint: FieldFootprint,
+): VenueKitId {
+    return kitFitsField(kit, footprint) ? kit : KIT_FIXED_FLOOR_FALLBACK;
 }
 
 /** The parts of FieldProperties the default venue depends on. */
@@ -315,4 +400,18 @@ export function parseVenueSettingsJson(
         ...result.data,
         lighting: lightingForKit(result.data.kit, result.data.lighting),
     };
+}
+
+/**
+ * The kit a show's venue shows as, in the 3D View and on the 2D field
+ * (`kitForField`): the saved kit, or the fallback when the show's field has
+ * outgrown its fixed floor. Before the field loads, the saved kit.
+ */
+export function shownKit(
+    kit: VenueKitId,
+    fieldProperties: FieldProperties | undefined,
+): VenueKitId {
+    return fieldProperties
+        ? kitForField(kit, fieldFootprint(fieldProperties))
+        : kit;
 }

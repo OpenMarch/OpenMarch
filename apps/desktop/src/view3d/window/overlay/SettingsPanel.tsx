@@ -168,7 +168,9 @@ export function SettingsPanel({
                     )}
                     {hasStands && <CrowdRows />}
                     {/* Indoor floors have no end zones */}
-                    {kitId !== "gym" && kitId !== "arena" && <EndZoneRow />}
+                    {kitId !== "gym" &&
+                        kitId !== "arena" &&
+                        kitId !== "nightpound" && <EndZoneRow />}
                 </TabContent>
                 <TabContent
                     value="performers"

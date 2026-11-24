@@ -28,6 +28,11 @@ export const PERSON_DEPTH = 0.3;
 export const PERSON_HEIGHT_JITTER = 0.1;
 /** Distance between neighbors along a row. */
 export const PERSON_SPACING = 0.64;
+/**
+ * How far the camera moves from the seat it cleared the view from before the
+ * people hidden for `keepInView` return, meters.
+ */
+export const KEEP_IN_VIEW_LEAVE = 1;
 /** Default people between aisles. */
 export const DEFAULT_AISLE_EVERY = 18;
 
@@ -82,7 +87,9 @@ export interface Crowd {
      * Gives the people nearest the camera at `point` (seat rows' frame) full
      * figures, once the camera has moved `CROWD_FOLLOW_STEP` from where they
      * were last chosen. Call it every frame; it returns true when it moved
-     * them. Does nothing for the blocks.
+     * them. Also brings back the people hidden for `keepInView` once the
+     * camera is `KEEP_IN_VIEW_LEAVE` from the seat they were hidden from
+     * (the blocks do only that).
      */
     follow(point: Vector3Tuple): boolean;
     /** Shows everyone again. */
@@ -1280,6 +1287,67 @@ export function buildCrowd(
     };
     const clearRadius = options.clearRadius ?? Infinity;
 
+    /** Everyone within `radius` of `point`, by index. */
+    const nearOf = (point: Vector3Tuple | null, radius: number): number[] => {
+        const out: number[] = [];
+        if (!point) return out;
+        const r2 = radius * radius;
+        placed.forEach((p, k) => {
+            if (
+                (p.x - point[0]) ** 2 +
+                    (p.y - point[1]) ** 2 +
+                    (p.z - point[2]) ** 2 <
+                r2
+            )
+                out.push(k);
+        });
+        return out;
+    };
+
+    /** The people hidden because they block the floor's view (`keepInView`). */
+    const blocking = new Uint8Array(total);
+    const view = options.keepInView;
+    /**
+     * Marks in `blocking` everyone whose head hides part of `keepInView`
+     * from an eye at `eye`: the line from the eye over the top of their head
+     * reaches the ground inside it. `inSeat` is false when the camera isn't
+     * in the stands (nobody near it), and then nobody is marked.
+     */
+    let blockingEye: Vector3Tuple | null = null;
+    const markBlocking = (eye: Vector3Tuple | null, inSeat: boolean) => {
+        blocking.fill(0);
+        blockingEye = null;
+        if (!view || !eye || !inSeat) return;
+        blockingEye = [...eye];
+        const [ex, ey, ez] = eye;
+        placed.forEach((p, k) => {
+            // `p.y` is already raised for the people standing.
+            const top = p.y + p.scale * p.height;
+            if (top >= ey) return;
+            const t = ey / (ey - top);
+            const gx = ex + (p.x - ex) * t;
+            const gz = ez + (p.z - ez) * t;
+            if (
+                gx >= view.minX &&
+                gx <= view.maxX &&
+                gz >= view.minZ &&
+                gz <= view.maxZ
+            )
+                blocking[k] = 1;
+        });
+    };
+
+    /**
+     * Whether the camera at `point` has left the seat `blocking` was marked
+     * from (orbit, zoom, a fly without a seat): then those people return.
+     */
+    const leftSeat = (point: Vector3Tuple): boolean =>
+        !!blockingEye &&
+        (point[0] - blockingEye[0]) ** 2 +
+            (point[1] - blockingEye[1]) ** 2 +
+            (point[2] - blockingEye[2]) ** 2 >
+            KEEP_IN_VIEW_LEAVE ** 2;
+
     if (!people) {
         const geometry = crowdBlockGeometry();
         const material = crowdMaterial({
@@ -1294,22 +1362,27 @@ export function buildCrowd(
         fill(mesh);
         const base = new Float32Array(mesh.instanceMatrix.array); // copy
         let hidden = 0;
-        const apply = (point: Vector3Tuple | null, radius: number): number => {
+        let last: { point: Vector3Tuple | null; radius: number } = {
+            point: null,
+            radius: 0,
+        };
+        const apply = (
+            point: Vector3Tuple | null,
+            radius: number,
+            withView = true,
+        ): number => {
+            last = { point, radius };
             const arr = mesh.instanceMatrix.array as Float32Array;
-            const r2 = radius * radius;
+            const near = nearOf(point, radius);
+            markBlocking(point, withView && near.length > 0);
+            const gone = new Uint8Array(blocking);
+            near.forEach((k) => (gone[k] = 1));
             hidden = 0;
             for (let k = 0; k < total; k++) {
                 const i = k * 16;
-                let isNear = false;
-                if (point) {
-                    const dx = base[i + 12] - point[0];
-                    const dy = base[i + 13] - point[1];
-                    const dz = base[i + 14] - point[2];
-                    isNear = dx * dx + dy * dy + dz * dz < r2;
-                }
-                if (isNear) hidden++;
+                if (gone[k]) hidden++;
                 for (let e = 0; e < 16; e++) {
-                    arr[i + e] = isNear && e !== 15 ? 0 : base[i + e];
+                    arr[i + e] = gone[k] && e !== 15 ? 0 : base[i + e];
                 }
             }
             mesh.instanceMatrix.needsUpdate = true;
@@ -1322,7 +1395,10 @@ export function buildCrowd(
             count: total,
             clearAround: (point, radius) =>
                 apply(point, Math.min(radius, clearRadius)),
-            follow: () => false,
+            follow(point) {
+                if (leftSeat(point)) apply(last.point, last.radius, false);
+                return false;
+            },
             reset: () => void apply(null, 0),
             visibleCount: () => total - hidden,
             dispose() {
@@ -1360,7 +1436,8 @@ export function buildCrowd(
     mesh.receiveShadow = false;
     mesh.userData.crowd = true;
     fill(mesh);
-    const base = mesh.instanceMatrix.array as Float32Array;
+    // A copy: the mesh's own matrices are zeroed for the people `blocking` hides.
+    const base = new Float32Array(mesh.instanceMatrix.array);
     const baseColor = mesh.instanceColor!.array as Float32Array;
 
     const reach = CROWD_NEAR[quality];
@@ -1406,7 +1483,7 @@ export function buildCrowd(
             const z = base[i + 14];
             d2[k] =
                 (x - point[0]) ** 2 + (y - point[1]) ** 2 + (z - point[2]) ** 2;
-            if (d2[k] >= r2) continue;
+            if (d2[k] >= r2 || blocking[k]) continue;
             if (
                 clearPoint &&
                 (x - clearPoint[0]) ** 2 +
@@ -1450,21 +1527,25 @@ export function buildCrowd(
         uniforms.uCrowdNearR2.value = reachR2;
     };
 
-    const clear = (point: Vector3Tuple | null, radius: number): number => {
+    const clear = (
+        point: Vector3Tuple | null,
+        radius: number,
+        withView = true,
+    ): number => {
         clearPoint = point ? [...point] : null;
         clearR2 = point ? radius * radius : 0;
-        hidden = 0;
-        if (point)
-            for (let k = 0; k < total; k++) {
-                const i = k * 16;
-                if (
-                    (base[i + 12] - point[0]) ** 2 +
-                        (base[i + 13] - point[1]) ** 2 +
-                        (base[i + 14] - point[2]) ** 2 <
-                    clearR2
-                )
-                    hidden++;
-            }
+        const inside = nearOf(point, radius);
+        hidden = inside.length;
+        markBlocking(point, withView && inside.length > 0);
+        inside.forEach((k) => (hidden -= blocking[k]));
+        const arr = mesh.instanceMatrix.array as Float32Array;
+        for (let k = 0; k < total; k++) {
+            const i = k * 16;
+            hidden += blocking[k];
+            for (let e = 0; e < 16; e++)
+                arr[i + e] = blocking[k] && e !== 15 ? 0 : base[i + e];
+        }
+        mesh.instanceMatrix.needsUpdate = true;
         uniforms.uCrowdClear.value.set(...(point ?? [0, 0, 0]));
         uniforms.uCrowdClearR2.value = clearR2;
         const at = point ?? center;
@@ -1481,6 +1562,11 @@ export function buildCrowd(
         clearAround: (point, radius) =>
             clear(point, Math.min(radius, clearRadius)),
         follow(point) {
+            if (leftSeat(point)) {
+                clear(clearPoint, Math.sqrt(clearR2), false);
+                choose(point);
+                return true;
+            }
             if (
                 center &&
                 (point[0] - center[0]) ** 2 +
