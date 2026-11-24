@@ -922,6 +922,16 @@
             }
         ]
     },
+    "toggleFieldVenue": {
+        "label": "Show or hide venue on field",
+        "category": "ui",
+        "bindings": []
+    },
+    "toggleView3dCameraOnField": {
+        "label": "Show or hide 3D View camera on field",
+        "category": "ui",
+        "bindings": []
+    },
     "openFieldMenu": {
         "label": "Open the field menu",
         "category": "ui",

@@ -1,0 +1,67 @@
+---
+title: See the venue on the field
+description: Show the 3D View's stadium, gym or arena faintly under the 2D field's grid, and see where the 3D View's camera is looking.
+type: how-to
+covers:
+  - apps/desktop/src/components/canvas/display/VenueButton.tsx
+  - apps/desktop/src/field/three/venueUnderlay
+  - action:toggleFieldVenue
+  - action:toggleView3dCameraOnField
+  - i18n:toolbar.view.venue
+sidebar:
+  order: 4
+---
+
+import Media from "@/components/docs/Media.astro";
+import Ui from "@/components/docs/Ui.astro";
+import InShort from "@/components/docs/InShort.astro";
+import { Steps } from "@astrojs/starlight/components";
+
+<InShort>Select <Ui k="toolbar.view.venue" /> on the field's display bar (top right of the field) and choose a look, such as <Ui k="toolbar.view.venueFaint" />.</InShort>
+
+The 2D field can show the show's venue underneath its grid: the stadium's turf, mowing stripes, end zones and midfield logo, or the gym or arena floor. It's the same venue the 3D View shows, drawn from above and faded, so you can write drill against the logo or the end zones while the grid and the marchers stay on top, as readable as on the plain field. It's off until you turn it on, and it's kept on this computer, not in the show.
+
+## Show the venue under the grid
+
+<Steps>
+
+1. On the display bar at the top right of the field, select <Ui k="toolbar.view.venue" /> (the map).
+
+2. Choose how the venue looks:
+   - <Ui k="toolbar.view.venueFaint" />: the venue's colors, very light. The grid and marchers read as they do on the plain field.
+   - <Ui k="toolbar.view.venueSoft" />: the same, a little stronger.
+   - <Ui k="toolbar.view.venueMarkings" />: no turf, only the midfield logo and the end zones, as light grey marks.
+   - <Ui k="toolbar.view.venueFull" />: the turf in full color. The grid's lines and numbers turn white so they show on the green.
+   - <Ui k="toolbar.view.venueOff" />: the plain field again.
+
+3. Under <Ui k="toolbar.view.venueAround" />, choose what shows past the field's edges: <Ui k="toolbar.view.venueAroundField" /> (nothing), <Ui k="toolbar.view.venueAroundEdge" /> (a strip of turf that fades out), or <Ui k="toolbar.view.venueAroundStands" />, the venue's stands, track and crowd seen from above when you zoom out.
+
+</Steps>
+
+<Media
+  id="venue-on-field"
+  alt="The 2D field with the high school stadium drawn faintly under its grid: light green turf with mowing stripes and the OpenMarch logo at midfield behind the marchers. The Venue menu is open beside the display bar, with Faint and Turf edge chosen."
+/>
+
+<Media
+  id="venue-on-field-stands"
+  alt="The 2D field zoomed out with the venue set to Soft and Stands: the field with its end zones and logo, the running track around it, the home and visitor stands, the press box and the parking lot, all seen from above and faded."
+/>
+
+The turf's own yard lines, hashes and numbers aren't drawn under the grid, since the grid draws them. A stadium always shows both end zones, as it does in the 3D View, even when your field stops at the goal lines. In a gym or an arena you see its floor, and <Ui k="toolbar.view.venueAroundEdge" plain /> is greyed out: only stadiums have turf around the field.
+
+The look follows the venue chosen in the 3D View's settings ([Change the venue and uniforms](/guides/3d-view/venue-and-uniforms/)), and changes with it. When the 3D View's venue is <Ui k="view3d.kit.blank" plain />, there's no venue to draw, so the looks are greyed out and the menu says why. Exports and printed drill charts never include the venue.
+
+To turn the venue on or off without the menu, use <Ui k="actions.ui.toggleFieldVenue" /> in the command palette. Turning it on brings back the look you chose last.
+
+## See where the 3D View is looking
+
+With the 3D View open, the 2D field can show where its camera stands and what it sees: a purple dot at the camera and a light wedge over the ground in view. It follows the camera as you move it or switch cameras ([Move the camera](/guides/3d-view/cameras/)).
+
+To turn it on, select <Ui k="toolbar.view.venue" /> on the display bar, then <Ui k="toolbar.view.venueCamera" />, or use <Ui k="actions.ui.toggleView3dCameraOnField" /> in the command palette. It shows only while the 3D View is open, and works with the venue on or off.
+
+## Related
+
+- [Open the 3D View](/guides/3d-view/open-the-3d-view/): the window this venue comes from.
+- [Change the venue and uniforms](/guides/3d-view/venue-and-uniforms/): pick the stadium, gym or arena the field shows.
+- [Edit the field](/guides/field/edit-the-field/): your own field image, which draws over the venue.

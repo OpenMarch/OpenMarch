@@ -631,6 +631,25 @@ const STATIC_ACTIONS = {
         scope: "canvas",
         defaultBindings: ["M"],
     },
+    // The show's 3D venue under the 2D grid (#1207), back in the look last picked. Unbound: a
+    // view picked now and then, from the display bar's Venue button or the palette
+    toggleFieldVenue: {
+        labelKey: "actions.ui.toggleFieldVenue",
+        keywordsKey: "actions.ui.toggleFieldVenueKeywords",
+        toggleOnKey: "actions.ui.showFieldVenue",
+        toggleOffKey: "actions.ui.hideFieldVenue",
+        category: "ui",
+        scope: "canvas",
+        defaultBindings: [],
+    },
+    toggleView3dCameraOnField: {
+        labelKey: "actions.ui.toggleView3dCameraOnField",
+        toggleOnKey: "actions.ui.showView3dCameraOnField",
+        toggleOffKey: "actions.ui.hideView3dCameraOnField",
+        category: "ui",
+        scope: "canvas",
+        defaultBindings: [],
+    },
     // #315: the field's right-click menu, from the keyboard, at the selection. Enabled only with
     // a selection
     openFieldMenu: {

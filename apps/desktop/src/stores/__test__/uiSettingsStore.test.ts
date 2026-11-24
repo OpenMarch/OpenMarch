@@ -2,6 +2,7 @@ import { renderHook, act } from "@testing-library/react";
 import {
     UiSettings,
     defaultSettings,
+    parseSettings,
     useUiSettingsStore,
 } from "../UiSettingsStore";
 import { ElectronApi } from "electron/preload";
@@ -220,5 +221,43 @@ describe("uiSettings Store", () => {
             }),
         );
         expect(renders).toBe(2);
+    });
+});
+
+describe("venue on the field settings (#1207)", () => {
+    it("are off by default", () => {
+        expect(defaultSettings.fieldVenue).toBe("off");
+        expect(defaultSettings.view3dCameraOnField).toBe(false);
+        expect(parseSettings("{}").fieldVenue).toBe("off");
+    });
+
+    it("keep a saved look and what's around the field", () => {
+        const parsed = parseSettings(
+            JSON.stringify({
+                fieldVenue: "soft",
+                fieldVenueLast: "soft",
+                fieldVenueAround: "stands",
+                view3dCameraOnField: true,
+            }),
+        );
+        expect(parsed).toMatchObject({
+            fieldVenue: "soft",
+            fieldVenueLast: "soft",
+            fieldVenueAround: "stands",
+            view3dCameraOnField: true,
+        });
+    });
+
+    it("fall back when a saved value isn't one of the choices", () => {
+        const parsed = parseSettings(
+            JSON.stringify({
+                fieldVenue: "neon",
+                fieldVenueLast: "off",
+                fieldVenueAround: 3,
+            }),
+        );
+        expect(parsed.fieldVenue).toBe("off");
+        expect(parsed.fieldVenueLast).toBe("faint");
+        expect(parsed.fieldVenueAround).toBe("edge");
     });
 });

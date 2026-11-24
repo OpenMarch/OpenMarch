@@ -103,6 +103,17 @@ export interface UiSettings {
      * that has one still plays it as before (`pathways/followTheLeader.ts`)
      */
     followTheLeader?: boolean;
+    /**
+     * The show's 3D venue under the 2D grid (fork #1207): off (the plain field), or a look. Off by
+     * default; `fieldVenueLast` is the look turning it back on picks
+     */
+    fieldVenue?: FieldVenueLook;
+    /** The look last picked, for Show venue on field */
+    fieldVenueLast?: Exclude<FieldVenueLook, "off">;
+    /** What of the venue shows around the field: none, a turf edge, or its stands from above */
+    fieldVenueAround?: FieldVenueAround;
+    /** Whether the 2D field shows where the 3D View's camera is while the 3D View is open */
+    view3dCameraOnField?: boolean;
     /** Whether props show their names on the canvas, unless `propNameOverrides` says otherwise */
     showPropNames: boolean;
     /** Per prop: whether its name shows. Key is the item id. */
@@ -118,6 +129,23 @@ export interface UiSettings {
 export type MarcherLabelForm = "auto" | "names" | "numbers" | "off";
 export type MarcherLabelSize = "small" | "normal" | "large";
 export type ShapeOutlines = "selected" | "always" | "off";
+export const FIELD_VENUE_LOOKS = [
+    "off",
+    "faint",
+    "soft",
+    "markings",
+    "full",
+] as const;
+export type FieldVenueLook = (typeof FIELD_VENUE_LOOKS)[number];
+export const FIELD_VENUE_AROUND = ["field", "edge", "stands"] as const;
+export type FieldVenueAround = (typeof FIELD_VENUE_AROUND)[number];
+
+const oneOf = <T extends string>(
+    values: readonly T[],
+    value: unknown,
+    fallback: T,
+): T =>
+    (values as readonly unknown[]).includes(value) ? (value as T) : fallback;
 
 /** How much each label size scales the labels' normal size */
 export const LABEL_SIZE_SCALE: Record<MarcherLabelSize, number> = {
@@ -164,6 +192,10 @@ export const defaultSettings: UiSettings = {
     marcherOrder: "selected",
     shapeWalks: false,
     followTheLeader: false,
+    fieldVenue: "off",
+    fieldVenueLast: "faint",
+    fieldVenueAround: "edge",
+    view3dCameraOnField: false,
     showPropNames: false,
     propNameOverrides: {},
     hiddenPropIds: {},
@@ -176,8 +208,8 @@ const clampZoomSensitivity = (value: number): number =>
     Math.min(4.0, Math.max(0.5, value));
 
 // Helper function to parse settings from a JSON string
-// Throws on bad JSON or invalid structure
-const parseSettings = (raw: string): UiSettings => {
+// Throws on bad JSON or invalid structure. Exported for tests
+export const parseSettings = (raw: string): UiSettings => {
     // Dropped: `previousPaths` (Previous paths) gave way to start flag positions (#331), and
     // `focussedComponent` went with the old timeline focus (beat editor)
     const {
@@ -207,6 +239,17 @@ const parseSettings = (raw: string): UiSettings => {
         timelineHeight: parseTimelineHeight(parsed.timelineHeight),
         timelineWaveformStyle: parseWaveformStyle(parsed.timelineWaveformStyle),
         startFlagPositions: parseStartFlagPositions(parsed.startFlagPositions),
+        fieldVenue: oneOf(FIELD_VENUE_LOOKS, parsed.fieldVenue, "off"),
+        fieldVenueLast: oneOf(
+            FIELD_VENUE_LOOKS.filter((l) => l !== "off"),
+            parsed.fieldVenueLast,
+            "faint",
+        ),
+        fieldVenueAround: oneOf(
+            FIELD_VENUE_AROUND,
+            parsed.fieldVenueAround,
+            "edge",
+        ),
         mouseSettings: mergedMouseSettings,
         coordinateRounding: parsed.coordinateRounding
             ? {

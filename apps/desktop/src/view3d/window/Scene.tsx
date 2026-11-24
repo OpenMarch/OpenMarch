@@ -72,6 +72,7 @@ import type {
 } from "@/view3d/core/types";
 import type { VenueSettings } from "@/view3d/core/venueSettings";
 import CameraRig from "./camera/CameraRig";
+import CameraPosePublisher from "./camera/CameraPosePublisher";
 import { DEFAULT_NEAR } from "./camera/rigMath";
 import { CROWD_CLEAR_RADIUS, useView3dSceneStore } from "./sceneStore";
 import { useFieldImage } from "./useFieldImage";
@@ -188,6 +189,7 @@ export default function Scene() {
                     />
                 )}
                 {ready && <CameraRig />}
+                {ready && <CameraPosePublisher />}
                 <DrawWhenNeeded />
             </Canvas>
         </div>

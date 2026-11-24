@@ -6,7 +6,7 @@
  * part: the two pages talk over a `BroadcastChannel`, and the editor tab
  * relays the 3D window's reads to its worker, its clock, selection and
  * invalidations to the window, and the window's hello, venue and playback
- * requests to the editor, as main relays them in Electron.
+ * requests and camera to the editor, as main relays them in Electron.
  *
  * Each editor tab has an id, kept for the tab's session so it survives the
  * reload that opening a show does, and its 3D window only talks to it. The
@@ -14,6 +14,7 @@
  * `installView3dApi`, so the window code in `src/view3d` runs unchanged.
  */
 import {
+    VIEW3D_CAMERA_CHANNEL,
     VIEW3D_HELLO_CHANNEL,
     VIEW3D_INVALIDATE_CHANNEL,
     VIEW3D_IS_OPEN_CHANNEL,
@@ -52,6 +53,7 @@ type FromView3d =
     | { type: "cameras"; cameras: unknown }
     | { type: "silkArtwork"; silkArtwork: unknown }
     | { type: "playback"; action: unknown; release?: unknown; speed?: unknown }
+    | { type: "camera"; pose: unknown }
     | {
           type: "sql";
           id: number;
@@ -208,6 +210,9 @@ export function registerView3dHost() {
                         release: message.release,
                         speed: message.speed,
                     });
+                    break;
+                case "camera":
+                    emit(VIEW3D_CAMERA_CHANNEL, message.pose);
                     break;
                 case "sql":
                 case "sql-batch":
@@ -406,6 +411,7 @@ export function installView3dApi() {
             post({ type: "playback", action, release }),
         requestPlaybackSpeed: (speed) =>
             post({ type: "playback", action: VIEW3D_SET_SPEED, speed }),
+        sendCamera: (pose) => post({ type: "camera", pose }),
     };
     (window as unknown as { view3d: View3dApi }).view3d = api;
 }

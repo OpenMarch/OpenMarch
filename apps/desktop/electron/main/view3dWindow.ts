@@ -28,6 +28,7 @@ import {
     VIEW3D_HELLO_CHANNEL,
     VIEW3D_IS_OPEN_CHANNEL,
     VIEW3D_PLAYBACK_REQUEST_CHANNEL,
+    VIEW3D_CAMERA_CHANNEL,
     VIEW3D_PUBLISH_CHANNELS,
     VIEW3D_VENUE_CHANGE_REQUEST_CHANNEL,
     VIEW3D_WINDOW_STATE_CHANNEL,
@@ -203,11 +204,12 @@ export function initView3dWindow(windowConfig: View3dWindowConfig) {
         getEditorWebContents()?.send(VIEW3D_HELLO_CHANNEL);
     });
 
-    // Window → editor: the editor validates and writes the settings, or
-    // checks and runs the playback action.
+    // Window → editor: the editor validates and writes the settings, checks
+    // and runs the playback action, or shows the camera on the 2D field.
     for (const channel of [
         VIEW3D_VENUE_CHANGE_REQUEST_CHANNEL,
         VIEW3D_PLAYBACK_REQUEST_CHANNEL,
+        VIEW3D_CAMERA_CHANNEL,
     ]) {
         ipcMain.on(channel, (event, payload: unknown) => {
             if (!isView3dSender(event.sender)) return;

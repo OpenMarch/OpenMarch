@@ -891,6 +891,18 @@
         "height": 296,
         "seconds": 6.9
     },
+    "venue-on-field": {
+        "chapter": "3d-view",
+        "kind": "still",
+        "width": 1600,
+        "height": 924
+    },
+    "venue-on-field-stands": {
+        "chapter": "3d-view",
+        "kind": "still",
+        "width": 1600,
+        "height": 924
+    },
     "window-command-palette": {
         "chapter": "workspace",
         "kind": "still",

@@ -7,6 +7,7 @@ import { contextBridge, ipcRenderer } from "electron";
 // Types only: a value import would be split into a chunk shared with the
 // editor's preload, which a sandboxed preload can't `require`.
 import type {
+    View3dCameraPose,
     View3dPayloads,
     View3dPlaybackAction,
     View3dPlaybackRequest,
@@ -135,6 +136,13 @@ const VIEW3D_API = {
             action,
             release,
         } satisfies View3dPlaybackRequest),
+
+    /**
+     * Tells the editor where the camera is, for the 2D field (fork #1207).
+     * Display only; the editor checks the payload.
+     */
+    sendCamera: (pose: View3dCameraPose) =>
+        ipcRenderer.send("view3d:camera", pose),
 
     /** Asks the editor to choose this playback speed (`VIEW3D_SET_SPEED`). */
     requestPlaybackSpeed: (speed: number) =>

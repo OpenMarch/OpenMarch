@@ -5,7 +5,15 @@ import {
     screen,
     within,
 } from "@testing-library/react";
-import { afterEach, beforeAll, beforeEach, describe, expect, it } from "vitest";
+import {
+    afterEach,
+    beforeAll,
+    beforeEach,
+    describe,
+    expect,
+    it,
+    vi,
+} from "vitest";
 import { TolgeeProvider } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
@@ -19,6 +27,12 @@ import FieldDisplayBar from "../FieldDisplayBar";
 /** The field's display bar: path overlays, marcher labels, shape outlines, and placeholders. */
 
 const settings = () => useUiSettingsStore.getState().uiSettings;
+
+// The Venue button reads the show's venue: a stadium unless a test says otherwise
+const venue = vi.hoisted(() => ({ kit: "hs" }));
+vi.mock("@/hooks/queries/useVenueSettings", () => ({
+    useVenueSettings: () => ({ data: { kit: venue.kit } }),
+}));
 
 const open = () =>
     render(
@@ -105,6 +119,59 @@ describe("FieldDisplayBar", () => {
         fireEvent.click(screen.getByTestId("field-display-shapes"));
         fireEvent.click(screen.getByTestId("field-display-shapes-always"));
         expect(settings().shapes).toBe("always");
+    });
+
+    it("shows the venue under the field in a look, off by default", () => {
+        venue.kit = "hs";
+        useUiSettingsStore.getState().setUiSettings({
+            ...settings(),
+            fieldVenue: "off",
+        });
+        open();
+        fireEvent.click(screen.getByTestId("field-display-venue"));
+        expect(
+            screen
+                .getByTestId("field-display-venue-off")
+                .getAttribute("aria-checked"),
+        ).toBe("true");
+        fireEvent.click(screen.getByTestId("field-display-venue-soft"));
+        expect(settings().fieldVenue).toBe("soft");
+        expect(settings().fieldVenueLast).toBe("soft");
+        fireEvent.click(
+            screen.getByTestId("field-display-venue-around-stands"),
+        );
+        expect(settings().fieldVenueAround).toBe("stands");
+        fireEvent.click(screen.getByTestId("field-display-venue-camera"));
+        expect(settings().view3dCameraOnField).toBe(true);
+    });
+
+    it("greys the venue looks out for the Field only venue and says why", () => {
+        venue.kit = "blank";
+        open();
+        fireEvent.click(screen.getByTestId("field-display-venue"));
+        const faint = screen.getByTestId(
+            "field-display-venue-faint",
+        ) as HTMLButtonElement;
+        expect(faint.disabled).toBe(true);
+        expect(screen.getByText(/venue is Field only/)).toBeTruthy();
+        venue.kit = "hs";
+    });
+
+    it("checks None, not the greyed-out Turf edge, where there's no turf", () => {
+        venue.kit = "gym";
+        useUiSettingsStore.getState().setUiSettings({
+            ...settings(),
+            fieldVenueAround: undefined,
+        });
+        open();
+        fireEvent.click(screen.getByTestId("field-display-venue"));
+        const checked = (id: string) =>
+            screen
+                .getByTestId(`field-display-venue-around-${id}`)
+                .getAttribute("aria-checked");
+        expect(checked("field")).toBe("true");
+        expect(checked("edge")).toBe("false");
+        venue.kit = "hs";
     });
 
     it("toggles next paths from the paths popover", () => {

@@ -269,7 +269,14 @@
             "addFrontEnsembleEquipment": "Add front ensemble equipment or podium",
             "addFrontEnsembleEquipmentKeywords": "pit podium drum major marimba vibraphone percussion speaker mixer tower stepladder instrument",
             "openAssets": "Open the show's assets",
-            "openAssetsKeywords": "assets imported models files credits license size storage library"
+            "openAssetsKeywords": "assets imported models files credits license size storage library",
+            "toggleFieldVenue": "Show or hide venue on field",
+            "toggleFieldVenueKeywords": "stadium turf 3d background underlay logo end zone",
+            "showFieldVenue": "Show venue on field",
+            "hideFieldVenue": "Hide venue on field",
+            "toggleView3dCameraOnField": "Show or hide 3D View camera on field",
+            "showView3dCameraOnField": "Show 3D View camera on field",
+            "hideView3dCameraOnField": "Hide 3D View camera on field"
         },
         "items": {
             "edit": "Edit selected prop or equipment",
@@ -3359,7 +3366,21 @@
             "order": "Order",
             "orderSelected": "While selected",
             "orderAlways": "Always",
-            "orderOff": "Off"
+            "orderOff": "Off",
+            "venue": "Venue",
+            "venueOff": "Off",
+            "venueFaint": "Faint",
+            "venueSoft": "Soft",
+            "venueMarkings": "Markings only",
+            "venueFull": "Full color",
+            "venueAround": "Around the field",
+            "venueAroundField": "None",
+            "venueAroundEdge": "Turf edge",
+            "venueAroundStands": "Stands",
+            "venueCamera": "3D View camera",
+            "venueCameraHint": "Shows where the 3D View is looking while it's open.",
+            "venueBlank": "This show's 3D View venue is Field only, so there's nothing to show. Choose another venue in the 3D View's settings.",
+            "venueEdgeStadiumOnly": "Only stadiums have a turf edge."
         },
         "alignmentTabShort": "Align",
         "pathsTab": "Paths"

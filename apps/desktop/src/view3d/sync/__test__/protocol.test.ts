@@ -7,6 +7,7 @@ import {
     isView3dInvalidate,
     isView3dSelection,
     newerClock,
+    parseCameraPose,
     showTimeAt,
     VIEW3D_HIDDEN_PROPS_CHANNEL,
     VIEW3D_PUBLISH_CHANNELS,
@@ -127,5 +128,32 @@ describe("hidden props", () => {
 
     it("is a channel the editor publishes", () => {
         expect(VIEW3D_PUBLISH_CHANNELS).toContain(VIEW3D_HIDDEN_PROPS_CHANNEL);
+    });
+});
+
+describe("parseCameraPose", () => {
+    const pose = {
+        position: [1, 2, 3],
+        direction: [0, -0.5, -0.8],
+        fov: 50,
+        aspect: 1.6,
+    };
+
+    it("accepts a pose", () => {
+        expect(parseCameraPose(pose)).toEqual(pose);
+    });
+
+    it("rejects anything else", () => {
+        for (const bad of [
+            null,
+            "pose",
+            { ...pose, position: [1, 2] },
+            { ...pose, direction: [0, Number.NaN, 1] },
+            { ...pose, fov: 0 },
+            { ...pose, fov: 180 },
+            { ...pose, aspect: -1 },
+            { ...pose, aspect: Number.POSITIVE_INFINITY },
+        ])
+            expect(parseCameraPose(bad)).toBeNull();
     });
 });

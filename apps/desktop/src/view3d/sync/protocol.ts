@@ -37,6 +37,13 @@ export const VIEW3D_VENUE_CHANGE_REQUEST_CHANNEL =
  * owner of the clock; the window sees the result in the next `clock`.
  */
 export const VIEW3D_PLAYBACK_REQUEST_CHANNEL = "view3d:playback-request";
+/**
+ * Window → main → editor: where the 3D View's camera is and what it sees
+ * (`View3dCameraPose`), so the 2D field can show it. Sent when the camera
+ * moves (at most 10 times a second) and once a second while it stands still.
+ * Display only: the editor writes nothing from it.
+ */
+export const VIEW3D_CAMERA_CHANNEL = "view3d:camera";
 
 /**
  * The app setting (`settings:get` and `settings:set`) that opens the 3D View
@@ -279,4 +286,40 @@ export function isView3dHiddenProps(
         Array.isArray(value.hiddenItemIds) &&
         value.hiddenItemIds.every(isFiniteNumber)
     );
+}
+
+/** The 3D View's camera, in world meters (`packages/core` `world.ts`). */
+export interface View3dCameraPose {
+    /** Camera position: x across the field, y up, z toward the audience. */
+    position: [number, number, number];
+    /** Unit view direction, in the same axes. */
+    direction: [number, number, number];
+    /** Vertical field of view, in degrees. */
+    fov: number;
+    /** Width over height of the view. */
+    aspect: number;
+}
+
+const finiteTriple = (value: unknown): value is [number, number, number] =>
+    Array.isArray(value) &&
+    value.length === 3 &&
+    value.every((n) => typeof n === "number" && Number.isFinite(n));
+
+/** The pose in an unchecked payload, or null when it isn't one. */
+export function parseCameraPose(value: unknown): View3dCameraPose | null {
+    if (typeof value !== "object" || value === null) return null;
+    const { position, direction, fov, aspect } = value as Record<
+        string,
+        unknown
+    >;
+    if (!finiteTriple(position) || !finiteTriple(direction)) return null;
+    if (typeof fov !== "number" || !(fov > 0 && fov < 180)) return null;
+    if (typeof aspect !== "number" || !(aspect > 0 && Number.isFinite(aspect)))
+        return null;
+    return {
+        position: [...position],
+        direction: [...direction],
+        fov,
+        aspect,
+    };
 }

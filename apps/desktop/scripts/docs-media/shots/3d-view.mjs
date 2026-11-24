@@ -1313,6 +1313,82 @@ const shots = [
             };
         },
     },
+    {
+        id: "venue-on-field",
+        kind: "still",
+        // The editor's field with the venue on it (Faint), and the Venue button's menu open
+        // beside the display bar (fork #1207)
+        covers: [
+            "apps/desktop/src/components/canvas/display/VenueButton.tsx",
+            "apps/desktop/src/field/three/venueUnderlay",
+        ],
+        async setup(ctx) {
+            const { page } = ctx;
+            await tidy(page);
+            const button = page.getByTestId("field-display-venue");
+            await button.click();
+            await page.getByTestId("field-display-venue-faint").click();
+            await page.getByTestId("field-display-venue-around-edge").click();
+            await page.mouse.move(4, ctx.window.height / 2);
+            await ctx.wait(1500);
+            const menu = page
+                .locator("[data-radix-popper-content-wrapper]")
+                .first();
+            return {
+                box: ctx.union(
+                    await ctx.around(
+                        page.getByTestId("fieldCanvas").first(),
+                        0,
+                    ),
+                    await ctx.around(menu, 12),
+                ),
+            };
+        },
+    },
+    {
+        id: "venue-on-field-stands",
+        kind: "still",
+        // Zoomed out with Soft and Stands: the stadium around the field, from above
+        async setup(ctx) {
+            const { page } = ctx;
+            await tidy(page);
+            await page.getByTestId("field-display-venue").click();
+            await page.getByTestId("field-display-venue-soft").click();
+            await page.getByTestId("field-display-venue-around-stands").click();
+            await page.keyboard.press("Escape");
+            // No tooltip on the button the menu closed back to
+            await ctx.wait(400);
+            await page.evaluate(() =>
+                /** @type {HTMLElement | null} */ (
+                    document.activeElement
+                )?.blur(),
+            );
+            const canvas = page.getByTestId("fieldCanvas").first();
+            const c = await canvas.boundingBox();
+            // Out about three times (ctrl-wheel, as a trackpad pinch)
+            await page.evaluate(
+                ([x, y]) => {
+                    const target = document.elementFromPoint(x, y);
+                    for (let i = 0; i < 6; i++)
+                        target.dispatchEvent(
+                            new WheelEvent("wheel", {
+                                deltaY: 100,
+                                ctrlKey: true,
+                                clientX: x,
+                                clientY: y,
+                                bubbles: true,
+                                cancelable: true,
+                            }),
+                        );
+                },
+                [c.x + c.width / 2, c.y + c.height / 2],
+            );
+            await page.mouse.move(4, ctx.window.height / 2);
+            await page.keyboard.press("Escape");
+            await ctx.wait(2000);
+            return { box: await ctx.around(canvas, 0) };
+        },
+    },
 ];
 
 export default shots;
