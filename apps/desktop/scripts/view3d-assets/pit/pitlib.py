@@ -386,7 +386,9 @@ PALETTE = {
     "resonators-black": ((0.02, 0.02, 0.022), 0.0, 0.45),
     "resonators-silver": ((0.74, 0.74, 0.76), 1.0, 0.4),
     "bars-silver": ((0.78, 0.78, 0.80), 1.0, 0.38),
-    "bars-gold": ((0.82, 0.62, 0.28), 0.8, 0.38),
+    # Yellow gold like Yamaha's gold vibes. Warmer than it looks on its own and only
+    # half metallic: a shinier, paler gold mirrors the green field and reads as khaki.
+    "bars-gold": ((0.88, 0.52, 0.10), 0.5, 0.36),
     "bars-steel": ((0.70, 0.71, 0.74), 1.0, 0.3),
     "cymbal": ((0.74, 0.5, 0.19), 0.85, 0.36),
     "gong": ((0.5, 0.3, 0.1), 0.8, 0.5),
