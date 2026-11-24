@@ -3597,6 +3597,7 @@
             "podium": "Podium",
             "pressBox": "Press box",
             "sideline": "Sideline",
+            "soundBoard": "Sound board",
             "topDown": "Top down",
             "tunnel": "Tunnel",
             "upperDeck": "Upper deck"
@@ -3609,6 +3610,7 @@
             "gym": "Indoor gym",
             "hs": "High school",
             "markDiesel": "Mark Diesel Stadium",
+            "nightpound": "Nightpound, OH",
             "pro": "Pro dome"
         },
         "lighting": {
@@ -3800,6 +3802,17 @@
             "unreadable": "That PNG couldn't be read.",
             "templateFailed": "The template couldn't be made.",
             "saveFailed": "Couldn't save the flag silk artwork"
+        },
+        "venueKind": {
+            "fitted": "Sized to your field",
+            "real": "Real venues",
+            "realHint": "Modeled on real buildings, at their real size.",
+            "field": "{venue}: a fixed {width} × {depth} ft field.",
+            "floor": "{venue}: a fixed {width} × {depth} ft floor."
+        },
+        "venueFit": {
+            "fallback": "This show's field is bigger than the {width} × {depth} ft floor at {venue}, so the 3D View shows the {fallback} instead.",
+            "tooBig": "{venue} has a fixed {width} × {depth} ft floor, and this show's field is {fieldWidth} × {fieldDepth} ft."
         }
     },
     "web": {

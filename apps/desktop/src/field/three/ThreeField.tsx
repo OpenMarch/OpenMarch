@@ -150,6 +150,7 @@ import {
 import { useFieldVenueAction } from "./venueUnderlay/useFieldVenueAction";
 import { useVenueSettings } from "@/hooks/queries/useVenueSettings";
 import { KIT_FIELD_STYLE, kitFieldStyle } from "@/view3d/core/kits/fieldStyle";
+import { shownKit } from "@/view3d/core/venueSettings";
 import MarchersLayer from "./layers/MarchersLayer";
 import ItemsLayer from "./layers/ItemsLayer";
 import LabelsLayer, { type LabelStyle } from "./layers/LabelsLayer";
@@ -276,7 +277,7 @@ function ThreeFieldView() {
         })),
     );
     const { data: venue } = useVenueSettings();
-    const venueKit = venue?.kit ?? "hs";
+    const venueKit = shownKit(venue?.kit ?? "hs", fieldProperties);
     const venueStyle = fieldProperties
         ? kitFieldStyle(venueKit, fieldProperties)
         : KIT_FIELD_STYLE[venueKit];

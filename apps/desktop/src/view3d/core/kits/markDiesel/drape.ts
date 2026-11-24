@@ -83,7 +83,7 @@ const BRIDLE = { x: 12.2, half: 2.4, rise: 2.6 };
 const LOGO_PANEL = { size: 7.4 };
 
 /** One level of a hang: height, depth of fold (0..1) and brightness. */
-interface Row {
+export interface Row {
     y: number;
     fold: number;
     shade: number;
@@ -120,7 +120,7 @@ export function dieselDrapeFoot(frame: DieselCtx["frame"]): {
 }
 
 /** Pleated cloth, collected into one indexed geometry. */
-class Cloth {
+export class Cloth {
     private readonly pos: number[] = [];
     private readonly normal: number[] = [];
     private readonly color: number[] = [];
