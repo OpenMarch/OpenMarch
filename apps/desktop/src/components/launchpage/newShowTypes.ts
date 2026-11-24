@@ -24,15 +24,19 @@ export const NEW_SHOW_STEPS: NewShowStepId[] = [
     "tempo",
 ];
 
-/** The steps a new show goes through: fewer for a previous show's file, none about a pit without one */
+/**
+ * The steps a new show goes through: fewer for a previous show's file, none about a pit without
+ * one. A blank show picks its activity on the Field step, beside the field it decides.
+ */
 export function getWizardSteps(state: NewShowWizardState): NewShowStepId[] {
     if (state.start?.mode === "importPrevious") {
         return ["start", "project", "ensemble", "audio", "tempo"];
     }
     // Winter Guard has no front ensemble, so it isn't asked about one
-    if (!activityHasFrontEnsemble(state.ensemble?.activity))
-        return NEW_SHOW_STEPS.filter((step) => step !== "frontEnsemble");
-    return NEW_SHOW_STEPS;
+    const hasPit = activityHasFrontEnsemble(state.ensemble?.activity);
+    return NEW_SHOW_STEPS.filter(
+        (step) => step !== "ensemble" && (hasPit || step !== "frontEnsemble"),
+    );
 }
 
 export interface NewShowProjectData {

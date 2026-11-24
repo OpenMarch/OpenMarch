@@ -976,10 +976,6 @@
                     "title": "Aktivitas",
                     "typeLabel": "Aktivitas"
                 },
-                "field": {
-                    "description": "Pilih template lapangan untuk pertunjukan.",
-                    "title": "Penyiapan lapangan"
-                },
                 "performers": {
                     "description": "Tambahkan pemain sekarang atau lewati dan tambahkan nanti di editor.",
                     "noneAdded": "Belum ada pemain yang ditambahkan.",

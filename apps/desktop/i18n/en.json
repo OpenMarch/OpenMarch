@@ -1154,9 +1154,9 @@
                     "typeLabel": "Activity"
                 },
                 "field": {
-                    "description": "Pick a field template for your show.",
                     "indoorDescription": "Set up your floor: its art, its size and the grid's step size.",
-                    "title": "Field setup"
+                    "activityTitle": "Activity and field",
+                    "activityDescription": "Choose your activity, then the field you perform on."
                 },
                 "performers": {
                     "description": "Add marchers now or skip and add them later in the editor.",

@@ -90,8 +90,9 @@ const STEP_COPY: Record<
         descriptionKey: "launchpage.newShow.steps.ensemble.description",
     },
     field: {
-        titleKey: "launchpage.newShow.steps.field.title",
-        descriptionKey: "launchpage.newShow.steps.field.description",
+        // The Field step only comes up for a blank show, which picks its activity there too
+        titleKey: "launchpage.newShow.steps.field.activityTitle",
+        descriptionKey: "launchpage.newShow.steps.field.activityDescription",
     },
     performers: {
         titleKey: "launchpage.newShow.steps.performers.title",
@@ -484,6 +485,7 @@ export default function NewShowDialog({
                         ensemble={wizardState.ensemble}
                         field={wizardState.field}
                         onChange={handleFieldChange}
+                        onEnsembleChange={handleEnsembleChange}
                     />
                 );
             case "performers":

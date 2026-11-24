@@ -19,10 +19,17 @@ interface EnsembleStepProps {
     onChange: (ensemble: NewShowEnsembleData) => void;
 }
 
-export default function EnsembleStep({
-    ensemble,
-    onChange,
-}: EnsembleStepProps) {
+/** The Activity step, for a show started from a previous show's file (no Field step to share) */
+export default function EnsembleStep(props: EnsembleStepProps) {
+    return (
+        <div className="mx-auto flex w-full max-w-2xl flex-col gap-16">
+            <ActivityPicker {...props} />
+        </div>
+    );
+}
+
+/** The activity dropdown; it reports the default activity when none is picked yet */
+export function ActivityPicker({ ensemble, onChange }: EnsembleStepProps) {
     const { t } = useTranslate();
     const [activity, setActivity] = useState(
         ensemble?.activity ?? DEFAULT_ACTIVITY,
@@ -42,27 +49,25 @@ export default function EnsembleStep({
     }, [activity, onChange]);
 
     return (
-        <div className="mx-auto flex w-full max-w-2xl flex-col gap-16">
-            <WizardFormField
-                label={t("launchpage.newShow.steps.ensemble.typeLabel")}
+        <WizardFormField
+            label={t("launchpage.newShow.steps.ensemble.typeLabel")}
+        >
+            <Select
+                value={activity}
+                onValueChange={(next) => {
+                    setActivity(next);
+                    onChange({ activity: next });
+                }}
             >
-                <Select
-                    value={activity}
-                    onValueChange={(next) => {
-                        setActivity(next);
-                        onChange({ activity: next });
-                    }}
-                >
-                    <SelectTriggerButton label={activityLabel(activity)} />
-                    <SelectContent>
-                        {ACTIVITY_LABELS.map((label) => (
-                            <SelectItem key={label} value={label}>
-                                {activityLabel(label)}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-            </WizardFormField>
-        </div>
+                <SelectTriggerButton label={activityLabel(activity)} />
+                <SelectContent>
+                    {ACTIVITY_LABELS.map((label) => (
+                        <SelectItem key={label} value={label}>
+                            {activityLabel(label)}
+                        </SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+        </WizardFormField>
     );
 }

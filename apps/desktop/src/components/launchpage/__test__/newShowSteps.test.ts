@@ -15,6 +15,27 @@ const withActivity = (activity: string): NewShowWizardState => ({
 });
 
 describe("getWizardSteps", () => {
+    it("asks for a blank show's activity on the Field step, not a step of its own", () => {
+        expect(getWizardSteps(withActivity("Marching Band"))).toEqual([
+            "start",
+            "project",
+            "field",
+            "performers",
+            "frontEnsemble",
+            "audio",
+            "tempo",
+        ]);
+    });
+
+    it("keeps the Activity step for a show from a previous file, which has no Field step", () => {
+        expect(
+            getWizardSteps({
+                ...DEFAULT_NEW_SHOW_WIZARD_STATE,
+                start: { mode: "importPrevious" },
+            }),
+        ).toEqual(["start", "project", "ensemble", "audio", "tempo"]);
+    });
+
     it("skips the Front ensemble step for Winter Guard", () => {
         expect(getWizardSteps(withActivity("Winter Guard"))).not.toContain(
             "frontEnsemble",

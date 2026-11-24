@@ -14,17 +14,21 @@ import IndoorFloorPicker, {
 } from "@/components/field/IndoorFloorPicker";
 import { indoorFloorOf } from "@/global/classes/fieldTemplates/indoorFloors";
 import { Button } from "@openmarch/ui";
+import { ActivityPicker } from "./EnsembleStep";
 
 interface FieldStepProps {
     ensemble: NewShowEnsembleData | null;
     field: NewShowFieldData | null;
     onChange: (field: NewShowFieldData) => void;
+    /** Given for a blank show, whose activity is picked here, above the field */
+    onEnsembleChange?: (ensemble: NewShowEnsembleData) => void;
 }
 
 export default function FieldStep({
     ensemble,
     field,
     onChange,
+    onEnsembleChange,
 }: FieldStepProps) {
     const activity = ensemble?.activity;
     const defaultTemplate = getDefaultFieldTemplate(activity);
@@ -97,6 +101,12 @@ export default function FieldStep({
         // Choices on the left; the preview stays in view beside them on a wide screen
         <div className="grid w-full gap-24 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
             <div className="flex min-w-0 flex-col gap-16">
+                {onEnsembleChange && (
+                    <ActivityPicker
+                        ensemble={ensemble}
+                        onChange={onEnsembleChange}
+                    />
+                )}
                 {showFloorPicker ? (
                     <IndoorFloorPicker
                         template={currentTemplate}

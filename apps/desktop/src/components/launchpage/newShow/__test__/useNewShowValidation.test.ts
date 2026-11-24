@@ -118,4 +118,20 @@ describe("useNewShowValidation", () => {
         );
         expect(result.current).toBe(true);
     });
+
+    it("requires the activity on the field step, where a blank show picks it", () => {
+        const state: NewShowWizardState = {
+            ...DEFAULT_NEW_SHOW_WIZARD_STATE,
+            ensemble: null,
+            field: {
+                template:
+                    FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES,
+                isCustom: false,
+            },
+        };
+        const { result } = renderHook(() =>
+            useNewShowValidation(state, "field"),
+        );
+        expect(result.current).toBe(false);
+    });
 });
