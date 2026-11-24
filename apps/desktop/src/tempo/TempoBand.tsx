@@ -3348,6 +3348,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             data-measures={data.measures
                 .map((m) => `${m.start}:${m.counts}:${m.number}`)
                 .join(",")}
+            data-hover-measure={hoverMeasure ?? ""}
             data-holds={[...data.holds].join(",")}
             data-changes={[...changes].sort((x, y) => x - y).join(",")}
             data-counts={durations
