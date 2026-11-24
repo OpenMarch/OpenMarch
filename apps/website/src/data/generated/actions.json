@@ -1235,6 +1235,26 @@
             }
         ]
     },
+    "applyShapeLoose": {
+        "label": "Place marchers without keeping the shape",
+        "category": "shape",
+        "bindings": [
+            {
+                "mac": {
+                    "keys": [
+                        "⇧",
+                        "↩"
+                    ]
+                },
+                "other": {
+                    "keys": [
+                        "Shift",
+                        "Enter"
+                    ]
+                }
+            }
+        ]
+    },
     "shapeRemoveLastPoint": {
         "label": "Shape: Remove the last point while drawing",
         "category": "shape",

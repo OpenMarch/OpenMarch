@@ -871,6 +871,14 @@ const STATIC_ACTIONS = {
         scope: "canvas",
         defaultBindings: ["Enter"],
     },
+    // Place without keeping the shape: the marchers go to their spots as a plain move does, and
+    // no shape is saved, as Place then Ungroup would leave them. Shift-click on Place does the same
+    applyShapeLoose: {
+        labelKey: "actions.shape.applyLoose",
+        category: "shape",
+        scope: "canvas",
+        defaultBindings: ["Shift+Enter"],
+    },
     // While drawing a line point by point, the last point taken back (owner, option A on #522).
     // Handled only then (shapes/tool/ShapeToolKeys), so the keys do nothing else meanwhile
     shapeRemoveLastPoint: {

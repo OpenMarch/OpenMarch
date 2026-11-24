@@ -8,6 +8,7 @@ covers:
   - apps/desktop/src/shapes/editor
   - action:shapeBlock
   - action:applyShape
+  - action:applyShapeLoose
   - action:openCommandBar
   - i18n:shapes.box
   - i18n:shapes.edit
@@ -44,7 +45,7 @@ import { Steps } from "@astrojs/starlight/components";
   alt="B is pressed, and a drag on empty field beside a row of trumpets draws a 4 × 3 box of spots. The pointer moves to Place and clicks it, and the trumpets move onto the spots."
 />
 
-The marchers take their spots, as one step you can undo. Until you place it, nobody moves, and <Kbd action="cancelAlignmentUpdates" /> throws the box away. On a tablet, drag with one finger, and select <Ui k="shapes.edit.discard" /> beside <Ui k="shapes.edit.place" /> to throw it away.
+The marchers take their spots, as one step you can undo. Until you place it, nobody moves, and <Kbd action="cancelAlignmentUpdates" /> throws the box away. To move the marchers onto the box without keeping it as a shape, press <Kbd action="applyShapeLoose" /> or Shift-click <Ui k="shapes.edit.place" />: they're left as plain marchers, as [Ungroup](/guides/shapes/place-marchers/#ungroup-a-shape) would leave them. On a tablet, drag with one finger, and select <Ui k="shapes.edit.discard" /> beside <Ui k="shapes.edit.place" /> to throw it away.
 
 ## Change the box on the field
 

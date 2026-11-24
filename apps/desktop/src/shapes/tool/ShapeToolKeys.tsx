@@ -36,7 +36,8 @@ const NUDGE_DIRECTIONS = {
  * - Escape: a gesture goes back to where it started; a selected point (#557) is cleared;
  *   otherwise the tool closes, placing nothing. The touch layout's Discard (`shapeDiscard`) does
  *   the same, skipping the selected point.
- * - Enter while clicking a line's points finishes the line (#524); otherwise it's Place.
+ * - Enter (or Shift+Enter) while clicking a line's points finishes the line (#524); otherwise
+ *   it's Place (Shift+Enter: Place without keeping the shape).
  *   That is an undo step: undo right after it brings the shape back ({@link DiscardedShapeKeys}).
  * - Backspace or Delete while clicking a line's points takes the last one back, as a right-click
  *   does (owner, option A on #522), and so does undo; otherwise undo and redo step through the
@@ -68,16 +69,13 @@ export function ShapeToolKeys(): null {
     const clicking = useShapeToolStore(
         (s) => s.tool?.gesture?.type === "points",
     );
-    useActionHandler(
-        "applyShape",
-        () => {
-            const field = currentShapeField();
-            if (field)
-                updateTool((t) => finishPoints(t, shapeContextFor(field)));
-        },
-        {},
-        clicking,
-    );
+    const finishClicking = () => {
+        const field = currentShapeField();
+        if (field) updateTool((t) => finishPoints(t, shapeContextFor(field)));
+    };
+    useActionHandler("applyShape", finishClicking, {}, clicking);
+    // Shift+Enter too: it never places a line still being clicked
+    useActionHandler("applyShapeLoose", finishClicking, {}, clicking);
     // Registered only while clicking points, so Backspace and Delete reach nothing else then
     useActionHandler(
         "shapeRemoveLastPoint",

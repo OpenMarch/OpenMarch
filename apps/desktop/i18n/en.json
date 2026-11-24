@@ -187,6 +187,7 @@
             "circle": "Shape: Circle",
             "ring": "Favorites ring: hold to pick a shape, tap to keep it open",
             "apply": "Place marchers on the shape",
+            "applyLoose": "Place marchers without keeping the shape",
             "removeLastPoint": "Shape: Remove the last point while drawing",
             "quarterTurn": "Shape: Turn 90° clockwise",
             "mirrorSideToSide": "Mirrored paste: Mirror side to side",
@@ -2166,6 +2167,7 @@
                 "tip": "Turn and flip around the {pivot}"
             },
             "place": "Place",
+            "placeLoose": "Shift-click or <keys></keys>: place without keeping the shape",
             "quarterTurn": "Turn 90° clockwise",
             "guides": {
                 "label": "Guides",

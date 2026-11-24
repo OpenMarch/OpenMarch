@@ -1494,6 +1494,49 @@ test("Enter places the marchers on the spots as one undo step, and Escape cancel
     await expect.poll(() => savedPositions(show, 0)).toEqual(asPositions(HOME));
 });
 
+test("change: Shift+Enter, or Shift-click on Place, puts the marchers on the spots as one undo step and keeps no shape", async ({
+    show,
+}) => {
+    const { page } = show;
+    const recipes = async () =>
+        (
+            await show.query<{ kind: string }>(
+                "SELECT kind FROM timeline_shape_recipes",
+            )
+        ).length;
+    const onSpots = (spots: readonly { x: number; y: number }[]) => async () =>
+        (await savedPositions(show, 0)).every((p) =>
+            spots.some((s) => Math.hypot(s.x - p.x, s.y - p.y) < CLOSE),
+        );
+
+    const steps = await undoSteps(show);
+    await drawBox(show);
+    let spots = (await shapeOverlay(page))!.spots;
+    await page.keyboard.press("Shift+Enter");
+    await expect(page.getByTestId("shape-tool-readout")).toBeHidden();
+    await expect.poll(onSpots(spots)).toBe(true);
+    await waitForIdle(page);
+    expect(await recipes()).toBe(0);
+    expect(await placedBoxes(page)).toEqual([]);
+    expect(await undoSteps(show)).toBe(steps + 1);
+    await page.keyboard.press("ControlOrMeta+z");
+    await expect.poll(() => savedPositions(show, 0)).toEqual(asPositions(HOME));
+
+    // Place's tooltip names both, and a Shift-click is Shift+Enter
+    await drawBox(show);
+    spots = (await shapeOverlay(page))!.spots;
+    const place = page.getByTestId("shape-editor-place");
+    await place.hover();
+    await expect(page.getByRole("tooltip")).toContainText(
+        "place without keeping the shape",
+    );
+    await place.click({ modifiers: ["Shift"] });
+    await expect(page.getByTestId("shape-tool-readout")).toBeHidden();
+    await expect.poll(onSpots(spots)).toBe(true);
+    await waitForIdle(page);
+    expect(await recipes()).toBe(0);
+});
+
 /** Draws and places a box on every marcher, then clears the selection. */
 async function placeBox(show: Show, pageId = 0) {
     const { page } = show;
