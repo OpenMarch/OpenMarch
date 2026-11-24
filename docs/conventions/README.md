@@ -28,3 +28,5 @@ Use these references when their condition applies:
   queries.
 - Read [testing](testing.md) before writing or running unit tests.
 - Read [troubleshooting](troubleshooting.md) when local hooks or formatting misbehave.
+- Read [the accessibility report guide](../accessibility/README.md) before a release,
+  or when asked about accessibility or a VPAT.
