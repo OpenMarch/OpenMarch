@@ -50,6 +50,11 @@ const singleTableNameToQueryKey = (tableName: string): string[][] => {
         case "timeline_slot_destinations":
         case "timeline_held_marks":
             return [];
+        // Shape recipes: placed shapes read them again after every edit, undo and redo
+        // (`followPlacedBoxChanges`), not through React Query
+        case "timeline_shape_recipes":
+        case "timeline_shape_recipe_marchers":
+            return [];
         // A cue is read with its performers (`allCuesQueryOptions`)
         case "cue_marchers":
             return [["cues"]];

@@ -795,12 +795,14 @@ export const ownPageMoves = async (
  *   earlier pages again; a timeline left empty goes. A zero-motion ending in a window that isn't a
  *   page's box is kept. A shape's write (`keepUnchanged`) only deletes a marcher's own page move this way
  *   (`ownPageMoves`), so a shape placed where its members start stays in a shared move (#485).
+ *   One that has to stay in its move (the shape's own member, a shape changed so its spot is
+ *   where it starts the page) is set there as a stay instead, and isn't named (#1264, #1276).
  * - **`clearPage`** (Clear this page, which was Set to previous page): every moved marcher is
  *   taken out of every move over the box the same way, whatever the move says, and nothing else
  *   is written.
  *
  * In both, a shape or follow-the-leader member keeps its move, untouched, and is named in
- * `skipped` (the holds commands' rule, owner 2026-10-30).
+ * `skipped` (the holds commands' rule, owner 2026-10-30), except in a shape's write (above).
  *
  * The add passes through (research/ownership/10-cross-page-windows.md): the drag overrides the
  * moved marchers' moves inside the range, a move the range runs into partway catches up after it,
@@ -906,8 +908,19 @@ export const moveMarchersInRangeInTransaction = async ({
         range,
     });
     if (out.removed.length > 0) result.cleared = out.removed;
+    // A shape's write sets a member it can't take out (one of the shape's own members, set
+    // back where the page starts) there as a stay instead, like everyone else in the shape.
+    // Left in its move untouched, it would keep its old spot on top of a neighbor (#1264,
+    // #1276)
+    const kept = keepUnchanged
+        ? new Set(out.skipped.map((s) => s.marcherId))
+        : new Set<number>();
+    for (const move of takeOut) if (kept.has(move.marcherId)) toMove.push(move);
     // Shape and follow-the-leader members keep their move, and the toast names them
-    const skipped = await skippedRefusal(tx, [...alsoSkipped, ...out.skipped]);
+    const skipped = await skippedRefusal(tx, [
+        ...alsoSkipped,
+        ...out.skipped.filter((s) => !kept.has(s.marcherId)),
+    ]);
     if (skipped) result.skipped = skipped;
     // A cut may have taken a timeline over the range out of `timelineOf`'s reach: read it again
     if (out.cuts.length > 0) {
