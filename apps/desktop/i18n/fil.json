@@ -976,10 +976,6 @@
                     "title": "Uri ng grupo",
                     "typeLabel": "Uri ng grupo"
                 },
-                "field": {
-                    "description": "Pumili ng field template para sa palabas mo.",
-                    "title": "Setup ng field"
-                },
                 "performers": {
                     "description": "Magdagdag ng mga miyembro ngayon, o laktawan at idagdag sila mamaya sa editor.",
                     "noneAdded": "Wala pang naidagdag na miyembro.",

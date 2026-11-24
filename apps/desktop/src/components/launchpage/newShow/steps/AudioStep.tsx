@@ -46,7 +46,7 @@ export default function AudioStep({ audio, onChange }: AudioStepProps) {
     }, [audio?.method, selectedAudioFile]);
 
     return (
-        <div className="mx-auto flex w-full max-w-lg flex-col gap-12">
+        <div className="mx-auto flex w-full max-w-2xl flex-col gap-12">
             {checkingDatabase && (
                 <WarningNote>
                     <T keyName="launchpage.newShow.steps.audio.waitingDb" />

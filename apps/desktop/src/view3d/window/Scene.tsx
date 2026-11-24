@@ -80,7 +80,7 @@ import type {
     KitResult,
     VenueParams,
 } from "@/view3d/core/types";
-import type { VenueSettings } from "@/view3d/core/venueSettings";
+import { shownKit, type VenueSettings } from "@/view3d/core/venueSettings";
 import CameraRig from "./camera/CameraRig";
 import CameraPosePublisher from "./camera/CameraPosePublisher";
 import { DEFAULT_NEAR } from "./camera/rigMath";
@@ -252,7 +252,11 @@ function SceneContents({
     );
     const paramsKey = JSON.stringify(settings.params);
     const params = useStable<VenueParams>(settings.params, paramsKey);
-    const kitId = settings.kit;
+    // A fixed-floor venue the field has outgrown shows the indoor arena.
+    const kitId = useMemo(
+        () => shownKit(settings.kit, fieldProperties),
+        [settings.kit, fieldProperties],
+    );
     const fieldStyle = useMemo(
         () => kitFieldStyle(kitId, fieldProperties),
         [kitId, fieldProperties],

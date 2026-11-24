@@ -15,6 +15,7 @@ export const KIT_FIELD_STYLE: Readonly<Record<VenueKitId, FieldSurfaceStyle>> =
         college: "turf",
         pro: "turf",
         markDiesel: "turf",
+        nightpound: "tarp",
         gym: "tarp",
         arena: "tarp",
         blank: "theme",

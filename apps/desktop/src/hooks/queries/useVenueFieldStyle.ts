@@ -1,6 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import type { FieldSurfaceStyle } from "@/view3d/core/field/plan";
 import { KIT_FIELD_STYLE, kitFieldStyle } from "@/view3d/core/kits/fieldStyle";
+import { shownKit } from "@/view3d/core/venueSettings";
 import { fieldPropertiesQueryOptions } from "./useFieldProperties";
 import { useVenueSettings } from "./useVenueSettings";
 
@@ -12,7 +13,7 @@ import { useVenueSettings } from "./useVenueSettings";
 export function useVenueFieldStyle(): FieldSurfaceStyle {
     const { data: venue } = useVenueSettings();
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
-    const kit = venue?.kit ?? "hs";
+    const kit = shownKit(venue?.kit ?? "hs", fieldProperties);
     return fieldProperties
         ? kitFieldStyle(kit, fieldProperties)
         : KIT_FIELD_STYLE[kit];

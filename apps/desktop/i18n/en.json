@@ -883,6 +883,37 @@
         "measurements": {
             "feet": "{value} ft",
             "meters": "{value} m"
+        },
+        "indoorFloor": {
+            "image": "Floor image",
+            "addImage": "Add floor image",
+            "imageHint": "The art printed on your floor, shown under the grid. If it has the shape of one of the floor sizes below, that size is picked for you.",
+            "unreadable": "That file isn't an image OpenMarch can read. Try a PNG or JPEG.",
+            "replaceImage": "Replace",
+            "removeImage": "Remove",
+            "matches": "Matches the {size} floor.",
+            "shapedLike": "Shaped like a {size} floor.",
+            "useSize": "Use {size}",
+            "noMatch": "This image's shape doesn't match a floor size below, so it's fitted inside the floor.",
+            "size": "Floor size",
+            "sizeFeet": "{depth} × {width} ft",
+            "fullSize": "WGI full size",
+            "stepSize": "Step size",
+            "step24": "24 inches",
+            "step30": "30 inches (6 to 5)",
+            "linesEvery": "Lines every {feet} ft ({steps} steps)",
+            "otherFields": "Other fields",
+            "backToFloors": "Indoor floor sizes",
+            "custom": "Custom",
+            "anySize": "Type a size",
+            "anyStep": "Type a step size",
+            "depth": "Front to back",
+            "width": "Side to side",
+            "feet": "ft",
+            "feetRange": "Use {min} to {max} feet.",
+            "stepLength": "Each step",
+            "inchesRange": "Use {min} to {max} inches.",
+            "matchesCustom": "The floor has this image's shape."
         }
     },
     "fileAccessDialogError": {
@@ -1140,8 +1171,9 @@
                     "typeLabel": "Activity"
                 },
                 "field": {
-                    "description": "Pick a field template for your show.",
-                    "title": "Field setup"
+                    "indoorDescription": "Set up your floor: its art, its size and the grid's step size.",
+                    "activityTitle": "Activity and field",
+                    "activityDescription": "Choose your activity, then the field you perform on."
                 },
                 "performers": {
                     "description": "Add marchers now or skip and add them later in the editor.",
@@ -3597,6 +3629,7 @@
             "podium": "Podium",
             "pressBox": "Press box",
             "sideline": "Sideline",
+            "soundBoard": "Sound board",
             "topDown": "Top down",
             "tunnel": "Tunnel",
             "upperDeck": "Upper deck"
@@ -3609,6 +3642,7 @@
             "gym": "Indoor gym",
             "hs": "High school",
             "markDiesel": "Mark Diesel Stadium",
+            "nightpound": "Nightpound, OH",
             "pro": "Pro dome"
         },
         "lighting": {
@@ -3800,6 +3834,17 @@
             "unreadable": "That PNG couldn't be read.",
             "templateFailed": "The template couldn't be made.",
             "saveFailed": "Couldn't save the flag silk artwork"
+        },
+        "venueKind": {
+            "fitted": "Sized to your field",
+            "real": "Real venues",
+            "realHint": "Modeled on real buildings, at their real size.",
+            "field": "{venue}: a fixed {width} × {depth} ft field.",
+            "floor": "{venue}: a fixed {width} × {depth} ft floor."
+        },
+        "venueFit": {
+            "fallback": "This show's field is bigger than the {width} × {depth} ft floor at {venue}, so the 3D View shows the {fallback} instead.",
+            "tooBig": "{venue} has a fixed {width} × {depth} ft floor, and this show's field is {fieldWidth} × {fieldDepth} ft."
         }
     },
     "web": {
@@ -4342,6 +4387,7 @@
             "selectRow": "Select these performers",
             "selectPerformers": "Select its performers",
             "markLabel": "{name}: {value}, {where}",
+            "menuHeading": "{value} · {name}",
             "forCounts": "{count, plural, one {For # count} other {For # counts}}",
             "dragStart": "Drag to change where it starts",
             "dragEnd": "Drag to change where it ends",

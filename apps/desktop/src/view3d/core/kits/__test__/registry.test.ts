@@ -34,6 +34,7 @@ describe("kit registry", () => {
             college: "turf",
             pro: "turf",
             markDiesel: "turf",
+            nightpound: "tarp",
             gym: "tarp",
             arena: "tarp",
             blank: "theme",
