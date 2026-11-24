@@ -94,7 +94,7 @@ export default function FieldStep({
     };
 
     return (
-        <div className="mx-auto flex w-full max-w-lg flex-col gap-16">
+        <div className="mx-auto flex w-full max-w-2xl flex-col gap-16">
             {showFloorPicker ? (
                 <IndoorFloorPicker
                     template={currentTemplate}
@@ -135,7 +135,7 @@ export default function FieldStep({
                 <FieldPreview
                     fieldProperties={currentTemplate}
                     image={drawnImage ?? undefined}
-                    className="h-[200px]"
+                    className="h-[280px]"
                 />
             </div>
             <div className="flex flex-col gap-8">

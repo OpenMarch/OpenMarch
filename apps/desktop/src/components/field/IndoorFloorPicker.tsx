@@ -1,6 +1,6 @@
 import * as RadioGroup from "@radix-ui/react-radio-group";
 import { CheckCircleIcon, CircleIcon, ImageIcon } from "@phosphor-icons/react";
-import { Button } from "@openmarch/ui";
+import { Button, UnitInput } from "@openmarch/ui";
 import { useTranslate } from "@tolgee/react";
 import clsx from "clsx";
 import { useEffect, useId, useState } from "react";
@@ -8,13 +8,19 @@ import type { FieldProperties } from "@openmarch/core";
 import type { DrillChartFieldImage } from "@/components/exporting/utils/drillChartSvg";
 import { pickImage } from "@/field/editMode/useFieldImageActions";
 import {
+    FLOOR_FEET_RANGE,
     FULL_SIZE_FLOOR,
     INDOOR_FLOOR_SIZES,
     INDOOR_STEP_SIZES,
     STEPS_BETWEEN_LINES,
+    STEP_INCHES_RANGE,
+    floorFitsImage,
+    floorShapedLikeImage,
     floorSizeForImage,
     indoorFloorOf,
     indoorFloorTemplate,
+    isStockFloorSize,
+    isStockStepSize,
     sameFloorSize,
     type IndoorFloorSize,
     type IndoorStepInches,
@@ -65,6 +71,81 @@ export function useFloorImage(
 const sizeKey = (size: IndoorFloorSize) =>
     `${size.depthFeet}x${size.widthFeet}`;
 
+const CUSTOM = "custom";
+
+/** Feet to one decimal place, so a 22.5-inch step's lines read "7.5 ft" */
+const roundTenth = (value: number) => Math.round(value * 10) / 10;
+
+/**
+ * A number typed in a unit, saved when the field loses focus or on Enter. A number outside
+ * `range` isn't saved; `rangeHint` says which numbers work.
+ */
+function NumberField({
+    label,
+    value,
+    unit,
+    range,
+    rangeHint,
+    onCommit,
+    testId,
+}: {
+    label: string;
+    value: number;
+    unit: string;
+    range: { min: number; max: number };
+    rangeHint: string;
+    onCommit: (value: number) => void;
+    testId: string;
+}) {
+    const id = useId();
+    const [draft, setDraft] = useState(String(value));
+    const [invalid, setInvalid] = useState(false);
+    useEffect(() => {
+        setDraft(String(value));
+        setInvalid(false);
+    }, [value]);
+
+    const commit = () => {
+        const parsed = parseFloat(draft);
+        if (isNaN(parsed) || parsed < range.min || parsed > range.max) {
+            setInvalid(true);
+            return;
+        }
+        setInvalid(false);
+        if (parsed !== value) onCommit(parsed);
+    };
+
+    return (
+        <div className="flex min-w-0 flex-col gap-4">
+            <label htmlFor={id} className="text-text-subtitle text-sub">
+                {label}
+            </label>
+            <UnitInput
+                id={id}
+                type="text"
+                inputMode="decimal"
+                unit={unit}
+                value={draft}
+                aria-invalid={invalid}
+                onChange={(e) => {
+                    const filtered = e.target.value.replace(/[^\d.]/g, "");
+                    setDraft(filtered.replace(/\.+/g, "."));
+                }}
+                onBlur={commit}
+                onKeyDown={(e) => {
+                    if (e.key === "Enter") commit();
+                }}
+                data-testid={testId}
+            />
+            {invalid && (
+                <span className="text-red text-sub" role="alert">
+                    {rangeHint}
+                </span>
+            )}
+        </div>
+    );
+}
+
 /**
  * Cards in a radio group, as the new show's other card questions draw them: arrow keys move
  * between them, the picked one is outlined in the accent color.
@@ -80,7 +161,7 @@ function OptionCards<V extends string>({
     value: V;
     options: { value: V; title: string; detail?: string }[];
     onChange: (value: V) => void;
-    columns: 2 | 4;
+    columns: 3 | 4;
     testId: string;
     labelledBy: string;
 }) {
@@ -91,7 +172,7 @@ function OptionCards<V extends string>({
             aria-labelledby={labelledBy}
             className={clsx(
                 "grid gap-8",
-                columns === 4 ? "grid-cols-4" : "grid-cols-2",
+                columns === 4 ? "grid-cols-4" : "grid-cols-3",
             )}
             data-testid={testId}
         >
@@ -141,8 +222,8 @@ function OptionCards<V extends string>({
 
 /**
  * An indoor floor for a new show, as floor makers sell them: its printed art (optional), its
- * size in feet and the grid's step size. Adding the art picks the floor size with the same
- * shape. `template` must be an indoor floor template (`indoorFloorOf`).
+ * size in feet and the grid's step size, each a stock choice or a custom number. Adding the art
+ * picks the floor size with the same shape. `template` must be an indoor floor (`indoorFloorOf`).
  */
 export default function IndoorFloorPicker({
     template,
@@ -164,18 +245,33 @@ export default function IndoorFloorPicker({
     const idPrefix = useId();
     const floor = indoorFloorOf(template)!;
     const [unreadable, setUnreadable] = useState(false);
+    // The Custom cards stay picked while a custom number happens to equal a stock one
+    const [customSize, setCustomSize] = useState(
+        () => !isStockFloorSize(floor.size),
+    );
+    const [customStep, setCustomStep] = useState(
+        () => !isStockStepSize(floor.stepInches),
+    );
 
     const sizeText = (size: IndoorFloorSize) =>
         t("fieldProperties.indoorFloor.sizeFeet", {
             depth: size.depthFeet,
             width: size.widthFeet,
         });
+    const feet = t("fieldProperties.indoorFloor.feet");
+    const inches = t("fieldProperties.units.inches");
 
     const choose = (
         size: IndoorFloorSize,
         stepInches: IndoorStepInches,
         nextImage = image,
     ) => onChange(indoorFloorTemplate(size, stepInches), nextImage);
+
+    /** Picks a size from the cards or the image, leaving the custom size behind */
+    const chooseStockSize = (size: IndoorFloorSize, nextImage = image) => {
+        setCustomSize(false);
+        choose(size, floor.stepInches, nextImage);
+    };
 
     const addImage = async () => {
         const bytes = await pickImage();
@@ -187,19 +283,48 @@ export default function IndoorFloorPicker({
         }
         setUnreadable(false);
         const match = floorSizeForImage(read.width, read.height, floor.size);
-        choose(match ?? floor.size, floor.stepInches, bytes);
+        if (match) chooseStockSize(match, bytes);
+        else choose(floor.size, floor.stepInches, bytes);
     };
 
-    const match = drawn
+    const fits = drawn
+        ? floorFitsImage(drawn.width, drawn.height, floor.size)
+        : false;
+    const stockMatch = drawn
         ? floorSizeForImage(drawn.width, drawn.height, floor.size)
         : null;
+    // With no stock floor of the image's shape, a custom one as deep as this floor
+    const shapedFloor =
+        drawn && !fits && !stockMatch
+            ? floorShapedLikeImage(drawn.width, drawn.height, floor.size)
+            : null;
+
+    let matchText: string;
+    if (fits)
+        matchText =
+            customSize || !isStockFloorSize(floor.size)
+                ? t("fieldProperties.indoorFloor.matchesCustom")
+                : t("fieldProperties.indoorFloor.matches", {
+                      size: sizeText(floor.size),
+                  });
+    else if (stockMatch)
+        matchText = t("fieldProperties.indoorFloor.shapedLike", {
+            size: sizeText(stockMatch),
+        });
+    else matchText = t("fieldProperties.indoorFloor.noMatch");
 
     const sizeLabelId = `${idPrefix}-size`;
     const stepLabelId = `${idPrefix}-step`;
     const heading = "text-body text-text font-medium";
 
+    const linesEvery = (stepInches: number) =>
+        t("fieldProperties.indoorFloor.linesEvery", {
+            feet: roundTenth((stepInches * STEPS_BETWEEN_LINES) / 12),
+            steps: STEPS_BETWEEN_LINES,
+        });
+
     return (
-        <div className="flex flex-col gap-16" data-testid="indoor-floor-picker">
+        <div className="flex flex-col gap-20" data-testid="indoor-floor-picker">
             <div className="flex flex-col gap-8">
                 <span className={heading}>
                     {t("fieldProperties.indoorFloor.image")}
@@ -209,7 +334,7 @@ export default function IndoorFloorPicker({
                         <img
                             src={drawn.href}
                             alt=""
-                            className="rounded-4 border-stroke h-48 w-auto max-w-120 shrink-0 border object-contain"
+                            className="rounded-4 border-stroke h-64 w-auto max-w-160 shrink-0 border object-contain"
                             data-testid="indoor-floor-image"
                         />
                         <div className="flex min-w-0 flex-1 flex-col gap-6">
@@ -217,36 +342,39 @@ export default function IndoorFloorPicker({
                                 className="text-text-subtitle text-sub"
                                 data-testid="indoor-floor-image-match"
                             >
-                                {match === null
-                                    ? t("fieldProperties.indoorFloor.noMatch")
-                                    : sameFloorSize(match, floor.size)
-                                      ? t(
-                                            "fieldProperties.indoorFloor.matches",
-                                            {
-                                                size: sizeText(match),
-                                            },
-                                        )
-                                      : t(
-                                            "fieldProperties.indoorFloor.shapedLike",
-                                            {
-                                                size: sizeText(match),
-                                            },
-                                        )}
+                                {matchText}
                             </span>
                             <div className="flex flex-wrap gap-8">
-                                {match && !sameFloorSize(match, floor.size) && (
+                                {stockMatch && !fits && (
                                     <Button
                                         size="compact"
                                         variant="secondary"
                                         onClick={() =>
-                                            choose(match, floor.stepInches)
+                                            chooseStockSize(stockMatch)
                                         }
                                     >
                                         {t(
                                             "fieldProperties.indoorFloor.useSize",
-                                            {
-                                                size: sizeText(match),
-                                            },
+                                            { size: sizeText(stockMatch) },
+                                        )}
+                                    </Button>
+                                )}
+                                {shapedFloor && (
+                                    <Button
+                                        size="compact"
+                                        variant="secondary"
+                                        onClick={() => {
+                                            setCustomSize(true);
+                                            choose(
+                                                shapedFloor,
+                                                floor.stepInches,
+                                            );
+                                        }}
+                                        data-testid="indoor-floor-image-shape"
+                                    >
+                                        {t(
+                                            "fieldProperties.indoorFloor.useSize",
+                                            { size: sizeText(shapedFloor) },
                                         )}
                                     </Button>
                                 )}
@@ -297,24 +425,74 @@ export default function IndoorFloorPicker({
                     {t("fieldProperties.indoorFloor.size")}
                 </span>
                 <OptionCards
-                    value={sizeKey(floor.size)}
-                    options={INDOOR_FLOOR_SIZES.map((size) => ({
-                        value: sizeKey(size),
-                        title: sizeText(size),
-                        detail: sameFloorSize(size, FULL_SIZE_FLOOR)
-                            ? t("fieldProperties.indoorFloor.fullSize")
-                            : undefined,
-                    }))}
-                    onChange={(key) =>
-                        choose(
-                            INDOOR_FLOOR_SIZES.find((s) => sizeKey(s) === key)!,
-                            floor.stepInches,
-                        )
-                    }
+                    value={customSize ? CUSTOM : sizeKey(floor.size)}
+                    options={[
+                        ...INDOOR_FLOOR_SIZES.map((size) => ({
+                            value: sizeKey(size),
+                            title: sizeText(size),
+                            detail: sameFloorSize(size, FULL_SIZE_FLOOR)
+                                ? t("fieldProperties.indoorFloor.fullSize")
+                                : undefined,
+                        })),
+                        {
+                            value: CUSTOM,
+                            title: t("fieldProperties.indoorFloor.custom"),
+                            detail: customSize
+                                ? sizeText(floor.size)
+                                : t("fieldProperties.indoorFloor.anySize"),
+                        },
+                    ]}
+                    onChange={(key) => {
+                        if (key === CUSTOM) setCustomSize(true);
+                        else
+                            chooseStockSize(
+                                INDOOR_FLOOR_SIZES.find(
+                                    (s) => sizeKey(s) === key,
+                                )!,
+                            );
+                    }}
                     columns={4}
                     testId="indoor-floor-size"
                     labelledBy={sizeLabelId}
                 />
+                {customSize && (
+                    <div className="grid grid-cols-2 gap-12">
+                        <NumberField
+                            label={t("fieldProperties.indoorFloor.depth")}
+                            value={floor.size.depthFeet}
+                            unit={feet}
+                            range={FLOOR_FEET_RANGE}
+                            rangeHint={t(
+                                "fieldProperties.indoorFloor.feetRange",
+                                FLOOR_FEET_RANGE,
+                            )}
+                            onCommit={(depthFeet) =>
+                                choose(
+                                    { ...floor.size, depthFeet },
+                                    floor.stepInches,
+                                )
+                            }
+                            testId="indoor-floor-custom-depth"
+                        />
+                        <NumberField
+                            label={t("fieldProperties.indoorFloor.width")}
+                            value={floor.size.widthFeet}
+                            unit={feet}
+                            range={FLOOR_FEET_RANGE}
+                            rangeHint={t(
+                                "fieldProperties.indoorFloor.feetRange",
+                                FLOOR_FEET_RANGE,
+                            )}
+                            onCommit={(widthFeet) =>
+                                choose(
+                                    { ...floor.size, widthFeet },
+                                    floor.stepInches,
+                                )
+                            }
+                            testId="indoor-floor-custom-width"
+                        />
+                    </div>
+                )}
             </div>
 
             <div className="flex flex-col gap-8">
@@ -322,22 +500,53 @@ export default function IndoorFloorPicker({
                     {t("fieldProperties.indoorFloor.stepSize")}
                 </span>
                 <OptionCards
-                    value={String(floor.stepInches)}
-                    options={INDOOR_STEP_SIZES.map(({ inches }) => ({
-                        value: String(inches),
-                        title: t(`fieldProperties.indoorFloor.step${inches}`),
-                        detail: t("fieldProperties.indoorFloor.linesEvery", {
-                            feet: (inches * STEPS_BETWEEN_LINES) / 12,
-                            steps: STEPS_BETWEEN_LINES,
-                        }),
-                    }))}
-                    onChange={(inches) =>
-                        choose(floor.size, Number(inches) as IndoorStepInches)
-                    }
-                    columns={2}
+                    value={customStep ? CUSTOM : String(floor.stepInches)}
+                    options={[
+                        ...INDOOR_STEP_SIZES.map((step) => ({
+                            value: String(step.inches),
+                            title: t(
+                                `fieldProperties.indoorFloor.step${step.inches}`,
+                            ),
+                            detail: linesEvery(step.inches),
+                        })),
+                        {
+                            value: CUSTOM,
+                            title: t("fieldProperties.indoorFloor.custom"),
+                            detail: customStep
+                                ? linesEvery(floor.stepInches)
+                                : t("fieldProperties.indoorFloor.anyStep"),
+                        },
+                    ]}
+                    onChange={(value) => {
+                        if (value === CUSTOM) {
+                            setCustomStep(true);
+                            return;
+                        }
+                        setCustomStep(false);
+                        choose(floor.size, Number(value));
+                    }}
+                    columns={3}
                     testId="indoor-floor-step"
                     labelledBy={stepLabelId}
                 />
+                {customStep && (
+                    <div className="grid grid-cols-2 gap-12">
+                        <NumberField
+                            label={t("fieldProperties.indoorFloor.stepLength")}
+                            value={floor.stepInches}
+                            unit={inches}
+                            range={STEP_INCHES_RANGE}
+                            rangeHint={t(
+                                "fieldProperties.indoorFloor.inchesRange",
+                                STEP_INCHES_RANGE,
+                            )}
+                            onCommit={(stepInches) =>
+                                choose(floor.size, stepInches)
+                            }
+                            testId="indoor-floor-custom-step"
+                        />
+                    </div>
+                )}
             </div>
 
             <Button

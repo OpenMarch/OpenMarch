@@ -42,7 +42,7 @@ export default function EnsembleStep({
     }, [activity, onChange]);
 
     return (
-        <div className="mx-auto flex w-full max-w-lg flex-col gap-16">
+        <div className="mx-auto flex w-full max-w-2xl flex-col gap-16">
             <WizardFormField
                 label={t("launchpage.newShow.steps.ensemble.typeLabel")}
             >

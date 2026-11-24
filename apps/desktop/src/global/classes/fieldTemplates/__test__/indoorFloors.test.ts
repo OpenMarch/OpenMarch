@@ -1,12 +1,19 @@
 // @vitest-environment node
 import { describe, it, expect } from "vitest";
+import { FieldProperties } from "@openmarch/core";
 import FieldPropertiesTemplates from "../../FieldProperties.templates";
+import GridFieldTemplates from "../GridFields";
 import {
     INDOOR_FLOOR_SIZES,
+    floorFitsImage,
+    floorShapedLikeImage,
     floorSizeForImage,
     indoorFloorOf,
     indoorFloorTemplate,
 } from "../indoorFloors";
+
+const toFeet = (pixels: number) =>
+    pixels / FieldProperties.PIXELS_PER_INCH / 12;
 
 const size = (depthFeet: number, widthFeet: number) => ({
     depthFeet,
@@ -37,6 +44,77 @@ describe("indoorFloorTemplate and indoorFloorOf", () => {
         expect(
             indoorFloorOf(FieldPropertiesTemplates.SOUNDSPORT_8to5),
         ).toBeNull();
+    });
+});
+
+describe("custom indoor floors", () => {
+    it("uses the stock template when there is one", () => {
+        expect(indoorFloorTemplate(size(60, 90), 24)).toBe(
+            GridFieldTemplates.INDOOR_60x90_8to5,
+        );
+    });
+
+    it.each([
+        { floor: size(48, 72), stepInches: 24 },
+        { floor: size(50, 85), stepInches: 30 },
+        { floor: size(60, 90), stepInches: 22.5 },
+        { floor: size(52.5, 77), stepInches: 27 },
+    ])(
+        "builds a $floor.depthFeet x $floor.widthFeet floor at $stepInches in and reads it back",
+        ({ floor, stepInches }) => {
+            const template = indoorFloorTemplate(floor, stepInches);
+            expect(template.isCustom).toBe(true);
+            expect(template.stepSizeInches).toBe(stepInches);
+            expect(toFeet(template.height)).toBeCloseTo(floor.depthFeet);
+            expect(toFeet(template.width)).toBeCloseTo(floor.widthFeet);
+            expect(indoorFloorOf(template)).toEqual({
+                size: floor,
+                stepInches,
+            });
+            // A copy, as the step size warning threshold makes, is still the same floor
+            expect(
+                indoorFloorOf(
+                    new FieldProperties({
+                        ...template,
+                        stepSizeWarningThresholdInches: 40,
+                    }),
+                ),
+            ).toEqual({ size: floor, stepInches });
+        },
+    );
+
+    it("labels lines every 4 steps, so a 22.5-inch step puts them 7.5 ft apart", () => {
+        const template = indoorFloorTemplate(size(60, 90), 22.5);
+        const lines = template.xCheckpoints
+            .filter((c) => c.visible)
+            .map((c) => c.stepsFromCenterFront)
+            .sort((a, b) => a - b);
+        expect(lines).toContain(4);
+        expect(lines).toContain(-4);
+        expect(lines.every((steps) => steps % 4 === 0)).toBe(true);
+    });
+
+    it("isn't fooled by a custom field that only has an indoor floor's name", () => {
+        const template = indoorFloorTemplate(size(48, 72), 24);
+        expect(
+            indoorFloorOf(
+                new FieldProperties({ ...template, stepSizeInches: 30 }),
+            ),
+        ).toBeNull();
+    });
+});
+
+describe("floorShapedLikeImage and floorFitsImage", () => {
+    it("keeps the depth and makes the width the image's shape", () => {
+        expect(floorShapedLikeImage(1200, 1000, size(60, 90))).toEqual(
+            size(60, 72),
+        );
+        expect(floorFitsImage(1200, 1000, size(60, 72))).toBe(true);
+        expect(floorFitsImage(1200, 1000, size(60, 90))).toBe(false);
+    });
+
+    it("gives up on a width the picker wouldn't take", () => {
+        expect(floorShapedLikeImage(5000, 1000, size(60, 90))).toBeNull();
     });
 });
 
