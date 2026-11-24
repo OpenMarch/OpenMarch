@@ -8,6 +8,7 @@
  * - `sweep`: Set order while it's on: the selected marchers, where they stand at its beat, who has
  *   been picked so far and where the pointer is. Its line redraws on the pointer's frame.
  */
+import { useEffect } from "react";
 import { create } from "zustand";
 import { db } from "@/global/database/db";
 import { subscribeHistoryChanges } from "@/db-functions/history";
@@ -51,13 +52,37 @@ interface MarcherOrderState {
     /** Whose `forms` are (`orderScopeKey`): they hold every form of those marchers */
     readonly formsScope: string | null;
     readonly sweep: OrderSweep | null;
+    /**
+     * A Follow button is pointed at or focused: the selection's order shows (guessed ones too)
+     * whatever the display bar says, so you see who will lead before you follow
+     */
+    readonly followHover: boolean;
 }
 
 export const useMarcherOrderStore = create<MarcherOrderState>(() => ({
     forms: null,
     formsScope: null,
     sweep: null,
+    followHover: false,
 }));
+
+const hoverFollow = (followHover: boolean) =>
+    useMarcherOrderStore.setState({ followHover });
+
+/**
+ * Props for what holds a Follow button: pointing at it or focusing it shows the selection's
+ * order. Going away while pointed at lets go, so the order never sticks
+ */
+export function useFollowHoverProps() {
+    useEffect(() => () => hoverFollow(false), []);
+    return FOLLOW_HOVER_PROPS;
+}
+const FOLLOW_HOVER_PROPS = {
+    onPointerEnter: () => hoverFollow(true),
+    onPointerLeave: () => hoverFollow(false),
+    onFocus: () => hoverFollow(true),
+    onBlur: () => hoverFollow(false),
+} as const;
 
 /** Whose forms the next read reads */
 let scope: OrderFormsScope = "all";

@@ -89,9 +89,12 @@ export interface UiSettings {
     shapes?: ShapeOutlines;
     /**
      * When a line's order shows on the field (pathways step 4g, Show order): for the selected
-     * marchers, every line whose order holds, or never. Same choices as `shapes`
+     * marchers, every line whose order holds, or never. Same choices as `shapes`. Off by default:
+     * the order still shows while Follow is pointed at or open, while Set order is on, and while
+     * Alt is held. Was `marcherOrder` (default While selected), left behind so the new default
+     * reaches everyone
      */
-    marcherOrder?: ShapeOutlines;
+    lineOrder?: ShapeOutlines;
     /**
      * Whether an open shape shows its walks and start rings (#403): the floating editor's
      * Pathways toggle. Off by default.
@@ -189,7 +192,7 @@ export const defaultSettings: UiSettings = {
     },
     marcherLabels: "auto",
     shapes: "selected",
-    marcherOrder: "selected",
+    lineOrder: "off",
     shapeWalks: false,
     followTheLeader: false,
     fieldVenue: "off",

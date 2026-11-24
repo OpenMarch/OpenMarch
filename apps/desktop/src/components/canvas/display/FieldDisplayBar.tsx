@@ -104,8 +104,8 @@ export default function FieldDisplayBar() {
                         Follow-the-leader on (#1095) */}
                     {followTheLeader && (
                         <ChoiceButton
-                            setting="marcherOrder"
-                            fallback="selected"
+                            setting="lineOrder"
+                            fallback="off"
                             choices={ORDER_CHOICES}
                             icon={ListNumbersIcon}
                             labelKey="toolbar.view.order"
@@ -129,7 +129,7 @@ interface Choice<T extends string> {
  * choices beside the bar as radio buttons, dimmed while the setting is off. Picking one closes
  * them, as the View tab's select did.
  */
-function ChoiceButton<K extends "marcherLabels" | "shapes" | "marcherOrder">({
+function ChoiceButton<K extends "marcherLabels" | "shapes" | "lineOrder">({
     setting,
     fallback,
     choices,

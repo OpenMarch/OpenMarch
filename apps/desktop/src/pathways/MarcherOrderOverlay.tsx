@@ -6,16 +6,21 @@
  * on a white field), a faint rim, and a halo round each of its dots in the tone that sets that dot's
  * color apart. The fade is multiplied onto the field, so it reads as ink. An order that runs back over its own
  * marchers loses the tip and shows its numbers; one whose legs cross thins to a thread with darts and
- * shows its numbers. A guessed order isn't drawn at rest; while Alt is held it shows hollow and
+ * shows its numbers.
+ *
+ * When it shows: the display bar's Order (off by default; While selected, Always), and for a moment
+ * the selection's order while Follow is pointed at or open (who will lead), while Alt is held, and
+ * while Set order is on. A guessed order isn't drawn at rest; Alt and Follow show it hollow and
  * dashed. Position badges show while Alt is held, and always while Set order is on (touch has no
  * Alt). Set order draws the lane it has picked so far, growing behind the pointer, with the bar that
- * says how to go on and keeps or cancels it.
+ * says how to go on and keeps or cancels it. The selection box stands clear of the lane only when
+ * the display bar shows it, so a peek never moves the box.
  *
  * The forms are read once per edit (`followOrderForms`), the selection's only unless Always shows
  * every line; what's drawn follows the camera and where the lines' marchers are drawn
  * (`FieldMarchers`), so it's worked out again only when either changes. It sits over the selection
- * box and its handles, takes no presses, and hides while the Follow tool or a shape tool is open
- * (they draw their own ends).
+ * box and its handles, takes no presses, and hides while a shape tool is open (it draws its own
+ * ends) and while Follow drags a trail (the line walks it).
  */
 import {
     memo,
@@ -460,9 +465,7 @@ export default function MarcherOrderOverlay({
     /** The marchers' name labels as drawn; none: the line doesn't keep clear of them */
     labels?: OrderLabels;
 }) {
-    const setting = useUiSettingsStore(
-        (s) => s.uiSettings.marcherOrder ?? "selected",
-    );
+    const setting = useUiSettingsStore((s) => s.uiSettings.lineOrder ?? "off");
     const isPlaying = useIsPlaying()?.isPlaying ?? false;
     const sweep = useMarcherOrderStore((s) => s.sweep);
     const forms = useMarcherOrderStore((s) => s.forms);
@@ -476,19 +479,33 @@ export default function MarcherOrderOverlay({
     );
     const beat = useTimelineSelectionStore(fieldBeat);
     const always = setting === "always";
-    // The Follow tool draws its own ends, and a shape tool its own; the order waits till they close
+    // Follow shows who leads: pointed at (its toolbar button or the path bar's choice) and open.
+    // While a trail is dragged the Follow tool walks the line itself, so the order steps aside
+    const followHover = useMarcherOrderStore((s) => s.followHover);
     const followOpen = usePathPenStore(
         (s) => !!s.session?.follow && s.session.phase !== "closed",
     );
+    const followDragging = usePathPenStore(
+        (s) =>
+            !!s.session?.follow &&
+            s.session.phase !== "closed" &&
+            s.session.follow.grabbed !== null,
+    );
+    // A shape tool draws its own ends; the order waits till it closes
     const shapeOpen = useShapeToolStore((s) => s.tool !== null);
+    const clear = !isPlaying && !shapeOpen && !followDragging;
+    // Alt peeks at the selection's order (with its numbers) whatever the display bar says
+    const alt = useAltHeld(clear && (always || ids.length >= 2));
+    // Shown for a moment, not by the display bar: the selection's order only
+    const peek = ids.length >= 2 && (followHover || followOpen || alt);
+    // The display bar's choice, which the selection box stands clear of (step 4j)
+    const atRest = setting !== "off" && (always || ids.length >= 2);
     // Set order on has the field, so it shows over either (opening it closes them)
     const showing =
-        !isPlaying &&
-        (sweep !== null ||
-            (!followOpen &&
-                !shapeOpen &&
-                setting !== "off" &&
-                (always || ids.length >= 2)));
+        !isPlaying && (sweep !== null || (clear && (atRest || peek)));
+    // A guessed order isn't drawn at rest; Alt and Follow show it, hollow and dashed (Follow
+    // will take it)
+    const showGuessed = alt || followHover || followOpen;
 
     // The forms, read while anything shows the order: the selection's, or everyone's for Always
     const key = ids.join(",");
@@ -518,7 +535,6 @@ export default function MarcherOrderOverlay({
             }),
         ),
     );
-    const alt = useAltHeld(showing);
 
     // The lines in force (Always) follow the forms and the beat, never a fill
     const inForce = useMemo(
@@ -656,8 +672,8 @@ export default function MarcherOrderOverlay({
                 }),
             ];
         }
-        // A guessed order isn't drawn at rest; Alt shows it, hollow and dashed
-        const shown = lines.filter((line) => !line.guessed || alt);
+        // A guessed order isn't drawn at rest; Alt and Follow show it, hollow and dashed
+        const shown = lines.filter((line) => !line.guessed || showGuessed);
         const pointsOf = shown.map((line) =>
             line.order.flatMap((id) => {
                 const p = linesAt.get(id);
@@ -705,6 +721,7 @@ export default function MarcherOrderOverlay({
         dotRadius,
         reach,
         alt,
+        showGuessed,
         everyone,
         labels,
         labelBox,
@@ -716,9 +733,16 @@ export default function MarcherOrderOverlay({
     const cover = useMemo((): FieldRect | null => {
         // Only the selection's own line, and only when it's known: a guess isn't drawn at rest, and
         // Always's other lines the selection is only part of keep today's box
-        if (!showing || sweep || ids.length < 2 || !own || own.guessed)
+        if (
+            !showing ||
+            !atRest ||
+            sweep ||
+            ids.length < 2 ||
+            !own ||
+            own.guessed
+        )
             return null;
-        const shownLines = lines.filter((line) => !line.guessed || alt);
+        const shownLines = lines.filter((line) => !line.guessed || showGuessed);
         const l = shownLines.findIndex(
             (line) =>
                 !line.guessed &&
@@ -747,7 +771,19 @@ export default function MarcherOrderOverlay({
             bottom: (b.maxY + SELECTION_CLEARANCE) / zoom,
         };
         return Object.values(rect).every(Number.isFinite) ? rect : null;
-    }, [showing, sweep, ids, own, lines, alt, drawn, linesAt, labelBox, zoom]);
+    }, [
+        showing,
+        atRest,
+        sweep,
+        ids,
+        own,
+        lines,
+        showGuessed,
+        drawn,
+        linesAt,
+        labelBox,
+        zoom,
+    ]);
     // Before paint, so the box drawn this frame stands round this frame's lane
     useLayoutEffect(() => setSelectionCover(cover), [cover]);
     useEffect(() => () => setSelectionCover(null), []);
