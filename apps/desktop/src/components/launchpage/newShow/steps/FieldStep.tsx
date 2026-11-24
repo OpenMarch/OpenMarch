@@ -97,17 +97,74 @@ export default function FieldStep({
         onChange({ template, isCustom: template.isCustom ?? false, image });
     };
 
-    return (
-        // Choices on the left; the preview stays in view beside them on a wide screen
-        <div className="grid w-full gap-24 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
-            <div className="flex min-w-0 flex-col gap-16">
-                {onEnsembleChange && (
-                    <ActivityPicker
-                        ensemble={ensemble}
-                        onChange={onEnsembleChange}
-                    />
-                )}
-                {showFloorPicker ? (
+    const activityPicker = onEnsembleChange && (
+        <ActivityPicker ensemble={ensemble} onChange={onEnsembleChange} />
+    );
+
+    const backToFloors = indoor && (
+        <Button
+            size="compact"
+            variant="secondary"
+            className="self-start"
+            onClick={() => {
+                setAllFields(false);
+                if (indoorFloorOf(currentTemplate) === null)
+                    handleTemplateChange(defaultTemplate);
+            }}
+            data-testid="indoor-floor-back"
+        >
+            <T keyName="fieldProperties.indoorFloor.backToFloors" />
+        </Button>
+    );
+
+    const preview = (previewHeight: string) => (
+        <div className="flex flex-col gap-8">
+            <span className="text-body text-text font-medium">
+                <T keyName="launchpage.files.fieldPreview" />
+            </span>
+            <FieldPreview
+                fieldProperties={currentTemplate}
+                image={drawnImage ?? undefined}
+                className={previewHeight}
+            />
+        </div>
+    );
+
+    const threshold = (
+        <div className="flex flex-col gap-8">
+            <span className="text-body text-text font-medium">
+                {t("fieldProperties.labels.stepSizeWarningThreshold")}
+            </span>
+            <UnitInput
+                type="text"
+                inputMode="numeric"
+                pattern="[0-9]*\.?[0-9]*"
+                unit={
+                    currentTemplate.measurementSystem === "imperial"
+                        ? t("fieldProperties.units.inches")
+                        : t("fieldProperties.units.centimeters")
+                }
+                onBlur={(e) => {
+                    if (e.target.value === "") return;
+                    const parsed = parseFloat(e.target.value);
+                    if (!isNaN(parsed)) handleThresholdChange(parsed);
+                }}
+                onChange={(e) => {
+                    const filtered = e.target.value.replace(/[^\d.]/g, "");
+                    e.target.value = filtered.replace(/\.+/g, ".");
+                }}
+                defaultValue={currentTemplate.stepSizeWarningThresholdInUnits}
+                key={currentTemplate.name}
+            />
+        </div>
+    );
+
+    if (showFloorPicker)
+        return (
+            // The floor's choices on the left; the preview stays in view beside them
+            <div className="grid w-full gap-24 lg:grid-cols-[minmax(0,1fr)_minmax(0,24rem)]">
+                <div className="flex min-w-0 flex-col gap-16">
+                    {activityPicker}
                     <IndoorFloorPicker
                         template={currentTemplate}
                         image={image}
@@ -115,75 +172,32 @@ export default function FieldStep({
                         onChange={handleTemplateChange}
                         onOtherFields={() => setAllFields(true)}
                     />
-                ) : (
-                    <div className="flex flex-col gap-8">
-                        <FieldPropertiesSelector
-                            currentTemplate={currentTemplate}
-                            onTemplateChange={(template) =>
-                                handleTemplateChange(template)
-                            }
-                        />
-                        {indoor && (
-                            <Button
-                                size="compact"
-                                variant="secondary"
-                                className="self-start"
-                                onClick={() => {
-                                    setAllFields(false);
-                                    if (indoorFloorOf(currentTemplate) === null)
-                                        handleTemplateChange(defaultTemplate);
-                                }}
-                                data-testid="indoor-floor-back"
-                            >
-                                <T keyName="fieldProperties.indoorFloor.backToFloors" />
-                            </Button>
-                        )}
-                    </div>
-                )}
-            </div>
-            <div className="flex min-w-0 flex-col gap-16 lg:sticky lg:top-0 lg:self-start">
-                <div className="flex flex-col gap-8">
-                    <span className="text-body text-text font-medium">
-                        <T keyName="launchpage.files.fieldPreview" />
-                    </span>
-                    <FieldPreview
-                        fieldProperties={currentTemplate}
-                        image={drawnImage ?? undefined}
-                        className="h-[260px]"
-                    />
                 </div>
-                <div className="flex flex-col gap-8">
-                    <span className="text-body text-text font-medium">
-                        {t("fieldProperties.labels.stepSizeWarningThreshold")}
-                    </span>
-                    <UnitInput
-                        type="text"
-                        inputMode="numeric"
-                        pattern="[0-9]*\.?[0-9]*"
-                        unit={
-                            currentTemplate.measurementSystem === "imperial"
-                                ? t("fieldProperties.units.inches")
-                                : t("fieldProperties.units.centimeters")
-                        }
-                        onBlur={(e) => {
-                            if (e.target.value === "") return;
-                            const parsed = parseFloat(e.target.value);
-                            if (!isNaN(parsed)) handleThresholdChange(parsed);
-                        }}
-                        onChange={(e) => {
-                            const filtered = e.target.value.replace(
-                                /[^\d.]/g,
-                                "",
-                            );
-                            e.target.value = filtered.replace(/\.+/g, ".");
-                        }}
-                        defaultValue={
-                            currentTemplate.stepSizeWarningThresholdInUnits
-                        }
-                        key={currentTemplate.name}
-                    />
+                <div className="flex min-w-0 flex-col gap-16 lg:sticky lg:top-0 lg:self-start">
+                    {preview("h-[260px]")}
+                    {threshold}
                 </div>
             </div>
+        );
+
+    // Two dropdowns side by side, then the field large below them
+    return (
+        <div className="flex w-full flex-col gap-24">
+            <div className="grid gap-24 sm:grid-cols-2">
+                {activityPicker}
+                <div className="flex min-w-0 flex-col gap-8">
+                    <FieldPropertiesSelector
+                        currentTemplate={currentTemplate}
+                        onTemplateChange={(template) =>
+                            handleTemplateChange(template)
+                        }
+                        stackedLabel
+                    />
+                    {backToFloors}
+                </div>
+            </div>
+            {preview("h-[340px]")}
+            <div className="max-w-xs">{threshold}</div>
         </div>
     );
 }
