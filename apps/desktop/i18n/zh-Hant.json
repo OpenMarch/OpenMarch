@@ -968,10 +968,6 @@
                     "title": "團體類型",
                     "typeLabel": "團體類型"
                 },
-                "field": {
-                    "description": "為你的表演選擇場地範本。",
-                    "title": "場地設定"
-                },
                 "performers": {
                     "description": "立即加入隊員，或略過並稍後在編輯器中加入。",
                     "noneAdded": "尚未加入任何隊員。",

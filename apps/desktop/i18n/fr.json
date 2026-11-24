@@ -976,10 +976,6 @@
                     "title": "Activité",
                     "typeLabel": "Activité"
                 },
-                "field": {
-                    "description": "Choisissez un modèle de terrain pour votre spectacle.",
-                    "title": "Configuration du terrain"
-                },
                 "performers": {
                     "description": "Ajoutez des marcheurs maintenant, ou passez cette étape et ajoutez-les plus tard dans l’éditeur.",
                     "noneAdded": "Aucun marcheur ajouté pour l’instant.",

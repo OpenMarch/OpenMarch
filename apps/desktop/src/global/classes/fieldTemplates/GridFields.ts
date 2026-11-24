@@ -1,10 +1,20 @@
 import { Checkpoint, FieldProperties } from "@openmarch/core";
 
+// Indoor floors, named depth x width in feet. 60x90 is WGI's minimum
+// competition area and the usual full-size floor; the rest are common
+// stock floor sizes from floor makers.
 const GridFieldTemplates = {
     INDOOR_40x60_8to5: new FieldProperties({
         name: "Indoor 40x60 - 24-inch steps",
         xCheckpoints: createGridXCheckpoints({ xSteps: 30 }),
         yCheckpoints: createGridYCheckpoints({ ySteps: 20 }),
+        stepSizeInches: 24,
+        isCustom: false,
+    }),
+    INDOOR_45x90_8to5: new FieldProperties({
+        name: "Indoor 45x90 - 24-inch steps",
+        xCheckpoints: createGridXCheckpoints({ xSteps: 45 }),
+        yCheckpoints: createGridYCheckpoints({ ySteps: 22.5 }),
         stepSizeInches: 24,
         isCustom: false,
     }),
@@ -29,10 +39,31 @@ const GridFieldTemplates = {
         stepSizeInches: 24,
         isCustom: false,
     }),
+    INDOOR_55x80_8to5: new FieldProperties({
+        name: "Indoor 55x80 - 24-inch steps",
+        xCheckpoints: createGridXCheckpoints({ xSteps: 40 }),
+        yCheckpoints: createGridYCheckpoints({ ySteps: 27.5 }),
+        stepSizeInches: 24,
+        isCustom: false,
+    }),
+    INDOOR_60x90_8to5: new FieldProperties({
+        name: "Indoor 60x90 - 24-inch steps",
+        xCheckpoints: createGridXCheckpoints({ xSteps: 45 }),
+        yCheckpoints: createGridYCheckpoints({ ySteps: 30 }),
+        stepSizeInches: 24,
+        isCustom: false,
+    }),
     INDOOR_40x60_6to5: new FieldProperties({
         name: "Indoor 40x60 - 6 to 5 Steps",
         xCheckpoints: createGridXCheckpoints({ xSteps: 24 }),
         yCheckpoints: createGridYCheckpoints({ ySteps: 16 }),
+        stepSizeInches: 30,
+        isCustom: false,
+    }),
+    INDOOR_45x90_6to5: new FieldProperties({
+        name: "Indoor 45x90 - 6 to 5 Steps",
+        xCheckpoints: createGridXCheckpoints({ xSteps: 36 }),
+        yCheckpoints: createGridYCheckpoints({ ySteps: 18 }),
         stepSizeInches: 30,
         isCustom: false,
     }),
@@ -54,6 +85,20 @@ const GridFieldTemplates = {
         name: "Indoor 50x90 - 6 to 5 Steps",
         xCheckpoints: createGridXCheckpoints({ xSteps: 36 }),
         yCheckpoints: createGridYCheckpoints({ ySteps: 20 }),
+        stepSizeInches: 30,
+        isCustom: false,
+    }),
+    INDOOR_55x80_6to5: new FieldProperties({
+        name: "Indoor 55x80 - 6 to 5 Steps",
+        xCheckpoints: createGridXCheckpoints({ xSteps: 32 }),
+        yCheckpoints: createGridYCheckpoints({ ySteps: 22 }),
+        stepSizeInches: 30,
+        isCustom: false,
+    }),
+    INDOOR_60x90_6to5: new FieldProperties({
+        name: "Indoor 60x90 - 6 to 5 Steps",
+        xCheckpoints: createGridXCheckpoints({ xSteps: 36 }),
+        yCheckpoints: createGridYCheckpoints({ ySteps: 24 }),
         stepSizeInches: 30,
         isCustom: false,
     }),

@@ -976,10 +976,6 @@
                     "title": "Modalidade",
                     "typeLabel": "Modalidade"
                 },
-                "field": {
-                    "description": "Escolha um modelo de campo para o seu show.",
-                    "title": "Configuração do campo"
-                },
                 "performers": {
                     "description": "Adicione os integrantes agora ou pule e adicione-os mais tarde no editor.",
                     "noneAdded": "Nenhum integrante adicionado ainda.",

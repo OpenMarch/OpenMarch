@@ -11,7 +11,7 @@ import { touchSafeAccept } from "@/utilities/fileAccept";
 import type { FieldSettingsPatch } from "@/field/edits";
 
 /** Asks for an image file; resolves with its bytes, or null when none was picked */
-function pickImage(): Promise<Uint8Array | null> {
+export function pickImage(): Promise<Uint8Array | null> {
     return new Promise((resolve) => {
         const input = document.createElement("input");
         input.type = "file";
