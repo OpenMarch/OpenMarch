@@ -7,14 +7,17 @@
  * - A lasting cue is a bar to the performer's next cue, a momentary one a rounded pill; the
  *   section's usual (not a cue) is a dashed bar.
  * - Click a cue to pick it: the cue commands (Add selected to this cue, Remove selected from this
- *   cue, lasting or momentary, Move cue to playhead, Delete cue) act on it. Right-click or
- *   long-press a cue for its menu.
+ *   cue, lasting or momentary, Move cue to playhead, Delete cue) act on it. The click also selects
+ *   the cue's counts, as a click on a move's clip selects the move's: the start flag to its start,
+ *   the playhead to its end. Right-click or long-press a cue for its menu.
  * - Drag a cue sideways to move it to another count, as a move's clip moves: whole beats, pulled to
  *   page lines (Alt drags free of them). Drag a momentary cue's end to change its length. Each drag
  *   is one undo step, and a cue whose performers span several rows moves in all of them.
  * - Click a row's name to select its performers.
- * - Presses stay in the lane: the timeline under it doesn't scrub or select. Cue bars and grips are
- *   timeline controls (`data-timeline-interactive`), so a finger drags them rather than panning.
+ * - A press on empty lane space (or a dashed usual bar) is the timeline's, as on the audio lane: a
+ *   click moves the playhead there, a drag scrubs. Presses on cues, the lane's name and its buttons
+ *   stay in the lane. Cue bars and grips are timeline controls (`data-timeline-interactive`), so a
+ *   finger drags them rather than panning, and a finger's tap on empty space seeks.
  */
 import {
     useMemo,
@@ -309,7 +312,8 @@ export function EquipmentLaneView({
      * past the slop it drags, pulled to page flags and measures (Alt: any count), and on release it
      * writes the new start or length as one undo step, its performers winning where it lands. The
      * end edge of a lasting cue makes it momentary; dragged back to the row's next cue it lasts
-     * again. Short of the slop it's a click, which only picks the cue.
+     * again. Short of the slop it's a click: it picks the cue and selects its counts, as a click
+     * on a move's clip does (not with Ctrl or Cmd, which a clip leaves to the range and the menu).
      */
     const startDrag = (
         e: ReactPointerEvent<HTMLElement>,
@@ -424,6 +428,13 @@ export function EquipmentLaneView({
             window.removeEventListener("pointermove", onMove);
             window.removeEventListener("pointerup", onUp);
             window.removeEventListener("pointercancel", onCancel);
+            if (commit && !dragging && !e.ctrlKey && !e.metaKey)
+                geometry.onSelectRange?.({
+                    startBeatIndex: axis.toView(at),
+                    endBeatIndex: axis.toView(
+                        span.length === null ? until : at + span.length,
+                    ),
+                });
             const plan = dragging && commit ? planned() : null;
             if (!plan) {
                 setDrag(null);
@@ -452,10 +463,18 @@ export function EquipmentLaneView({
             data-testid="equipment-lane"
             className="border-stroke absolute left-0 border-t"
             style={{ top: geometry.top, width: geometry.width, height }}
-            // The timeline under the lane neither scrubs nor selects on a press here
+            // A press on empty lane space goes on to the timeline, which moves the playhead or
+            // scrubs as on the audio lane; the lane's name and buttons keep theirs (cues stop
+            // their own)
             onPointerDown={(e) => {
-                e.stopPropagation();
                 if (e.target === e.currentTarget) pick(null);
+                if (
+                    e.target instanceof Element &&
+                    e.target.closest(
+                        '[data-testid="equipment-lane-header"], button',
+                    )
+                )
+                    e.stopPropagation();
             }}
             onDoubleClick={(e) => e.stopPropagation()}
             onContextMenu={(e) => {
@@ -792,8 +811,9 @@ function Piece({
                       },
                   })}
             onPointerDown={(e) => {
-                e.stopPropagation();
+                // A dashed usual bar is empty lane space: its press is the timeline's
                 if (!isCue) return;
+                e.stopPropagation();
                 onPress(e, "move");
                 longPress.start(e);
             }}

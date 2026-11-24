@@ -1,4 +1,5 @@
 import { act, cleanup, fireEvent, render } from "@testing-library/react";
+import type { ReactNode } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TolgeeProvider } from "@tolgee/react";
 import {
@@ -23,6 +24,8 @@ import {
     registerActionHandler,
 } from "@/shortcuts/registry";
 import { EquipmentLaneView } from "../EquipmentLane";
+import { useTimelinePointer } from "../../TimelinePrimitives";
+import type { TimelineBeatRange } from "../../TimelineViewModel";
 
 // The edits a drag writes, instead of the database
 const written: CueEdit[] = [];
@@ -80,7 +83,39 @@ const spec = (count: number) => count + 1;
 const pageBeats = [0, spec(8), spec(16), spec(24), spec(32), spec(40)];
 const downbeats = Array.from({ length: 12 }, (_, m) => spec(m * 4));
 
-function renderLane(cues: DatabaseCue[]) {
+const snapBeats = [...new Set([...pageBeats, ...downbeats])];
+/** The timeline's pointer surface around the lanes: its click and scrub, as on the audio lane */
+function Surface({
+    onSeek,
+    children,
+}: {
+    onSeek: (beat: number) => void;
+    children: ReactNode;
+}) {
+    const pointer = useTimelinePointer({
+        onSeek,
+        pixelsPerBeat: PPB,
+        beatCount: beats.length,
+        seekSnapBeats: snapBeats,
+        snapBeats: pageBeats,
+    });
+    return (
+        <div
+            data-testid="timeline-pointer-surface"
+            {...pointer.pointerHandlers}
+        >
+            {children}
+        </div>
+    );
+}
+
+function renderLane(
+    cues: DatabaseCue[],
+    timeline: {
+        onSeek?: (beat: number) => void;
+        onSelectRange?: (range: TimelineBeatRange) => void;
+    } = {},
+) {
     const compiled = compileShowCues(marchers, beats, cues);
     const show = { ...compiled, cues, marchers };
     const lane = equipmentLane({
@@ -91,23 +126,26 @@ function renderLane(cues: DatabaseCue[]) {
     const view = render(
         <TolgeeProvider tolgee={tolgee}>
             <QueryClientProvider client={new QueryClient()}>
-                <EquipmentLaneView
-                    geometry={{
-                        top: 0,
-                        width: 2000,
-                        pixelsPerBeat: PPB,
-                        beatCount: beats.length,
-                        // What the timeline hands the lanes: page flags and downbeats together
-                        snapBeats: [...new Set([...pageBeats, ...downbeats])],
-                        pageBeats,
-                        downbeats,
-                        leadingInset: 0,
-                    }}
-                    lane={lane}
-                    show={show}
-                    beats={beats}
-                    folded={false}
-                />
+                <Surface onSeek={timeline.onSeek ?? (() => {})}>
+                    <EquipmentLaneView
+                        geometry={{
+                            top: 0,
+                            width: 2000,
+                            pixelsPerBeat: PPB,
+                            beatCount: beats.length,
+                            // What the timeline hands the lanes: page flags and downbeats together
+                            snapBeats,
+                            pageBeats,
+                            downbeats,
+                            leadingInset: 0,
+                            onSelectRange: timeline.onSelectRange,
+                        }}
+                        lane={lane}
+                        show={show}
+                        beats={beats}
+                        folded={false}
+                    />
+                </Surface>
             </QueryClientProvider>
         </TolgeeProvider>,
     );
@@ -270,5 +308,69 @@ describe("right-clicking a cue bar (#992 follow-up)", () => {
         } finally {
             unregister();
         }
+    });
+});
+
+describe("clicking in the Equipment lane (#1288 follow-up)", () => {
+    const mouse = { pointerId: 1, pointerType: "mouse", button: 0 };
+    /** A press and release at `clientX` without moving, as a click */
+    async function clickAt(target: Element, clientX: number) {
+        await act(async () => {
+            fireEvent.pointerDown(target, { ...mouse, clientX });
+        });
+        await act(async () => {
+            fireEvent.pointerUp(target, { ...mouse, clientX });
+            fireEvent.pointerUp(window, { ...mouse, clientX });
+        });
+    }
+
+    it("a click on empty lane space moves the playhead there, as on the audio lane", async () => {
+        const onSeek = vi.fn();
+        const { container } = renderLane(
+            [cue(1, 4, "rifle"), cue(2, 40, "flag")],
+            { onSeek },
+        );
+        const row = container.querySelector(
+            '[data-testid="equipment-lane-row"]',
+        )!;
+        // The timeline's own beats (view beats: count c is view beat c), 3 counts from any line
+        await clickAt(row, 23 * PPB);
+        expect(onSeek).toHaveBeenCalled();
+        expect(onSeek.mock.calls.at(-1)?.[0]).toBe(23);
+    });
+
+    it("a drag on a bar's edge doesn't move the playhead", async () => {
+        const onSeek = vi.fn();
+        const onSelectRange = vi.fn();
+        const { container } = renderLane(
+            [cue(1, 4, "rifle"), cue(2, 12, "flag")],
+            { onSeek, onSelectRange },
+        );
+        await dragBy(edge(container, 1, "end"), -32);
+        expect(written.length).toBe(1);
+        expect(onSeek).not.toHaveBeenCalled();
+        expect(onSelectRange).not.toHaveBeenCalled();
+    });
+
+    it("a click on a bar picks it and selects its counts, as a click on a move's clip does", async () => {
+        const onSeek = vi.fn();
+        const onSelectRange = vi.fn();
+        const { container } = renderLane(
+            [cue(1, 4, "rifle"), cue(2, 12, "flag")],
+            { onSeek, onSelectRange },
+        );
+        const rifle = container.querySelector(
+            '[data-testid="equipment-lane-cue"][data-cue-id="1"]',
+        )!;
+        await clickAt(rifle, spec(6) * PPB);
+        expect(useCueSelectionStore.getState().cueId).toBe(1);
+        // The Rifle runs from count 4 to the Flag on count 12, in the timeline's beats (view
+        // beats, where its bar is drawn)
+        expect(onSelectRange).toHaveBeenCalledWith({
+            startBeatIndex: 4,
+            endBeatIndex: 12,
+        });
+        expect(onSeek).not.toHaveBeenCalled();
+        expect(written).toEqual([]);
     });
 });

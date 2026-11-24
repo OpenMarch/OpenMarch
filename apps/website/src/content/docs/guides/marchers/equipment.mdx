@@ -145,6 +145,8 @@ The Equipment lane appears under the moves as soon as the show has an equipment 
 
 - Performers who share the same changes share a row, named after who they are ("Rifles", "Color Guard", "G6–G10"). When everyone changes together the lane is one row; it gets a row for each group that differs. Performers who never change aren't in the lane.
 - A change that lasts is a bar up to that performer's next change. A change for a few counts is a rounded bar. A dashed bar is their own instrument before any change.
+- Click empty space in the lane to move the playhead there, as on the music, or drag across it to scrub. On a tablet, tap it.
+- Click a bar to pick its change. As when you click a move's bar, that also selects its counts: the start flag goes to where the change starts, and the playhead to where it ends.
 - Click a row's name to select its performers.
 - Click the arrow by <Ui k="cues.lane.equipment" plain /> (<Ui k="cues.lane.collapseRows" plain />) to collapse the lane into one row that shows how many performers hold each thing over the show, with a diamond where each change happens. Click a diamond to pick its change, or right-click it (press and hold on a tablet) for the same menu as its bar. Click the arrow again (<Ui k="cues.lane.expandRows" plain />) to see the rows.
 - Click the eye-slash button by the lane's name to hide it, or right-click the name and choose <Ui k="cues.lane.hideNamed" values={{ lane: "Equipment" }} plain />. Tick it in the <Ui k="cues.lane.lanes" plain /> list to bring it back.
@@ -154,8 +156,8 @@ The Equipment lane appears under the moves as soon as the show has an equipment 
 - **Move it:** drag its bar sideways. It moves in whole counts, as far as you drag it. Close to a page's flag or the playhead it lands on it, and very close to the start of a measure it lands there; hold <Kbd keys="Alt" gesture="drag" /> to turn that off (it still moves in whole counts). A change made for performers in several rows moves in all of them, since it's one cue. On its new count it replaces any other change made the same way for those performers, and a change to the same item there becomes part of it.
 - **Change where it ends:** drag the bar's right edge, as you would a move's. On a change for a few counts (a rounded bar), that changes how many. On a change that lasts until the next one, it makes it a change for that many counts, after which the performers go back to what they held before; drag it back to the next change for them and it lasts again. It ends at least a count after it starts. The edge lands where you let go, and on page flags, the playhead and measures as when moving it, as a move's edges do. Where the playhead or the start flag crosses a bar, the bar's edge still takes your press.
 - **Change where it starts:** drag the bar's left edge. Where it ends stays put.
-- **Without dragging:** move the playhead to the new count, then choose <Ui k="actions.cues.moveToPlayhead" /> or <Ui k="actions.cues.endAtPlayhead" /> from the bar's menu or the command palette. They replace and join changes on that count the same way.
-- **On a tablet**, tap the bar to pick it: its edges then take a finger, as a picked move's do. The menu commands work too.
+- **Without dragging:** move the playhead to the new count, then right-click the bar and choose <Ui k="actions.cues.moveToPlayhead" /> or <Ui k="actions.cues.endAtPlayhead" />. Right-clicking leaves the playhead where it is; clicking the bar would move it to the bar's end. With the bar already picked, the command palette has them too. They replace and join changes on that count the same way.
+- **On a tablet**, tap the bar to pick it: its edges then take a finger, as a picked move's do. The tap selects its counts, as a click does. The menu commands work too (press and hold the bar).
 
 <Media
   id="marchers-equipment-drag"
@@ -173,7 +175,7 @@ Each drag is one step of undo (<Kbd action="performUndo" />). None of them works
 
 <Steps>
 
-1. Click the cue's bar in the Equipment lane to pick it. It gets an outline. With no bar picked, the commands below act on the Equipment cue on the playhead's count, if there's exactly one there.
+1. Click the cue's bar in the Equipment lane to pick it. It gets an outline, and its counts are selected. With no bar picked, the commands below act on the Equipment cue on the playhead's count, if there's exactly one there.
 2. Select the performers to add or take out.
 3. Choose <Ui k="actions.cues.addSelected" /> or <Ui k="actions.cues.removeSelected" /> from the bar's menu (right-click it, or press and hold it on a tablet: that picks it too), or from the field's right-click menu, where they show while there's a cue to change.
 

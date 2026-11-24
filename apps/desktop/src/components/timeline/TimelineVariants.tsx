@@ -1368,6 +1368,9 @@ const TimelineSurface = memo(function TimelineSurface({
                             pageBeats: basic ? seekSnapBeats : snapBeats,
                             downbeats: measureDownbeats,
                             leadingInset: initialPageWidth,
+                            // A click on a cue's bar selects its counts, as a clip's click does
+                            // (Basic has no clips and selects no ranges)
+                            onSelectRange: basic ? undefined : commitSelection,
                         })}
                     </div>
                     {/* The clips dropping out of a page box (`useClipDrops`), over the pinned
