@@ -59,7 +59,10 @@ export function ActivityPicker({ ensemble, onChange }: EnsembleStepProps) {
                     onChange({ activity: next });
                 }}
             >
-                <SelectTriggerButton label={activityLabel(activity)} />
+                <SelectTriggerButton
+                    label={activityLabel(activity)}
+                    className="w-full"
+                />
                 <SelectContent>
                     {ACTIVITY_LABELS.map((label) => (
                         <SelectItem key={label} value={label}>

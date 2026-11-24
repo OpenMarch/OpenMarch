@@ -113,6 +113,8 @@ export default function FieldPropertiesSelector({
                     fieldProperties?.name ||
                     t("fieldProperties.fieldType.label")
                 }
+                // In the wizard it fills its column, as the activity beside it does
+                className={stackedLabel ? "w-full" : undefined}
             />
             <SelectContent>
                 <SelectGroup>
