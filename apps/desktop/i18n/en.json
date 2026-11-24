@@ -283,6 +283,13 @@
             "edit": "Edit selected prop or equipment",
             "editNamed": "Edit {name}",
             "editKeywords": "edit settings properties prop equipment podium instrument name size lock",
+            "unlock": "Unlock selected prop or equipment",
+            "unlockNamed": "Unlock {name}",
+            "lock": "Lock selected prop or equipment",
+            "lockNamed": "Lock {name}",
+            "lockKeywords": "lock unlock prop equipment pit protect keep select move",
+            "resize": "Resize and turn",
+            "resizeKeywords": "resize turn rotate size scale handles prop equipment",
             "importModel": "Import a 3D model…",
             "importModelKeywords": "import 3d model glb gltf prop upload file object",
             "placeImportedModel": "Place an imported model",
@@ -748,7 +755,13 @@
         "areaCount": {
             "add": "{count, plural, one {+# marcher} other {+# marchers}}",
             "select": "{count, plural, one {# marcher} other {# marchers}}",
-            "subtract": "{count, plural, one {−# marcher} other {−# marchers}}"
+            "subtract": "{count, plural, one {−# marcher} other {−# marchers}}",
+            "addProps": "{props, plural, one {+# prop} other {+# props}}",
+            "addBoth": "{marchers, plural, one {+# marcher} other {+# marchers}} and {props, plural, one {# prop} other {# props}}",
+            "selectProps": "{props, plural, one {# prop} other {# props}}",
+            "selectBoth": "{marchers, plural, one {# marcher} other {# marchers}} and {props, plural, one {# prop} other {# props}}",
+            "subtractProps": "{props, plural, one {−# prop} other {−# props}}",
+            "subtractBoth": "{marchers, plural, one {−# marcher} other {−# marchers}} and {props, plural, one {# prop} other {# props}}"
         },
         "menu": {
             "equipment": "Equipment",
@@ -758,6 +771,10 @@
             "name": "3D View camera",
             "move": "Move the 3D View camera",
             "aim": "Aim the 3D View camera"
+        },
+        "lockedItem": {
+            "tag": "Locked",
+            "open": "Locked: click to unlock or edit it"
         }
     },
     "fieldDisplay": {
@@ -940,7 +957,7 @@
             "drillNumber": "Drill Number",
             "errorLoadingCoords": "Error loading coordinates",
             "propsLook": "Prop size and look: Props panel",
-            "lockedSelected": "{count, plural, one {# locked item selected. It stays where it is: right-click it to edit it.} other {# locked items selected. They stay where they are: right-click one to edit it.}}",
+            "lockedSelected": "{count, plural, one {# locked item selected. It isn't moved here: right-click it and choose Unlock to move it.} other {# locked items selected. They aren't moved here: right-click one and choose Unlock to move it.}}",
             "playing": "Playing. Pause to see and edit the selected marchers.",
             "maxStepSize": "Largest step size",
             "minStepSize": "Smallest step size",
@@ -1626,7 +1643,7 @@
         },
         "locked": "Locked",
         "lockLabel": "Locked",
-        "lockHint": "One position for the whole show",
+        "lockHint": "Clicks and drags on the field pass over it",
         "imported": {
             "title": "Imported",
             "import": "Import…",

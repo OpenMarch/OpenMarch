@@ -173,7 +173,7 @@ Every model you import is stored in the show file, whether or not a prop uses it
 />
 
 - <Ui k="props.name" />: shown on the field next to the prop when names are shown. Without a name, the prop goes by its number.
-- <Ui k="props.lockLabel" />: on, the prop has one position for the whole show, and dragging it on any page moves it on every page. Off, the default for a prop you draw, it can move from page to page (below).
+- <Ui k="props.lockLabel" />: on, the prop can't be selected or moved on the field ([Lock a prop](#lock-a-prop)). Off, the default for a prop you draw, it moves like a marcher (below).
 - <Ui k="props.color" />: colors the prop on the field and in the 3D View. <Ui k="props.colorNone" plain /> goes back to the plain look. To color several props at once, select them on the field: the Props panel shows one color for all of them.
 - <Ui k="props.surfaceLabel" />: <Ui k="props.surface.floor" plain />, <Ui k="props.surface.obstacle" plain /> or <Ui k="props.surface.platform" plain />. In the 3D View, marchers and props over a <Ui k="props.surface.platform" plain /> prop stand on it. On an imported model they stand on the top surface the import found over its middle, when it found one, rather than at its full height.
 - <Ui k="props.width" />, <Ui k="props.depth" /> and <Ui k="props.height" />, in meters, and <Ui k="props.rotation" /> in degrees clockwise.
@@ -197,13 +197,17 @@ Before the prop's first count, the panel says the prop is off the field, and you
 
 ## Resize and turn a prop on the field
 
-Click inside a prop's outline to select it. Drag a side or a corner handle to resize it, as you would a group of marchers: the opposite side stays where it is, so the prop's center moves with the resize. Drag the round handle to turn it about its center. Like the panel, a resize or turn is saved at the playhead's count. A resize that moves the prop is saved like a drag of the prop, in the same undo step: on a later page the prop moves there during that page's move, and where a drag would be refused the resize is too. Hold <Kbd keys="Alt" gesture="drag" /> to resize it without moving it.
+A selected prop shows no handles, so a drag anywhere on it moves it. To resize or turn it, right-click it and choose <Ui k="actions.items.resize" />: its handles appear until you select something else.
+
+Drag a side or a corner handle to resize it, as you would a group of marchers: the opposite side stays where it is, so the prop's center moves with the resize. Drag the round handle to turn it about its center. Like the panel, a resize or turn is saved at the playhead's count. A resize that moves the prop is saved like a drag of the prop, in the same undo step: on a later page the prop moves there during that page's move, and where a drag would be refused the resize is too. Hold <Kbd keys="Alt" gesture="drag" /> to resize it without moving it.
 
 Hold these keys while you drag a side or corner handle:
 
 - <Kbd keys="Alt" gesture="drag" /> resizes the prop about its center, so it doesn't move and is saved at the playhead's count alone.
 - <Kbd keys="Mod" gesture="drag" /> keeps the prop's proportions.
 - <Kbd keys="Shift" gesture="drag" /> resizes it slowly, for fine changes.
+
+While the handles show, a drag on one resizes or turns the prop, even where it covers a small prop; a drag inside the prop away from them still moves it. To move a small prop the handles cover, select something else, then drag the prop.
 
 <Media
   id="3d-props-handles"
@@ -216,9 +220,15 @@ A prop moves the way a marcher does. Select it and drag it on a later page, or u
 
 Select props together with marchers and they share the same tools. A [shape](/guides/shapes/) gives a prop a spot like any marcher, a path takes it along with the others, and align, distribute and swap treat it as one more dot. A box or a lasso picks props up with marchers, and so does <Ui k="actions.select.selectAll" plain />. To select every prop, open the <Ui k="inspector.shape.selectTab" plain /> tab, set <Ui k="toolbar.select.selectByText" plain /> to <Ui k="toolbar.select.selectBy.section" plain /> and choose <Ui k="section.prop" plain /> ([Select marchers](/guides/marchers/select-marchers/#select-a-whole-section-tag-family-or-drill-prefix)).
 
-A <Ui k="props.locked" plain /> prop stays out of all of this: selecting around it leaves it alone, and the tools leave it where it is.
+A [locked](#lock-a-prop) prop stays out of all of this.
 
-To move a small prop whose handles cover it, press inside it and drag. To resize it, grab a handle from outside its outline.
+## Lock a prop
+
+Lock a prop that should stay where it is while you work around it, such as a tarp the band marches over. Right-click it and choose the lock item, which carries its name, such as <Ui k="actions.items.lockNamed" values={{ name: "Tarp" }} />.
+
+A locked prop can't be clicked, boxed, lassoed or selected with <Ui k="actions.select.selectAll" plain />, and no tool moves it, so you can select and move the marchers on and around it. It keeps any moves it has, and still moves during the show where they say. Clicking it shows a <Ui k="field.lockedItem.tag" plain /> tag beside the pointer for a few seconds; click the tag for the same menu a right-click opens. The Props panel marks a locked prop with a lock.
+
+To change it again, right-click it and choose <Ui k="actions.items.unlockNamed" values={{ name: "Tarp" }} />, or <Ui k="actions.items.editNamed" values={{ name: "Tarp" }} /> to open its settings. The pit's equipment starts locked ([Set up the front ensemble](/guides/3d-view/front-ensemble/)).
 
 ## Hide or delete a prop
 

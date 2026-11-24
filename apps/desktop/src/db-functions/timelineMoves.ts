@@ -6,7 +6,7 @@ import { pageEndBeat } from "@/timeline/timelineCanvas";
 import { DbConnection, DbTransaction } from "./types";
 import { transactionWithHistory } from "./history";
 import { ensureCountsInTransaction } from "./endlessCounts";
-import { splitLockedItemMovesInTransaction } from "./lockedItems";
+import { withoutLockedMovesInTransaction } from "./lockedItems";
 import { updateMarcherHomesInTransaction } from "./marcherHome";
 import {
     setTimelineTransitionDestinationInTransaction,
@@ -1332,25 +1332,10 @@ export const moveMarchersInTarget = async ({
     try {
         return await transactionWithHistory(db, "moveMarchers", async (tx) => {
             onStart?.();
-            // Locked items have one position for the whole show: wherever the edit was aimed,
-            // theirs is their home and their moves are cleared (`lockedItems.ts`)
-            const { rest: moves, pinned } =
-                await splitLockedItemMovesInTransaction(tx, allMoves);
-            if (moves.length === 0)
-                return { ...emptyMoveResult(), homes: pinned };
-            const withPinned = (result: TimelineMoveResult) => {
-                if (pinned.length > 0)
-                    result.homes = [...pinned, ...result.homes];
-                return result;
-            };
-            try {
-                return withPinned(await editInTarget(tx, moves));
-            } catch (e) {
-                // The edit's own marchers wrote nothing, but the locked items moved: still a step
-                if (e instanceof NothingWritten && pinned.length > 0)
-                    return withPinned(e.result);
-                throw e;
-            }
+            // Locked items aren't edited: only an unlock lets them move (props epic step 2)
+            const moves = await withoutLockedMovesInTransaction(tx, allMoves);
+            if (moves.length === 0) throw new NothingWritten(emptyMoveResult());
+            return await editInTarget(tx, moves);
         });
     } catch (e) {
         if (e instanceof NothingWritten) return e.result;

@@ -1066,7 +1066,7 @@ const shots = [
     {
         id: "3d-props-handles",
         kind: "clip",
-        // A selected prop: turn it with the round handle, then resize it from a corner
+        // A prop with its handles shown: turn it with the round handle, then resize it from a corner
         async setup(ctx) {
             const { page } = ctx;
             const { item } = await drawRiser(page, { color: AMBER });
@@ -1076,7 +1076,11 @@ const shots = [
             const before = (await items(page)).find((i) => i.id === item.id);
             await zoomFieldAt(page, before.screen, 3);
             const now = (await items(page)).find((i) => i.id === item.id);
-            await page.mouse.click(now.screen.x, now.screen.y);
+            // Its handles show once asked for: right-click, Resize and turn (props epic step 2)
+            await page.mouse.click(now.screen.x, now.screen.y, {
+                button: "right",
+            });
+            await page.getByTestId("field-menu-resizeSelectedItem").click();
             await ctx.wait(600);
             const handles = await page.evaluate(() =>
                 window.fieldTest.handles(),

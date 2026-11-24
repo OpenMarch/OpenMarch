@@ -428,6 +428,18 @@ aliases, never shown as labels [owner, 2026-10-12, Q39–Q41, Q44].
   lane, align and distribute, tags, select-all and the marquee. Locked items
   stay out of all of them. The type filters above stay only where the loop
   means people: exports, drill order, cues and uniforms.
+- **One lock, a deliberate unlock** (owner, 2026-11-23 and 2026-11-24, fork
+  #1241). A locked item can't be clicked, dragged, boxed, lassoed or picked by
+  Select all, and canvas edits leave it out (`withoutLockedMovesInTransaction`).
+  Its right-click selects it alone and offers Unlock and Edit. It carries no
+  padlock on the field (owner, 2026-11-24): a click on it shows a "Locked" tag
+  beside the pointer for a few seconds, and the tag opens the same menu, so a
+  click is never dead and a rage click unlocks nothing. Locking and
+  unlocking write only the flag: the old "one position for the whole show"
+  meaning (a drag set the home and cleared moves) is gone. Equipment starts
+  locked; drawn props start unlocked. A selected prop shows no resize or turn
+  handles until its right-click menu's Resize and turn, since props are
+  usually drawn at their real size; they go when the selection changes.
 - **Hidden** is a per-user view preference (`UiSettingsStore.hiddenPropIds`),
   never show data [05].
 

@@ -92,8 +92,8 @@ export default function ItemsLayer({
             last.itemsVersion === items.version &&
             last.selectionVersion === marchers.selectionVersion &&
             last.dimVersion === dimming.version &&
-            // Locks are the same size on screen at every zoom
-            (last.zoom === zoom || !hasLocks(items)) &&
+            // Equipment's marks and edges are sized on screen, so a zoom redraws them
+            (last.zoom === zoom || !hasEquipment(items)) &&
             last.theme === theme
         )
             return;
@@ -122,8 +122,8 @@ export default function ItemsLayer({
     return <primitive object={layer.group} />;
 }
 
-const hasLocks = (items: FieldItems) =>
-    items.outlines().some((outline) => outline.locked);
+const hasEquipment = (items: FieldItems) =>
+    items.outlines().some((outline) => outline.plan);
 
 /** Triangulates each fill into `geometry`, with its color on every vertex. */
 function writeFills(geometry: BufferGeometry, fills: readonly FillPlan[]) {

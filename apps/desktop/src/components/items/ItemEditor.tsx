@@ -256,16 +256,7 @@ export function ItemEditor({ itemId }: { itemId: number }) {
                     aria-label={t("props.lockLabel")}
                     checked={item.locked}
                     onCheckedChange={(locked) =>
-                        updateItems.mutate([
-                            {
-                                itemId: item.id,
-                                locked,
-                                // Locking keeps it where it is at the playhead, not at its home
-                                lockAtBeat:
-                                    useTimelineSelectionStore.getState()
-                                        .playheadBeat,
-                            },
-                        ])
+                        updateItems.mutate([{ itemId: item.id, locked }])
                     }
                 />
             </label>

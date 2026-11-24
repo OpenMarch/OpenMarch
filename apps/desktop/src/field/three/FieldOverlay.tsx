@@ -57,6 +57,7 @@ import { PivotHint } from "./PivotHint";
 import HeldRolesChip, { HeldRolesChipBelowTip } from "./HeldRolesChip";
 import { useFieldUnderlayStore } from "@/field/editor/fieldUnderlayStore";
 import { useSelectionCoverStore } from "@/field/editor/selectionCoverStore";
+import { useItemHandlesStore } from "@/items/itemHandlesStore";
 import { prefersReducedMotion } from "@/components/timeline/reducedMotion";
 import ClearOfFinger from "./ClearOfFinger";
 
@@ -207,6 +208,7 @@ export default function FieldOverlay({
                     items.subscribe(listener),
                     subscribeEditor(listener),
                     useSelectionCoverStore.subscribe(listener),
+                    useItemHandlesStore.subscribe(listener),
                 ];
                 return () => off.forEach((unsubscribe) => unsubscribe());
             },
@@ -308,7 +310,12 @@ export default function FieldOverlay({
                     />
                 )}
                 {area && (
-                    <AreaPreviewMarks area={area} theme={theme} touch={touch} />
+                    <AreaPreviewMarks
+                        area={area}
+                        theme={theme}
+                        touch={touch}
+                        isItem={(id) => items.isItem(id)}
+                    />
                 )}
                 {modeDrawing && (
                     <ModeDrawing
@@ -2189,10 +2196,13 @@ function AreaPreviewMarks({
     area,
     theme,
     touch,
+    isItem,
 }: {
     area: AreaShape;
     theme: FieldTheme;
     touch: boolean;
+    /** Whether a marcher row is a prop or equipment, counted apart (props epic) */
+    isItem: (id: number) => boolean;
 }) {
     const { t } = useTranslate();
     const view = useFieldViewStore();
@@ -2214,13 +2224,21 @@ function AreaPreviewMarks({
             `M${p.x - half} ${p.y - half}h${half * 2}v${half * 2}h${-half * 2}z`,
         );
     }
-    const count = preview.ids.length;
-    const text =
+    const props = preview.ids.filter(isItem).length;
+    const count = preview.ids.length - props;
+    const choice =
         preview.choice === "add"
-            ? t("field.areaCount.add", { count })
+            ? "add"
             : preview.choice === "subtract"
-              ? t("field.areaCount.subtract", { count })
-              : t("field.areaCount.select", { count });
+              ? "subtract"
+              : "select";
+    // Marchers and props counted apart, as the inspector does ("8 marchers and 1 prop")
+    const text =
+        props === 0
+            ? t(`field.areaCount.${choice}`, { count })
+            : count === 0
+              ? t(`field.areaCount.${choice}Props`, { props })
+              : t(`field.areaCount.${choice}Both`, { marchers: count, props });
     return (
         <g data-testid="fieldAreaPreview" opacity={opacity}>
             <path

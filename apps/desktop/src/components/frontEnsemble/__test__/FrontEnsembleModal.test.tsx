@@ -9,11 +9,7 @@ import {
 import { afterEach, beforeAll, expect, vi } from "vitest";
 import { useEffect } from "react";
 import { describeDbTests, schema, type DbConnection } from "@/test/base";
-import {
-    harnessQueryClient,
-    selectTimeline,
-    setUpFeature,
-} from "@/test/featureHarness";
+import { harnessQueryClient, setUpFeature } from "@/test/featureHarness";
 import tolgee from "@/global/singletons/Tolgee";
 import { stopTimelineResolver } from "@/timeline/timelineStore";
 import { createItems, getItemGeometry, getItems } from "@/db-functions/items";
@@ -436,7 +432,7 @@ describeDbTests("Front ensemble panel", (it) => {
         expect((await getItems({ db }))[0].locked).toBe(true);
     });
 
-    it("locks an item with moves where it is at the playhead, not at its home", async ({
+    it("locks an item from its switch, keeping its moves", async ({
         db,
         marchersAndPages,
     }) => {
@@ -466,19 +462,19 @@ describeDbTests("Front ensemble panel", (it) => {
         });
         const resolverOf = async () =>
             createResolver((await readTimelineTables(db)).snapshot);
-        const at9 = (await resolverOf()).positionAt(prop.marcher_id, 9);
-        expect(at9).not.toEqual([100, 100]);
+        const before = await resolverOf();
 
         await setUpFeature(<PropEditContents itemId={prop.id} />, PAGE, []);
-        // The playhead on beat 9
-        await selectTimeline({ start: 1, end: 9 });
         fireEvent.click(await screen.findByRole("switch", { name: "Locked" }));
         await waitFor(async () =>
             expect((await getItems({ db }))[0].locked).toBe(true),
         );
+        // A lock changes nothing but the lock (props epic step 2)
         const resolver = await resolverOf();
         for (const beat of [0, 1, 9, 17, 30])
-            expect(resolver.positionAt(prop.marcher_id, beat)).toEqual(at9);
+            expect(resolver.positionAt(prop.marcher_id, beat)).toEqual(
+                before.positionAt(prop.marcher_id, beat),
+            );
     });
 
     it("places a podium with the turn the tool gave it", async ({
@@ -704,7 +700,7 @@ describeDbTests("Front ensemble panel", (it) => {
         expect(
             await screen.findByTestId("inspector-locked-selected"),
         ).toHaveTextContent(
-            "1 locked item selected. It stays where it is: right-click it to edit it.",
+            "1 locked item selected. It isn't moved here: right-click it and choose Unlock to move it.",
         );
         expect(
             screen.getByTestId("inspector-items-selected"),

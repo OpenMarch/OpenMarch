@@ -15,7 +15,6 @@ import { transactionWithHistory } from "./history";
 import { storedBeatIdInTransaction } from "./endlessCounts";
 import { createMarchersInTransaction } from "./marcher";
 import { updateMarcherHomesInTransaction } from "./marcherHome";
-import { lockItemsInTransaction } from "./lockedItems";
 
 export type DatabaseItem = typeof schema.items.$inferSelect;
 export type DatabaseItemGeometry = typeof schema.item_geometry.$inferSelect;
@@ -47,7 +46,7 @@ export interface NewItemArgs {
     surfaceType?: SurfaceType;
     /** A built-in 3D model id such as `pit/marimba-5.0`; none (a block) by default */
     model?: string | null;
-    /** One position for the whole show; equipment is locked and props unlocked by default */
+    /** Kept from being selected or moved on the field; equipment starts locked, props unlocked */
     locked?: boolean;
     /** Placed by a front ensemble preset; false by default */
     fromPreset?: boolean;
@@ -291,12 +290,10 @@ export interface ModifiedItemArgs {
     /** A built-in 3D model id such as `pit/marimba-5.0`; null draws the item as a block */
     model?: string | null;
     /**
-     * Locks the item to one position for the whole show, or unlocks it. Locking clears its moves
-     * and keeps it where it is at `lockAtBeat` (`lockItemsInTransaction`)
+     * Locks the item, so it can't be selected or moved on the field, or unlocks it. Nothing else
+     * changes: it keeps its moves (`lockedItems.ts`)
      */
     locked?: boolean;
-    /** The beat a lock keeps the item's position from: the playhead. 0 (its home) by default */
-    lockAtBeat?: number;
     /**
      * Sizes every Outline change of the item to this, in meters, keeping their turns: a new
      * model's footprint, set with `model`
@@ -322,7 +319,6 @@ export async function updateItemsInTransaction({
         color,
         model,
         locked,
-        lockAtBeat,
         footprint,
     } of modifiedItems) {
         const item = await tx
@@ -337,9 +333,6 @@ export async function updateItemsInTransaction({
                 .set({ name })
                 .where(eq(schema.marchers.id, item.marcher_id))
                 .run();
-        // Locking an unlocked item gives it one position first, from the moves it has now
-        if (locked === true && !item.locked)
-            await lockItemsInTransaction(tx, [item.marcher_id], lockAtBeat);
         if (color !== undefined || model !== undefined || locked !== undefined)
             await tx
                 .update(schema.items)

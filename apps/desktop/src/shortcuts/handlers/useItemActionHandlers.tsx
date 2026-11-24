@@ -1,7 +1,16 @@
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslate } from "@tolgee/react";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
-import { allItemsQueryOptions } from "@/hooks/queries/useItems";
+import {
+    allItemsQueryOptions,
+    updateItemsMutationOptions,
+} from "@/hooks/queries/useItems";
+import {
+    hideItemHandles,
+    showItemHandles,
+    useItemHandlesStore,
+} from "@/items/itemHandlesStore";
 import { itemLabel } from "@/components/items/ItemRows";
 import { openItemEditor } from "@/components/items/openItemEditor";
 import { useActionHandler } from "../useActionHandler";
@@ -21,7 +30,9 @@ import { showAssetRefValue } from "@/showAssets/ref";
  */
 export function useItemActionHandlers() {
     const { t } = useTranslate();
-    const selected = useSelectedMarchers()?.selectedMarchers ?? [];
+    const selectedContext = useSelectedMarchers();
+    const selected = selectedContext?.selectedMarchers ?? [];
+    const setSelectedMarchers = selectedContext?.setSelectedMarchers;
     const { data: items } = useQuery(allItemsQueryOptions());
     const item =
         selected.length === 1
@@ -40,6 +51,48 @@ export function useItemActionHandlers() {
         },
     );
     const queryClient = useQueryClient();
+    const updateItems = useMutation(updateItemsMutationOptions(queryClient));
+    const name = item ? itemLabel(item) : "";
+    // Props epic step 2: a lock keeps an item from being selected or moved on the field
+    useActionHandler(
+        "unlockSelectedItem",
+        () => {
+            if (item?.locked)
+                updateItems.mutate([{ itemId: item.id, locked: false }]);
+        },
+        {
+            enabled: item?.locked === true,
+            label: item ? t("actions.items.unlockNamed", { name }) : undefined,
+        },
+    );
+    useActionHandler(
+        "lockSelectedItem",
+        () => {
+            if (!item || item.locked) return;
+            hideItemHandles();
+            updateItems.mutate([{ itemId: item.id, locked: true }]);
+            // Locked, it can't be selected: let it go, as a click past it would
+            setSelectedMarchers?.([]);
+        },
+        {
+            enabled: item !== undefined && !item.locked,
+            label: item ? t("actions.items.lockNamed", { name }) : undefined,
+        },
+    );
+    useActionHandler(
+        "resizeSelectedItem",
+        () => {
+            if (item && !item.locked) showItemHandles(item.marcher_id);
+        },
+        { enabled: item !== undefined && !item.locked },
+    );
+    // The handles go with the selection: shown for one item, until anything else is selected
+    const only = selected.length === 1 ? selected[0].id : null;
+    useEffect(() => {
+        const shown = useItemHandlesStore.getState().id;
+        if (shown !== null && (shown !== only || item?.locked))
+            hideItemHandles();
+    }, [only, item?.locked]);
     useActionHandler("importModel", () => void importModel());
     useActionHandler("openAssets", () => showAssetsView());
     useActionHandler("removeUnusedAssets", () =>

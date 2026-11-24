@@ -979,6 +979,31 @@ const STATIC_ACTIONS = {
         scope: "global",
         defaultBindings: [],
     },
+    // The one selected item's lock (props epic step 2): a locked item can't be clicked, boxed or
+    // moved on the field; a right-click on it offers Unlock, and an unlocked one's offers Lock
+    unlockSelectedItem: {
+        labelKey: "actions.items.unlock",
+        keywordsKey: "actions.items.lockKeywords",
+        category: "edit",
+        scope: "global",
+        defaultBindings: [],
+    },
+    lockSelectedItem: {
+        labelKey: "actions.items.lock",
+        keywordsKey: "actions.items.lockKeywords",
+        category: "edit",
+        scope: "global",
+        defaultBindings: [],
+    },
+    // Shows the one selected prop's resize and turn handles on the field (props epic step 2):
+    // hidden otherwise, so a click on a prop moves it as it would a marcher
+    resizeSelectedItem: {
+        labelKey: "actions.items.resize",
+        keywordsKey: "actions.items.resizeKeywords",
+        category: "edit",
+        scope: "global",
+        defaultBindings: [],
+    },
     // The Props panel's model import (fork #999): Import… asks for a model's files and shows its
     // review; an Imported tile places that model with a click on the field (args: the show
     // asset's `id` and `versionHash`). From the palette, with no model named, the Props panel
