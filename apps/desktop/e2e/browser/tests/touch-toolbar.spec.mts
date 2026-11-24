@@ -267,10 +267,10 @@ test("the Shapes tab has a Ring button, and no Hold R hint until a key is presse
     const { page } = show;
     await tapOn(page, tab(page, "Shapes"));
     await expect(panel(page)).toBeVisible();
-    // Each kind is captioned, as its tooltip can't be seen
-    await expect(
-        panel(page).getByRole("button", { name: "Box" }),
-    ).toContainText("Box");
+    // Each kind is an icon with its name, which a long press shows; no caption under it (#1292)
+    const box = panel(page).getByRole("button", { name: "Box" });
+    await expect(box).toBeVisible();
+    await expect(box).toHaveText("");
     await expect(page.getByTestId("shapes-tab-ring-hint")).toHaveCount(0);
 
     // The Ring button opens the ring the R key does, over the field, kept open for a tap
