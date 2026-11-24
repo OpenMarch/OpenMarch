@@ -866,6 +866,37 @@
         "measurements": {
             "feet": "{value} ft",
             "meters": "{value} m"
+        },
+        "indoorFloor": {
+            "image": "Floor image",
+            "addImage": "Add floor image",
+            "imageHint": "The art printed on your floor, shown under the grid. If it has the shape of one of the floor sizes below, that size is picked for you.",
+            "unreadable": "That file isn't an image OpenMarch can read. Try a PNG or JPEG.",
+            "replaceImage": "Replace",
+            "removeImage": "Remove",
+            "matches": "Matches the {size} floor.",
+            "shapedLike": "Shaped like a {size} floor.",
+            "useSize": "Use {size}",
+            "noMatch": "This image's shape doesn't match a floor size below, so it's fitted inside the floor.",
+            "size": "Floor size",
+            "sizeFeet": "{depth} × {width} ft",
+            "fullSize": "WGI full size",
+            "stepSize": "Step size",
+            "step24": "24 inches",
+            "step30": "30 inches (6 to 5)",
+            "linesEvery": "Lines every {feet} ft ({steps} steps)",
+            "otherFields": "Other fields",
+            "backToFloors": "Indoor floor sizes",
+            "custom": "Custom",
+            "anySize": "Type a size",
+            "anyStep": "Type a step size",
+            "depth": "Front to back",
+            "width": "Side to side",
+            "feet": "ft",
+            "feetRange": "Use {min} to {max} feet.",
+            "stepLength": "Each step",
+            "inchesRange": "Use {min} to {max} inches.",
+            "matchesCustom": "The floor has this image's shape."
         }
     },
     "fileAccessDialogError": {
@@ -1123,8 +1154,9 @@
                     "typeLabel": "Activity"
                 },
                 "field": {
-                    "description": "Pick a field template for your show.",
-                    "title": "Field setup"
+                    "indoorDescription": "Set up your floor: its art, its size and the grid's step size.",
+                    "activityTitle": "Activity and field",
+                    "activityDescription": "Choose your activity, then the field you perform on."
                 },
                 "performers": {
                     "description": "Add marchers now or skip and add them later in the editor.",

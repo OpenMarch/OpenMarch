@@ -1,3 +1,4 @@
+import { isIndoorFloorActivity } from "@/global/classes/Activities";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
     AlertDialog,
@@ -26,7 +27,7 @@ import { useNewShowValidation } from "./newShow/hooks/useNewShowValidation";
 import {
     DEFAULT_NEW_SHOW_WIZARD_STATE,
     hasNewShowProgress,
-    NEW_SHOW_STEPS,
+    getWizardSteps,
     type NewShowAudioData,
     type NewShowFrontEnsembleData,
     type NewShowEnsembleData,
@@ -89,8 +90,9 @@ const STEP_COPY: Record<
         descriptionKey: "launchpage.newShow.steps.ensemble.description",
     },
     field: {
-        titleKey: "launchpage.newShow.steps.field.title",
-        descriptionKey: "launchpage.newShow.steps.field.description",
+        // The Field step only comes up for a blank show, which picks its activity there too
+        titleKey: "launchpage.newShow.steps.field.activityTitle",
+        descriptionKey: "launchpage.newShow.steps.field.activityDescription",
     },
     performers: {
         titleKey: "launchpage.newShow.steps.performers.title",
@@ -109,13 +111,6 @@ const STEP_COPY: Record<
         descriptionKey: "launchpage.newShow.steps.tempo.description",
     },
 };
-
-function getWizardSteps(state: NewShowWizardState): NewShowStepId[] {
-    if (state.start?.mode === "importPrevious") {
-        return ["start", "project", "ensemble", "audio", "tempo"];
-    }
-    return NEW_SHOW_STEPS;
-}
 
 export default function NewShowDialog({
     open,
@@ -490,6 +485,7 @@ export default function NewShowDialog({
                         ensemble={wizardState.ensemble}
                         field={wizardState.field}
                         onChange={handleFieldChange}
+                        onEnsembleChange={handleEnsembleChange}
                     />
                 );
             case "performers":
@@ -552,7 +548,7 @@ export default function NewShowDialog({
         <>
             <Dialog open={open} onOpenChange={handleOpenChange}>
                 <DialogContent
-                    className="touch:h-[min(85dvh,52rem)] touch:max-h-[min(85dvh,52rem)] flex max-h-[85vh] w-[40rem] max-w-[95vw] flex-col overflow-hidden"
+                    className="touch:h-[min(85dvh,52rem)]! touch:max-h-[min(85dvh,52rem)]! flex h-[min(88dvh,50rem)]! max-h-[88dvh]! w-[64rem] max-w-[95vw] flex-col overflow-hidden"
                     onPointerDownOutside={(e) => {
                         if (isCompleting || isCreatingDraft) {
                             e.preventDefault();
@@ -571,9 +567,16 @@ export default function NewShowDialog({
                         steps={wizardSteps}
                         stepTitle={t(stepCopy.titleKey)}
                         stepDescription={
-                            stepCopy.descriptionKey
-                                ? t(stepCopy.descriptionKey)
-                                : undefined
+                            currentStep === "field" &&
+                            isIndoorFloorActivity(
+                                wizardState.ensemble?.activity,
+                            )
+                                ? t(
+                                      "launchpage.newShow.steps.field.indoorDescription",
+                                  )
+                                : stepCopy.descriptionKey
+                                  ? t(stepCopy.descriptionKey)
+                                  : undefined
                         }
                         onNext={() => void handleNext()}
                         onBack={handleBack}
