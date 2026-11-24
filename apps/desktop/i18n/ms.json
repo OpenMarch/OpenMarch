@@ -4091,9 +4091,7 @@
         },
         "button": {
             "hint": "Fail muzik, dan menjajarkan kiraan dengannya: tempo, tanda masa, tanda latihan",
-            "hintOn": "Jajarkan kiraan dengan muzik. <escape></escape> atau <toggle></toggle> untuk keluar.",
             "label": "Edit muzik",
-            "labelOn": "Mengedit muzik",
             "text": "Edit muzik"
         },
         "errors": {
@@ -4101,53 +4099,6 @@
             "moveOneCountLong": "Gerakan itu hanya sepanjang satu kiraan",
             "wouldHideSet": "Ini akan menyebabkan kerangka kunci berakhir pada kiraan yang sama dengan gerakan di bawahnya, lalu menyembunyikan set gerakan itu. Buang lebih sedikit kiraan, atau tamatkan kerangka kunci satu kiraan lebih awal.",
             "wouldRemovePage": "Ini akan membuang satu halaman. Buang lebih sedikit kiraan, atau padam halaman itu dahulu."
-        },
-        "help": {
-            "doubleClickLane": {
-                "title": "Tambah perubahan tempo",
-                "text": "Klik dua kali pada lorong tempo di tempat ia patut berubah. Klik dua kali titik perubahan untuk membuangnya."
-            },
-            "dragChangeDot": {
-                "title": "Alih perubahan tempo",
-                "text": "Seret titiknya ke atas atau ke bawah untuk menukar tempo, atau ke sisi untuk mengalih tempat ia berubah."
-            },
-            "dragEndDot": {
-                "title": "Tetapkan tempat rit. berakhir",
-                "text": "Seret titik segi empat di hujung sesuatu bahagian, supaya tempo seterusnya boleh kembali melompat (a tempo)."
-            },
-            "dragLine": {
-                "title": "Tetapkan tempo",
-                "text": "Seret garisan tempo ke atas atau ke bawah. Untuk menaip tempo, klik kanan dan pilih Tetapkan tempo…"
-            },
-            "dragMeasures": {
-                "title": "Pilih kiraan",
-                "text": "Seret di sepanjang bar atau muzik, kemudian edit kesemuanya sekali gus."
-            },
-            "dragRoundHandle": {
-                "title": "Ubah tempo secara beransur",
-                "text": "Seret pemegang bulat di tengah sesuatu bahagian. Klik dua kali padanya untuk kembali melompat."
-            },
-            "keys": {
-                "escape": "Kosongkan pilihan, atau batalkan seretan; jika tiada apa untuk dikosongkan, berhenti mengedit muzik",
-                "play": "Main dari kepala main, atau berhenti di tempatnya",
-                "tap": "Ketuk tempo: ketuk pada setiap rentak untuk melihat kelajuannya",
-                "toggle": "Mula atau berhenti mengedit muzik",
-                "metronome": "Hidupkan atau matikan metronom"
-            },
-            "label": "Cara mengedit muzik",
-            "rightClick": {
-                "title": "Fermata dan kiraan",
-                "text": "Klik kanan kiraan untuk menjadikannya fermata, mengubah tempo secara beransur, atau menambah dan membuang kiraan."
-            },
-            "rightClickMeasure": {
-                "title": "Bar dan tanda latihan",
-                "text": "Klik kanan bar untuk menomborkannya semula, menetapkan tanda masanya atau menambah tanda. Seret tanda untuk mengalihkannya."
-            },
-            "title": "Jajarkan kiraan dengan muzik",
-            "musicFile": {
-                "title": "Tukar muzik",
-                "text": "Klik nama fail di pengepala untuk menukar, mengimport atau memadam audio, atau menetapkan ofset muzik."
-            }
         },
         "importScore": {
             "choose": "Pilih fail…",

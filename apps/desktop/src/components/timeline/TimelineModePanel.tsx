@@ -160,10 +160,11 @@ const SPEED_BUTTON = <TimelineSpeedButton />;
 const MOVES_HEADER = <MovesLaneHeader />;
 const MOVES_HIDDEN_STRIP = <MovesHiddenStrip />;
 /**
- * Tempo mode: the Tempo button leads the transport's view controls. In tempo mode
- * it's the only one: Play loops the selected measures, so no Loop button
+ * Tempo mode: the Edit music button leads the transport's view controls. In tempo mode there are
+ * none: the mode's header has Done, the one way out (owner, 2026-11-24), and Play loops the
+ * selected measures, so no Loop button
  */
-const TEMPO_VIEW_CONTROLS = <TempoModeButton />;
+const TEMPO_VIEW_CONTROLS = null;
 const BASIC_VIEW_CONTROLS = <TempoModeButton />;
 const EXPERT_VIEW_CONTROLS = (
     <>

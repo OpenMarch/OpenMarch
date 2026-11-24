@@ -1,7 +1,7 @@
 // cspell:ignore priya
 /**
  * Edit music: the mode's header row: Tap tempo, the
- * music file, metronome, Import (audio or MusicXML), help and Done.
+ * music file, metronome, Import (audio or MusicXML) and Done.
  */
 import clsx from "clsx";
 import { getButtonClassName } from "@openmarch/ui";
@@ -18,7 +18,6 @@ import tolgee from "@/global/singletons/Tolgee";
 import { useMetronomeStore } from "@/stores/MetronomeStore";
 import { TapTempo } from "./TapTempo";
 import { useTempoModeStore } from "./tempoModeStore";
-import { TempoHelp } from "./TempoHelp";
 import { TempoImport } from "./TempoImport";
 import { TempoMusicFile } from "./TempoMusicFile";
 
@@ -47,7 +46,7 @@ export const toolButton = (on = false, iconOnly = false, className?: string) =>
 export const withTextBody = (className: string) => `${className} text-body`;
 
 /**
- * Tempo mode's header row: the mode's name, its tools, help and Done. Narrow, the tools drop
+ * Tempo mode's header row: the mode's name, its tools and Done. Narrow, the tools drop
  * their words for their icons (the full name is the tooltip).
  */
 export function TempoToolbar(props: {
@@ -60,7 +59,7 @@ export function TempoToolbar(props: {
     const metronome = tolgee.t("tempoMode.toolbar.metronome", "Metronome");
     return (
         // A tooltip closes as soon as the pointer leaves its button or presses it, so none stays
-        // up over a menu or the help card opened next (dana, priya)
+        // up over a menu opened next (dana, priya)
         <TransportTooltipProvider disableHoverableContent>
             <div
                 className="@container flex min-w-0 flex-1 items-center gap-6 px-8"
@@ -121,7 +120,6 @@ export function TempoToolbar(props: {
                 </ShortcutTooltip>
                 <span className="min-w-0 flex-1" aria-hidden />
                 <TempoImport />
-                <TempoHelp />
                 <ShortcutTooltip
                     closeOnPress
                     label={tolgee.t(

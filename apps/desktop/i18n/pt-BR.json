@@ -4091,9 +4091,7 @@
         },
         "button": {
             "hint": "O arquivo de música e o alinhamento dos tempos com ela: andamento, fórmulas de compasso, marcas de ensaio",
-            "hintOn": "Alinhe os tempos com a música. <escape></escape> ou <toggle></toggle> sai.",
             "label": "Editar música",
-            "labelOn": "Editando a música",
             "text": "Editar música"
         },
         "errors": {
@@ -4101,53 +4099,6 @@
             "moveOneCountLong": "Esse movimento tem só um tempo",
             "wouldHideSet": "Isso deixaria um quadro-chave terminando no mesmo tempo que o movimento abaixo dele, escondendo a formação desse movimento. Remova menos tempos ou termine o quadro-chave um tempo antes.",
             "wouldRemovePage": "Isso removeria uma página. Remova menos tempos ou exclua a página antes."
-        },
-        "help": {
-            "doubleClickLane": {
-                "title": "Adicionar uma mudança de andamento",
-                "text": "Clique duas vezes na faixa de andamento onde ele deve mudar. Clique duas vezes no ponto de uma mudança para removê-la."
-            },
-            "dragChangeDot": {
-                "title": "Mover uma mudança de andamento",
-                "text": "Arraste o ponto para cima ou para baixo para mudar o andamento, ou para os lados para mudar onde ele muda."
-            },
-            "dragEndDot": {
-                "title": "Definir onde um rit. termina",
-                "text": "Arraste o ponto quadrado no fim de um trecho para que o andamento seguinte possa voltar de repente (a tempo)."
-            },
-            "dragLine": {
-                "title": "Definir um andamento",
-                "text": "Arraste a linha de andamento para cima ou para baixo. Para digitar um andamento, clique com o botão direito e escolha Definir andamento…"
-            },
-            "dragMeasures": {
-                "title": "Selecionar tempos",
-                "text": "Arraste ao longo dos compassos ou da música e edite todos de uma vez."
-            },
-            "dragRoundHandle": {
-                "title": "Mudar o andamento gradualmente",
-                "text": "Arraste a alça redonda no meio de um trecho. Clique duas vezes nela para voltar a um salto."
-            },
-            "keys": {
-                "escape": "Limpar a seleção ou cancelar um arrasto; sem nada para limpar, parar de editar a música",
-                "play": "Reproduzir do indicador de reprodução ou parar onde está",
-                "tap": "Andamento por toque: toque em cada batida para ver a velocidade",
-                "toggle": "Começar ou parar de editar a música",
-                "metronome": "Ativar ou desativar o metrônomo"
-            },
-            "label": "Como funciona a edição da música",
-            "rightClick": {
-                "title": "Fermatas e tempos",
-                "text": "Clique com o botão direito em um tempo para transformá-lo em fermata, mudar o andamento gradualmente ou adicionar e remover tempos."
-            },
-            "rightClickMeasure": {
-                "title": "Compassos e marcas de ensaio",
-                "text": "Clique com o botão direito em um compasso para renumerá-lo, definir a fórmula de compasso ou adicionar uma marca. Arraste uma marca para movê-la."
-            },
-            "title": "Alinhe os tempos com a música",
-            "musicFile": {
-                "title": "Trocar a música",
-                "text": "Clique no nome do arquivo no cabeçalho para trocar, importar ou excluir áudio, ou definir o deslocamento da música."
-            }
         },
         "importScore": {
             "choose": "Escolher um arquivo…",

@@ -227,6 +227,11 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
     } | null>(null);
     /** What's under the pointer in the tempo lane: a line highlights, a stretch shows its handle */
     const [hover, setHover] = useState<TempoHover | null>(null);
+    /**
+     * The measure under the pointer in the marks or measures lane (its first count), lit so it
+     * reads as something to right-click or double-click (owner, 2026-11-24)
+     */
+    const [hoverMeasure, setHoverMeasure] = useState<number | null>(null);
     // It explains what was under the pointer: scrolling or zooming moves that away
     useEffect(() => setTip(null), [win.left, ppb]);
 
@@ -606,6 +611,33 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             );
             ctx.globalAlpha = 1;
         }
+        // the measure under the pointer in the marks and measures lanes: what a right-click
+        // there is about. Not inside the selection, whose menu a right-click there opens
+        const hovered =
+            hoverMeasure !== null && !gesture && !highlight
+                ? data.measures.find((m) => m.start === hoverMeasure)
+                : undefined;
+        if (
+            hovered &&
+            !(
+                ui.range &&
+                hovered.start >= ui.range.from &&
+                hovered.start < ui.range.to
+            )
+        ) {
+            const x0 = X(hovered.start);
+            const span = hovered.counts * ppb;
+            const h = MEASURES.top + MEASURES.height - MARKS.top;
+            ctx.save();
+            ctx.fillStyle = accent;
+            ctx.globalAlpha = 0.1;
+            ctx.fillRect(x0, MARKS.top, span, h);
+            ctx.globalAlpha = 0.5;
+            ctx.strokeStyle = accent;
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x0 + 0.5, MARKS.top + 0.5, span - 1, h - 1);
+            ctx.restore();
+        }
         // what the menu item, editor or add/remove box at hand would change: outlined
         if (highlight) {
             ctx.save();
@@ -896,6 +928,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
         traceCount,
         outliers,
         highlight,
+        hoverMeasure,
         ui.range,
     ]);
 
@@ -2145,6 +2178,12 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
                 over?.stretch.to !== hover?.stretch.to
             )
                 setHover(over);
+            const y = localY(e);
+            const lane =
+                y >= MARKS.top && y < TEMPO.top
+                    ? (laneMeasureAt(localX(e), y)?.start ?? null)
+                    : null;
+            if (lane !== hoverMeasure) setHoverMeasure(lane);
             return;
         }
         if (cancelGesture.current) return;
@@ -3351,6 +3390,7 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
             onPointerLeave={() => {
                 setTip(null);
                 setHover(null);
+                setHoverMeasure(null);
             }}
             onDoubleClick={onDoubleClick}
             onContextMenu={onContextMenu}

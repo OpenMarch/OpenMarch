@@ -4091,9 +4091,7 @@
         },
         "button": {
             "hint": "Ang music file, at ang pagtutugma ng mga bilang dito: tempo, mga time signature, mga rehearsal mark",
-            "hintOn": "Itugma ang mga bilang sa musika. <escape></escape> o <toggle></toggle> para lumabas.",
             "label": "I-edit ang musika",
-            "labelOn": "Ine-edit ang musika",
             "text": "I-edit ang musika"
         },
         "errors": {
@@ -4101,53 +4099,6 @@
             "moveOneCountLong": "Isang bilang lang ang haba ng galaw na iyon",
             "wouldHideSet": "Mag-iiwan iyon ng keyframe na nagtatapos sa parehong bilang ng galaw sa ilalim nito, kaya matatago ang set ng galaw na iyon. Mag-alis ng mas kaunting bilang, o tapusin ang keyframe nang isang bilang na mas maaga.",
             "wouldRemovePage": "Maaalis ang isang pahina dahil doon. Mag-alis ng mas kaunting bilang, o burahin muna ang pahina."
-        },
-        "help": {
-            "doubleClickLane": {
-                "title": "Magdagdag ng pagbabago ng tempo",
-                "text": "I-double-click ang tempo lane kung saan dapat magbago. I-double-click ang tuldok ng isang pagbabago para alisin ito."
-            },
-            "dragChangeDot": {
-                "title": "Ilipat ang pagbabago ng tempo",
-                "text": "I-drag ang tuldok nito pataas o pababa para baguhin ang tempo, o pahalang para ilipat kung saan ito magbabago."
-            },
-            "dragEndDot": {
-                "title": "Itakda kung saan matatapos ang rit.",
-                "text": "I-drag ang parisukat na tuldok sa dulo ng isang bahagi, para makabalik agad ang susunod na tempo (a tempo)."
-            },
-            "dragLine": {
-                "title": "Magtakda ng tempo",
-                "text": "I-drag ang linya ng tempo pataas o pababa. Para mag-type ng tempo, mag-right-click at piliin ang Itakda ang tempo…"
-            },
-            "dragMeasures": {
-                "title": "Pumili ng mga bilang",
-                "text": "Mag-drag sa mga sukat o sa musika, saka i-edit ang lahat nang sabay-sabay."
-            },
-            "dragRoundHandle": {
-                "title": "Unti-unting baguhin ang tempo",
-                "text": "I-drag ang bilog na hawakan sa gitna ng isang bahagi. I-double-click ito para bumalik sa biglang palit."
-            },
-            "keys": {
-                "escape": "I-clear ang selection, o kanselahin ang drag; kapag walang iki-clear, itigil ang pag-edit ng musika",
-                "play": "I-play mula sa playhead, o huminto kung nasaan ito",
-                "tap": "Tap tempo: mag-tap sa bawat kumpas para makita kung gaano ito kabilis",
-                "toggle": "Simulan o itigil ang pag-edit ng musika",
-                "metronome": "I-on o i-off ang metronome"
-            },
-            "label": "Paano gumagana ang pag-edit ng musika",
-            "rightClick": {
-                "title": "Mga hold at bilang",
-                "text": "I-right-click ang isang bilang para gawin itong hold, unti-unting baguhin ang tempo, o magdagdag at mag-alis ng mga bilang."
-            },
-            "rightClickMeasure": {
-                "title": "Mga sukat at rehearsal mark",
-                "text": "I-right-click ang isang sukat para i-renumber ito, itakda ang time signature nito o magdagdag ng mark. I-drag ang mark para ilipat ito."
-            },
-            "title": "Itugma ang mga bilang sa musika",
-            "musicFile": {
-                "title": "Palitan ang musika",
-                "text": "I-click ang pangalan ng file sa header para magpalit, mag-import o magbura ng audio, o itakda ang music offset."
-            }
         },
         "importScore": {
             "choose": "Pumili ng file…",

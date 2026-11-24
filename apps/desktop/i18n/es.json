@@ -4091,9 +4091,7 @@
         },
         "button": {
             "hint": "El archivo de música y la alineación de los tiempos con ella: tempo, indicaciones de compás, marcas de ensayo",
-            "hintOn": "Alinea los tiempos con la música. <escape></escape> o <toggle></toggle> para salir.",
             "label": "Editar música",
-            "labelOn": "Editando música",
             "text": "Editar música"
         },
         "errors": {
@@ -4101,53 +4099,6 @@
             "moveOneCountLong": "Ese movimiento dura solo un tiempo",
             "wouldHideSet": "Eso dejaría un fotograma clave terminando en el mismo tiempo que el movimiento de abajo, lo que ocultaría la formación de ese movimiento. Elimina menos tiempos o haz que el fotograma clave termine un tiempo antes.",
             "wouldRemovePage": "Eso eliminaría una página. Elimina menos tiempos o borra primero la página."
-        },
-        "help": {
-            "doubleClickLane": {
-                "title": "Agregar un cambio de tempo",
-                "text": "Haz doble clic en el carril de tempo donde debe cambiar. Haz doble clic en el punto de un cambio para eliminarlo."
-            },
-            "dragChangeDot": {
-                "title": "Mover un cambio de tempo",
-                "text": "Arrastra su punto hacia arriba o hacia abajo para cambiar el tempo, o hacia los lados para mover dónde cambia."
-            },
-            "dragEndDot": {
-                "title": "Definir dónde termina un rit.",
-                "text": "Arrastra el punto cuadrado al final de un tramo para que el tempo siguiente pueda volver de golpe (a tempo)."
-            },
-            "dragLine": {
-                "title": "Definir un tempo",
-                "text": "Arrastra la línea de tempo hacia arriba o hacia abajo. Para escribir un tempo, haz clic derecho y elige Definir tempo…"
-            },
-            "dragMeasures": {
-                "title": "Seleccionar tiempos",
-                "text": "Arrastra a lo largo de los compases o de la música y luego edítalos todos a la vez."
-            },
-            "dragRoundHandle": {
-                "title": "Cambiar el tempo gradualmente",
-                "text": "Arrastra el control redondo en medio de un tramo. Haz doble clic en él para volver a un salto."
-            },
-            "keys": {
-                "escape": "Borrar la selección o cancelar un arrastre; si no hay nada que borrar, dejar de editar la música",
-                "play": "Reproducir desde el cabezal de reproducción o detener donde está",
-                "tap": "Tap tempo: toca en cada pulso para ver qué tan rápida es la música",
-                "toggle": "Empezar o dejar de editar la música",
-                "metronome": "Activar o desactivar el metrónomo"
-            },
-            "label": "Cómo funciona la edición de música",
-            "rightClick": {
-                "title": "Calderones y tiempos",
-                "text": "Haz clic derecho en un tiempo para convertirlo en calderón, cambiar el tempo gradualmente o agregar y eliminar tiempos."
-            },
-            "rightClickMeasure": {
-                "title": "Compases y marcas de ensayo",
-                "text": "Haz clic derecho en un compás para renumerarlo, definir su indicación de compás o agregar una marca. Arrastra una marca para moverla."
-            },
-            "title": "Alinea los tiempos con la música",
-            "musicFile": {
-                "title": "Cambiar la música",
-                "text": "Haz clic en el nombre del archivo en el encabezado para cambiar, importar o eliminar el audio, o para definir el desfase de la música."
-            }
         },
         "importScore": {
             "choose": "Elegir un archivo…",
