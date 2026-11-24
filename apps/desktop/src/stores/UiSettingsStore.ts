@@ -89,9 +89,12 @@ export interface UiSettings {
     shapes?: ShapeOutlines;
     /**
      * When a line's order shows on the field (pathways step 4g, Show order): for the selected
-     * marchers, every line whose order holds, or never. Same choices as `shapes`
+     * marchers, every line whose order holds, or never. Same choices as `shapes`. Off by default:
+     * the order still shows while Follow, Set, Reverse or Clear order is pointed at, while Set
+     * order is on, and while Alt is held. Was `marcherOrder` (default While selected);
+     * `parseSettings` drops it so the new default reaches everyone
      */
-    marcherOrder?: ShapeOutlines;
+    lineOrder?: ShapeOutlines;
     /**
      * Whether an open shape shows its walks and start rings (#403): the floating editor's
      * Pathways toggle. Off by default.
@@ -189,7 +192,7 @@ export const defaultSettings: UiSettings = {
     },
     marcherLabels: "auto",
     shapes: "selected",
-    marcherOrder: "selected",
+    lineOrder: "off",
     shapeWalks: false,
     followTheLeader: false,
     fieldVenue: "off",
@@ -210,16 +213,21 @@ const clampZoomSensitivity = (value: number): number =>
 // Helper function to parse settings from a JSON string
 // Throws on bad JSON or invalid structure. Exported for tests
 export const parseSettings = (raw: string): UiSettings => {
-    // Dropped: `previousPaths` (Previous paths) gave way to start flag positions (#331), and
-    // `focussedComponent` went with the old timeline focus (beat editor)
+    // Dropped: `previousPaths` (Previous paths) gave way to start flag positions (#331),
+    // `focussedComponent` went with the old timeline focus (beat editor), and `marcherOrder`
+    // became `lineOrder` with Off for its default (an Always picked before carries over)
     const {
         previousPaths: _previousPaths,
         focussedComponent: _focussedComponent,
+        marcherOrder,
         ...parsed
     } = JSON.parse(raw) as UiSettings & {
         previousPaths?: unknown;
         focussedComponent?: unknown;
+        marcherOrder?: unknown;
     };
+    if (marcherOrder === "always" && parsed.lineOrder === undefined)
+        parsed.lineOrder = "always";
     const mergedMouseSettings = {
         ...defaultSettings.mouseSettings,
         ...parsed.mouseSettings,

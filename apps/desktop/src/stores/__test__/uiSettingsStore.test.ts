@@ -261,3 +261,32 @@ describe("venue on the field settings (#1207)", () => {
         expect(parsed.fieldVenueAround).toBe("edge");
     });
 });
+
+describe("line order setting", () => {
+    it("starts off", () => {
+        expect(parseSettings("{}").lineOrder).toBe("off");
+    });
+
+    it("drops the old While selected default, so Off reaches everyone", () => {
+        const parsed = parseSettings(
+            JSON.stringify({ marcherOrder: "selected" }),
+        );
+        expect(parsed.lineOrder).toBe("off");
+        expect("marcherOrder" in parsed).toBe(false);
+    });
+
+    it("carries an Always picked before over", () => {
+        const parsed = parseSettings(
+            JSON.stringify({ marcherOrder: "always" }),
+        );
+        expect(parsed.lineOrder).toBe("always");
+        expect("marcherOrder" in parsed).toBe(false);
+    });
+
+    it("keeps a line order already set", () => {
+        const parsed = parseSettings(
+            JSON.stringify({ marcherOrder: "always", lineOrder: "selected" }),
+        );
+        expect(parsed.lineOrder).toBe("selected");
+    });
+});
