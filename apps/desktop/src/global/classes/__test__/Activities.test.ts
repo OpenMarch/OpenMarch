@@ -42,7 +42,7 @@ describe("getDefaultFieldTemplate", () => {
 
     it("returns an indoor floor for an indoor activity", () => {
         expect(getDefaultFieldTemplate("Winter Guard")).toBe(
-            FieldPropertiesTemplates.INDOOR_50x80_8to5,
+            FieldPropertiesTemplates.INDOOR_60x90_8to5,
         );
     });
 

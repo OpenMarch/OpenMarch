@@ -30,17 +30,17 @@ export const ACTIVITIES: ActivityDefinition[] = [
     {
         label: "Winter Guard",
         labelKey: "activities.winterGuard",
-        defaultTemplate: FieldPropertiesTemplates.INDOOR_50x80_8to5,
+        defaultTemplate: FieldPropertiesTemplates.INDOOR_60x90_8to5,
     },
     {
         label: "Indoor Percussion",
         labelKey: "activities.indoorPercussion",
-        defaultTemplate: FieldPropertiesTemplates.INDOOR_50x80_8to5,
+        defaultTemplate: FieldPropertiesTemplates.INDOOR_60x90_8to5,
     },
     {
         label: "Indoor Winds",
         labelKey: "activities.indoorWinds",
-        defaultTemplate: FieldPropertiesTemplates.INDOOR_50x80_8to5,
+        defaultTemplate: FieldPropertiesTemplates.INDOOR_60x90_8to5,
     },
     {
         label: "Other",
