@@ -6,7 +6,7 @@
  * on a white field), a faint rim, and a halo round each of its dots in the tone that sets that dot's
  * color apart. The fade is multiplied onto the field, so it reads as ink. An order that runs back over its own
  * marchers loses the tip and shows its numbers; one whose legs cross thins to a thread with darts and
- * shows its numbers. A known order also runs a comet (`OrderComet`): a ring that lights each dot in
+ * shows its numbers. A known order also runs a comet (`OrderCometRings`): a ring that lights each dot in
  * turn from the leader, with a fading tail behind it. A guessed order isn't drawn at rest; while Alt is held it shows hollow and
  * dashed. Position badges show while Alt is held, and always while Set order is on (touch has no
  * Alt). Set order draws the lane it has picked so far, growing behind the pointer, with the bar that
@@ -103,7 +103,7 @@ import {
     type PlacedBadge,
 } from "./orderLane";
 import { usePathPenStore } from "./pathPenStore";
-import OrderComet from "./OrderComet";
+import OrderCometRings from "./OrderCometRings";
 import { prefersReducedMotion } from "@/components/timeline/reducedMotion";
 import type { FloorSampler } from "./floorSampler";
 import { resolveMarcherLook } from "@/entity-components/appearance";
@@ -112,7 +112,7 @@ import { resolveMarcherLook } from "@/entity-components/appearance";
 const LANE_INK = "#1c1f26";
 /** How far the selection box stands clear of the selection's lane and names, in CSS px (step 4j) */
 const SELECTION_CLEARANCE = 5;
-/** Whether known orders run their comet (`OrderComet`): not for someone who turned motion down */
+/** Whether known orders run their comet (`OrderCometRings`): not for someone who turned motion down */
 const cometRuns = !prefersReducedMotion();
 
 /**
@@ -969,7 +969,7 @@ export default function MarcherOrderOverlay({
                                 (line, i) =>
                                     !line.guessed &&
                                     line.points.length >= 2 && (
-                                        <OrderComet
+                                        <OrderCometRings
                                             key={`comet-${i}`}
                                             points={line.points}
                                             radius={

@@ -9,7 +9,7 @@ import type { XY } from "./orderSweep";
  * Dots and their colors are left alone. Nothing runs for someone who asked their system for less
  * motion.
  */
-const OrderComet = memo(function OrderComet({
+const OrderCometRings = memo(function OrderCometRings({
     points,
     radius,
     dotRadius,
@@ -64,7 +64,7 @@ const OrderComet = memo(function OrderComet({
     return <g data-testid="marcherOrderComet">{rings}</g>;
 });
 
-export default OrderComet;
+export default OrderCometRings;
 
 /** Milliseconds since the comet first showed, every frame; null when motion is turned down */
 function useElapsed(): number | null {
