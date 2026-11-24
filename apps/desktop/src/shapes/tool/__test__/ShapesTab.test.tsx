@@ -7,6 +7,7 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { TolgeeProvider } from "@tolgee/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { TooltipProvider } from "@radix-ui/react-tooltip";
 import tolgee from "@/global/singletons/Tolgee";
 import { useInputModeStore } from "@/stores/InputModeStore";
@@ -24,11 +25,13 @@ const setMode = (preference: "touch" | "mouse") =>
 
 const renderTab = () =>
     render(
-        <TolgeeProvider tolgee={tolgee} fallback="">
-            <TooltipProvider>
-                <ShapesTab />
-            </TooltipProvider>
-        </TolgeeProvider>,
+        <QueryClientProvider client={new QueryClient()}>
+            <TolgeeProvider tolgee={tolgee} fallback="">
+                <TooltipProvider>
+                    <ShapesTab />
+                </TooltipProvider>
+            </TolgeeProvider>
+        </QueryClientProvider>,
     );
 
 const pressKey = (key: string) =>

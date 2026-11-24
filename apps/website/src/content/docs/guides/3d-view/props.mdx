@@ -212,7 +212,13 @@ Hold these keys while you drag a side or corner handle:
 
 ## Move a prop during the show
 
-Select the prop and drag it on a later page, or use the alignment tools, as you would a marcher ([Move marchers](/guides/marchers/move-marchers/)). It travels there during that page's <Term id="move">move</Term>, and it's held in place when nothing moves it. Props aren't in the marcher list.
+A prop moves the way a marcher does. Select it and drag it on a later page, or use the alignment tools ([Move marchers](/guides/marchers/move-marchers/)). It travels there during that page's <Term id="move">move</Term>, and it's held in place when nothing moves it. Props aren't in the marcher list.
+
+Select props together with marchers and they share the same tools. A [shape](/guides/shapes/) gives a prop a spot like any marcher, a path takes it along with the others, and align, distribute and swap treat it as one more dot. A box or a lasso picks props up with marchers, and so does <Ui k="actions.select.selectAll" plain />. To select every prop, open the <Ui k="inspector.shape.selectTab" plain /> tab, set <Ui k="toolbar.select.selectByText" plain /> to <Ui k="toolbar.select.selectBy.section" plain /> and choose <Ui k="section.prop" plain /> ([Select marchers](/guides/marchers/select-marchers/#select-a-whole-section-tag-family-or-drill-prefix)).
+
+A <Ui k="props.locked" plain /> prop stays out of all of this: selecting around it leaves it alone, and the tools leave it where it is.
+
+To move a small prop whose handles cover it, press inside it and drag. To resize it, grab a handle from outside its outline.
 
 ## Hide or delete a prop
 

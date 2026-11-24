@@ -132,9 +132,9 @@ function previewOf(
 
 /**
  * A marquee: the rectangle from the press to the pointer. On release it
- * replaces the selection with every marcher whose dot it touches, leaving out
- * items when performers are among them (`areaPicks`); with Shift held at the
- * press, it adds them, and with Alt it removes them.
+ * replaces the selection with every marcher and prop whose dot it touches,
+ * leaving out locked items (`areaPicks`); with Shift held at the press, it adds
+ * them, and with Alt it removes them.
  */
 export function startMarquee(
     ports: AreaPorts,
@@ -151,7 +151,6 @@ export function startMarquee(
                 hitRadius(ports.zoom()),
                 ports.canSelect,
             ),
-            (id) => ports.isItem?.(id) ?? false,
             (id) => ports.isLocked?.(id) ?? false,
         );
     const shapeAt = (
@@ -214,7 +213,6 @@ export function startLasso(
     const picks = () =>
         areaPicks(
             marchersInPolygon(ports.marchers(), points, ports.canSelect),
-            (id) => ports.isItem?.(id) ?? false,
             (id) => ports.isLocked?.(id) ?? false,
         );
     let shape: AreaShape = {

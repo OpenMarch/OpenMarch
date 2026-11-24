@@ -51,27 +51,27 @@ export function useAlignmentActionHandlers() {
         fieldProperties,
         ready,
         getSelectedMarcherPages,
-        getSelectedPerformerPages,
+        getSelectedEditablePages,
         selectedMarchers,
-        selectedPerformers,
+        selectedEditable,
     } = useEditorReadiness();
     // Read when an action runs, so a settings change (such as a timeline zoom save) doesn't
     // re-render the handlers
     const setUiSettings = useUiSettingsStore((s) => s.setUiSettings);
     const hasSelection = ready && selectedMarchers.length > 0;
-    // Align, distribute and swap line performers up: a selected prop isn't one more dot (C2.2)
-    const hasPerformers = ready && selectedPerformers.length > 0;
-    // Why they're greyed out: nothing selected, or only props (which don't line up)
+    // Align, distribute and swap line up marchers and props alike; a locked item stays put
+    const hasEditable = ready && selectedEditable.length > 0;
+    // Why they're greyed out: nothing selected, or only locked items
     const noSelection = ready
         ? t("actions.shape.noMarchersSelected")
         : undefined;
-    const noPerformers =
+    const noEditable =
         ready && selectedMarchers.length > 0
-            ? t("actions.alignment.propsOnly")
+            ? t("actions.alignment.lockedOnly")
             : noSelection;
-    const forPerformers = {
-        enabled: hasPerformers,
-        disabledReason: noPerformers,
+    const forEditable = {
+        enabled: hasEditable,
+        disabledReason: noEditable,
     };
     const forSelection = { enabled: hasSelection, disabledReason: noSelection };
     const updateCoordinates = useUpdateCoordinates();
@@ -123,22 +123,22 @@ export function useAlignmentActionHandlers() {
         "alignVertically",
         () => {
             const alignedCoords = CoordinateActions.alignVertically({
-                marcherPages: getSelectedPerformerPages(),
+                marcherPages: getSelectedEditablePages(),
             });
             updateCoordinates(alignedCoords);
         },
-        forPerformers,
+        forEditable,
     );
 
     useActionHandler(
         "alignHorizontally",
         () => {
             const alignedCoords = CoordinateActions.alignHorizontally({
-                marcherPages: getSelectedPerformerPages(),
+                marcherPages: getSelectedEditablePages(),
             });
             updateCoordinates(alignedCoords);
         },
-        forPerformers,
+        forEditable,
     );
 
     useActionHandler(
@@ -147,12 +147,12 @@ export function useAlignmentActionHandlers() {
             if (!fieldProperties) return;
             const distributedCoords =
                 CoordinateActions.evenlyDistributeVertically({
-                    marcherPages: getSelectedPerformerPages(),
+                    marcherPages: getSelectedEditablePages(),
                     fieldProperties,
                 });
             updateCoordinates(distributedCoords);
         },
-        forPerformers,
+        forEditable,
     );
 
     useActionHandler(
@@ -161,12 +161,12 @@ export function useAlignmentActionHandlers() {
             if (!fieldProperties) return;
             const distributedCoords =
                 CoordinateActions.evenlyDistributeHorizontally({
-                    marcherPages: getSelectedPerformerPages(),
+                    marcherPages: getSelectedEditablePages(),
                     fieldProperties,
                 });
             updateCoordinates(distributedCoords);
         },
-        forPerformers,
+        forEditable,
     );
 
     useActionHandler(
@@ -199,9 +199,9 @@ export function useAlignmentActionHandlers() {
         "swapMarchers",
         () => {
             // Greyed out otherwise, saying why
-            if (selectedPerformers.length !== 2) return;
+            if (selectedEditable.length !== 2) return;
             // Each marcher takes the other's position where the selection edits
-            const pair = getSelectedPerformerPages();
+            const pair = getSelectedEditablePages();
             if (pair.length !== 2) {
                 // Refused by the selection: say why, as the other tools do
                 updateCoordinates([]);
@@ -213,7 +213,7 @@ export function useAlignmentActionHandlers() {
             ]);
         },
         {
-            enabled: ready && selectedPerformers.length === 2,
+            enabled: ready && selectedEditable.length === 2,
             disabledReason: ready ? t("actions.swap.selectTwo") : undefined,
         },
     );

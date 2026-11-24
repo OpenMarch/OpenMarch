@@ -7,7 +7,7 @@ import { CaretDownIcon, WarningIcon } from "@phosphor-icons/react";
 import ActionButton from "@/shortcuts/ActionButton";
 import { runAction } from "@/shortcuts/registry";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
-import { performersOnly } from "@/global/classes/Marcher";
+import { useUnlockedOnly } from "@/items/lockedItems";
 import { useQuery } from "@tanstack/react-query";
 import { fieldPropertiesQueryOptions } from "@/hooks/queries/useFieldProperties";
 import { frameCorners } from "../frame/frame";
@@ -33,7 +33,7 @@ export function useClipboardView() {
     const pasteAs = useCopiedPictureStore((s) => s.pasteAs);
     const { data: fieldProperties } = useQuery(fieldPropertiesQueryOptions());
     const selectedMarchers = useSelectedMarchers()?.selectedMarchers ?? [];
-    const selected = performersOnly(selectedMarchers).length;
+    const selected = useUnlockedOnly(selectedMarchers).length;
     const stepPx = fieldProperties?.pixelsPerStep;
     // What was copied, and what pasting it does now (a shape can paste as its positions)
     const copied = useMemo(

@@ -1,5 +1,6 @@
 import { act, cleanup, render, screen } from "@testing-library/react";
 import { TolgeeProvider } from "@tolgee/react";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
 import tolgee from "@/global/singletons/Tolgee";
 import type { ActionId } from "@/shortcuts/definitions";
@@ -208,9 +209,11 @@ describe("Follow-the-leader switch: the field's menus (#1095)", () => {
 describe("Follow-the-leader switch: the Paths tab (#1095)", () => {
     const renderTab = (node: React.ReactNode) =>
         render(
-            <TolgeeProvider tolgee={tolgee} fallback="Loading...">
-                {node}
-            </TolgeeProvider>,
+            <QueryClientProvider client={new QueryClient()}>
+                <TolgeeProvider tolgee={tolgee} fallback="Loading...">
+                    {node}
+                </TolgeeProvider>
+            </QueryClientProvider>,
         );
 
     it("off: the Path pen without Follow; on, Follow beside it, no reload", () => {

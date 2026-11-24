@@ -81,25 +81,25 @@ export function useApplyShape(): (loose?: boolean) => Promise<void> {
  * selection (#603)
  */
 export function useShapeToolActions(): void {
-    const { ready, selectedPerformers } = useEditorReadiness();
+    const { ready, selectedEditable } = useEditorReadiness();
     const placeable = useShapeToolStore(
         (s) => s.tool !== null && s.tool.params !== null && !s.tool.gesture,
     );
     const apply = useApplyShape();
     const hidden = useShapeHidden();
     const shown = useShapeShown();
-    useShapePaletteSource(ready, selectedPerformers, apply);
+    useShapePaletteSource(ready, selectedEditable, apply);
 
     // A kind's key arms it, or turns the open shape into it
     useActionHandlerGroup(
         SHAPE_TOOLS.map((entry) => entry.action),
         (id) => {
             const entry = SHAPE_TOOLS.find((e) => e.action === id);
-            if (entry) pickShapeKind(entry.kind, selectedPerformers);
+            if (entry) pickShapeKind(entry.kind, selectedEditable);
         },
-        { enabled: ready && kindPickGate(shown, selectedPerformers).ok },
+        { enabled: ready && kindPickGate(shown, selectedEditable).ok },
     );
-    // Group the selected performers as they stand (#603); not one placed shape selected whole,
+    // Group the selected marchers and props as they stand (#603); not one placed shape selected whole,
     // which is a shape already (Ungroup is offered there instead)
     const shapeSelected = useBoxSelectionStore((s) => s.selected !== null);
     const queryClient = useQueryClient();
@@ -107,7 +107,7 @@ export function useShapeToolActions(): void {
         "shapeGroup",
         () =>
             void groupMarchers(
-                selectedPerformers.map((m) => m.id),
+                selectedEditable.map((m) => m.id),
                 queryClient,
             ),
         {
@@ -115,7 +115,7 @@ export function useShapeToolActions(): void {
                 ready &&
                 !shown &&
                 !shapeSelected &&
-                selectedPerformers.length >= GROUP_MIN,
+                selectedEditable.length >= GROUP_MIN,
             ignoreRepeat: true,
             // Too few to group says so; a shape open or selected offers its own commands
             disabledReason:

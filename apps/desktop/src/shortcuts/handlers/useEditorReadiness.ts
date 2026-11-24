@@ -1,5 +1,6 @@
 import { useCallback, useMemo } from "react";
-import Marcher, { performersOnly } from "@/global/classes/Marcher";
+import Marcher from "@/global/classes/Marcher";
+import { useUnlockedOnly } from "@/items/lockedItems";
 import { useQuery } from "@tanstack/react-query";
 import { fieldPropertiesQueryOptions } from "@/hooks/queries";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
@@ -45,14 +46,11 @@ export function useEditorReadiness() {
         [selectedMarchersContext?.selectedMarchers],
     );
     /**
-     * The selected performers, for formation tools (align, distribute, swap, line, circle) that
-     * would otherwise treat a selected prop as one more dot (C2.2). Moves, nudges and flips take
-     * the whole selection.
+     * The selected marchers the formation tools (align, distribute, swap, shapes, copy) act on:
+     * marchers and props alike, without the locked items, which stay where they are (props epic,
+     * fork #1239). Moves, nudges and flips take the whole selection.
      */
-    const selectedPerformers = useMemo(
-        () => performersOnly(selectedMarchers),
-        [selectedMarchers],
-    );
+    const selectedEditable = useUnlockedOnly(selectedMarchers);
 
     /**
      * The selected marchers' positions where the selection edits (UI-9 Editing, P8.15): the
@@ -64,10 +62,10 @@ export function useEditorReadiness() {
         () => coordinateRecordsOf(selectedMarchers),
         [selectedMarchers],
     );
-    /** `getSelectedMarcherPages` for the selected performers only */
-    const getSelectedPerformerPages = useCallback(
-        () => coordinateRecordsOf(selectedPerformers),
-        [selectedPerformers],
+    /** `getSelectedMarcherPages` for `selectedEditable` only */
+    const getSelectedEditablePages = useCallback(
+        () => coordinateRecordsOf(selectedEditable),
+        [selectedEditable],
     );
 
     const ready = !!selectedPage && !!fieldProperties;
@@ -77,8 +75,8 @@ export function useEditorReadiness() {
         fieldProperties,
         ready,
         getSelectedMarcherPages,
-        getSelectedPerformerPages,
+        getSelectedEditablePages,
         selectedMarchers,
-        selectedPerformers,
+        selectedEditable,
     };
 }

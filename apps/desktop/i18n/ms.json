@@ -18,8 +18,7 @@
             "snapOn": "Lekap dimatikan: hidupkan semula",
             "snapToCustomFraction": "Lekap ke grid",
             "toggleSnap": "Togol lekap",
-            "toggleSnapKeywords": "snap magnet grid free lekap bebas",
-            "propsOnly": "Hanya prop dipilih: prop tidak dijajarkan atau dijarakkan"
+            "toggleSnapKeywords": "snap magnet grid free lekap bebas"
         },
         "batchEdit": {
             "clearPage": "Kosongkan halaman {page}",
@@ -798,8 +797,6 @@
         "marcher": {
             "drillNumber": "Nombor drill",
             "errorLoadingCoords": "Ralat memuatkan koordinat",
-            "itemsSelected": "{count, plural, other {# prop dipilih. Editnya dalam panel Prop.}}",
-            "equipmentSelected": "{count, plural, =1 {# peralatan dipilih. Klik kanan padanya untuk mengeditnya.} other {# peralatan dipilih. Klik kanan pada salah satu untuk mengeditnya.}}",
             "playing": "Sedang dimainkan. Jeda untuk melihat dan mengedit pemain yang dipilih.",
             "maxStepSize": "Saiz langkah terbesar",
             "minStepSize": "Saiz langkah terkecil",

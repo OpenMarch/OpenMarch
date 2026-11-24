@@ -17,16 +17,17 @@ import { pictureSummary } from "./picture";
 
 /**
  * Copy, Paste, Paste exactly (#961) and Paste mirrored, for their keys, the field's menu and the command palette
- * alike. Each needs performers selected (a prop takes no spot), and no shape open and showing:
+ * alike. Each needs marchers or props selected (a locked item takes no spot), and no shape open and
+ * showing:
  * that one is placed or discarded first. The pastes also need something copied. Unavailable,
  * their keys are left alone, so Ctrl/Cmd+C and V keep working on text.
  */
 export function useClipboardActions(): void {
-    const { ready, selectedPerformers } = useEditorReadiness();
+    const { ready, selectedEditable } = useEditorReadiness();
     const shapeShown = useShapeShown();
     const copied = useCopiedPictureStore((s) => s.picture !== null);
-    const selected = ready && !shapeShown && selectedPerformers.length > 0;
-    const ids = () => selectedPerformers.map((m) => m.id);
+    const selected = ready && !shapeShown && selectedEditable.length > 0;
+    const ids = () => selectedEditable.map((m) => m.id);
     // Why they're greyed out, for the palette and the field menu's ?
     const openShape = () =>
         shapeShown
@@ -35,7 +36,7 @@ export function useClipboardActions(): void {
                   "Place or discard the open shape first",
               )
             : undefined;
-    const noSelection = selectedPerformers.length === 0;
+    const noSelection = selectedEditable.length === 0;
     useActionHandler("copyFormation", () => void copyFormation(ids()), {
         enabled: selected,
         ignoreRepeat: true,

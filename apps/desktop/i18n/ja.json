@@ -18,8 +18,7 @@
             "snapOn": "スナップはオフです：オンに戻す",
             "snapToCustomFraction": "グリッドにスナップ",
             "toggleSnap": "スナップの切り替え",
-            "toggleSnapKeywords": "スナップ マグネット グリッド 自由 フリー snap magnet grid free",
-            "propsOnly": "プロップだけが選択されています：プロップは整列や均等配置の対象になりません"
+            "toggleSnapKeywords": "スナップ マグネット グリッド 自由 フリー snap magnet grid free"
         },
         "batchEdit": {
             "clearPage": "ページ{page}をクリア",
@@ -798,8 +797,6 @@
         "marcher": {
             "drillNumber": "ドリル番号",
             "errorLoadingCoords": "座標の読み込みエラー",
-            "itemsSelected": "{count, plural, other {#個のプロップを選択中です。プロップパネルで編集してください。}}",
-            "equipmentSelected": "{count, plural, =1 {機材#点を選択中です。編集するには右クリックしてください。} other {機材#点を選択中です。編集するにはいずれかを右クリックしてください。}}",
             "playing": "再生中です。選択したメンバーを表示・編集するには一時停止してください。",
             "maxStepSize": "最大歩幅",
             "minStepSize": "最小歩幅",

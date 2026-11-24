@@ -18,8 +18,7 @@
             "snapOn": "Naka-off ang Snap: i-on ulit",
             "snapToCustomFraction": "I-snap sa grid",
             "toggleSnap": "I-on/i-off ang Snap",
-            "toggleSnapKeywords": "snap magnet grid free dikit magneto malaya",
-            "propsOnly": "Mga prop lang ang napili: hindi ina-align o dini-distribute ang mga prop"
+            "toggleSnapKeywords": "snap magnet grid free dikit magneto malaya"
         },
         "batchEdit": {
             "clearPage": "I-clear ang Pahina {page}",
@@ -798,8 +797,6 @@
         "marcher": {
             "drillNumber": "Numero sa drill",
             "errorLoadingCoords": "Hindi ma-load ang mga coordinate",
-            "itemsSelected": "{count, plural, one {# prop ang napili. I-edit ito sa panel na Props.} other {# prop ang napili. I-edit ang mga ito sa panel na Props.}}",
-            "equipmentSelected": "{count, plural, =1 {# kagamitan ang napili. I-right-click ito para i-edit.} other {# kagamitan ang napili. I-right-click ang isa para i-edit ito.}}",
             "playing": "Nagpe-play. I-pause para makita at ma-edit ang mga napiling miyembro.",
             "maxStepSize": "Pinakamalaking laki ng hakbang",
             "minStepSize": "Pinakamaliit na laki ng hakbang",

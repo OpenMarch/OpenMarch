@@ -9,7 +9,7 @@ import tolgee from "@/global/singletons/Tolgee";
 import { db } from "@/global/database/db";
 import { rememberedOrderAt } from "@/db-functions/rememberedOrder";
 import { subscribeHistoryChanges } from "@/db-functions/history";
-import { performersOnly } from "@/global/classes/Marcher";
+import { useUnlockedOnly } from "@/items/lockedItems";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import { useActionHandler } from "@/shortcuts/useActionHandler";
@@ -77,12 +77,11 @@ export function useMarcherOrderActions(): void {
     const selected = useSelectedMarchers()?.selectedMarchers;
     const isPlaying = useIsPlaying()?.isPlaying ?? false;
     const ready = useTimelineResolverStore((s) => s.status === "ready");
+    // Marchers and props alike; a locked item has no place in an order
+    const editable = useUnlockedOnly(selected);
     const ids = useMemo(
-        () =>
-            performersOnly(selected ?? [])
-                .map((m) => m.id)
-                .sort((a, b) => a - b),
-        [selected],
+        () => editable.map((m) => m.id).sort((a, b) => a - b),
+        [editable],
     );
     const key = ids.join(",");
     const beat = useTimelineSelectionStore(displayedBeat);
