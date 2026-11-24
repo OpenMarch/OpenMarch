@@ -151,8 +151,8 @@ The Equipment lane appears under the moves as soon as the show has an equipment 
 
 ## Move a change, or change how long it lasts
 
-- **Move it:** drag its bar sideways. It moves in whole counts, and near a page's flag or a measure it snaps to it; hold <Kbd keys="Alt" gesture="drag" /> to turn that snapping off (it still moves in whole counts). A change made for performers in several rows moves in all of them, since it's one cue. On its new count it replaces any other change made the same way for those performers, and a change to the same item there becomes part of it.
-- **Change where it ends:** drag the bar's right edge, as you would a move's. On a change for a few counts (a rounded bar), that changes how many. On a change that lasts until the next one, it makes it a change for that many counts, after which the performers go back to what they held before; drag it back to the next change for them and it lasts again. It ends at least a count after it starts. The edge snaps and <Kbd keys="Alt" gesture="drag" /> works as for moving it.
+- **Move it:** drag its bar sideways. It moves in whole counts, as far as you drag it. Close to a page's flag or the playhead it lands on it, and very close to the start of a measure it lands there; hold <Kbd keys="Alt" gesture="drag" /> to turn that off (it still moves in whole counts). A change made for performers in several rows moves in all of them, since it's one cue. On its new count it replaces any other change made the same way for those performers, and a change to the same item there becomes part of it.
+- **Change where it ends:** drag the bar's right edge, as you would a move's. On a change for a few counts (a rounded bar), that changes how many. On a change that lasts until the next one, it makes it a change for that many counts, after which the performers go back to what they held before; drag it back to the next change for them and it lasts again. It ends at least a count after it starts. The edge lands where you let go, and on page flags, the playhead and measures as when moving it, as a move's edges do. Where the playhead or the start flag crosses a bar, the bar's edge still takes your press.
 - **Change where it starts:** drag the bar's left edge. Where it ends stays put.
 - **Without dragging:** move the playhead to the new count, then choose <Ui k="actions.cues.moveToPlayhead" /> or <Ui k="actions.cues.endAtPlayhead" /> from the bar's menu or the command palette. They replace and join changes on that count the same way.
 - **On a tablet**, tap the bar to pick it: its edges then take a finger, as a picked move's do. The menu commands work too.
@@ -175,7 +175,7 @@ Each drag is one step of undo (<Kbd action="performUndo" />). None of them works
 
 1. Click the cue's bar in the Equipment lane to pick it. It gets an outline. With no bar picked, the commands below act on the Equipment cue on the playhead's count, if there's exactly one there.
 2. Select the performers to add or take out.
-3. Choose <Ui k="actions.cues.addSelected" /> or <Ui k="actions.cues.removeSelected" /> from the bar's menu (right-click it, or press and hold it on a tablet), or from the field's right-click menu, where they show while there's a cue to change.
+3. Choose <Ui k="actions.cues.addSelected" /> or <Ui k="actions.cues.removeSelected" /> from the bar's menu (right-click it, or press and hold it on a tablet: that picks it too), or from the field's right-click menu, where they show while there's a cue to change.
 
 </Steps>
 

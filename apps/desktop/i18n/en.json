@@ -4342,6 +4342,7 @@
             "selectRow": "Select these performers",
             "selectPerformers": "Select its performers",
             "markLabel": "{name}: {value}, {where}",
+            "menuHeading": "{value} · {name}",
             "forCounts": "{count, plural, one {For # count} other {For # counts}}",
             "dragStart": "Drag to change where it starts",
             "dragEnd": "Drag to change where it ends",

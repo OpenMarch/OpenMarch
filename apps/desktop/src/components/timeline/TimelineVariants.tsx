@@ -10,6 +10,7 @@ import {
     useRef,
     useState,
     type MouseEvent,
+    type RefObject,
 } from "react";
 import { TimelineLoopBar } from "./TimelineLoopBar";
 import { useClipDrops } from "./clipDrops";
@@ -944,12 +945,25 @@ const TimelineSurface = memo(function TimelineSurface({
     );
     // A band being edited (tempo mode) is the only thing in focus: no page editing beside it
     const bandFocus = !!band?.focus;
+    // The cue lanes take presses below their top (as a focused band does): the playhead and the
+    // start flag are grabbed above them, so a cue's edge under either line is still the cue's
+    const lanesScroll = useScrollTop(viewportRef, lanes !== undefined);
+    const linesGrabHeight = bandFocus
+        ? trackTop
+        : lanes
+          ? Math.max(0, lanesTop - lanesScroll)
+          : undefined;
     const appendAtPlayhead =
         props.isPlaying || bandFocus ? undefined : props.appendAtPlayhead;
     // The owner seeks on a selection (UI-9: to a range's end, or home's beat 0)
     const onSelectionChange = useLatestCallback(props.onSelectionChange);
     // UI-12: clicks and scrubs land on a nearby downbeat or page line; Basic's on any count
     // (UI-19: a mid-page edit happens at a count)
+    // A dragged edge's weaker lines, apart from the page lines (`snapEdgeBeat`)
+    const measureDownbeats = useMemo(
+        () => model.measures.map((measure) => measure.atBeat),
+        [model.measures],
+    );
     const seekSnapBeats = useMemo(
         () =>
             basic
@@ -1313,6 +1327,8 @@ const TimelineSurface = memo(function TimelineSurface({
                             pixelsPerBeat,
                             beatCount: model.beatCount,
                             snapBeats: seekSnapBeats,
+                            pageBeats: basic ? seekSnapBeats : snapBeats,
+                            downbeats: measureDownbeats,
                             leadingInset: initialPageWidth,
                         })}
                         {!basic &&
@@ -1349,6 +1365,8 @@ const TimelineSurface = memo(function TimelineSurface({
                             pixelsPerBeat,
                             beatCount: model.beatCount,
                             snapBeats: seekSnapBeats,
+                            pageBeats: basic ? seekSnapBeats : snapBeats,
+                            downbeats: measureDownbeats,
                             leadingInset: initialPageWidth,
                         })}
                     </div>
@@ -1526,7 +1544,7 @@ const TimelineSurface = memo(function TimelineSurface({
                             }
                             pixelsPerBeat={pixelsPerBeat}
                             height={pinnedHeight}
-                            grabHeight={bandFocus ? trackTop : undefined}
+                            grabHeight={linesGrabHeight}
                             beatCount={model.beatCount}
                             anchorRef={playheadRef}
                             onSeek={props.onSeek}
@@ -1593,7 +1611,7 @@ const TimelineSurface = memo(function TimelineSurface({
                                 pixelsPerBeat={pixelsPerBeat}
                                 height={pinnedHeight}
                                 // Tempo mode: the band's count handles win over the flag
-                                grabHeight={bandFocus ? trackTop : undefined}
+                                grabHeight={linesGrabHeight}
                                 snapBeats={snapBeats}
                                 onCommit={commitSelection}
                                 onLineDrag={props.onSeek}
@@ -1638,3 +1656,20 @@ export const CollapsedTimeline = memo(function CollapsedTimeline(
 ) {
     return <TimelineSurface {...props} density="collapsed" />;
 });
+
+/** The element's vertical scroll, kept while `watch` (the cue lanes show); 0 otherwise. */
+function useScrollTop(
+    ref: RefObject<HTMLElement | null>,
+    watch: boolean,
+): number {
+    const [top, setTop] = useState(0);
+    useEffect(() => {
+        const element = ref.current;
+        if (!watch || !element) return;
+        const read = () => setTop(element.scrollTop);
+        read();
+        element.addEventListener("scroll", read, { passive: true });
+        return () => element.removeEventListener("scroll", read);
+    }, [ref, watch]);
+    return watch ? top : 0;
+}

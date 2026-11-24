@@ -20,6 +20,7 @@ import {
     useMemo,
     useRef,
     useState,
+    useSyncExternalStore,
     type MouseEvent as ReactMouseEvent,
     type PointerEvent as ReactPointerEvent,
 } from "react";
@@ -45,9 +46,8 @@ import {
 import {
     clamp,
     isPageSnapDisabled,
-    snapBoundary,
-    snapRangeOffset,
 } from "@/components/timeline/TimelineGeometry";
+import { snapEdgeBeat } from "@/components/timeline/timelineEdgeSnap";
 import { clipHandleWidth } from "@/components/timeline/TimelineClipResize";
 import { TouchHitArea } from "@/components/timeline/TouchHitArea";
 import {
@@ -73,6 +73,7 @@ import {
     runAction,
     isActionChecked,
     isActionEnabled,
+    subscribeToActionHandlers,
 } from "@/shortcuts/registry";
 import type { ActionId } from "@/shortcuts/definitions";
 import { getActionLabel } from "@/shortcuts/labels";
@@ -198,7 +199,7 @@ type LaneDrag = {
     edit: CueEdit | null;
 };
 
-function EquipmentLaneView({
+export function EquipmentLaneView({
     geometry,
     lane,
     show,
@@ -270,6 +271,15 @@ function EquipmentLaneView({
     const rowName = (ids: readonly number[], label: string | null) =>
         label ??
         describePerformers({ ids, marchers: show?.marchers ?? [], words });
+    /** A cue's menu heading: what it sets, then who it's for ("Flag · Rifles") */
+    const cueHeading = (cueId: number) => {
+        const cue = show?.cues.find((c) => c.id === cueId);
+        if (!cue) return "";
+        return t("cues.lane.menuHeading", {
+            value: valueName(cue.value),
+            name: rowName(cue.marcherIds, cue.label),
+        });
+    };
     /** The count a cue starts on */
     const startCountOf = (cueId: number) => {
         const cue = show?.cues.find((c) => c.id === cueId);
@@ -331,35 +341,49 @@ function EquipmentLaneView({
         const span = { start: at, length: cue.length };
         let dragging = false;
         let result = { ...span, end: pieceEnd };
+        /**
+         * Where an edge at view beat `view` lands for a pointer `offset` beats away: every timeline
+         * edge's rule (`snapEdgeBeat`, as a move's clip edge): page lines and the paused playhead
+         * pull from 12 px, downbeats from 6 px, and never back to where it started; Alt keeps only
+         * the whole count. Else exactly as far as the pointer went, in whole counts.
+         */
+        const playhead = axis.toView(
+            useTimelineSelectionStore.getState().playheadBeat,
+        );
+        const landAt = (ev: PointerEvent, view: number, offset: number) =>
+            snapEdgeBeat({
+                beat: view + offset,
+                pageBeats: geometry.pageBeats ?? geometry.snapBeats,
+                downbeats: geometry.downbeats ?? [],
+                playheadBeat: playhead,
+                pixelsPerBeat: ppb,
+                snapDisabled: isPageSnapDisabled(ev),
+                from: view,
+            }) - view;
         const resultAt = (ev: PointerEvent) => {
             const offset = (ev.clientX - startX) / ppb;
             if (mode === "move") {
-                const view = axis.toView(at);
-                const requested = snapRangeOffset({
-                    range: { startBeatIndex: view, endBeatIndex: view },
-                    offset,
-                    snapBeats: isPageSnapDisabled(ev) ? [] : geometry.snapBeats,
-                    pixelsPerBeat: ppb,
-                });
+                // The bar moves whole: by its start's landing, or a momentary cue's end's when
+                // that one is pulled to a line and the start isn't
+                const byStart = landAt(ev, axis.toView(at), offset);
+                const byEnd =
+                    span.length === null
+                        ? byStart
+                        : landAt(ev, axis.toView(at + span.length), offset);
+                const raw = Math.round(offset);
+                const requested =
+                    byStart === raw && byEnd !== raw ? byEnd : byStart;
                 // Home and the fixed first beat are one moment: a cue goes no earlier than beat 1
                 const delta = clamp(requested, 1 - at, beats.length - 1 - at);
                 return { ...span, start: at + delta, end: pieceEnd + delta };
             }
-            // An edge lands on a page flag or measure near it, as a clip's edge does
+            // An edge lands on a page flag, the playhead or a measure near it, as a clip's edge does
             const edgeAt =
                 mode === "start"
                     ? at
                     : span.length !== null
                       ? at + span.length
                       : until;
-            const view = axis.toView(edgeAt);
-            const landed = isPageSnapDisabled(ev)
-                ? Math.round(view + offset)
-                : snapBoundary({
-                      beat: view + offset,
-                      snapBeats: geometry.snapBeats,
-                      pixelsPerBeat: ppb,
-                  });
             const edged = cueEdgeDrag({
                 edge: mode,
                 cue: span,
@@ -369,7 +393,7 @@ function EquipmentLaneView({
                         ? null
                         : specAt(near.nextMomentary),
                 previous: near.previous === null ? null : specAt(near.previous),
-                delta: landed - view,
+                delta: landAt(ev, axis.toView(edgeAt), offset),
             });
             return {
                 ...edged,
@@ -579,6 +603,7 @@ function EquipmentLaneView({
                 <CueMenuView
                     menu={menu}
                     show={show}
+                    heading={cueHeading(menu.cueId)}
                     onClose={() => setMenu(null)}
                 />
             )}
@@ -888,17 +913,41 @@ function SummaryMarkButton({
     );
 }
 
+/** The commands a cue's menu offers */
+const CUE_MENU_ACTIONS: readonly ActionId[] = [
+    "cueAddSelected",
+    "cueRemoveSelected",
+    "cueMoveToPlayhead",
+    "cueEndAtPlayhead",
+    "cueMakeLasting",
+    "cueMakeMomentary",
+    "cueDelete",
+];
+
+/** Each cue command's state as one string, so a change draws the menu again */
+const cueMenuSnapshot = () =>
+    CUE_MENU_ACTIONS.map(
+        (id) =>
+            `${isActionEnabled(id) ? 1 : 0}${isActionChecked(id) ? 1 : 0}${actionDisabledReason(id) ?? ""}`,
+    ).join("\n");
+
 /** A cue's menu: the cue commands, which act on the picked cue, and selecting its performers. */
 function CueMenuView({
     menu,
     show,
+    heading,
     onClose,
 }: {
     menu: CueMenu;
     show: EditorCues;
+    /** What the cue sets and for whom ("Flag · Rifles"), so it's plain which cue it is */
+    heading: string;
     onClose: () => void;
 }) {
     const { t } = useTranslate();
+    // Opened by the same press that picks the cue: the commands catch up with the pick a moment
+    // later, so the menu follows them rather than showing them as they were (greyed out)
+    useSyncExternalStore(subscribeToActionHandlers, cueMenuSnapshot);
     const cue = show.cues.find((c) => c.id === menu.cueId);
     const label = (id: ActionId) =>
         getActionLabel(id, (key, params) => t(key, params as never));
@@ -946,9 +995,12 @@ function CueMenuView({
                     {...KEEP_MENU_EVENTS}
                     className={TIMELINE_MENU_CONTENT_CLASS}
                 >
-                    {cue?.label && (
-                        <DropdownMenu.Label className={MENU_LABEL_CLASS}>
-                            {cue.label}
+                    {cue && (
+                        <DropdownMenu.Label
+                            data-testid="cue-menu-heading"
+                            className={MENU_LABEL_CLASS}
+                        >
+                            {heading}
                         </DropdownMenu.Label>
                     )}
                     {item("cueAddSelected")}
