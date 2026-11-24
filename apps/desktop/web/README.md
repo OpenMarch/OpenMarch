@@ -107,6 +107,12 @@ VITE_EDITOR_API_URL=http://localhost:3000/api/editor/
 Without a development key, a dev build can't sign in and the Mobile tab
 says so.
 
+### Page zoom
+
+A trackpad pinch or Ctrl + scroll zooms the field or the timeline, never the
+page: anywhere else it is cancelled (`renderer/touchGestures.ts`). Keyboard
+zoom (Cmd/Ctrl with + and −) and the browser's zoom menu still work.
+
 ### Tablets
 
 On iPads (Safari) and Android tablets (Chrome) the page doesn't zoom or

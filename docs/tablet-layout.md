@@ -152,6 +152,8 @@ Other field behavior:
 
 - Page pinch-zoom, double-tap zoom, rubber-banding and the tap highlight are off
   (`styles/index.css`, `web/renderer/touchGestures.ts`).
+- On a computer, a trackpad pinch or Ctrl + scroll zooms only the field
+  and the timeline, never the page (`web/renderer/touchGestures.ts`).
 - Home-screen app: manifest and icons in `web/public/`, tags injected by
   `vite.web.config.mts`.
   The status bar style is "default": with "black-translucent", iPadOS 17
