@@ -17,7 +17,6 @@ export interface ReportLine {
 const MB = 1024 * 1024;
 const megabytes = (bytes: number) => String(Math.round(bytes / MB));
 const number = (value: number) => value.toLocaleString();
-const meters = (value: number) => String(Number(value.toFixed(2)));
 const names = (list: readonly string[]) => list.join(", ");
 
 const K = "props.import.cantImport";
@@ -186,8 +185,12 @@ export function fixText(fix: Fix, t: Translate): ReportLine {
 
 const N = "props.import.notes";
 
-/** A quiet note */
-export function noteText(note: Note, t: Translate): ReportLine {
+/** A quiet note, its lengths as `length` writes meters (in the show's units) */
+export function noteText(
+    note: Note,
+    t: Translate,
+    length: (meters: number) => string,
+): ReportLine {
     switch (note.code) {
         case "validatorWarnings":
             return {
@@ -196,10 +199,10 @@ export function noteText(note: Note, t: Translate): ReportLine {
         case "sizeOutOfRange":
             return {
                 title: t(`${N}.sizeOutOfRange.title`),
-                detail: t(`${N}.sizeOutOfRange.detail`, {
-                    largest: meters(note.largestM),
-                    min: meters(note.minM),
-                    max: meters(note.maxM),
+                detail: t(`${N}.sizeOutOfRange.detailOf`, {
+                    largest: length(note.largestM),
+                    min: length(note.minM),
+                    max: length(note.maxM),
                 }),
             };
         case "overTriangleCap":

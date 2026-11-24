@@ -86,9 +86,23 @@ describe("the import report's words", () => {
     it.each(NOTES.map((n) => [n.code, n] as const))(
         "notes %s",
         (_code, note) => {
-            expect(noteText(note, t).title).toBeTruthy();
+            expect(noteText(note, t, String).title).toBeTruthy();
         },
     );
+
+    it("writes an odd size's lengths with the length it's given", () => {
+        const say = (key: string, params?: Record<string, string | number>) =>
+            `${key} ${JSON.stringify(params ?? {})}`;
+        const note: Note = {
+            code: "sizeOutOfRange",
+            largestM: 40,
+            minM: 0.1,
+            maxM: 20,
+        };
+        expect(noteText(note, say, (m) => `<${m}>`).detail).toContain(
+            '"largest":"<40>","min":"<0.1>","max":"<20>"',
+        );
+    });
 
     it("offers Try again only when the import failed, not the file", () => {
         expect(REFUSALS.filter(canRetry).map((r) => r.code)).toEqual([

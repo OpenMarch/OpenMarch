@@ -1604,6 +1604,8 @@
             "preset": "Couldn't apply the preset"
         },
         "height": "Height",
+        "lengthUnreadable": "Couldn't read “{text}” as a length. Type it like 4 ft 6 in, 4.5 ft or 1.4 m.",
+        "lengthTooSmall": "Too small: at least {min}.",
         "hide": "Hide on the field",
         "name": "Name",
         "offField": "Off field at the playhead. Move the playhead to a count where the prop is on the field to change its outline.",
@@ -1638,9 +1640,6 @@
         "title": "Props",
         "transition": "Transition",
         "width": "Width",
-        "units": {
-            "meters": "m"
-        },
         "locked": "Locked",
         "lockLabel": "Locked",
         "lockHint": "Clicks and drags on the field pass over it",
@@ -1683,7 +1682,8 @@
             },
             "size": {
                 "title": "Size",
-                "value": "{width} × {depth} m, {height} m tall",
+                "dimensionsOf": "{width} × {depth}, {height} tall",
+                "inFile": "In the file: {width} × {depth} {unit}, {height} {unit} tall",
                 "question": "Is that its real size? If not, pick the unit the file was made in.",
                 "suggested": "It looked like it was made in {unit}, so it was converted. Check the size."
             },
@@ -1797,7 +1797,7 @@
                 "validatorWarnings": "{count, plural, one {The file has # warning} other {The file has # warnings}}",
                 "sizeOutOfRange": {
                     "title": "Unusual size for a prop",
-                    "detail": "Its longest side is {largest} m; props are usually {min} to {max} m."
+                    "detailOf": "Its longest side is {largest}; props are usually {min} to {max}."
                 },
                 "overTriangleCap": "Still detailed: {triangles} triangles (the aim is {cap})"
             }
@@ -1833,7 +1833,7 @@
             "editTitle": "Edit Podium"
         },
         "default": "Default",
-        "footprint": "{width} × {depth} m",
+        "footprintSize": "{width} × {depth}",
         "groups": {
             "audio": "Audio",
             "keyboards": "Keyboards",

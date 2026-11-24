@@ -229,9 +229,13 @@ async function importChair(
 }
 
 /** Sets a number field in the Edit Prop panel. */
+/**
+ * Types into a prop's Width, Depth or Height box. A number is meters; text is typed as it is
+ * (`20'`). The boxes show the show's units, and a bare number would be feet or inches there.
+ */
 async function setPropField(page, label, value) {
     const input = page.getByLabel(label, { exact: true }).first();
-    await input.fill(String(value));
+    await input.fill(typeof value === "number" ? `${value} m` : value);
     await input.press("Enter");
     await page.waitForTimeout(600);
 }
@@ -1027,7 +1031,7 @@ const shots = [
     {
         id: "3d-props-edit",
         kind: "still",
-        // The Edit Prop panel for a riser 1.2 m tall
+        // The Edit Prop panel for a riser 20 × 6 ft, 4 ft tall
         async setup(ctx) {
             const { page } = ctx;
             const { index } = await drawRiser(page, {
@@ -1043,8 +1047,9 @@ const shots = [
                 .click();
             await ctx.wait(800);
             // Round sizes, so the picture matches its alt text
-            await setPropField(page, "Width", 6);
-            await setPropField(page, "Depth", 2);
+            await setPropField(page, "Width", "20'");
+            await setPropField(page, "Depth", "6'");
+            await setPropField(page, "Height", "4'");
             // No focus ring left on the last field
             await page.evaluate(() => document.activeElement?.blur());
             await page.mouse.move(1596, 996);

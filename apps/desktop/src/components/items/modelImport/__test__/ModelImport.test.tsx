@@ -144,7 +144,11 @@ describeDbTests("Model import", (it) => {
         // The size to confirm, the turn, and the detail level: Light, with what it costs
         expect(
             within(review).getByTestId("model-import-size").textContent,
-        ).toMatch(/^[\d.]+ × [\d.]+ m, [\d.]+ m tall$/);
+        ).toMatch(/^[\d' /]+" × [\d' /]+", [\d' /]+" tall$/);
+        // The test show is imperial and the file is in meters, so the file's numbers show too
+        expect(
+            within(review).getByTestId("model-import-size-in-file").textContent,
+        ).toMatch(/^In the file: [\d.]+ × [\d.]+ m, [\d.]+ m tall$/);
         expect(
             within(review).getByTestId("model-import-detail-cost").textContent,
         ).toMatch(
@@ -290,8 +294,12 @@ describeDbTests("Model import", (it) => {
         expect(
             await screen.findByTestId("item-keeps-proportions"),
         ).toBeTruthy();
-        const width = screen.getByLabelText("Width");
-        fireEvent.change(width, { target: { value: String(sizeM.width * 2) } });
+        // The box shows feet and inches in this imperial show, and takes a length in any unit
+        const width = screen.getByLabelText<HTMLInputElement>("Width");
+        expect(width.value).toMatch(/"$/);
+        fireEvent.change(width, {
+            target: { value: `${sizeM.width * 2} m` },
+        });
         fireEvent.keyDown(width, { key: "Enter" });
         await waitFor(async () => {
             const rows = await getItemGeometry({ db });
@@ -300,7 +308,31 @@ describeDbTests("Model import", (it) => {
         const resized = (await getItemGeometry({ db })).at(-1)!;
         expect(resized.depth).toBeCloseTo(sizeM.depth * 2);
         expect(resized.height).toBeCloseTo(sizeM.height * 2);
-        await performUndo(db);
+
+        // A bare number is in the unit the box shows: inches once the chair is under a foot
+        const typeWidth = async (value: string, meters: number) => {
+            fireEvent.change(width, { target: { value } });
+            fireEvent.keyDown(width, { key: "Enter" });
+            await waitFor(async () => {
+                const rows = await getItemGeometry({ db });
+                expect(rows.at(-1)!.width).toBeCloseTo(meters, 6);
+            });
+        };
+        await typeWidth("10 in", 0.254);
+        await waitFor(() => expect(width.value).toBe('10"'));
+        await typeWidth("12", 0.3048);
+
+        // Text that isn't a length says so and keeps the size
+        fireEvent.change(width, { target: { value: "wide" } });
+        fireEvent.keyDown(width, { key: "Enter" });
+        expect(
+            (await screen.findByTestId("item-length-refused")).textContent,
+        ).toContain("“wide”");
+        expect((await getItemGeometry({ db })).at(-1)!.width).toBeCloseTo(
+            0.3048,
+            6,
+        );
+        for (let i = 0; i < 3; i++) await performUndo(db);
 
         // One undo removes the prop and keeps the model
         await performUndo(db);
