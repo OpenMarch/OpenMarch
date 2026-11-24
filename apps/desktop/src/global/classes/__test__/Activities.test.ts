@@ -4,7 +4,9 @@ import {
     ACTIVITIES,
     ACTIVITY_LABELS,
     DEFAULT_ACTIVITY,
+    activityHasFrontEnsemble,
     getDefaultFieldTemplate,
+    isIndoorFloorActivity,
 } from "../Activities";
 import FieldPropertiesTemplates from "../FieldProperties.templates";
 
@@ -59,5 +61,23 @@ describe("getDefaultFieldTemplate", () => {
         expect(getDefaultFieldTemplate("Basket Weaving")).toBe(
             FieldPropertiesTemplates.COLLEGE_FOOTBALL_FIELD_NO_END_ZONES,
         );
+    });
+});
+
+describe("indoor floors and front ensembles", () => {
+    it("gives the indoor activities the indoor floor step", () => {
+        expect(isIndoorFloorActivity("Winter Guard")).toBe(true);
+        expect(isIndoorFloorActivity("Indoor Percussion")).toBe(true);
+        expect(isIndoorFloorActivity("Indoor Winds")).toBe(true);
+        expect(isIndoorFloorActivity("Marching Band")).toBe(false);
+        expect(isIndoorFloorActivity(undefined)).toBe(false);
+    });
+
+    it("leaves only Winter Guard without a front ensemble", () => {
+        expect(activityHasFrontEnsemble("Winter Guard")).toBe(false);
+        expect(activityHasFrontEnsemble("Indoor Percussion")).toBe(true);
+        expect(activityHasFrontEnsemble("Indoor Winds")).toBe(true);
+        expect(activityHasFrontEnsemble("Marching Band")).toBe(true);
+        expect(activityHasFrontEnsemble(undefined)).toBe(true);
     });
 });

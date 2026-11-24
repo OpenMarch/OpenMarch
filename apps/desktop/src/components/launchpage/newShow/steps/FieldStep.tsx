@@ -5,7 +5,15 @@ import FieldPropertiesSelector from "@/components/field/FieldPropertiesSelector"
 import FieldPreview from "@/components/field/FieldPreview";
 import type { NewShowEnsembleData, NewShowFieldData } from "../../newShowTypes";
 import { T, useTranslate } from "@tolgee/react";
-import { getDefaultFieldTemplate } from "@/global/classes/Activities";
+import {
+    getDefaultFieldTemplate,
+    isIndoorFloorActivity,
+} from "@/global/classes/Activities";
+import IndoorFloorPicker, {
+    useFloorImage,
+} from "@/components/field/IndoorFloorPicker";
+import { indoorFloorOf } from "@/global/classes/fieldTemplates/indoorFloors";
+import { Button } from "@openmarch/ui";
 
 interface FieldStepProps {
     ensemble: NewShowEnsembleData | null;
@@ -24,6 +32,10 @@ export default function FieldStep({
     const [currentTemplate, setCurrentTemplate] = useState<FieldProperties>(
         field?.template ?? defaultTemplate,
     );
+    const indoor = isIndoorFloorActivity(activity);
+    const [allFields, setAllFields] = useState(
+        () => indoor && indoorFloorOf(currentTemplate) === null,
+    );
     const prevActivity = useRef(activity);
     const hasInitializedField = useRef(field !== null);
 
@@ -40,17 +52,29 @@ export default function FieldStep({
         if (prevActivity.current === activity) return;
         prevActivity.current = activity;
         setCurrentTemplate(defaultTemplate);
+        setAllFields(false);
         onChange({
             template: defaultTemplate,
             isCustom: defaultTemplate.isCustom ?? false,
+            image: null,
         });
     }, [activity, field, defaultTemplate, onChange]);
 
-    const handleTemplateChange = (template: FieldProperties) => {
+    // Field image only comes from the indoor floor picker; any other field drops it
+    const image = field?.image ?? null;
+    const drawnImage = useFloorImage(image);
+    const showFloorPicker =
+        indoor && !allFields && indoorFloorOf(currentTemplate) !== null;
+
+    const handleTemplateChange = (
+        template: FieldProperties,
+        nextImage: Uint8Array | null = null,
+    ) => {
         setCurrentTemplate(template);
         onChange({
             template,
             isCustom: template.isCustom ?? false,
+            image: nextImage,
         });
     };
 
@@ -66,21 +90,51 @@ export default function FieldStep({
             stepSizeWarningThresholdInches: inches,
         });
         setCurrentTemplate(template);
-        onChange({ template, isCustom: template.isCustom ?? false });
+        onChange({ template, isCustom: template.isCustom ?? false, image });
     };
 
     return (
         <div className="mx-auto flex w-full max-w-lg flex-col gap-16">
-            <FieldPropertiesSelector
-                currentTemplate={currentTemplate}
-                onTemplateChange={handleTemplateChange}
-            />
+            {showFloorPicker ? (
+                <IndoorFloorPicker
+                    template={currentTemplate}
+                    image={image}
+                    drawn={drawnImage}
+                    onChange={handleTemplateChange}
+                    onOtherFields={() => setAllFields(true)}
+                />
+            ) : (
+                <div className="flex flex-col gap-8">
+                    <FieldPropertiesSelector
+                        currentTemplate={currentTemplate}
+                        onTemplateChange={(template) =>
+                            handleTemplateChange(template)
+                        }
+                    />
+                    {indoor && (
+                        <Button
+                            size="compact"
+                            variant="secondary"
+                            className="self-start"
+                            onClick={() => {
+                                setAllFields(false);
+                                if (indoorFloorOf(currentTemplate) === null)
+                                    handleTemplateChange(defaultTemplate);
+                            }}
+                            data-testid="indoor-floor-back"
+                        >
+                            <T keyName="fieldProperties.indoorFloor.backToFloors" />
+                        </Button>
+                    )}
+                </div>
+            )}
             <div className="flex flex-col gap-8">
                 <span className="text-body text-text font-medium">
                     <T keyName="launchpage.files.fieldPreview" />
                 </span>
                 <FieldPreview
                     fieldProperties={currentTemplate}
+                    image={drawnImage ?? undefined}
                     className="h-[200px]"
                 />
             </div>

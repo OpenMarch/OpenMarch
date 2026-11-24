@@ -26,7 +26,7 @@ import { useNewShowValidation } from "./newShow/hooks/useNewShowValidation";
 import {
     DEFAULT_NEW_SHOW_WIZARD_STATE,
     hasNewShowProgress,
-    NEW_SHOW_STEPS,
+    getWizardSteps,
     type NewShowAudioData,
     type NewShowFrontEnsembleData,
     type NewShowEnsembleData,
@@ -109,13 +109,6 @@ const STEP_COPY: Record<
         descriptionKey: "launchpage.newShow.steps.tempo.description",
     },
 };
-
-function getWizardSteps(state: NewShowWizardState): NewShowStepId[] {
-    if (state.start?.mode === "importPrevious") {
-        return ["start", "project", "ensemble", "audio", "tempo"];
-    }
-    return NEW_SHOW_STEPS;
-}
 
 export default function NewShowDialog({
     open,

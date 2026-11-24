@@ -866,6 +866,27 @@
         "measurements": {
             "feet": "{value} ft",
             "meters": "{value} m"
+        },
+        "indoorFloor": {
+            "image": "Floor image",
+            "addImage": "Add floor image",
+            "imageHint": "The art printed on your floor. It shows under the grid, and the floor size with the same shape is picked for you.",
+            "unreadable": "That file isn't an image OpenMarch can read. Try a PNG or JPEG.",
+            "replaceImage": "Replace",
+            "removeImage": "Remove",
+            "matches": "Matches the {size} floor.",
+            "shapedLike": "Shaped like a {size} floor.",
+            "useSize": "Use {size}",
+            "noMatch": "This image's shape doesn't match a floor size below, so it's fitted inside the floor.",
+            "size": "Floor size",
+            "sizeFeet": "{depth} × {width} ft",
+            "fullSize": "WGI full size",
+            "stepSize": "Step size",
+            "step24": "24 inches",
+            "step30": "30 inches (6 to 5)",
+            "linesEvery": "Lines every {feet} ft ({steps} steps)",
+            "otherFields": "Other fields",
+            "backToFloors": "Indoor floor sizes"
         }
     },
     "fileAccessDialogError": {

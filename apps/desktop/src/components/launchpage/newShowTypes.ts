@@ -1,3 +1,4 @@
+import { activityHasFrontEnsemble } from "@/global/classes/Activities";
 import type { FieldProperties } from "@openmarch/core";
 import type { NewMarcherArgs, NewSectionAppearanceArgs } from "@/db-functions";
 import type { PitPresetSize } from "@/view3d/core/pit/presets";
@@ -22,6 +23,17 @@ export const NEW_SHOW_STEPS: NewShowStepId[] = [
     "audio",
     "tempo",
 ];
+
+/** The steps a new show goes through: fewer for a previous show's file, none about a pit without one */
+export function getWizardSteps(state: NewShowWizardState): NewShowStepId[] {
+    if (state.start?.mode === "importPrevious") {
+        return ["start", "project", "ensemble", "audio", "tempo"];
+    }
+    // Winter Guard has no front ensemble, so it isn't asked about one
+    if (!activityHasFrontEnsemble(state.ensemble?.activity))
+        return NEW_SHOW_STEPS.filter((step) => step !== "frontEnsemble");
+    return NEW_SHOW_STEPS;
+}
 
 export interface NewShowProjectData {
     projectName: string;
@@ -49,6 +61,8 @@ export interface NewShowFrontEnsembleData {
 export interface NewShowFieldData {
     template: FieldProperties;
     isCustom: boolean;
+    /** The floor's printed art, picked on an indoor floor; shown under the grid */
+    image?: Uint8Array | null;
 }
 
 export interface PreviousDotsCoordinateData {
@@ -158,6 +172,8 @@ export type NewShowFormState = {
     projectName: string;
     filePath: string;
     fieldTemplate: FieldProperties;
+    /** The field image picked in the Field step */
+    fieldImage?: Uint8Array | null;
     designer?: string;
     client?: string;
     defaultTempo: number;
@@ -185,12 +201,16 @@ export function wizardStateToFormState(
         projectName: state.project.projectName,
         filePath: state.project.fileLocation,
         fieldTemplate: state.field.template,
+        fieldImage: state.field.image ?? null,
         designer: state.project.designer,
         client: state.project.client,
         defaultTempo,
         ensemble: state.ensemble,
         performers: state.performers,
-        frontEnsemble: state.frontEnsemble,
+        // A pit picked before switching to an activity without one is dropped with its step
+        frontEnsemble: activityHasFrontEnsemble(state.ensemble.activity)
+            ? state.frontEnsemble
+            : null,
         audio: state.audio,
         tempo: state.tempo,
         draftFilePath: state.draftFilePath,
