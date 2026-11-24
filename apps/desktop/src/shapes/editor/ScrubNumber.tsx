@@ -80,6 +80,12 @@ export function ScrubNumber({
     // Unmounted mid-drag: stop following the keyboard
     useEffect(() => () => press.current?.held.end(), []);
     const typingNow = typing !== null;
+    // Whether anything was typed since it opened: one left as it opened applies nothing, so a −
+    // or + pressed meanwhile isn't undone by the old number when it closes (sim study of #1190)
+    const changed = useRef(false);
+    useEffect(() => {
+        if (typingNow) changed.current = false;
+    }, [typingNow]);
     const heard = useRef(onTyping);
     heard.current = onTyping;
     useEffect(() => {
@@ -97,11 +103,11 @@ export function ScrubNumber({
 
     if (typing !== null) {
         const apply = () => {
-            if (onType(typing)) setTyping(null);
+            if (!changed.current || onType(typing)) setTyping(null);
         };
         /** Tab and Shift+Tab: apply this one and type into the next or previous number */
         const tabTo = (step: 1 | -1) => {
-            if (!onType(typing)) return;
+            if (changed.current && !onType(typing)) return;
             const own = wrapper.current;
             const all = [
                 ...(own
@@ -129,7 +135,10 @@ export function ScrubNumber({
                     style={{ width: `${Math.max(typing.length, 3) + 1}ch` }}
                     value={typing}
                     onFocus={(e) => e.currentTarget.select()}
-                    onChange={(e) => setTyping(e.currentTarget.value)}
+                    onChange={(e) => {
+                        changed.current = true;
+                        setTyping(e.currentTarget.value);
+                    }}
                     onBlur={apply}
                     onKeyDown={(e) => {
                         // The number's own keys: the shape tool doesn't see them

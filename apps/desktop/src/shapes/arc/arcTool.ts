@@ -16,7 +16,13 @@ import type {
     ToolParam,
 } from "../tool/toolKind";
 import type { XY } from "../types";
-import { INTERVAL, keptInterval, lineTool, pivoted } from "../line/lineTool";
+import {
+    INTERVAL,
+    keptInterval,
+    lineToolBase,
+    pivoted,
+} from "../line/lineTool";
+import { withRows } from "../line/lineRows";
 import { lineFillSpots } from "../line/lineFill";
 import {
     lineFrame,
@@ -383,7 +389,7 @@ const ENDS: ToolChoice<LineParams> = {
 
 /** One of the Line's menus, as the Arc shares it */
 const lineChoice = (key: string) =>
-    lineTool.choices!.find((choice) => choice.key === key)!;
+    lineToolBase.choices!.find((choice) => choice.key === key)!;
 
 /**
  * The Line's Measured menu for the Arc (owner on #634): along the arc, straight from marcher to
@@ -426,8 +432,8 @@ const MENU: ToolHandleMenu<LineParams> = {
  * both ends always hold a marcher. It never turns more than 359°; closed, by its chord or round to
  * a whole circle, it fills as a closed Line does.
  */
-export const arcTool: ToolKind<LineParams> = {
-    ...lineTool,
+export const arcTool: ToolKind<LineParams> = withRows({
+    ...lineToolBase,
     shape: arcShape,
     keywords: ["arc", "bow", "semicircle"],
     params: [INTERVAL, BEND, WIDTH, DEPTH, STRETCH],
@@ -501,4 +507,4 @@ export const arcTool: ToolKind<LineParams> = {
             },
             180,
         ),
-};
+});

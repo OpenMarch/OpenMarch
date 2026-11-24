@@ -35,6 +35,7 @@ import type {
 } from "../tool/toolKind";
 import { withPivot } from "../frame/pivot";
 import { curveShape, lineShape } from "./lineShape";
+import { withRows } from "./lineRows";
 import {
     cornersPictures,
     endsPictures,
@@ -1373,7 +1374,8 @@ export function pivoted(p: LineParams | undefined): LineParams | undefined {
     return p && withPivot(p, linePivot(p));
 }
 
-export const lineTool: ToolKind<LineParams> = {
+/** The Line as drawn, without rows: the Curve and the Arc start from it */
+export const lineToolBase: ToolKind<LineParams> = {
     shape: lineShape,
     params: [INTERVAL, OFFSET_X, OFFSET_Y],
     choices: [ENDS, SPACING, MEASURED, CORNERS],
@@ -1502,6 +1504,9 @@ export const lineTool: ToolKind<LineParams> = {
     pictureParams: (_n, env) => zigzag(env),
 };
 
+/** The Line, with rows (spec #1190) */
+export const lineTool: ToolKind<LineParams> = withRows(lineToolBase);
+
 /** The picture's zigzag (owner, 2026-10-31): three segments from the top down, corners or smooth */
 const ZIGZAG: readonly XY[] = [
     { x: -4, y: -4 },
@@ -1525,8 +1530,8 @@ const wave = (env: ToolEnv): LineParams => drawPoints(WAVE, env, MAX_TENSION)!;
  * of the drag), clicks draw a curve through the points, and a shape turned into a Curve arches across its frame. Placed, it
  * reads back as a Line.
  */
-export const curveTool: ToolKind<LineParams> = {
-    ...lineTool,
+export const curveTool: ToolKind<LineParams> = withRows({
+    ...lineToolBase,
     preset: "curve",
     keywords: ["curve", "arc-like", "smooth"],
     shape: curveShape,
@@ -1541,4 +1546,4 @@ export const curveTool: ToolKind<LineParams> = {
     },
     fromFrame: (frame, n, env) => pivoted(curveInFrame(frame, n, env)),
     pictureParams: (_n, env) => wave(env),
-};
+});

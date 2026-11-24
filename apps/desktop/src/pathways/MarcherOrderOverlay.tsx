@@ -6,12 +6,14 @@
  * on a white field), a faint rim, and a halo round each of its dots in the tone that sets that dot's
  * color apart. The fade is multiplied onto the field, so it reads as ink. An order that runs back over its own
  * marchers loses the tip and shows its numbers; one whose legs cross thins to a thread with darts and
- * shows its numbers.
+ * shows its numbers. A known order also runs a comet (`OrderCometRings`): a ring that lights each dot in
+ * turn from the leader, with a fading tail behind it.
  *
  * When it shows: the display bar's Order (off by default; While selected, Always), and for a moment
- * the selection's order while Follow (without the tip: the end you drag from leads) or Set, Reverse
- * or Clear order (what it changes) is pointed at, while Alt is held, and while Set order is on. A
- * guessed order isn't drawn at rest; Alt and those buttons show it hollow and dashed. Position badges show while Alt is held, and always while Set order is on (touch has no
+ * the selection's order while Follow (without the tip or comet: the end you drag from leads) or
+ * Set, Reverse or Clear order (what it changes) is pointed at, while Alt is held, and while Set
+ * order is on. A guessed order isn't drawn at rest; Alt and those buttons show it hollow and
+ * dashed. Position badges show while Alt is held, and always while Set order is on (touch has no
  * Alt). Set order draws the lane it has picked so far, growing behind the pointer, with the bar that
  * says how to go on and keeps or cancels it. The selection box stands clear of the lane only when
  * the display bar shows it, so a peek never moves the box.
@@ -108,6 +110,10 @@ import {
     type PlacedBadge,
 } from "./orderLane";
 import { usePathPenStore } from "./pathPenStore";
+import OrderCometRings from "./OrderCometRings";
+import { prefersReducedMotion } from "@/components/timeline/reducedMotion";
+import { useFieldQuality } from "@/field/three/useFieldQuality";
+import { cometOnDarkFloor } from "./orderComet";
 import type { FloorSampler } from "./floorSampler";
 import { resolveMarcherLook } from "@/entity-components/appearance";
 
@@ -115,6 +121,29 @@ import { resolveMarcherLook } from "@/entity-components/appearance";
 const LANE_INK = "#1c1f26";
 /** How far the selection box stands clear of the selection's lane and names, in CSS px (step 4j) */
 const SELECTION_CLEARANCE = 5;
+/**
+ * Whether known orders run their comet (`OrderCometRings`): not for someone who turned motion down,
+ * nor while the field doesn't animate (Performance mode, a slow machine). Follows either changing.
+ */
+function useCometRuns(): boolean {
+    const reduced = useSyncExternalStore(
+        subscribeReducedMotion,
+        prefersReducedMotion,
+        () => false,
+    );
+    const animates = useFieldQuality().settings.animateView;
+    return !reduced && animates;
+}
+
+function subscribeReducedMotion(onChange: () => void): () => void {
+    const query =
+        typeof window === "undefined"
+            ? undefined
+            : window.matchMedia?.("(prefers-reduced-motion: reduce)");
+    if (!query) return () => {};
+    query.addEventListener("change", onChange);
+    return () => query.removeEventListener("change", onChange);
+}
 
 /**
  * A guessed order's colors on a light or a dark field (its hollow dashed outline has no ground of
@@ -284,6 +313,10 @@ interface DrawnLine {
     readonly box: Box;
     /** What the lane covers as drawn: its points as wide as the lane, and the tip */
     readonly extent: Box;
+    /** Who the line is, so its comet starts again at the leader when another line shows instead */
+    readonly who?: string;
+    /** Its comet is drawn light: the floor under it is dark */
+    readonly cometLight?: boolean;
 }
 
 /**
@@ -297,7 +330,6 @@ function drawLine({
     marchers,
     guessed,
     numbered,
-    tipless = false,
     halfWidth,
     dotRadius,
     busy,
@@ -305,13 +337,12 @@ function drawLine({
     others = [],
     floorAt,
     labels = [],
+    tipped = true,
 }: {
     points: readonly XY[];
     marchers: number;
     guessed: boolean;
     numbered: boolean;
-    /** No tip past the leader: Follow's look, where the end you drag from leads */
-    tipless?: boolean;
     halfWidth: number;
     dotRadius: number;
     busy: readonly Box[];
@@ -322,13 +353,18 @@ function drawLine({
     floorAt: (p: XY) => number;
     /** Every drawn marcher's name label on screen: those the lane reaches are cut out of it */
     labels?: readonly Box[];
+    /**
+     * Draw the tip past the leader. Not while the comet runs: on a line whose last marcher stands
+     * by its leader the tip lands on the last one, and the comet already starts at the leader
+     */
+    tipped?: boolean;
 }): DrawnLine {
     const own = points.slice(0, marchers);
     // On the marchers only: Set order's pointer sits on the dot it just picked and crosses earlier
     // legs on its way to the next, which would make every pick look like a fold or a crossing
     const kind = classifyOrder(own, dotRadius);
     // The tip keeps the full width; the lane itself narrows where its own ranks are close
-    const tip = kind === "lane" && !tipless ? laneTip(points, halfWidth) : null;
+    const tip = kind === "lane" && tipped ? laneTip(points, halfWidth) : null;
     const tipHalf = halfWidth;
     halfWidth = ownHalfWidth(own, halfWidth, dotRadius);
     const darts = kind === "crossed" ? threadDarts(points) : [];
@@ -501,7 +537,8 @@ export default function MarcherOrderOverlay({
     // Set order on has the field, so it shows over either (opening it closes them)
     const showing =
         !isPlaying && (sweep !== null || (clear && (atRest || peek)));
-    const tipless = orderHover === "follow";
+    // Follow's look: no tip and no comet, since the end you drag from leads
+    const leaderless = orderHover === "follow";
 
     // The forms, read while anything shows the order: the selection's, or everyone's for Always
     const key = ids.join(",");
@@ -531,6 +568,7 @@ export default function MarcherOrderOverlay({
             }),
         ),
     );
+    const cometRuns = useCometRuns();
 
     // The lines in force (Always) follow the forms and the beat, never a fill
     const inForce = useMemo(
@@ -699,13 +737,14 @@ export default function MarcherOrderOverlay({
             dotRadius,
         );
         const busy = busyOf(lineIds, linesAt);
-        return shown.map((line, l) =>
-            drawLine({
+        return shown.map((line, l) => ({
+            ...drawLine({
                 points: pointsOf[l]!,
                 marchers: pointsOf[l]!.length,
                 guessed: line.guessed,
                 numbered: alt,
-                tipless,
+                // A guess runs no comet, so it keeps its tip. Follow's look marks no leader
+                tipped: !leaderless && (line.guessed || !cometRuns),
                 halfWidth: halfWidths[l]!,
                 dotRadius,
                 busy,
@@ -716,7 +755,9 @@ export default function MarcherOrderOverlay({
                 floorAt,
                 labels: allLabels,
             }),
-        );
+            who: line.order.join(","),
+            cometLight: cometOnDarkFloor(pointsOf[l]!.map(floorAt)),
+        }));
     }, [
         marchers,
         floor,
@@ -729,11 +770,12 @@ export default function MarcherOrderOverlay({
         reach,
         alt,
         guessShown,
-        tipless,
+        leaderless,
         everyone,
         labels,
         labelBox,
         selectedSet,
+        cometRuns,
     ]);
     // What the selection's own line covers (its lane, tip and names), for the selection box to stand
     // clear of (step 4j): in field units, CLEARANCE screen px out. None for a guess (Alt shows it only
@@ -875,6 +917,22 @@ export default function MarcherOrderOverlay({
         zoom,
     ]);
 
+    // The names the halos are cut away from, as the lanes are: a selected dot's halo reaches out to
+    // where its name sits above it (the comet cuts its own)
+    const nameCut = useMemo(() => {
+        const names = [...new Set(drawn.flatMap((line) => line.labelHoles))];
+        if (names.length === 0) return null;
+        // Clear of the halos round the outermost dots
+        const margin = 20;
+        return {
+            names,
+            minX: Math.min(...drawn.map((l) => l.box.minX)) - margin,
+            minY: Math.min(...drawn.map((l) => l.box.minY)) - margin,
+            maxX: Math.max(...drawn.map((l) => l.box.maxX)) + margin,
+            maxY: Math.max(...drawn.map((l) => l.box.maxY)) + margin,
+        };
+    }, [drawn]);
+
     const prefix = useId().replace(/:/g, "");
     if (!showing) return null;
     return (
@@ -916,6 +974,35 @@ export default function MarcherOrderOverlay({
                     ))}
                 </g>
             </svg>
+            {/*
+              The comets in a layer of their own, under the marks: redrawn every frame while they
+              run, without repainting the halos and their cut-out names
+            */}
+            {!sweep && cometRuns && !leaderless && (
+                <svg
+                    className="pointer-events-none absolute inset-0 z-[5] h-full w-full"
+                    style={{ willChange: "transform" }}
+                    data-testid="marcherOrderComets"
+                >
+                    <g transform={`translate(${view.panX} ${view.panY})`}>
+                        {drawn.map(
+                            (line, i) =>
+                                !line.guessed &&
+                                line.points.length >= 2 && (
+                                    <OrderCometRings
+                                        key={line.who ?? `comet-${i}`}
+                                        id={`${prefix}-comet${i}`}
+                                        points={line.points}
+                                        radius={reach + haloWidth(dotRadius)}
+                                        dotRadius={dotRadius}
+                                        light={line.cometLight ?? false}
+                                        names={line.labelHoles}
+                                    />
+                                ),
+                        )}
+                    </g>
+                </svg>
+            )}
             <svg
                 className="pointer-events-none absolute inset-0 z-[5] h-full w-full"
                 data-testid="marcherOrderOverlay"
@@ -929,23 +1016,59 @@ export default function MarcherOrderOverlay({
                     {drawn.map((line, i) => (
                         <LaneMarks key={i} line={line} ink={ink} />
                     ))}
-                    {halos.map(({ at, r, width, tone }, i) => (
-                        <circle
-                            key={i}
-                            cx={at.x}
-                            cy={at.y}
-                            r={r}
-                            fill="none"
-                            stroke={
-                                tone === "dark"
-                                    ? "rgba(28,31,38,0.9)"
-                                    : "rgba(255,255,255,0.92)"
-                            }
-                            strokeWidth={width}
-                            data-testid="marcherOrderHalo"
-                            data-tone={tone}
-                        />
-                    ))}
+                    {nameCut && (
+                        <defs>
+                            <mask
+                                id={`${prefix}-names`}
+                                maskUnits="userSpaceOnUse"
+                                x={nameCut.minX}
+                                y={nameCut.minY}
+                                width={nameCut.maxX - nameCut.minX}
+                                height={nameCut.maxY - nameCut.minY}
+                            >
+                                <rect
+                                    x={nameCut.minX}
+                                    y={nameCut.minY}
+                                    width={nameCut.maxX - nameCut.minX}
+                                    height={nameCut.maxY - nameCut.minY}
+                                    fill="white"
+                                />
+                                {nameCut.names.map((b, i) => (
+                                    <rect
+                                        key={i}
+                                        x={b.minX - 1}
+                                        y={b.minY - 1}
+                                        width={b.maxX - b.minX + 2}
+                                        height={b.maxY - b.minY + 2}
+                                        rx={1.5}
+                                        fill="black"
+                                    />
+                                ))}
+                            </mask>
+                        </defs>
+                    )}
+                    <g
+                        mask={nameCut ? `url(#${prefix}-names)` : undefined}
+                        data-testid="marcherOrderRings"
+                    >
+                        {halos.map(({ at, r, width, tone }, i) => (
+                            <circle
+                                key={i}
+                                cx={at.x}
+                                cy={at.y}
+                                r={r}
+                                fill="none"
+                                stroke={
+                                    tone === "dark"
+                                        ? "rgba(28,31,38,0.9)"
+                                        : "rgba(255,255,255,0.92)"
+                                }
+                                strokeWidth={width}
+                                data-testid="marcherOrderHalo"
+                                data-tone={tone}
+                            />
+                        ))}
+                    </g>
                     {drawn.flatMap((line, l) =>
                         line.numbers.map((badge, i) => (
                             <OrderBadge

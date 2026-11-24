@@ -90,9 +90,9 @@ export interface UiSettings {
     /**
      * When a line's order shows on the field (pathways step 4g, Show order): for the selected
      * marchers, every line whose order holds, or never. Same choices as `shapes`. Off by default:
-     * the order still shows while Follow is pointed at or open, while Set order is on, and while
-     * Alt is held. Was `marcherOrder` (default While selected), left behind so the new default
-     * reaches everyone
+     * the order still shows while Follow, Set, Reverse or Clear order is pointed at, while Set
+     * order is on, and while Alt is held. Was `marcherOrder` (default While selected);
+     * `parseSettings` drops it so the new default reaches everyone
      */
     lineOrder?: ShapeOutlines;
     /**

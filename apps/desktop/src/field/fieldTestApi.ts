@@ -371,6 +371,19 @@ export type FieldTestShapeOverlay = {
         across: string;
         deep: string;
     } | null;
+    /**
+     * While a Line's Rows apart or Slant number is engaged: the gap from the drawn row to the
+     * next, field units, across to `corner` then along to `to`, with its labels ("4 steps apart",
+     * "Slant 1" or null). Null otherwise.
+     */
+    rowsGap: {
+        from: { x: number; y: number };
+        corner: { x: number; y: number };
+        to: { x: number; y: number };
+        outward: { x: number; y: number };
+        apart: string;
+        slant: string | null;
+    } | null;
 };
 
 /** A placed box outlined on the field. */
