@@ -4,16 +4,20 @@ import {
     GUARD_UNIFORM_PRESET_IDS,
     UNIFORM_PRESET_IDS,
 } from "../marchers/uniformPresets";
+import { DIESEL_VENUE_PARAMS } from "../kits/markDiesel/brand";
 import FootballTemplates from "@/global/classes/fieldTemplates/Football";
 import GridFieldTemplates from "@/global/classes/fieldTemplates/GridFields";
 import {
     DEFAULT_VENUE_PARAMS,
     KIT_LIGHTING,
+    KIT_VENUE_PARAMS,
     VENUE_KIT_IDS,
+    defaultParamsForKit,
     defaultVenueForField,
     defaultVenueForKit,
     fieldFamily,
     lightingForKit,
+    paramsForKitSwitch,
     parseVenueSettings,
     parseVenueSettingsJson,
     venueSettingsSchema,
@@ -113,6 +117,7 @@ describe("lighting", () => {
 
     it("keeps lighting the kit supports", () => {
         expect(lightingForKit("pro", "roofClosed")).toBe("roofClosed");
+        expect(lightingForKit("markDiesel", "night")).toBe("night");
         expect(lightingForKit("gym", "show")).toBe("show");
         expect(lightingForKit("arena", "house")).toBe("house");
     });
@@ -121,6 +126,7 @@ describe("lighting", () => {
         expect(lightingForKit("gym", "night")).toBe("house");
         expect(lightingForKit("hs", "roofClosed")).toBe("day");
         expect(lightingForKit("pro", "dusk")).toBe("roofClosed");
+        expect(lightingForKit("markDiesel", "show")).toBe("roofClosed");
         // The arena opens with the house dark and the floor lit.
         expect(lightingForKit("arena", "night")).toBe("show");
     });
@@ -210,5 +216,32 @@ describe("defaultVenueForField", () => {
         a.params.homeColor = "#000000";
         expect(defaultVenueForField(field).params.homeColor).toBe("#6442ff");
         expect(DEFAULT_VENUE_PARAMS.homeColor).toBe("#6442ff");
+    });
+});
+
+describe("a kit's starting params", () => {
+    it("gives Mark Diesel OpenMarch's name and colors, as the kit paints them", () => {
+        const params = defaultVenueForKit("markDiesel").params;
+        expect(params).toEqual({ ...DIESEL_VENUE_PARAMS });
+        expect(params.endZoneText).toBe("OPENMARCH");
+        expect(defaultParamsForKit("hs")).toEqual({ ...DEFAULT_VENUE_PARAMS });
+        // A fresh object each time.
+        expect(defaultParamsForKit("markDiesel")).not.toBe(
+            KIT_VENUE_PARAMS.markDiesel,
+        );
+    });
+
+    it("swaps untouched params on a kit switch and keeps the show's own", () => {
+        const start = defaultParamsForKit("hs");
+        const diesel = defaultParamsForKit("markDiesel");
+        expect(paramsForKitSwitch("hs", "markDiesel", start)).toEqual(diesel);
+        expect(paramsForKitSwitch("markDiesel", "pro", diesel)).toEqual(start);
+        expect(paramsForKitSwitch("hs", "pro", start)).toEqual(start);
+        const own = { ...start, endZoneText: "TIGERS" };
+        expect(paramsForKitSwitch("hs", "markDiesel", own)).toBe(own);
+        const ownInDiesel = { ...diesel, homeColor: "#112233" };
+        expect(paramsForKitSwitch("markDiesel", "hs", ownInDiesel)).toBe(
+            ownInDiesel,
+        );
     });
 });

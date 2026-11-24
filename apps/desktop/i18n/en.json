@@ -3454,10 +3454,12 @@
         "camera": {
             "blimp": "Blimp",
             "corner": "Corner",
+            "directors": "Directors' area",
             "endZone": "End zone",
             "floor": "On the floor",
             "frontRow": "Front row",
             "geJudge": "GE judge",
+            "judges": "Judges' level",
             "judgesTable": "Judges' table",
             "lowerBowl": "Lower bowl",
             "podium": "Podium",
@@ -3474,6 +3476,7 @@
             "college": "College bowl",
             "gym": "Indoor gym",
             "hs": "High school",
+            "markDiesel": "Mark Diesel Stadium",
             "pro": "Pro dome"
         },
         "lighting": {
@@ -3538,6 +3541,13 @@
             "homeColor": "Home",
             "awayColor": "Visitors",
             "endZones": "End zones",
+            "fieldLines": "Field lines",
+            "fieldLinesOption": {
+                "show": "Show's field",
+                "stadium": "Stadium's field"
+            },
+            "fieldLinesShowNote": "The lines of your show's field, as set up in Edit field.",
+            "fieldLinesStadiumNote": "The lines really painted in this stadium: its own yard numbers and hashes. Your show's field doesn't change, and marchers stay where you wrote them.",
             "endZoneText": "End-zone lettering",
             "endZoneTextPlaceholder": "No lettering",
             "endZoneColor": "Color",

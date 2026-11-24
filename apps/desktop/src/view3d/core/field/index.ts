@@ -20,6 +20,8 @@ import {
 import {
     createPlanContext,
     type EndZoneStyle,
+    type FieldCenterArt,
+    type TurfColors,
     type FieldPlan,
     type FieldSurfaceStyle,
     type ImageSize,
@@ -28,6 +30,7 @@ import { planTarp } from "./tarpPlan";
 import { planTheme } from "./themePlan";
 import { withFootballEndZones } from "./regulation";
 import { planTurf } from "./turfPlan";
+import { applyTurfSheen } from "./turfSheen";
 
 /**
  * Field surface (P2.1, design.md section 4). Framework-free: three.js only
@@ -42,6 +45,10 @@ import { planTurf } from "./turfPlan";
  */
 export type {
     EndZoneStyle,
+    FieldCenterArt,
+    TurfColors,
+    TurfMarks,
+    TurfSurface,
     FieldPlan,
     FieldSurfaceStyle,
     PlanItem,
@@ -66,6 +73,10 @@ export interface FieldSurfaceInput {
     params: VenueParams;
     /** Turf end-zone paint; defaults to `solid`. */
     endZoneStyle?: EndZoneStyle;
+    /** The venue's own midfield artwork, in place of the OpenMarch logo (turf). */
+    centerArt?: FieldCenterArt;
+    /** The venue's own grass colors, in place of the shared turf's (turf). */
+    turf?: TurfColors;
     /** The show's field background image, if it has one. */
     image?: FieldImage | null;
     /** `renderer.capabilities.maxTextureSize`; 8192 px textures need >= 8192. */
@@ -113,6 +124,8 @@ export function planField(input: FieldSurfaceInput): FieldPlan {
         style: input.style,
         params: input.params,
         endZoneStyle: input.endZoneStyle,
+        centerArt: input.centerArt,
+        turf: input.turf,
         image,
     });
     if (input.style === "turf") planTurf(ctx);
@@ -140,6 +153,9 @@ export function buildFieldSurface(input: FieldSurfaceInput): FieldSurface {
         roughness: ROUGHNESS[input.style],
     });
     setGroundLayer(material, GROUND_LAYER.field);
+    // Synthetic turf shades its 5-yard rolls by the view (`turfSheen.ts`).
+    if (input.style === "turf" && input.turf?.surface === "synthetic")
+        applyTurfSheen(material);
     const geometry = new PlaneGeometry(f.maxX - f.minX, f.maxZ - f.minZ);
     const mesh = new Mesh(geometry, material);
     mesh.name = "fieldSurface";
@@ -153,7 +169,10 @@ export function buildFieldSurface(input: FieldSurfaceInput): FieldSurface {
     mesh.userData.fieldStyle = input.style;
 
     let disposed = false;
-    const hasText = plan.items.some((i) => i.type === "text");
+    // A venue's artwork is lettered as well, so it waits for the font too.
+    const hasText = plan.items.some(
+        (i) => i.type === "text" || i.type === "art",
+    );
     const ready = hasText
         ? fontsLoaded().then(() => {
               if (!disposed && painted) repaint(texture, layout, paint);

@@ -1,6 +1,7 @@
 import type { FieldFootprint } from "@openmarch/core";
 import { TEXTURE_FONT } from "../environment";
 import { MARCHER_MARK, OPENMARCH_LOGO } from "./brandMark";
+import { BLOCK_GRID, hasBlockGlyphs, paintBlockText } from "./blockDigits";
 import { createRng } from "../environment/random";
 import type {
     FieldPlan,
@@ -11,6 +12,7 @@ import type {
     PlanItem,
     PlanLogo,
     PlanText,
+    TurfSurface,
 } from "./plan";
 
 /** A texture's pixel grid over the footprint. */
@@ -85,6 +87,15 @@ function paintItem(
                 (item.maxZ - item.minZ) * sz,
             );
             return;
+        case "poly":
+            g.fillStyle = item.color;
+            g.beginPath();
+            item.points.forEach(([x, z], i) =>
+                i === 0 ? g.moveTo(X(x), Y(z)) : g.lineTo(X(x), Y(z)),
+            );
+            g.closePath();
+            g.fill();
+            return;
         case "image":
             if (!image) return;
             g.save();
@@ -109,6 +120,16 @@ function paintItem(
             return;
         case "logo":
             paintLogo(g, item, X(item.x), Y(item.z), s);
+            return;
+        case "art":
+            // The venue's own painter, in a box with its top toward the back.
+            g.save();
+            g.translate(
+                X(item.x) - (item.width * s) / 2,
+                Y(item.z) - (item.height * s) / 2,
+            );
+            item.art.paint(g, item.width * s, item.height * s);
+            g.restore();
             return;
         case "hatch":
             paintHatch(g, item, X, Y, s);
@@ -175,9 +196,32 @@ function paintFade(
 const GRAIN_TILE = 256;
 
 /**
- * Overlays two seamless noise tiles: speckle at about 3 m a tile for
- * blade-scale texture, and soft blotches at about 40 m a tile for uneven
- * growth and wear.
+ * Noise layers per surface: cells across and down a tile (more cells down
+ * than across stretches the features across the field, along z), meters per
+ * tile and alpha.
+ *
+ * - Grass: speckle at about 3 m a tile for blade-scale texture, and soft
+ *   blotches at about 40 m a tile for uneven growth and wear.
+ * - Synthetic turf is even: fine crumb speckle, fiber streaks running
+ *   sideline to sideline like the rolls, and only a trace of wear.
+ */
+const GRAIN_LAYERS: Record<
+    TurfSurface,
+    { cellsX: number; cellsY: number; meters: number; alpha: number }[]
+> = {
+    grass: [
+        { cellsX: GRAIN_TILE, cellsY: GRAIN_TILE, meters: 3, alpha: 0.16 },
+        { cellsX: 12, cellsY: 12, meters: 40, alpha: 0.22 },
+    ],
+    synthetic: [
+        { cellsX: 96, cellsY: 96, meters: 1.2, alpha: 0.14 },
+        { cellsX: 128, cellsY: 8, meters: 3, alpha: 0.1 },
+        { cellsX: 8, cellsY: 8, meters: 60, alpha: 0.05 },
+    ],
+};
+
+/**
+ * Overlays seamless noise tiles in soft light (`GRAIN_LAYERS`).
  * Needs a DOM canvas for the tiles; skipped without one (tests).
  */
 function paintGrain(
@@ -189,26 +233,26 @@ function paintGrain(
         return;
     const rng = createRng(grain.seed);
     /**
-     * A seamless GRAIN_TILE tile of value noise over a `cells` x `cells`
-     * grid, smoothly interpolated and wrapped at the edges.
+     * A seamless GRAIN_TILE tile of value noise over a `cx` x `cy` grid,
+     * smoothly interpolated and wrapped at the edges.
      */
-    const tile = (cells: number) => {
-        const grid = Array.from({ length: cells * cells }, () => rng());
-        const at = (i: number, j: number) =>
-            grid[(j % cells) * cells + (i % cells)];
+    const tile = (cx: number, cy: number) => {
+        const grid = Array.from({ length: cx * cy }, () => rng());
+        const at = (i: number, j: number) => grid[(j % cy) * cx + (i % cx)];
         const canvas = document.createElement("canvas");
         canvas.width = canvas.height = GRAIN_TILE;
         const tg = canvas.getContext("2d");
         if (!tg) return null;
         const img = tg.createImageData(GRAIN_TILE, GRAIN_TILE);
-        const per = GRAIN_TILE / cells;
+        const perX = GRAIN_TILE / cx;
+        const perY = GRAIN_TILE / cy;
         const ease = (t: number) => t * t * (3 - 2 * t);
         for (let y = 0; y < GRAIN_TILE; y++)
             for (let x = 0; x < GRAIN_TILE; x++) {
-                const i = Math.floor(x / per);
-                const j = Math.floor(y / per);
-                const u = ease(x / per - i);
-                const w = ease(y / per - j);
+                const i = Math.floor(x / perX);
+                const j = Math.floor(y / perY);
+                const u = ease(x / perX - i);
+                const w = ease(y / perY - j);
                 const top = at(i, j) + (at(i + 1, j) - at(i, j)) * u;
                 const bottom =
                     at(i, j + 1) + (at(i + 1, j + 1) - at(i, j + 1)) * u;
@@ -218,15 +262,12 @@ function paintGrain(
         tg.putImageData(img, 0, 0);
         return canvas;
     };
-    const layers: [number, number, number][] = [
-        // cells, meters per tile, alpha
-        [GRAIN_TILE, 3, 0.16],
-        [12, 40, 0.22],
-    ];
     g.save();
     g.globalCompositeOperation = "soft-light";
-    for (const [cells, meters, alpha] of layers) {
-        const t = tile(cells);
+    for (const { cellsX, cellsY, meters, alpha } of GRAIN_LAYERS[
+        grain.surface ?? "grass"
+    ]) {
+        const t = tile(cellsX, cellsY);
         const pattern = t && g.createPattern(t, "repeat");
         if (!pattern) continue;
         const k = (meters * layout.scaleX) / GRAIN_TILE;
@@ -277,6 +318,22 @@ function paintText(
     py: number,
     s: number,
 ): void {
+    if (t.block && hasBlockGlyphs(t.text)) {
+        const h = t.height * s;
+        g.save();
+        g.translate(px, py);
+        g.rotate(t.rotation);
+        g.fillStyle = t.color;
+        // Digits of one item sit a quarter digit apart.
+        paintBlockText(
+            g,
+            t.text,
+            h,
+            (h * BLOCK_GRID.width) / BLOCK_GRID.height / 4,
+        );
+        g.restore();
+        return;
+    }
     let size = (t.height * s) / CAP_HEIGHT;
     g.save();
     g.font = `${t.weight} ${size}px ${TEXTURE_FONT}`;

@@ -227,6 +227,21 @@ describe("the show's cameras", () => {
         ).toBeUndefined();
     });
 
+    it("keeps a venue a newer build added, through this build's saves", () => {
+        const list: SavedCamera[] = [{ kind: "kit", id: "pressBox" }];
+        const stored = parseShowCamerasJson(
+            JSON.stringify({
+                version: 1,
+                venues: { hs: { list }, futureDome: { list } },
+            }),
+        );
+        expect(stored?.venues.hs).toEqual({ list });
+        const saved = withVenueCameras(stored!, "gym", { list: [] });
+        expect(Object.keys(saved.venues).sort()).toEqual(
+            ["futureDome", "gym", "hs"].sort(),
+        );
+    });
+
     it("drops the camera profile a fork build stored with a list", () => {
         const list: SavedCamera[] = [{ kind: "kit", id: "pressBox" }];
         const profile = {

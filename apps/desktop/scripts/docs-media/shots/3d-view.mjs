@@ -640,6 +640,41 @@ const shots = [
         },
     },
     {
+        id: "3d-venue-mark-diesel",
+        kind: "still",
+        // Narrower than the usual 1600 pixels, like the arena: the crowd is busy
+        width: 1280,
+        covers: [
+            "apps/desktop/src/view3d/core/kits/markDiesel.ts",
+            "apps/desktop/src/view3d/core/kits/markDiesel",
+        ],
+        // Mark Diesel Stadium with its roof closed, from its first camera
+        async setup(ctx) {
+            await seekInPage(ctx.page, 3, 0.5);
+            const { view, baked } = await open3d(ctx);
+            await view.getByTestId("view3d-settings-button").click();
+            await view.getByTestId("view3d-settings").waitFor();
+            await view
+                .getByTestId("view3d-venue-picker")
+                .locator('[data-value="markDiesel"]')
+                .click();
+            await baked(2);
+            await ctx.wait(1500);
+            // The sample show's Day carries over, and Day opens the roof
+            await view
+                .getByTestId("view3d-lighting-picker")
+                .locator('[data-value="roofClosed"]')
+                .click();
+            await ctx.wait(1500);
+            await view.getByTestId("view3d-settings-button").click();
+            await tidy(view);
+            await view.keyboard.press("Digit1");
+            await view.mouse.move(ctx.window.width - 4, ctx.window.height / 2);
+            await ctx.wait(3000);
+            return { box: ctx.whole, target: view };
+        },
+    },
+    {
         id: "3d-silk-settings",
         kind: "still",
         // The flag silk rows of 3D View settings › Performers: the shapes, and imported Artwork

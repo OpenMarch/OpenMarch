@@ -35,6 +35,7 @@ export const VENUE_KIT_IDS = [
     "bighs",
     "college",
     "pro",
+    "markDiesel",
     "gym",
     "arena",
     "blank",
@@ -102,9 +103,36 @@ export const venueSettingsSchema = z.object({
      * (fork #973) without a version bump.
      */
     silkArtwork: z.number().int().positive().optional(),
+    /**
+     * Whose lines a venue with a field of its own (`KITS_WITH_OWN_FIELD`)
+     * paints: the show's field ("show") or the stadium's real ones
+     * ("stadium"); absent means the show's. Added 2026-11-23 without a
+     * version bump, like `brassFinish`: older builds ignore it.
+     */
+    fieldLines: z.enum(["show", "stadium"]).optional(),
 });
 
 export type VenueSettings = z.infer<typeof venueSettingsSchema>;
+
+export type FieldLines = NonNullable<VenueSettings["fieldLines"]>;
+
+/**
+ * Venues with a football field of their own, painted from the stadium's
+ * turf drawings (`KIT_OWN_FIELD`): they never shrink to the show's field,
+ * lay a floor on their turf as a tarp, and can paint their own lines in
+ * place of the show's (`fieldLines`).
+ */
+export const KITS_WITH_OWN_FIELD: readonly VenueKitId[] = ["markDiesel"];
+
+/** The lines a venue paints: the stadium's only where it has its own. */
+export function fieldLinesFor(
+    kit: VenueKitId,
+    fieldLines: FieldLines | undefined,
+): FieldLines {
+    return KITS_WITH_OWN_FIELD.includes(kit) && fieldLines === "stadium"
+        ? "stadium"
+        : "show";
+}
 
 // Compile-time checks that the schema matches the shared contracts in types.ts.
 type Equals<A, B> =
@@ -127,6 +155,43 @@ export const DEFAULT_VENUE_PARAMS: Readonly<VenueParams> = Object.freeze({
 });
 
 /**
+ * Params a kit starts with instead of `DEFAULT_VENUE_PARAMS`: a venue with
+ * a name of its own paints that name, in its own colors, until the show
+ * chooses otherwise. (Mark Diesel's match `DIESEL_VENUE_PARAMS` in the kit.)
+ */
+export const KIT_VENUE_PARAMS: Readonly<
+    Partial<Record<VenueKitId, Readonly<VenueParams>>>
+> = {
+    markDiesel: Object.freeze({
+        homeColor: "#6442ff",
+        awayColor: "#c23b3b",
+        endZoneText: "OPENMARCH",
+        endZoneColor: "#6442ff",
+    }),
+};
+
+/** The params a kit starts with. */
+export function defaultParamsForKit(kit: VenueKitId): VenueParams {
+    return { ...(KIT_VENUE_PARAMS[kit] ?? DEFAULT_VENUE_PARAMS) };
+}
+
+/**
+ * The params after switching kits: a show that never changed the old kit's
+ * starting params gets the new kit's; one that chose its own keeps them.
+ */
+export function paramsForKitSwitch(
+    from: VenueKitId,
+    to: VenueKitId,
+    params: VenueParams,
+): VenueParams {
+    const start = defaultParamsForKit(from);
+    const untouched = (Object.keys(start) as (keyof VenueParams)[]).every(
+        (key) => params[key] === start[key],
+    );
+    return untouched ? defaultParamsForKit(to) : params;
+}
+
+/**
  * The lighting presets each kit supports and its default (design.md §6).
  * Kit builders should report the same lists in `KitResult.lightingPresets`.
  */
@@ -144,6 +209,10 @@ export const KIT_LIGHTING: Readonly<
     college: { presets: ["day", "dusk", "night"], defaultLighting: "night" },
     pro: {
         presets: ["day", "night", "roofClosed"],
+        defaultLighting: "roofClosed",
+    },
+    markDiesel: {
+        presets: ["roofClosed", "day", "night"],
         defaultLighting: "roofClosed",
     },
     gym: { presets: ["house", "show"], defaultLighting: "house" },
@@ -169,7 +238,7 @@ export function defaultVenueForKit(kit: VenueKitId): VenueSettings {
         kit,
         lighting: KIT_LIGHTING[kit].defaultLighting,
         crowd: true,
-        params: { ...DEFAULT_VENUE_PARAMS },
+        params: defaultParamsForKit(kit),
     };
 }
 

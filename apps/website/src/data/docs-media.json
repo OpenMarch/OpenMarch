@@ -135,7 +135,7 @@
         "chapter": "3d-view",
         "kind": "still",
         "width": 752,
-        "height": 1088
+        "height": 728
     },
     "3d-silk-artwork": {
         "chapter": "3d-view",
@@ -160,6 +160,12 @@
         "kind": "still",
         "width": 1280,
         "height": 640
+    },
+    "3d-venue-mark-diesel": {
+        "chapter": "3d-view",
+        "kind": "still",
+        "width": 1280,
+        "height": 800
     },
     "3d-window": {
         "chapter": "3d-view",

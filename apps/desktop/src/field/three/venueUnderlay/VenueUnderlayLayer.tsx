@@ -16,6 +16,7 @@ import {
     ShaderMaterial,
     Vector3,
     WebGLRenderTarget,
+    type Object3D,
     type Texture,
     type WebGLRenderer,
 } from "three";
@@ -31,9 +32,11 @@ import {
     planField,
     textureLayout,
     venueFootprint,
+    type FieldCenterArt,
     type FieldPlan,
+    type TurfColors,
 } from "@/view3d/core/field";
-import { KIT_FIELD_STYLE } from "@/view3d/core/kits/fieldStyle";
+import { kitFieldStyle } from "@/view3d/core/kits/fieldStyle";
 import { DEFAULT_VENUE_PARAMS } from "@/view3d/core/venueSettings";
 import type { KitBuilder, VenueKitId, VenueParams } from "@/view3d/core/types";
 import type {
@@ -182,6 +185,35 @@ async function loadKits(): Promise<KitModules> {
     };
 }
 
+/**
+ * The bounds of what `root` shows: hidden parts (a roof cut away for the view
+ * from above) don't count, nor does any part whose bounds aren't finite, so
+ * one odd mesh can't leave the stands unframed.
+ */
+/** A kit's own field look, for the venue it was loaded for. */
+interface FieldLook {
+    kitId: VenueKitId;
+    centerArt?: FieldCenterArt;
+    turf?: TurfColors;
+}
+
+function visibleBounds(root: Object3D): Box3 {
+    const box = new Box3();
+    const part = new Box3();
+    root.updateWorldMatrix(true, true);
+    root.traverseVisible((o) => {
+        if (!(o as Mesh).isMesh) return;
+        part.makeEmpty().expandByObject(o, false);
+        if (
+            [part.min.x, part.min.z, part.max.x, part.max.z].every(
+                Number.isFinite,
+            )
+        )
+            box.union(part);
+    });
+    return box;
+}
+
 function renderAround(
     { builders, buildCrowd, defaultCrowdPalette }: KitModules,
     gl: WebGLRenderer,
@@ -189,15 +221,14 @@ function renderAround(
     fieldProperties: FieldProperties,
     params: VenueParams,
 ): Surface | null {
-    const fieldFootprint = venueFootprint(
-        fieldProperties,
-        KIT_FIELD_STYLE[kitId],
-    );
+    const fieldStyle = kitFieldStyle(kitId, fieldProperties);
+    const fieldFootprint = venueFootprint(fieldProperties, fieldStyle);
     const kit = builders[kitId]({
         footprint: fieldFootprint,
         params,
         quality: "low",
         venuePodium: true,
+        fieldStyle,
     });
     const crowd =
         kit.seatRows.length > 0
@@ -216,7 +247,7 @@ function renderAround(
     // Roofs hide with the camera above them
     kit.onFrame?.({ cameraPosition: [0, 600, 0], dt: 0 });
 
-    const box = new Box3().setFromObject(kit.root);
+    const box = visibleBounds(kit.root);
     const footprint: FieldFootprint = {
         minX: Math.max(box.min.x, fieldFootprint.minX - AROUND_REACH),
         maxX: Math.min(box.max.x, fieldFootprint.maxX + AROUND_REACH),
@@ -435,22 +466,51 @@ export default function VenueUnderlayLayer({
     const { theme: appTheme } = useTheme();
     const fontsReady = useFontsReady();
     const kitId: VenueKitId = venue?.kit ?? "hs";
-    const style = KIT_FIELD_STYLE[kitId];
+    const style = kitFieldStyle(kitId, fieldProperties);
     const paramsKey = JSON.stringify(venue?.params ?? DEFAULT_VENUE_PARAMS);
     const lookKey = JSON.stringify(look);
 
     // The field surface: repainted for a new look, venue, field or image
+    // The kit's own field look (Mark Diesel's turf and midfield helmet), as
+    // the 3D View paints it; loaded on first use, like the kits
+    const [fieldLook, setFieldLook] = useState<FieldLook | null>(null);
+    const lookOn = !!look;
+    useEffect(() => {
+        if (!lookOn) return;
+        let live = true;
+        void import("@/view3d/core/kits/fieldLook")
+            .then((m) => {
+                if (live)
+                    setFieldLook({
+                        kitId,
+                        centerArt: m.KIT_FIELD_ART[kitId],
+                        turf: m.KIT_FIELD_TURF[kitId],
+                    });
+            })
+            .catch((error: unknown) =>
+                console.warn("The venue's field look couldn't load", error),
+            );
+        return () => {
+            live = false;
+        };
+    }, [kitId, lookOn]);
+    const kitLook = fieldLook?.kitId === kitId ? fieldLook : null;
+
     const [field, setField] = useState<Surface | null>(null);
     useEffect(() => {
         if (!look) {
             setField(null);
             return;
         }
+        // Wait for the kit's look, so its field isn't painted plain first
+        if (!kitLook) return;
         const plan = planField({
             fieldProperties,
             style,
             params: JSON.parse(paramsKey) as VenueParams,
             image,
+            centerArt: kitLook?.centerArt,
+            turf: kitLook?.turf,
         });
         // Only stadium turf has an edge (a gym's or arena's floor ends at its tarp), and the stands
         // bring their own ground
@@ -464,7 +524,16 @@ export default function VenueUnderlayLayer({
         return () => surface.dispose();
         // `lookKey` stands for `look`
         // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [fieldProperties, style, paramsKey, image, lookKey, around, fontsReady]);
+    }, [
+        fieldProperties,
+        style,
+        paramsKey,
+        image,
+        lookKey,
+        around,
+        fontsReady,
+        kitLook,
+    ]);
 
     // Stands: a render, only for a new venue or field
     const [stands, setStands] = useState<Surface | null>(null);

@@ -17,8 +17,7 @@ import {
     type FieldVenueLook,
     type UiSettings,
 } from "@/stores/UiSettingsStore";
-import { useVenueSettings } from "@/hooks/queries/useVenueSettings";
-import { KIT_FIELD_STYLE } from "@/view3d/core/kits/fieldStyle";
+import { useVenueFieldStyle } from "@/hooks/queries/useVenueFieldStyle";
 import {
     setFieldVenue,
     venueAround,
@@ -64,8 +63,7 @@ export default function VenueButton() {
             camera: s.uiSettings.view3dCameraOnField === true,
         })),
     );
-    const { data: venue } = useVenueSettings();
-    const style = KIT_FIELD_STYLE[venue?.kit ?? "hs"];
+    const style = useVenueFieldStyle();
     const blank = !venueShows(style);
     // What's drawn: Turf edge reads as None where there's no turf
     const drawnAround = venueAround(around, style);

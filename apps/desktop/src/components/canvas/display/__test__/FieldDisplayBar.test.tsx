@@ -30,9 +30,13 @@ const settings = () => useUiSettingsStore.getState().uiSettings;
 
 // The Venue button reads the show's venue: a stadium unless a test says otherwise
 const venue = vi.hoisted(() => ({ kit: "hs" }));
-vi.mock("@/hooks/queries/useVenueSettings", () => ({
-    useVenueSettings: () => ({ data: { kit: venue.kit } }),
-}));
+vi.mock("@/hooks/queries/useVenueFieldStyle", async () => {
+    const { KIT_FIELD_STYLE } = await import("@/view3d/core/kits/fieldStyle");
+    return {
+        useVenueFieldStyle: () =>
+            KIT_FIELD_STYLE[venue.kit as keyof typeof KIT_FIELD_STYLE],
+    };
+});
 
 const open = () =>
     render(

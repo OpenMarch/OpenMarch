@@ -226,8 +226,12 @@ export function createSkyUniforms(): SkyUniforms {
 }
 
 /** Copies a preset's sky look into the uniforms. */
-export function applySkyPreset(u: SkyUniforms, preset: LightingPreset): void {
-    const v = lightingValues(preset);
+export function applySkyPreset(
+    u: SkyUniforms,
+    preset: LightingPreset,
+    venue?: string,
+): void {
+    const v = lightingValues(preset, venue);
     const s = v.sky;
     u.top.value.setHex(v.skyTop);
     u.bottom.value.setHex(v.fog);

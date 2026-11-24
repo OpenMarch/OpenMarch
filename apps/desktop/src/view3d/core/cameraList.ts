@@ -19,7 +19,6 @@
 import * as z from "zod";
 import type { Vector3Tuple } from "three";
 import type { CameraSeat, VenueKitId } from "./types";
-import { VENUE_KIT_IDS } from "./venueSettings";
 
 /** More than enough for a show; keeps the menu usable. */
 export const MAX_CAMERAS = 30;
@@ -222,13 +221,19 @@ export type VenueCameras = z.infer<typeof venueCamerasSchema>;
 
 export const SHOW_CAMERAS_VERSION = 1;
 
-/** Version 1 of the JSON in `view3d_cameras.json_data`. */
+/**
+ * Version 1 of the JSON in `view3d_cameras.json_data`. Venues are keyed by
+ * any string, not only this build's kits: a show saved by a newer build may
+ * hold a venue this one doesn't know, and that venue's cameras must survive
+ * (`withVenueCameras` keeps them) rather than fail the whole parse and be
+ * dropped on the next save.
+ */
 export const showCamerasSchema = z.object({
     version: z.literal(SHOW_CAMERAS_VERSION),
-    venues: z.partialRecord(z.enum(VENUE_KIT_IDS), venueCamerasSchema),
+    venues: z.record(z.string(), venueCamerasSchema),
 });
 export type ShowCameras = z.infer<typeof showCamerasSchema>;
-export type ShowVenueCameras = ShowCameras["venues"];
+export type ShowVenueCameras = Partial<Record<VenueKitId, VenueCameras>>;
 
 export const EMPTY_SHOW_CAMERAS: ShowCameras = Object.freeze({
     version: SHOW_CAMERAS_VERSION,

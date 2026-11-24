@@ -197,7 +197,7 @@ export function landGeometry(segments = 96): BufferGeometry {
 export interface Land {
     mesh: Mesh;
     /** Recolors for a preset (and shows or hides with the sky). */
-    setPreset(preset: LightingPreset): void;
+    setPreset(preset: LightingPreset, venue?: string): void;
     /** Centers the land on the venue (only x and z are used). */
     setCenter(center: Vector3Tuple): void;
     dispose(): void;
@@ -230,8 +230,8 @@ export function createLand(): Land {
     const u = material.uniforms;
     return {
         mesh,
-        setPreset(preset) {
-            const v = lightingValues(preset);
+        setPreset(preset, venue) {
+            const v = lightingValues(preset, venue);
             u.uHaze.value.setHex(v.fog);
             u.uLight.value = v.sky.landLight;
             u.uWindows.value = v.sky.windows;

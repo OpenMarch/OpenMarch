@@ -46,12 +46,27 @@ function pair(
     };
 }
 
+/** The seat colors in `seatTexture`: the row, seat backs, pans and gaps. */
+export interface SeatColors {
+    base: string;
+    back: string;
+    pan: string;
+    gap: string;
+}
+
+const CHARCOAL_SEATS: SeatColors = {
+    base: "#232a36",
+    back: "#1a2029",
+    pan: "#2d3542",
+    gap: "#12161d",
+};
+
 /**
  * One seating section, one row deep: a concrete walkway at the front of the
  * tread, charcoal seats behind it and a half aisle with a stair nosing at
  * each side. `u` spans one section (`ringSections`), `v` one tread.
  */
-export function seatTexture(): CanvasTexture {
+export function seatTexture(seats: SeatColors = CHARCOAL_SEATS): CanvasTexture {
     return paintCanvasTexture(
         512,
         64,
@@ -60,16 +75,16 @@ export function seatTexture(): CanvasTexture {
             g.fillRect(0, 0, w, h);
             const seatTop = 4;
             const seatBottom = 40;
-            g.fillStyle = "#232a36";
+            g.fillStyle = seats.base;
             g.fillRect(0, seatTop, w, seatBottom - seatTop);
             const seatW = 11;
             for (let x = 0; x < w; x += seatW) {
                 // Seat back (top), seat pan, and a shadow line between seats.
-                g.fillStyle = "#1a2029";
+                g.fillStyle = seats.back;
                 g.fillRect(x, seatTop, seatW - 2, 10);
-                g.fillStyle = "#2d3542";
+                g.fillStyle = seats.pan;
                 g.fillRect(x + 1, seatTop + 12, seatW - 3, seatBottom - 18);
-                g.fillStyle = "#12161d";
+                g.fillStyle = seats.gap;
                 g.fillRect(x + seatW - 2, seatTop, 2, seatBottom - seatTop);
             }
             g.fillStyle = "rgba(0,0,0,0.35)";
@@ -402,10 +417,11 @@ export const ROOF_TILE = 72;
 /**
  * The fixed roof's top, mapped in plan: four 18 m bays that line up with the
  * cross trusses, each a slightly different metal tone with a gutter, faint
- * standing seams, cross joints and weathering, and a row of skylights in
- * every other bay. Long parallel bays read as one roof, not a quilt.
+ * standing seams, cross joints and weathering, and (unless `skylights` is
+ * false) a row of skylights in every other bay. Long parallel bays read as
+ * one roof, not a quilt.
  */
-export function roofDeckTexture(): CanvasTexture {
+export function roofDeckTexture({ skylights = true } = {}): CanvasTexture {
     const rnd = createRng(3);
     const size = 1024;
     const bay = size / 4;
@@ -441,7 +457,7 @@ export function roofDeckTexture(): CanvasTexture {
                 g.fillRect(x, y, w, len);
             }
             // Skylights: glazed strips along every other bay, with curbs.
-            for (const i of [1, 3])
+            for (const i of skylights ? [1, 3] : [])
                 for (let y = 0; y < size; y += bay) {
                     const x = (i + 0.5) * bay - 24;
                     g.fillStyle = "#c2c5c6";

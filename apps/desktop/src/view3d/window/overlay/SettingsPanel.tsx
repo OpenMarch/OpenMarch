@@ -36,6 +36,7 @@ import { RESOLUTIONS } from "../renderPrefs";
 import { type ControlScheme } from "../camera/controlScheme";
 import ControlSchemePicker from "../camera/ControlSchemePicker";
 import { Segmented } from "./Panel";
+import { KITS_WITH_OWN_FIELD } from "@/view3d/core/venueSettings";
 import { SilkArtworkControls } from "./SilkArtworkControls";
 import {
     BrassFinishPicker,
@@ -45,6 +46,7 @@ import {
     TubaPicker,
     UniformPicker,
     VenuePicker,
+    FieldLinesControl,
     useVenueRequest,
 } from "./VenueControls";
 
@@ -159,6 +161,11 @@ export function SettingsPanel({
                     <Row label={t("view3d.overlay.lighting")} stacked>
                         <LightingControl />
                     </Row>
+                    {kitId && KITS_WITH_OWN_FIELD.includes(kitId) && (
+                        <Row label={t("view3d.settings.fieldLines")} stacked>
+                            <FieldLinesControl />
+                        </Row>
+                    )}
                     {hasStands && <CrowdRows />}
                     {/* Indoor floors have no end zones */}
                     {kitId !== "gym" && kitId !== "arena" && <EndZoneRow />}

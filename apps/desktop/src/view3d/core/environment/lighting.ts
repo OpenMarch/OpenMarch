@@ -1,4 +1,5 @@
 import type { Light, Vector3Tuple } from "three";
+import type { BloomSettings } from "../post";
 import type { LightingPreset } from "../types";
 import { ft } from "./units";
 
@@ -29,6 +30,16 @@ export interface LightingValues {
     };
     /** Apply to `renderer.toneMappingExposure`. */
     exposure: number;
+    /**
+     * The tone curve; ACES when absent. AgX keeps saturated colors' hue
+     * under hot light and rolls lamps off softly.
+     */
+    toneMapping?: "aces" | "agx" | "neutral";
+    /**
+     * Bloom and lens ghosts around the venue's lamps, drawn at high quality
+     * only. Absent (every shared preset): the scene has no post pass at all.
+     */
+    bloom?: BloomSettings;
     /** Fog range in meters (linear fog, `env.fog.near` and `far`). */
     fogNear: number;
     fogFar: number;
@@ -323,9 +334,97 @@ const LIGHTING: Record<LightingPreset, LightingValues> = {
     show,
 };
 
-/** Every preset's values. Treat the result as read-only. */
-export function lightingValues(preset: LightingPreset): LightingValues {
-    return LIGHTING[preset];
+/**
+ * The Mark Diesel kit (`kits/markDiesel/lighting.ts`) with the roof shut, dressed
+ * for a championship at night: the sports lights on the two catwalks are the
+ * only real source, so the field is bright and everything above the lights
+ * falls to near black. The hemisphere is the hall's bounce light, and it is
+ * brighter from below than from above: a cool gray from the dark roof, and
+ * a dim warm gray coming up from the field and the lit bowl, which is what
+ * lifts the steel and the roof deck. It is near neutral on purpose: a green
+ * ground (the turf's color) turned every dark surface olive, as the tone
+ * curve keeps a dark color's hue (photos 2, 8 and 12 show gray steel). It is night outside the window wall, as it
+ * is when finals run.
+ *
+ * `kit.roofSpotIntensity` scales the five field spots, `kit.barEmissive` the
+ * fixtures' faces and glare, `kit.panelEmissive` the glow of the roof panels.
+ */
+const dieselRoofClosed: LightingValues = {
+    ...night,
+    hemisphere: { sky: 0x929cb0, ground: 0x68665f, intensity: 0.9 },
+    sun: { ...night.sun, intensity: 0 },
+    exposure: 1.35,
+    toneMapping: "neutral",
+    bloom: {
+        strength: 1.5,
+        radius: 1,
+        threshold: 2.6,
+        knee: 0.3,
+        ghost: 0.1,
+        ghostThreshold: 9,
+        ghostTint: 0x48ff8a,
+    },
+    sky: { ...night.sky, landSpill: 0.03 },
+    envGround: 0x737068,
+    kit: {
+        ...kitOff,
+        lampsOn: true,
+        lampScale: 0.55,
+        barEmissive: 1,
+        roofSpotIntensity: 1.8,
+        roofOpen: false,
+        panelEmissive: 0.014,
+    },
+};
+
+/** Mark Diesel at night with the roof open: the same rig under a black sky. */
+const dieselNight: LightingValues = {
+    ...dieselRoofClosed,
+    sun: { ...night.sun, intensity: 0.25 },
+    sky: { ...night.sky, landSpill: 0.08 },
+    kit: { ...dieselRoofClosed.kit, roofOpen: true },
+};
+
+/** Mark Diesel by day with the roof open: the sun does the work, lamps idle. */
+const dieselDay: LightingValues = {
+    ...day,
+    // The same tone curve and post pass as the venue's other presets, so
+    // switching between them compiles nothing new. Only the sun's glints
+    // are bright enough to glow.
+    toneMapping: "neutral",
+    bloom: {
+        ...dieselRoofClosed.bloom!,
+        strength: 0.6,
+        threshold: 3,
+        ghost: 0,
+    },
+    kit: { ...kitOff, barEmissive: 0.06 },
+};
+
+/**
+ * Presets a venue lights differently from the shared table. The key is the
+ * kit's id. Only presets the kit lists need an entry.
+ */
+const VENUE_LIGHTING: Readonly<
+    Record<string, Partial<Record<LightingPreset, LightingValues>>>
+> = {
+    markDiesel: {
+        roofClosed: dieselRoofClosed,
+        night: dieselNight,
+        day: dieselDay,
+    },
+};
+
+/**
+ * Every preset's values. Treat the result as read-only. `venue` is a kit id:
+ * a kit whose hall is lit unlike the shared presets (`VENUE_LIGHTING`) gets
+ * its own values, and every other kit the shared ones.
+ */
+export function lightingValues(
+    preset: LightingPreset,
+    venue?: string,
+): LightingValues {
+    return (venue && VENUE_LIGHTING[venue]?.[preset]) || LIGHTING[preset];
 }
 
 export const LIGHTING_PRESET_IDS = Object.keys(LIGHTING) as LightingPreset[];

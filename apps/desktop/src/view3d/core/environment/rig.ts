@@ -43,9 +43,14 @@ export interface Environment {
     /**
      * Applies a preset to the sky, fog, hemisphere light, sun and exposure and
      * returns the preset's values. Kits drive their own lights from
-     * `values.kit`.
+     * `values.kit`. `venue` is the kit's `KitResult.lightingVenue`: a kit
+     * with lighting values of its own gets those instead of the shared ones.
      */
-    setLighting(preset: LightingPreset, focus?: Vector3Tuple): LightingValues;
+    setLighting(
+        preset: LightingPreset,
+        focus?: Vector3Tuple,
+        venue?: string,
+    ): LightingValues;
     setFocus(focus: Vector3Tuple): void;
     /**
      * Shows or hides the land and horizon around the venue (they also hide
@@ -108,13 +113,13 @@ export function createEnvironment(
         get exposure() {
             return exposure;
         },
-        setLighting(preset, f) {
+        setLighting(preset, f, venue) {
             if (f) focus = f;
-            const v = lightingValues(preset);
-            sky.setPreset(preset);
-            horizon?.setPreset(preset);
+            const v = lightingValues(preset, venue);
+            sky.setPreset(preset, venue);
+            horizon?.setPreset(preset, venue);
             horizon?.setCenter(focus);
-            land?.setPreset(preset);
+            land?.setPreset(preset, venue);
             land?.setCenter(focus);
             skyVisible = v.skyVisible;
             showSurroundings();

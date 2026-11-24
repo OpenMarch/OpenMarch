@@ -91,7 +91,10 @@ export function pickDirection(
     tx: number,
     tz: number,
 ): Direction;
-export function turnedDir(family: StraightFamily, legYaw: number): [number, number];
+export function turnedDir(
+    family: StraightFamily,
+    legYaw: number,
+): [number, number];
 export function turnedClips(
     manifest: Manifest,
     pick: Pick,

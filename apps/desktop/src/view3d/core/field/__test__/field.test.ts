@@ -26,6 +26,7 @@ import {
 } from "..";
 import { MARCHER_MARK, OPENMARCH_LOGO } from "../brandMark";
 import { FIVE_YARDS } from "../turfPlan";
+import { blockOverhang } from "../blockDigits";
 
 beforeAll(() => setTexturePainting(false));
 
@@ -150,15 +151,13 @@ describe("turf on football fields", () => {
                 );
                 expect(logo.rotation).toBe(0);
                 expect(logo.color).toBe("#f4f6f1");
-                // fits between the middle hash rows, at most 20 yards wide
+                // The same size on every field: it fits the middle third of
+                // the width (between high school hashes; narrower hashes run
+                // under it), at most 20 yards wide.
                 const height = (logo.width * 128) / 230;
-                const mid = (p.footprint.minZ + p.footprint.maxZ) / 2;
-                for (const h of p.items.filter((i) => i.role === "hash"))
-                    if (h.type === "rect" && Math.abs(h.minX) < 1)
-                        expect(
-                            Math.abs((h.minZ + h.maxZ) / 2 - mid),
-                        ).toBeGreaterThan(height / 2);
-                expect(logo.width).toBeLessThanOrEqual(4 * FIVE_YARDS + 1e-9);
+                const fieldWidth = p.footprint.maxZ - p.footprint.minZ;
+                expect(height).toBeLessThanOrEqual(fieldWidth / 3 + 1e-9);
+                expect(logo.width).toBeCloseTo(4 * FIVE_YARDS, 9);
                 // painted over the center yard line, under the numbers
                 const at = (role: FieldRole) =>
                     p.items.findIndex((i) => i.role === role);
@@ -222,6 +221,79 @@ describe("turf on football fields", () => {
         );
         if (away?.type !== "text") throw new Error("no away number");
         expect(away.z).toBeCloseTo(-(74.1333 - 1.6) * m, 4);
+    });
+
+    it("sizes numbers, arrows and lines to the rule books", () => {
+        const inch = 0.0254;
+        const ft = 12 * inch;
+        for (const fp of [
+            T.HIGH_SCHOOL_FOOTBALL_FIELD_WITH_END_ZONES,
+            T.PRO_FOOTBALL_FIELD_WITH_END_ZONES,
+        ]) {
+            const p = plan(fp, "turf");
+            const x = -16 * stepMeters(fp);
+            const digits = p.items.filter(
+                (i) =>
+                    i.type === "text" &&
+                    i.role === "yardNumber" &&
+                    i.rotation === 0 &&
+                    Math.abs(i.x - x) < 3,
+            );
+            // Two block digits, 6 ft tall and 4 ft wide, 6 in off the line.
+            expect(digits).toHaveLength(2);
+            for (const d of digits) {
+                if (d.type !== "text") throw new Error("not text");
+                expect(d.block).toBe(true);
+                expect(d.height).toBeCloseTo(6 * ft, 2);
+                expect(Math.abs(d.x - x)).toBeCloseTo(6 * inch + 2 * ft, 2);
+            }
+            // The arrow: 18 in base, 36 in sides, 6 in past the outer digit.
+            const arrow = p.items.find(
+                (i) => i.type === "arrow" && Math.abs(i.x - x) < 4,
+            );
+            if (arrow?.type !== "arrow") throw new Error("no arrow");
+            expect(arrow.halfWidth * 2).toBeCloseTo(18 * inch, 3);
+            expect(Math.hypot(arrow.length, arrow.halfWidth)).toBeCloseTo(
+                36 * inch,
+                3,
+            );
+            // The 40's 4 reaches past its 4 ft cell on its slanted side
+            // (the turf drawings' 4), and the gap is measured from its tip.
+            expect(x - arrow.x).toBeCloseTo(
+                6 * inch +
+                    4 * ft +
+                    6 * ft * blockOverhang("4") +
+                    6 * inch +
+                    arrow.length / 2,
+                3,
+            );
+            expect(arrow.dir).toBe(-1);
+            // Only where the 40 reads toward midfield is its 4 the outer
+            // digit: the other two 40 arrows are 6 in past the 0.
+            const base = 6 * inch + 4 * ft + 6 * inch + arrow.length / 2;
+            const tip = 6 * ft * blockOverhang("4");
+            const past = p.items
+                .filter(
+                    (i) =>
+                        i.type === "arrow" && Math.abs(Math.abs(i.x) + x) < 4,
+                )
+                .map((i) => Math.abs(i.x) + x)
+                .sort((a, b) => a - b);
+            expect(past).toHaveLength(4);
+            [base, base, base + tip, base + tip].forEach((d, i) =>
+                expect(past[i]).toBeCloseTo(d, 3),
+            );
+            // Lines and hashes are 4 in wide (the end lines are clipped to
+            // the field, so take one in the middle).
+            const line = p.items.find(
+                (i) =>
+                    i.role === "yardLine" &&
+                    i.type === "rect" &&
+                    Math.abs(i.minX) < 20,
+            );
+            if (line?.type !== "rect") throw new Error("no line");
+            expect(line.maxX - line.minX).toBeCloseTo(4 * inch, 4);
+        }
     });
 
     it("splits the digits around the line and mirrors them for away", () => {
@@ -315,6 +387,30 @@ describe("turf on football fields", () => {
             expect(count(resized, "yardLine")).toBe(23);
         }
 
+        // 6 to 5 at a 30 in step (yard lines 6 steps apart) is still a
+        // 360 by 160 ft field, with or without the grid's end zones
+        const sixToFive = (fp: FieldProperties) =>
+            new FieldProperties({
+                ...fp,
+                stepSizeInches: 30,
+                xCheckpoints: fp.xCheckpoints.map((c) => ({
+                    ...c,
+                    stepsFromCenterFront: (c.stepsFromCenterFront * 3) / 4,
+                })),
+                yCheckpoints: fp.yCheckpoints.map((c) => ({
+                    ...c,
+                    stepsFromCenterFront: (c.stepsFromCenterFront * 3) / 4,
+                })),
+            });
+        for (const fp of [noEz, withEz]) {
+            const six = plan(sixToFive(fp), "turf");
+            expect(count(six, "endZone")).toBe(2);
+            expect(count(six, "yardLine")).toBe(23);
+            expect(six.footprint.maxX - six.footprint.minX).toBeCloseTo(
+                full.footprint.maxX - full.footprint.minX,
+            );
+        }
+
         // hidden end lines count as missing
         const hidden = plan(
             new FieldProperties({
@@ -327,6 +423,27 @@ describe("turf on football fields", () => {
         );
         expect(count(hidden, "endZone")).toBe(2);
         expect(count(hidden, "yardLine")).toBe(23);
+
+        // yard lines that aren't all references still space the end zones:
+        // references only every 10 yards, or only at the goals and the 50
+        const tenOnly = new FieldProperties({
+            ...noEz,
+            xCheckpoints: noEz.xCheckpoints.map((c) => ({
+                ...c,
+                useAsReference: Math.round(c.stepsFromCenterFront) % 16 === 0,
+            })),
+        });
+        const goalsOnly = new FieldProperties({
+            ...noEz,
+            xCheckpoints: noEz.xCheckpoints.map((c) => ({
+                ...c,
+                useAsReference: Math.round(c.stepsFromCenterFront) % 80 === 0,
+            })),
+        });
+        for (const fp of [tenOnly, goalsOnly]) {
+            const f = venueFootprint(fp, "turf");
+            expect((f.maxX - f.minX) / 0.3048).toBeCloseTo(360, 1);
+        }
 
         // a stadium on an indoor grid keeps the grid's footprint
         const indoor = T.INDOOR_50x80_8to5;
@@ -499,7 +616,8 @@ describe("painting", () => {
         const rec = recordingContext();
         paintPlan(rec.g, p, layout);
         const rects = p.items.filter((i) => i.type === "rect").length;
-        const texts = p.items.filter((i) => i.type === "text");
+        // Yard numbers are block numerals, filled as paths, not text.
+        const texts = p.items.filter((i) => i.type === "text" && !i.block);
         const shadowed = texts.filter((t) => t.type === "text" && t.shadow);
         expect(rec.named("fillRect")).toHaveLength(rects);
         // shadowed text is painted three times: drop shadow, outline, face
@@ -507,8 +625,11 @@ describe("painting", () => {
             texts.length + 2 * shadowed.length,
         );
         expect(rec.named("strokeText")).toHaveLength(2 * shadowed.length);
-        // only the arrows are paths (solid end zones are rects)
-        expect(rec.named("fill")).toHaveLength(count(p, "arrow"));
+        // only the arrows and the numbers are paths (solid end zones are
+        // rects), one fill each
+        expect(rec.named("fill")).toHaveLength(
+            count(p, "arrow") + count(p, "yardNumber"),
+        );
         for (const c of rec.named("fillRect"))
             for (const v of c.args) expect(Number.isFinite(v)).toBe(true);
     });

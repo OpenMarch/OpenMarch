@@ -1,3 +1,4 @@
+import { blockOverhang } from "./blockDigits";
 import type { Checkpoint } from "@openmarch/core";
 import {
     checkpointWorld,
@@ -11,6 +12,7 @@ import {
     type NumberBand,
     type EndZoneStyle,
     type PlanContext,
+    type TurfMarks,
 } from "./plan";
 import { fieldFamily } from "../venueSettings";
 import { OPENMARCH_LOGO } from "./brandMark";
@@ -27,8 +29,13 @@ export const TURF = {
 
 /** Five yards in meters: the mowing-stripe width. */
 export const FIVE_YARDS = 4.572;
-/** Line widths and mark sizes in meters (from the reference demo). */
-const LINE = 0.12;
+const YARD = FIVE_YARDS / 5;
+const FOOT = YARD / 3;
+/**
+ * Line widths and mark sizes in meters. Lines and hashes are 4 inches wide
+ * and hashes 2 feet long (NFL, NCAA and high school rules alike).
+ */
+const LINE = 0.1016;
 const BORDER = 0.3;
 const MARK = 0.61;
 /** End zones are at least this deep; a 5-yard gap never is. */
@@ -48,19 +55,45 @@ export function planTurf(ctx: PlanContext): void {
     const xs = sortedVisibleX(ctx);
     const play = playingRegion(ctx, xs);
 
-    pushRect(ctx, "background", TURF.base, f.minX, f.minZ, f.maxX, f.maxZ);
+    const grass = ctx.turf ?? TURF;
+    const marks = ctx.turf?.marks ?? {};
+    pushRect(ctx, "background", grass.base, f.minX, f.minZ, f.maxX, f.maxZ);
     planStripes(ctx, play.minX, play.maxX);
     planEndZones(ctx, play);
-    for (const xc of xs)
-        pushLineZ(ctx, "yardLine", TURF.paint, checkpointWorld(ctx, xc), LINE);
+    for (const xc of xs) {
+        const x = checkpointWorld(ctx, xc);
+        const goal = marks.goalLine
+            ? play.endZones.find((ez) => Math.abs(ez.goal - x) < 1e-3)
+            : undefined;
+        if (goal && marks.goalLine) {
+            const side = Math.sign(goal.outer - goal.goal);
+            const fieldEdge = x - (side * LINE) / 2;
+            pushRect(
+                ctx,
+                "goalLine",
+                TURF.paint,
+                fieldEdge,
+                f.minZ,
+                fieldEdge + side * marks.goalLine,
+                f.maxZ,
+            );
+        } else pushLineZ(ctx, "yardLine", TURF.paint, x, LINE);
+    }
     if (!ctx.fieldProperties.useHashes)
         for (const yc of visible(ctx.fieldProperties.yCheckpoints))
             pushLineX(ctx, "yLine", TURF.paint, checkpointWorld(ctx, yc), LINE);
     planCenterLogo(ctx, play);
     planHashesAndTicks(ctx, xs, play);
+    planVenueMarks(ctx, xs, play, marks);
     planTurfNumbers(ctx);
-    pushBorder(ctx, TURF.paint, BORDER);
-    ctx.items.push({ type: "grain", role: "grain", seed: 7, strength: 1 });
+    if (marks.insetBorder !== false) pushBorder(ctx, TURF.paint, BORDER);
+    ctx.items.push({
+        type: "grain",
+        role: "grain",
+        seed: 7,
+        strength: 1,
+        surface: ctx.turf?.surface ?? "grass",
+    });
 }
 
 interface PlayingRegion {
@@ -103,7 +136,8 @@ function planStripes(ctx: PlanContext, minX: number, maxX: number): void {
     const f = ctx.footprint;
     const first = Math.floor(minX / FIVE_YARDS + 1e-9);
     for (let k = first; k * FIVE_YARDS < maxX - 1e-9; k++) {
-        const color = k % 2 === 0 ? TURF.stripeLight : TURF.stripeDark;
+        const grass = ctx.turf ?? TURF;
+        const color = k % 2 === 0 ? grass.stripeLight : grass.stripeDark;
         const x0 = Math.max(minX, k * FIVE_YARDS);
         const x1 = Math.min(maxX, (k + 1) * FIVE_YARDS);
         pushRect(ctx, "stripe", color, x0, f.minZ, x1, f.maxZ);
@@ -121,21 +155,27 @@ function planEndZones(ctx: PlanContext, play: PlayingRegion): void {
         if (!text) continue;
         const zoneDepth = Math.abs(ez.goal - ez.outer);
         const side = Math.sign(ez.outer - ez.goal);
+        const lettering = ctx.turf?.marks?.endZoneText;
         ctx.items.push({
             type: "text",
             role: "endZoneText",
             text,
             x: (ez.outer + ez.goal) / 2,
             z: (f.minZ + f.maxZ) / 2,
-            height: zoneDepth * 0.36,
+            height: lettering?.height ?? zoneDepth * 0.36,
             // Glyph tops face the end line, so the words read from the field.
             rotation: (side * Math.PI) / 2,
             color: TURF.paint,
             weight: 700,
-            maxLength: depth * 0.82,
+            maxLength: lettering ? depth - 2 * lettering.margin : depth * 0.82,
             leadingMark: isOpenMarch(text),
             // On bare turf the lettering is outlined in the end-zone color.
-            shadow: style === "outline" ? color : shade(color, 0.45),
+            shadow:
+                style === "outline"
+                    ? color
+                    : lettering
+                      ? undefined
+                      : shade(color, 0.45),
         });
     }
 }
@@ -146,26 +186,36 @@ const LOGO_MAX_WIDTH = 4 * FIVE_YARDS;
 const LOGO_MIN_WIDTH = FIVE_YARDS;
 
 /**
- * The OpenMarch logo, in white paint, at the middle of the center line, reading from the
- * front sideline, as large as fits inside the hash rows nearest the middle
- * (or in the middle third of a field without hashes). Skipped on fields too small to
- * hold it.
+ * The OpenMarch logo, in white paint (or the venue's own `centerArt`), at
+ * the middle of the center line, reading from the front sideline. It is the
+ * same size on every field: as large as fits in the middle third of the
+ * width, which is between the hashes on a high school field. On fields with
+ * narrower hashes (college, pro) the hash marks run under it. Skipped on
+ * fields too small to hold it.
  */
 function planCenterLogo(ctx: PlanContext, play: PlayingRegion): void {
     const f = ctx.footprint;
     const midZ = (f.minZ + f.maxZ) / 2;
-    const hashZs = ctx.fieldProperties.useHashes
-        ? realHashes(ctx).map((c) => checkpointWorld(ctx, c))
-        : [];
-    const back = Math.max(f.minZ, ...hashZs.filter((z) => z < midZ - 1e-6));
-    const front = Math.min(f.maxZ, ...hashZs.filter((z) => z > midZ + 1e-6));
-    const room = hashZs.length
-        ? 2 * Math.min(midZ - back, front - midZ) - 2 * MARK
-        : (f.maxZ - f.minZ) / 3;
-    const aspect = OPENMARCH_LOGO.width / OPENMARCH_LOGO.height;
-    const width = Math.min(LOGO_MAX_WIDTH, room * aspect);
+    const room = (f.maxZ - f.minZ) / 3 - 2 * MARK;
+    const art = ctx.centerArt;
+    const aspect = art
+        ? art.aspect
+        : OPENMARCH_LOGO.width / OPENMARCH_LOGO.height;
+    const width = Math.min(art?.maxWidth ?? LOGO_MAX_WIDTH, room * aspect);
     if (width < LOGO_MIN_WIDTH) return;
     if (play.minX > -width || play.maxX < width) return;
+    if (art) {
+        ctx.items.push({
+            type: "art",
+            role: "centerLogo",
+            x: 0,
+            z: midZ,
+            width,
+            height: width / aspect,
+            art,
+        });
+        return;
+    }
     ctx.items.push({
         type: "logo",
         role: "centerLogo",
@@ -217,6 +267,7 @@ function planEndZoneFill(
         hatch(hexAlpha(shade(color, 0.7), 0.45), 1);
         hatch(hexAlpha(shade(color, 0.7), 0.45), -1);
     }
+    if (ctx.turf?.marks?.endZoneBorder === false) return;
     planEndZoneBorder(ctx, x0, x1, END_ZONE_INSET);
     if (style === "pinstripe")
         planEndZoneBorder(ctx, x0, x1, END_ZONE_INSET + 3 * LINE);
@@ -267,6 +318,63 @@ function isOpenMarch(text: string): boolean {
 }
 
 /**
+ * The venue's own marks that hang off yard lines (`TurfMarks`): colored
+ * lines either side of the 20s, an X on each 35 and a short line on each
+ * 2-yard line. All are placed from the goal lines; a 20 or 35 is only marked
+ * where the field has a line there.
+ */
+function planVenueMarks(
+    ctx: PlanContext,
+    xs: Checkpoint[],
+    play: PlayingRegion,
+    marks: TurfMarks,
+): void {
+    const f = ctx.footprint;
+    const midZ = (f.minZ + f.maxZ) / 2;
+    const lineXs = xs.map((c) => checkpointWorld(ctx, c));
+    const hasLine = (x: number) => lineXs.some((l) => Math.abs(l - x) < 0.05);
+    for (const ez of play.endZones) {
+        // From the goal line toward midfield.
+        const side = Math.sign(ez.outer - ez.goal);
+        const yardLine = (yards: number) => ez.goal - side * yards * YARD;
+        const twenty = yardLine(20);
+        if (marks.twenties && hasLine(twenty)) {
+            const { goalSide, fieldSide } = marks.twenties;
+            pushLineZ(ctx, "accent", goalSide, twenty + side * LINE, LINE);
+            pushLineZ(ctx, "accent", fieldSide, twenty - side * LINE, LINE);
+        }
+        const kickoff = yardLine(35);
+        if (marks.kickoffMarks && hasLine(kickoff)) {
+            // Two 4 in bars crossing on the line, 2 ft each way.
+            const r = FOOT;
+            const n = LINE / 2 / Math.SQRT2;
+            for (const d of [1, -1])
+                ctx.items.push({
+                    type: "poly",
+                    role: "kickoff",
+                    color: TURF.paint,
+                    points: [
+                        [kickoff - r - n, midZ - d * r + d * n],
+                        [kickoff + r - n, midZ + d * r + d * n],
+                        [kickoff + r + n, midZ + d * r - d * n],
+                        [kickoff - r + n, midZ - d * r - d * n],
+                    ],
+                });
+        }
+        if (marks.patLines)
+            pushLineZ(
+                ctx,
+                "patLine",
+                TURF.paint,
+                yardLine(2),
+                LINE,
+                midZ - YARD / 2,
+                midZ + YARD / 2,
+            );
+    }
+}
+
+/**
  * Hashes at every visible y checkpoint: a short cross mark on each line, and
  * 1-yard marks between lines that are 5 yards apart, also along both
  * sidelines. When a grid hash and a "real" hash sit within two steps of each
@@ -279,6 +387,7 @@ function planHashesAndTicks(
 ): void {
     if (!ctx.fieldProperties.useHashes) return;
     const f = ctx.footprint;
+    const tickInset = ctx.turf?.marks?.tickInset ?? BORDER + 0.1;
     const hashZs = realHashes(ctx).map((c) => checkpointWorld(ctx, c));
     const lineXs = xs.map((c) => checkpointWorld(ctx, c));
     for (const x of lineXs) {
@@ -296,8 +405,8 @@ function planHashesAndTicks(
     }
     const tickZs = [
         ...hashZs.map((z) => [z - MARK / 2, z + MARK / 2]),
-        [f.maxZ - BORDER - 0.1 - MARK, f.maxZ - BORDER - 0.1],
-        [f.minZ + BORDER + 0.1, f.minZ + BORDER + 0.1 + MARK],
+        [f.maxZ - tickInset - MARK, f.maxZ - tickInset],
+        [f.minZ + tickInset, f.minZ + tickInset + MARK],
     ];
     for (let i = 0; i + 1 < lineXs.length; i++) {
         const [a, b] = [lineXs[i], lineXs[i + 1]];
@@ -348,6 +457,23 @@ function planTurfNumbers(ctx: PlanContext): void {
     }
 }
 
+/**
+ * Yard-number proportions as shares of the number's height (6 ft on every
+ * template): each digit is 4 ft wide, its inner edge 6 in from the yard line.
+ * The direction arrow is a triangle with an 18 in base and 36 in sides (NCAA
+ * Rule 1-2-1-i; NFL fields paint the same), its base 6 in outside the outer
+ * digit, its axis a little toward the sideline of the number's middle, as
+ * the reference photos show.
+ */
+const DIGIT_WIDTH = 2 / 3;
+const DIGIT_GAP = 1 / 12;
+const ARROW_BASE = 0.25;
+/** Its 36 in sides are half the number's height. */
+const ARROW_SIDE = 1 / 2;
+const ARROW_LENGTH = Math.sqrt(ARROW_SIDE ** 2 - (ARROW_BASE / 2) ** 2);
+const ARROW_GAP = 1 / 12;
+const ARROW_AXIS = 0.6;
+
 function planNumber(
     ctx: PlanContext,
     label: string,
@@ -360,7 +486,10 @@ function planNumber(
     // Reading from the back flips left and right.
     const reading = rotation === 0 ? 1 : -1;
     const chars = label.length === 2 ? [...label] : [label];
-    const offset = chars.length === 2 ? h / 2 : 0;
+    const w = h * DIGIT_WIDTH;
+    const marks = ctx.turf?.marks;
+    const gap = marks?.digitGap ?? h * DIGIT_GAP;
+    const offset = chars.length === 2 ? gap + w / 2 : 0;
     chars.forEach((text, i) =>
         ctx.items.push({
             type: "text",
@@ -372,19 +501,28 @@ function planNumber(
             rotation,
             color: TURF.paint,
             weight: 600,
+            block: true,
         }),
     );
     if (Math.abs(x) < 1e-6) return;
     const dir = x < 0 ? -1 : 1;
     const towardOutside = Math.sign(band.outside - band.inside);
+    // The digits' outer edge: past the one digit, or the outer of two.
+    // The drawings measure the arrow's gap from the 4's slanted tip, which
+    // juts out on the first digit's leading side: outward only where the
+    // number reads toward midfield.
+    const edge =
+        (chars.length === 2 ? offset + w / 2 : w / 2) +
+        (dir === -reading ? h * blockOverhang(chars[0]) : 0);
+    const length = h * ARROW_LENGTH;
     ctx.items.push({
         type: "arrow",
         role: "arrow",
-        x: x + dir * (offset + h * 0.95),
-        z: band.inside + towardOutside * h * 0.25,
+        x: x + dir * (edge + h * ARROW_GAP + length / 2),
+        z: band.inside + towardOutside * (marks?.arrowAxis ?? h * ARROW_AXIS),
         dir,
-        length: h * 0.32,
-        halfWidth: h * 0.18,
+        length,
+        halfWidth: (h * ARROW_BASE) / 2,
         color: TURF.paint,
     });
 }

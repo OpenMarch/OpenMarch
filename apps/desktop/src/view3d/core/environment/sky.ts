@@ -20,8 +20,11 @@ export interface SkyDome {
     mesh: Mesh;
     /** Overrides the zenith and horizon colors of the current preset. */
     setColors(top: number, bottom: number): void;
-    /** Applies a preset's sky (and shows or hides the dome). */
-    setPreset(preset: LightingPreset): void;
+    /**
+     * Applies a preset's sky (and shows or hides the dome), as `venue`
+     * lights it when it has values of its own (`lightingValues`).
+     */
+    setPreset(preset: LightingPreset, venue?: string): void;
     dispose(): void;
 }
 
@@ -61,9 +64,9 @@ export function createSkyDome(
             uniforms.top.value.setHex(top);
             uniforms.bottom.value.setHex(bottom);
         },
-        setPreset(preset) {
-            applySkyPreset(uniforms, preset);
-            mesh.visible = lightingValues(preset).skyVisible;
+        setPreset(preset, venue) {
+            applySkyPreset(uniforms, preset, venue);
+            mesh.visible = lightingValues(preset, venue).skyVisible;
         },
         dispose() {
             geometry.dispose();
