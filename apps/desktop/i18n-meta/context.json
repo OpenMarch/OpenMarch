@@ -798,6 +798,7 @@
     "launchpage.newShow.steps.ensemble.title": "Title of the Activity step of the New show setup. 'Activity' means the type of performing group, such as marching band or drum corps. Noun.",
     "launchpage.newShow.steps.ensemble.typeLabel": "Label of the dropdown in the Activity step of the New show setup, listing types of performing group (marching band, drum corps, color guard and so on). Noun.",
     "launchpage.newShow.steps.field.description": "Subtitle of the Field setup step of the New show setup. A field template is a ready-made field layout (for example a football field with yard lines) that the show starts from.",
+    "launchpage.newShow.steps.field.indoorDescription": "Subtitle of the new show's Field step for an indoor activity (winter guard, indoor percussion, indoor winds): the step asks for the floor tarp's printed art, its size in feet and the drill grid's step size.",
     "launchpage.newShow.steps.field.title": "Title of the Field setup step of the New show setup, where the user picks the field the show is on. Noun phrase.",
     "launchpage.newShow.steps.performers.description": "Subtitle of the Performers step of the New show setup. Marchers are the performers on the field; they can be added now or later in the editor.",
     "launchpage.newShow.steps.performers.noneAdded": "Empty-state text in the Performers step of the New show setup, shown when no marchers have been added yet. 'Performers' means the marchers of the show.",

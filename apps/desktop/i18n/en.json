@@ -1145,6 +1145,7 @@
                 },
                 "field": {
                     "description": "Pick a field template for your show.",
+                    "indoorDescription": "Set up your floor: its art, its size and the grid's step size.",
                     "title": "Field setup"
                 },
                 "performers": {

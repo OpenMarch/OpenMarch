@@ -1,3 +1,4 @@
+import { isIndoorFloorActivity } from "@/global/classes/Activities";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import {
     AlertDialog,
@@ -564,9 +565,16 @@ export default function NewShowDialog({
                         steps={wizardSteps}
                         stepTitle={t(stepCopy.titleKey)}
                         stepDescription={
-                            stepCopy.descriptionKey
-                                ? t(stepCopy.descriptionKey)
-                                : undefined
+                            currentStep === "field" &&
+                            isIndoorFloorActivity(
+                                wizardState.ensemble?.activity,
+                            )
+                                ? t(
+                                      "launchpage.newShow.steps.field.indoorDescription",
+                                  )
+                                : stepCopy.descriptionKey
+                                  ? t(stepCopy.descriptionKey)
+                                  : undefined
                         }
                         onNext={() => void handleNext()}
                         onBack={handleBack}
