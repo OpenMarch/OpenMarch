@@ -258,3 +258,44 @@ describe("fieldGeometry with a pit area behind the field", () => {
         );
     });
 });
+
+describe("fieldGeometry from the performers' side (#1265)", () => {
+    const lines = { gridLines: true, halfLines: true };
+    const audience = fieldGeometry(fp, lines);
+    const performer = fieldGeometry(fp, { ...lines, viewFrom: "performer" });
+
+    it("keeps the labels around the field upright, aligned to the other side", () => {
+        const labels = (g: typeof audience) =>
+            g.texts.filter((t) => t.font === "label");
+        const swapped = {
+            left: "right",
+            center: "center",
+            right: "left",
+        } as const;
+        expect(labels(performer).length).toBeGreaterThan(0);
+        labels(audience).forEach((t, i) => {
+            const u = labels(performer)[i]!;
+            expect(u.rotation).toBe(t.rotation);
+            expect(u.align).toBe(swapped[t.align]);
+            expect(u.x).toBeCloseTo(fp.width - t.x);
+            expect(u.y).toBeCloseTo(fp.height - t.y);
+        });
+    });
+
+    it("turns yard number text half a turn with the field", () => {
+        const numbers = (g: typeof audience) =>
+            g.texts.filter((t) => t.font === "number");
+        numbers(audience).forEach((t, i) =>
+            expect(numbers(performer)[i]!.rotation).toBe(
+                t.rotation === 0 ? Math.PI : 0,
+            ),
+        );
+    });
+
+    it("draws the same number of rectangles and shape triangles", () => {
+        expect(performer.rects.count).toBe(audience.rects.count);
+        expect(performer.shapes.indices.length).toBe(
+            audience.shapes.indices.length,
+        );
+    });
+});

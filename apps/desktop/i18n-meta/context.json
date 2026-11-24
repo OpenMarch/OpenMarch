@@ -367,7 +367,7 @@
     "exportCoordinates.checkMarcher": "One line in a checklist shown when export is not available. {status} selects the mark: 'ok' when at least one marcher (performer) exists, shown as a check mark ✓; 'other' when it is missing, shown as a cross ✗. Keep the select structure and the words 'ok' and 'other'; you may replace the marks with what your language uses for yes and no.",
     "exportCoordinates.checkPage": "One line in a checklist shown when export is not available. {status} selects the mark: 'ok' when the show has more than one page (\"Page\" is a section of the show between two page flags), shown as a check mark ✓; 'other' when it is missing, shown as a cross ✗. Keep the select structure and the words 'ok' and 'other'; you may replace the marks with what your language uses for yes and no.",
     "exportCoordinates.coordinateSheets": "Tab title in the Export dialog. A coordinate sheet is a printable table for one marcher listing their position (side to side and front to back) at every page of the show. Plural noun, short.",
-    "exportCoordinates.drillChartPreviewAlt": "Alt text for the example image in the Drill Charts tab of the Export dialog. It shows what an exported drill chart (a printed picture of the field with every marcher's position on one page) looks like.",
+    "exportCoordinates.drillChartPreviewAlt": "Alt text for the live preview in the drill chart export tab: one page of the user's own show, drawn as the exported PDF will draw it.",
     "exportCoordinates.drillCharts": "Tab title in the Export dialog. A drill chart is a printed picture of the field showing a marcher's (or everyone's) positions on each page of the show. Plural noun, short.",
     "exportCoordinates.errorRendering": "Placeholder shown in place of one marcher's sheet when it could not be built. {drillNumber} is the marcher's drill number (their ID in the show), for example \"B1\".",
     "exportCoordinates.errorTitle": "Heading shown in the coordinate sheet preview when it cannot be built because required show data is missing. A list of what is missing follows.",
@@ -4152,5 +4152,11 @@
     "field.view3dCamera.name": "Small chip on the 2D field shown while hovering or dragging the purple camera marker. The marker is where the separate 3D View window's camera stands. Names it.",
     "field.view3dCamera.move": "Accessible label of the purple camera marker on the 2D field: dragging it moves the 3D View window's camera across the field (it keeps looking the same way).",
     "field.view3dCamera.aim": "Accessible label of the small ring at the end of the 3D View camera's dashed line of sight on the 2D field: dragging it turns the camera to look at that spot.",
+    "exportCoordinates.viewFrom": "Label for a two-way choice in the drill chart and video export tabs: which side of the football field the export shows it from (the audience's side or the performers' side).",
+    "exportCoordinates.viewFromAudience": "Choice for \"View from\": the field seen from the stands, the front sideline at the bottom, as the editor shows it.",
+    "exportCoordinates.viewFromPerformers": "Choice for \"View from\": the field turned around, as marching performers see it when they face the front (the audience). Plural noun.",
+    "exportCoordinates.viewFromTooltip": "Tooltip on \"View from\" in the export tabs. \"Side 1\" is the drill term for one end of the field; keep it as a fixed term.",
+    "exportCoordinates.drillChartPreviewLoading": "Shown in the drill chart export tab's preview area while the preview of the user's show is being drawn.",
+    "exportCoordinates.drillChartPreviewUnavailable": "Shown in the drill chart export tab's preview area when the preview of the user's show couldn't be drawn. Exporting may still work.",
     "cues.reason.endPastNext": "Why 'End cue at playhead' is greyed out: the playhead is after the next equipment change for the cue's performers, which the cue can't run past."
 }

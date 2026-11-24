@@ -4,6 +4,7 @@ import type { ResolverFrameSampler } from "@/timeline/timelineExport";
 import type { AppearanceStepsByMarcherId } from "@/services/appearance/appearanceSteps";
 import type { FieldView } from "@/field/three/fieldView";
 import type { OffscreenField } from "@/field/three/offscreenField";
+import type { FieldViewFrom } from "@/field/fieldViewFrom";
 import {
     drawBranding,
     drawOverlay,
@@ -114,6 +115,8 @@ export interface CreateVideoRenderContextArgs {
     /** The first frame's size; a frame of another size resizes the field */
     width: number;
     height: number;
+    /** The side the field is seen from; the audience's by default (#1265) */
+    viewFrom?: FieldViewFrom;
 }
 
 /**
@@ -136,6 +139,7 @@ export async function createVideoRenderContext(
         image: args.backgroundImage,
         width: args.width,
         height: args.height,
+        viewFrom: args.viewFrom,
     });
     return {
         field,

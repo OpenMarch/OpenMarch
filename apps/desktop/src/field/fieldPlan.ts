@@ -8,6 +8,11 @@ import {
     yardNumberPath,
     yardNumberSides,
 } from "./fieldNumbers";
+import {
+    turnPathData,
+    type FieldSize,
+    type FieldViewFrom,
+} from "./fieldViewFrom";
 
 /**
  * The 2D field's layout, in field units. Everything sits exactly on its
@@ -61,6 +66,8 @@ export type FieldPlanImage = {
     width: number;
     height: number;
     opacity: number;
+    /** Drawn turned half a turn about its center (the performers' view) */
+    turned?: boolean;
 };
 
 export type FieldPlan2d = {
@@ -96,6 +103,8 @@ export type FieldPlanOptions = {
      * didn't decode. Drawn only if the field properties show it.
      */
     image?: { width: number; height: number } | null;
+    /** The side the field is seen from; the audience's by default (`fieldViewFrom.ts`). */
+    viewFrom?: FieldViewFrom;
 };
 
 const GRID_STROKE = FieldProperties.GRID_STROKE_WIDTH;
@@ -238,6 +247,7 @@ export const fieldImagePlacement = (
 export function planFieldImage(
     fieldProperties: FieldProperties,
     image: FieldPlanOptions["image"],
+    viewFrom: FieldViewFrom = "audience",
 ): FieldPlanImage | null {
     if (!fieldProperties.showFieldImage || !image) return null;
     const { width, height } = fieldProperties;
@@ -245,14 +255,73 @@ export function planFieldImage(
         image.width > 0 && image.height > 0
             ? fieldImagePlacement(fieldProperties, image)
             : { x: 0, y: 0, width, height };
-    return { ...at, opacity: fieldProperties.backgroundImageOpacity };
+    const placed = { ...at, opacity: fieldProperties.backgroundImageOpacity };
+    return viewFrom === "performer"
+        ? turnImage(placed, fieldProperties)
+        : placed;
+}
+
+const turnImage = (image: FieldPlanImage, size: FieldSize): FieldPlanImage => ({
+    ...image,
+    x: size.width - image.x - image.width,
+    y: size.height - image.y - image.height,
+    turned: !image.turned,
+});
+
+const SWAPPED_ANCHOR: Record<FieldPlanText["anchor"], FieldPlanText["anchor"]> =
+    { start: "end", middle: "middle", end: "start" };
+
+/**
+ * A text seen from the other side. Painted yard numbers turn with the field, as they would on
+ * the grass; the labels around the field move with their point but stay upright.
+ */
+function turnText(t: FieldPlanText, size: FieldSize): FieldPlanText {
+    const centerY = size.height - textCenterY(t);
+    const painted = t.role === "yardNumber";
+    return {
+        ...t,
+        x: size.width - t.x,
+        y: centerY + BASELINE_BELOW_CENTER * t.fontSize,
+        anchor: painted ? t.anchor : SWAPPED_ANCHOR[t.anchor],
+        flipped: painted ? !t.flipped : t.flipped,
+    };
+}
+
+/**
+ * The plan seen from the performers' side: everything turned half a turn about the field's
+ * center, the labels around it kept upright (`turnText`).
+ */
+export function turnFieldPlan(plan: FieldPlan2d): FieldPlan2d {
+    const size = { width: plan.width, height: plan.height };
+    const { border } = plan;
+    return {
+        ...plan,
+        image: plan.image && turnImage(plan.image, size),
+        lines: plan.lines.map((l) => ({
+            ...l,
+            x1: size.width - l.x1,
+            y1: size.height - l.y1,
+            x2: size.width - l.x2,
+            y2: size.height - l.y2,
+        })),
+        texts: plan.texts.map((t) => turnText(t, size)),
+        shapes: plan.shapes.map((s) => ({
+            ...s,
+            path: turnPathData(s.path, size),
+        })),
+        border: {
+            ...border,
+            x: size.width - border.x - border.width,
+            y: size.height - border.y - border.height,
+        },
+    };
 }
 
 /** Plans the 2D field of `fieldProperties`, painted with its theme. */
 // eslint-disable-next-line max-lines-per-function
 export function planField2d(
     fieldProperties: FieldProperties,
-    { gridLines, halfLines, image }: FieldPlanOptions,
+    { gridLines, halfLines, image, viewFrom = "audience" }: FieldPlanOptions,
 ): FieldPlan2d {
     const fp = fieldProperties;
     const { width, height, pixelsPerStep, centerFrontPoint, theme } = fp;
@@ -347,7 +416,7 @@ export function planField2d(
     const inset = (borderWidth - GRID_STROKE) / 2;
     const numbers = yardNumbers(fp);
 
-    return {
+    const plan: FieldPlan2d = {
         width,
         height,
         background: theme.background,
@@ -364,6 +433,7 @@ export function planField2d(
             color: theme.primaryStroke,
         },
     };
+    return viewFrom === "performer" ? turnFieldPlan(plan) : plan;
 }
 
 /** The checkpoint labels outside the field */

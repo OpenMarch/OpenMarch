@@ -13,7 +13,13 @@ import {
     fieldSvg,
     type DrillChartDot,
     type DrillChartFieldImage,
+    type DrillChartWalk,
 } from "./drillChartSvg";
+import {
+    pointSeenFrom,
+    turnPathData,
+    type FieldViewFrom,
+} from "@/field/fieldViewFrom";
 
 /**
  * Each marcher's appearance stack on a page: the page's stack when there is one, otherwise the
@@ -72,6 +78,16 @@ export const generateDrillChartExportSVGs = async (args: {
     gridLines?: boolean;
     halfLines?: boolean;
     individualCharts: boolean;
+    /**
+     * The side the charts show the field from: the audience's (the default) or the
+     * performers', turned half a turn (#1268)
+     */
+    viewFrom?: FieldViewFrom;
+    /**
+     * Individual charts: draw only these marchers' charts (the dialog's preview); the others'
+     * arrays stay empty. Every marcher's dot is still drawn on them.
+     */
+    onlyMarcherIds?: ReadonlySet<number>;
     /** Write the field image as a placeholder the PDF export fills in (main process) */
     useImagePlaceholder?: boolean;
     /** Space around the field for the checkpoint labels, in field pixels */
@@ -89,12 +105,15 @@ export const generateDrillChartExportSVGs = async (args: {
         useImagePlaceholder = true,
         svgMargin = 40,
         walkedPaths,
+        viewFrom = "audience",
+        onlyMarcherIds,
     } = args;
     ReadableCoords.setFieldProperties(fieldProperties);
 
     const field = fieldSvg(fieldProperties, {
         gridLines,
         halfLines,
+        viewFrom,
         image: backgroundImage && {
             ...backgroundImage,
             href: useImagePlaceholder
@@ -115,11 +134,22 @@ export const generateDrillChartExportSVGs = async (args: {
             margin: svgMargin,
         });
 
+    // Everything drawn is seen from `viewFrom`; the coordinates printed stay the field's own
+    const seen = <T extends { x: number; y: number }>(point: T) =>
+        pointSeenFrom(viewFrom, fieldProperties, point);
+    const seenWalk = (walk: DrillChartWalk | undefined) =>
+        walk && viewFrom === "performer"
+            ? {
+                  d: turnPathData(walk.d, fieldProperties),
+                  mid: seen(walk.mid),
+              }
+            : walk;
     const positionOn = (pageIndex: number, marcherId: number) => {
         const page = sortedPages[pageIndex];
-        return page
+        const position = page
             ? marcherPagesMap.marcherPagesByPage[page.id]?.[marcherId]
             : undefined;
+        return position && seen(position);
     };
 
     // One array per marcher (individual charts) or a single one (the main chart)
@@ -142,11 +172,12 @@ export const generateDrillChartExportSVGs = async (args: {
         for (const marcher of marchers) {
             const position = positions[marcher.id];
             if (!position) continue;
+            const at = seen(position);
             const dot: DrillChartDot = {
                 marcherId: marcher.id,
                 label: marcher.drill_number,
-                x: position.x,
-                y: position.y,
+                x: at.x,
+                y: at.y,
                 appearances: appearances.get(marcher.id) ?? [],
             };
             dots.push(dot);
@@ -159,6 +190,7 @@ export const generateDrillChartExportSVGs = async (args: {
         }
 
         marchers.forEach((marcher, index) => {
+            if (onlyMarcherIds && !onlyMarcherIds.has(marcher.id)) return;
             const dot = dotsById.get(marcher.id);
             if (!dot) {
                 console.error(
@@ -178,17 +210,21 @@ export const generateDrillChartExportSVGs = async (args: {
                         next,
                         previousWalk:
                             previous &&
-                            walkedPaths?.(
-                                marcher.id,
-                                sortedPages[pageIndex - 1]!.id,
-                                page.id,
+                            seenWalk(
+                                walkedPaths?.(
+                                    marcher.id,
+                                    sortedPages[pageIndex - 1]!.id,
+                                    page.id,
+                                ),
                             ),
                         nextWalk:
                             next &&
-                            walkedPaths?.(
-                                marcher.id,
-                                page.id,
-                                sortedPages[pageIndex + 1]!.id,
+                            seenWalk(
+                                walkedPaths?.(
+                                    marcher.id,
+                                    page.id,
+                                    sortedPages[pageIndex + 1]!.id,
+                                ),
                             ),
                     },
                 }),

@@ -60,6 +60,8 @@ export default function BackgroundImageLayer({
             0,
         );
         mesh.scale.set(placement.width, placement.height, 1);
+        // The performers' view turns it half a turn (`turnFieldPlan`)
+        if (placement.turned) mesh.rotation.z = Math.PI;
         mesh.frustumCulled = false;
         mesh.renderOrder = -1;
         return mesh;

@@ -694,7 +694,13 @@
         "checkFieldProperties": "Field Properties: {status, select, ok {✓} other {✗}}",
         "checkMarcher": "Marcher: {status, select, ok {✓} other {✗}}",
         "checkPage": "Page: {status, select, ok {✓} other {✗}}",
-        "organizeBySectionHint": "Create PDF files for each individual marcher, organized in folders by section. If this is not checked, one large PDF file will be created with every coordinate sheet in score order."
+        "organizeBySectionHint": "Create PDF files for each individual marcher, organized in folders by section. If this is not checked, one large PDF file will be created with every coordinate sheet in score order.",
+        "viewFrom": "View from",
+        "viewFromAudience": "Audience",
+        "viewFromPerformers": "Performers",
+        "viewFromTooltip": "Performers turns the field around, as marchers see it facing the front: the front sideline is at the top and side 1 is on the right. Yard numbers turn with the field; the labels around it stay upright.",
+        "drillChartPreviewLoading": "Drawing the preview…",
+        "drillChartPreviewUnavailable": "The preview couldn't be drawn."
     },
     "field": {
         "benchmark": {

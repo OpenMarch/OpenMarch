@@ -1,4 +1,5 @@
 import tolgee from "@/global/singletons/Tolgee";
+import type { FieldViewFrom } from "@/field/fieldViewFrom";
 import {
     AudioBufferSource,
     CanvasSource,
@@ -54,6 +55,8 @@ export interface VideoExportArgs {
     videoTheme: VideoTheme;
     /** Pan/zoom for the field within the frame */
     fieldFraming?: FieldFraming;
+    /** The side the field is seen from; the audience's by default (#1265) */
+    viewFrom?: FieldViewFrom;
     /** When set, an info HUD (set, counts, measure, etc.) is drawn on each frame */
     overlay?: {
         options: OverlayOptions;
@@ -201,6 +204,7 @@ export async function exportVideo(
             backgroundImage: args.backgroundImage,
             width,
             height,
+            viewFrom: args.viewFrom,
         });
 
         const frameCanvas = document.createElement("canvas");

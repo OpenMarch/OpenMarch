@@ -8,6 +8,7 @@ covers:
   - apps/desktop/src/components/exporting/MovesPastEndWarning.tsx
   - apps/desktop/src/components/exporting/utils
   - apps/desktop/electron/main/services/export-service.ts
+  - apps/desktop/src/field/fieldViewFrom.ts
   - action:openExportDialog
   - i18n:exportCoordinates
   - i18n:coordinateSheet
@@ -73,13 +74,16 @@ When the export is done, select the message that appears to open the file or fol
 
 <Media
   id="files-export-charts"
-  alt="The Export dialog on the Drill Charts tab with Individual Drill Charts and Include notes appendix pages on, and a preview of one marcher's chart: a box on where they were, a dotted path to where they stand now, and a solid path to a circle on where they go next."
+  alt="The Export dialog on the Drill Charts tab with Individual Drill Charts and Include notes appendix pages on, View from set to Performers, and a preview of the show's first marcher's chart drawn from the performers' side, with the front sideline at the top."
 />
 
 ### Drill chart options
 
 - <Ui k="exportCoordinates.individualCharts" />: makes a chart PDF for each marcher. Each page shows the whole band with that marcher picked out, a box on where they were on the previous page, a circle on where they go next, the paths between them, and their coordinates. Without it, you get one overview PDF with every marcher on every page and no paths.
+- <Ui k="exportCoordinates.viewFrom" />: which side the charts show the field from. <Ui k="exportCoordinates.viewFromAudience" plain /> draws it as the editor does, with the front sideline at the bottom. <Ui k="exportCoordinates.viewFromPerformers" plain /> turns the field around, as marchers see it when they face the front: the front sideline is at the top and <Term id="side-1-and-side-2">Side 1</Term> is on the right. The yard numbers turn the way they're painted on the grass, the labels around the field and the drill numbers stay upright, and the printed coordinates don't change. Individual charts start in <Ui k="exportCoordinates.viewFromPerformers" plain /> and the overview in <Ui k="exportCoordinates.viewFromAudience" plain />.
 - <Ui k="exportCoordinates.includeNotesAppendix" />: each page's notes are always printed under its chart, cut short if they're long. Turn this on to add pages at the end with the full notes for every page that has notes.
+
+The preview draws a page of your show as it will print: the first marcher's chart on the second page, or the overview's first page.
 
 The charts draw your show's field, with its markings and field image, and the <Ui k="settings.field.gridLines" plain /> and <Ui k="settings.field.halfLines" plain /> you have turned on for the field in the editor.
 

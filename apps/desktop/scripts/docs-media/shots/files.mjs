@@ -131,7 +131,11 @@ const shots = [
             const dialog = await exportDialog(page, "Drill Charts");
             // Individual Drill Charts on, so the preview shows one marcher's chart with its paths
             await dialog.getByRole("checkbox").first().click();
-            await page.waitForTimeout(1500);
+            // The preview draws the show's own chart once its positions are read
+            await page
+                .locator('[data-testid="drill-chart-preview"][data-view-from]')
+                .waitFor({ timeout: 20_000 });
+            await page.waitForTimeout(500);
             await page.mouse.move(4, 996);
             return { box: await settledBox(page, around, dialog, 4) };
         },

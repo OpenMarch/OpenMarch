@@ -10,6 +10,7 @@ import {
     textCenterY,
     type FieldPlanText,
 } from "@/field/fieldPlan";
+import type { FieldViewFrom } from "@/field/fieldViewFrom";
 
 /**
  * Drill chart SVGs drawn straight from show data, with no canvas (field renderer migration,
@@ -36,6 +37,8 @@ export interface DrillChartFieldImage {
 export interface DrillChartFieldOptions {
     gridLines: boolean;
     halfLines: boolean;
+    /** The side the field is seen from; the audience's by default */
+    viewFrom?: FieldViewFrom;
     /** Drawn when the field properties show the field image */
     image?: DrillChartFieldImage;
 }
@@ -130,9 +133,14 @@ export { fieldImagePlacement };
 
 export function fieldSvg(
     fieldProperties: FieldProperties,
-    { gridLines, halfLines, image }: DrillChartFieldOptions,
+    { gridLines, halfLines, image, viewFrom }: DrillChartFieldOptions,
 ): string {
-    const plan = planField2d(fieldProperties, { gridLines, halfLines, image });
+    const plan = planField2d(fieldProperties, {
+        gridLines,
+        halfLines,
+        image,
+        viewFrom,
+    });
     const out: string[] = [];
 
     out.push(
@@ -140,8 +148,11 @@ export function fieldSvg(
     );
     if (plan.image && image) {
         const at = plan.image;
+        const turn = at.turned
+            ? ` transform="rotate(180 ${num(at.x + at.width / 2)} ${num(at.y + at.height / 2)})"`
+            : "";
         out.push(
-            `<image x="${num(at.x)}" y="${num(at.y)}" width="${num(at.width)}" height="${num(at.height)}" preserveAspectRatio="none" opacity="${num(at.opacity)}" xlink:href="${escapeXml(image.href)}" />`,
+            `<image x="${num(at.x)}" y="${num(at.y)}" width="${num(at.width)}" height="${num(at.height)}" preserveAspectRatio="none" opacity="${num(at.opacity)}"${turn} xlink:href="${escapeXml(image.href)}" />`,
         );
     }
     for (const l of plan.lines)

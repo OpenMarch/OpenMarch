@@ -38,8 +38,6 @@ import * as Form from "@radix-ui/react-form";
 import { toast } from "sonner";
 import { ACTION_TOAST_DURATION_MS } from "@/components/ui/toastDurations";
 import { useTimingObjects } from "@/hooks";
-import individualDemoSVG from "@/assets/drill_chart_export_individual_demo.svg";
-import overviewDemoSVG from "@/assets/drill_chart_export_overview_demo.svg";
 import { Tabs, TabsList, TabContent, TabItem } from "@openmarch/ui";
 import MovesPastEndWarning from "./MovesPastEndWarning";
 import { useAppDialogStore, type ExportTab } from "@/stores/AppDialogStore";
@@ -78,6 +76,9 @@ import {
     OverlayTimeline,
 } from "./video/videoOverlay";
 import OverlayPreview from "./video/OverlayPreview";
+import ViewFromChoice, { EXPORT_TOGGLE_ITEM_CLASS } from "./ViewFromChoice";
+import DrillChartPreview from "./DrillChartPreview";
+import type { FieldViewFrom } from "@/field/fieldViewFrom";
 import type { VideoTheme } from "./video/videoTheme";
 import {
     clampFieldFraming,
@@ -658,6 +659,13 @@ function DrillChartExport() {
     // Export options
     const [individualCharts, setIndividualCharts] = useState(false);
     const [includeNotesAppendix, setIncludeNotesAppendix] = useState(true);
+    // The view each kind of chart is drawn from. A performer reads their own chart, so
+    // individual charts start in the performers' view; the full-field chart in the audience's (#1268)
+    const [viewFromByKind, setViewFromByKind] = useState<
+        Record<"individual" | "overview", FieldViewFrom>
+    >({ individual: "performer", overview: "audience" });
+    const chartKind = individualCharts ? "individual" : "overview";
+    const viewFrom = viewFromByKind[chartKind];
 
     /**
      * Exports the generated SVGs as PDF files for each marcher or a single overview PDF.
@@ -822,6 +830,7 @@ function DrillChartExport() {
                 gridLines: uiSettings.gridLines,
                 halfLines: uiSettings.halfLines,
                 individualCharts: individualCharts,
+                viewFrom,
             }));
         } catch (error) {
             toast.error(
@@ -917,6 +926,7 @@ function DrillChartExport() {
         uiSettings.gridLines,
         uiSettings.halfLines,
         individualCharts,
+        viewFrom,
         exportMarcherSVGs,
     ]);
 
@@ -987,6 +997,15 @@ function DrillChartExport() {
                         />
                     </Form.Field>
                 </div>
+                <ViewFromChoice
+                    value={viewFrom}
+                    onChange={(next) =>
+                        setViewFromByKind((current) => ({
+                            ...current,
+                            [chartKind]: next,
+                        }))
+                    }
+                />
             </Form.Root>
 
             {/* Preview Section */}
@@ -1001,20 +1020,18 @@ function DrillChartExport() {
                 {canExport ? (
                     <div className="flex flex-col items-center gap-8">
                         <div className="rounded-6 max-h-[20rem] w-full max-w-[20rem] border border-gray-200 bg-white px-8 py-4 text-black">
-                            <img
-                                src={
-                                    individualCharts
-                                        ? individualDemoSVG
-                                        : overviewDemoSVG
+                            <DrillChartPreview
+                                fieldProperties={fieldProperties!}
+                                pages={pages}
+                                marchers={marchers!}
+                                sectionAppearances={sectionAppearances}
+                                marcherAppearancesByPageId={
+                                    marcherAppearancesByPageId
                                 }
-                                alt={t(
-                                    "exportCoordinates.drillChartPreviewAlt",
-                                )}
-                                className="block w-full"
-                                style={{
-                                    maxHeight: "20rem",
-                                    objectFit: "contain",
-                                }}
+                                gridLines={uiSettings.gridLines}
+                                halfLines={uiSettings.halfLines}
+                                individualCharts={individualCharts}
+                                viewFrom={viewFrom}
                             />
                         </div>
                     </div>
@@ -1175,6 +1192,8 @@ function VideoExport() {
     const [fieldFraming, setFieldFraming] = useState<FieldFraming>(
         DEFAULT_FIELD_FRAMING,
     );
+    // The video follows the whole show, so it starts in the audience's view (#1265)
+    const [viewFrom, setViewFrom] = useState<FieldViewFrom>("audience");
     const [fieldRenderContext, setFieldRenderContext] =
         useState<VideoRenderContext | null>(null);
     // Why the new field couldn't start off screen for the preview, if it couldn't
@@ -1256,6 +1275,7 @@ function VideoExport() {
                     // The preview sizes it to its own canvas on the first frame
                     width: 1,
                     height: 1,
+                    viewFrom,
                 });
                 if (cancelled) {
                     ctx.dispose();
@@ -1290,6 +1310,7 @@ function VideoExport() {
         appearanceSteps,
         fieldImage.loaded,
         fieldImage.image,
+        viewFrom,
     ]);
 
     const previewLoading =
@@ -1411,6 +1432,7 @@ function VideoExport() {
                 fps: frameRate,
                 videoTheme,
                 fieldFraming,
+                viewFrom,
                 overlay: overlayEnabled
                     ? { measures, options: overlayOptions, placement }
                     : undefined,
@@ -1490,6 +1512,7 @@ function VideoExport() {
         overlayOptions,
         placement,
         fieldFraming,
+        viewFrom,
     ]);
 
     return (
@@ -1569,20 +1592,34 @@ function VideoExport() {
                     >
                         <ToggleGroup.Item
                             value="light"
-                            className="text-text bg-fg-2 text-body border-stroke data-[state=on]:border-accent touch:min-h-44 flex items-center gap-6 rounded-full border px-12 py-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4"
+                            className={EXPORT_TOGGLE_ITEM_CLASS}
                         >
                             <SunIcon size={20} />
                             <T keyName="settings.general.appearance.light" />
                         </ToggleGroup.Item>
                         <ToggleGroup.Item
                             value="dark"
-                            className="text-text bg-fg-2 text-body border-stroke data-[state=on]:border-accent touch:min-h-44 flex items-center gap-6 rounded-full border px-12 py-8 outline-hidden duration-150 ease-out focus-visible:-translate-y-4"
+                            className={EXPORT_TOGGLE_ITEM_CLASS}
                         >
                             <MoonIcon size={20} />
                             <T keyName="settings.general.appearance.dark" />
                         </ToggleGroup.Item>
                     </ToggleGroup.Root>
                 </Form.Field>
+                <ViewFromChoice
+                    value={viewFrom}
+                    onChange={(next) => {
+                        if (next === viewFrom) return;
+                        // The field turns about the frame's center: keep the same part in view
+                        setFieldFraming((framing) => ({
+                            ...framing,
+                            offsetX: -framing.offsetX,
+                            offsetY: -framing.offsetY,
+                        }));
+                        setViewFrom(next);
+                    }}
+                    className="col-span-2"
+                />
             </Form.Root>
 
             {/* Overlay options */}

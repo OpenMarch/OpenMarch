@@ -16,6 +16,10 @@ import {
     type QualitySettings,
 } from "@/field/fieldQuality";
 import { planFieldImage } from "@/field/fieldPlan";
+import {
+    turnedPositionSource,
+    type FieldViewFrom,
+} from "@/field/fieldViewFrom";
 import tolgee from "@/global/singletons/Tolgee";
 import type { PositionSource } from "@/timeline/positionBuffer";
 import type { AppearanceStepsByMarcherId } from "@/services/appearance/appearanceSteps";
@@ -43,6 +47,8 @@ export interface OffscreenFieldArgs {
     image: ImageBitmap | null;
     width: number;
     height: number;
+    /** The side the field is seen from; the audience's by default (#1265) */
+    viewFrom?: FieldViewFrom;
 }
 
 /**
@@ -116,7 +122,13 @@ export async function createOffscreenField(
         panY: 0,
     }));
     const draw: FieldDraw = { view, quality: () => EXPORT_QUALITY };
-    const marchers = new FieldMarchers(args.source);
+    const viewFrom = args.viewFrom ?? "audience";
+    // The performers' view turns the marchers' positions with the field; their labels stay upright
+    const marchers = new FieldMarchers(
+        viewFrom === "performer"
+            ? turnedPositionSource(args.source, args.fieldProperties)
+            : args.source,
+    );
     marchers.setAppearanceSteps(args.appearanceSteps);
     const atlases = {
         label: new GlyphAtlas(LABEL_FONT),
@@ -126,6 +138,7 @@ export async function createOffscreenField(
     const placement = planFieldImage(
         args.fieldProperties,
         args.image && { width: args.image.width, height: args.image.height },
+        viewFrom,
     );
 
     let mounted!: () => void;
@@ -138,6 +151,7 @@ export async function createOffscreenField(
                     fieldProperties={args.fieldProperties}
                     numberAtlas={atlases.number}
                     labelAtlas={atlases.checkpoint}
+                    viewFrom={viewFrom}
                 />
                 <BackgroundImageLayer
                     image={args.image}
