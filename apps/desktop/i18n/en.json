@@ -4353,6 +4353,7 @@
             "atPlayhead": "The cue is already on the playhead's count",
             "endBeforeStart": "Move the playhead after the cue's start first.",
             "endsAtPlayhead": "The cue already ends at the playhead.",
+            "endPastNext": "The playhead is past these performers' next change. End the cue before it.",
             "movesBasic": "Moves have bars in Expert only"
         }
     },

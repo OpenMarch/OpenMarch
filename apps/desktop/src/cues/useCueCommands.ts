@@ -31,6 +31,7 @@ import {
     type EquipmentChoice,
 } from "./equipment";
 import { itemKeyOf } from "./equipmentItems";
+import { endAtCount, type EndRefusal } from "./cueEdges";
 
 /**
  * The beat a cue made at the paused playhead sits on: the beat whose click is the playhead. Spec
@@ -91,10 +92,14 @@ export interface CueCommands {
     /** Moves the cue to the playhead's count, as one undo step. */
     readonly moveToPlayhead: () => void;
     /**
-     * How many counts the cue would last if it ended at the playhead's count, or null when the
-     * playhead isn't after its start.
+     * What ending the cue at the playhead's count would do, by the end edge's rule
+     * (`endAtCount`): its new length (null: lasting), or why it can't: no count at the playhead,
+     * the playhead not after its start, past the next cue that stops it, or it ends there already.
      */
-    readonly lengthToPlayhead: () => number | null;
+    readonly endToPlayhead: () =>
+        | { readonly length: number | null }
+        | { readonly refused: EndRefusal | "noCount" }
+        | null;
     /** Ends the cue at the playhead's count (momentary for that many counts), as one undo step. */
     readonly endAtPlayhead: () => void;
     readonly deleteCue: () => void;
@@ -192,11 +197,16 @@ export function useCueCommands(): CueCommands {
         const cue = picked ?? (onBeat.length === 1 ? onBeat[0] : null);
         const edited = (edit: "add" | "remove") =>
             cue ? editedPerformers(cue, selectedIds, edit) : null;
-        const lengthToPlayhead = () => {
-            const from = cue ? show?.countOfBeat.get(cue.beatId) : undefined;
-            if (from === undefined || count === null || count <= from)
-                return null;
-            return count - from;
+        const endToPlayhead = () => {
+            if (!cue || !show) return null;
+            if (count === null) return { refused: "noCount" as const };
+            return endAtCount({
+                cues: show.cues,
+                cue,
+                countOf: (beatId) => show.countOfBeat.get(beatId),
+                count,
+                showEnd: show.beatIds.length,
+            });
         };
         const holdsAlready = (choice: EquipmentChoice) =>
             selectedIds.length > 0 &&
@@ -287,11 +297,16 @@ export function useCueCommands(): CueCommands {
                 );
                 if (plan) edit(plan);
             },
-            lengthToPlayhead,
+            endToPlayhead,
             endAtPlayhead: () => {
-                const length = lengthToPlayhead();
-                if (!cue || !show || length === null) return;
-                const plan = cueChangeEdit(show, cue.id, { length }, words);
+                const end = endToPlayhead();
+                if (!cue || !show || !end || "refused" in end) return;
+                const plan = cueChangeEdit(
+                    show,
+                    cue.id,
+                    { length: end.length },
+                    words,
+                );
                 if (plan) edit(plan);
             },
             deleteCue: () => {

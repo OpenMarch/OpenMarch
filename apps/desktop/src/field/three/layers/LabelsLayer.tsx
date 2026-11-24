@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import type { FieldTheme } from "@openmarch/core";
 import { rgba01 } from "../fieldGeometry";
@@ -19,12 +19,7 @@ import type {
     EquipmentIconKey,
     EquipmentIconPlace,
 } from "@/cues/equipmentIcons";
-import {
-    IconBatch,
-    loadIconAtlas,
-    type FieldIcon,
-    type IconAtlas,
-} from "../iconBatch";
+import { IconBatch, useIconAtlas, type FieldIcon } from "../iconBatch";
 
 /**
  * A marcher label: 14 field units, its center 2.2 dot radii above the dot,
@@ -199,18 +194,7 @@ export default function LabelsLayer({
         return batch;
     }, [atlas]);
     // The icons' atlas is drawn once, the first time a field has an icon to show
-    const [iconAtlas, setIconAtlas] = useState<IconAtlas | null>(null);
-    useEffect(() => {
-        if (!icons || iconAtlas) return;
-        let live = true;
-        loadIconAtlas().then(
-            (loaded) => live && setIconAtlas(loaded),
-            () => undefined,
-        );
-        return () => {
-            live = false;
-        };
-    }, [icons, iconAtlas]);
+    const iconAtlas = useIconAtlas(icons !== null);
     const iconBatch = useMemo(() => {
         if (!iconAtlas) return null;
         const batch = new IconBatch(iconAtlas);

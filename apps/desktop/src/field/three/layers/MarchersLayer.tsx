@@ -22,6 +22,7 @@ import { MARCHER_SHAPE, writeMarcherLooks } from "../marcherLooks";
 import { dotSizes, SELECTION_RGBA01 } from "../selectionRing";
 import type { LabelIcons } from "@/cues/useEquipmentIcons";
 import type { EquipmentIconPlace } from "@/cues/equipmentIcons";
+import { useIconAtlas } from "../iconBatch";
 
 /**
  * Every marcher's dot in one instanced draw, shaded in the fragment shader so
@@ -248,6 +249,8 @@ export default function MarchersLayer({
     iconPlace?: EquipmentIconPlace;
 }) {
     const invalidate = useThree((s) => s.invalidate);
+    // In place of the dot: the icons' atlas, which the dots wait for
+    const iconAtlas = useIconAtlas(iconPlace === "dot" && icons !== null);
     const draw = useFieldDraw();
     const drawn = useRef<Drawn>({
         version: -1,
@@ -295,7 +298,7 @@ export default function MarchersLayer({
     }, []);
 
     // A new theme restyles the dots on the next frame
-    useEffect(() => invalidate(), [theme, invalidate]);
+    useEffect(() => invalidate(), [theme, iconAtlas, invalidate]);
     // New dimming redraws them on the next frame
     useEffect(() => dimming.subscribe(invalidate), [dimming, invalidate]);
     useEffect(() => look.subscribe(invalidate), [look, invalidate]);
@@ -321,8 +324,9 @@ export default function MarchersLayer({
 
         const last = drawn.current;
         const resized = marchers.idsVersion !== last.idsVersion;
+        // Only once the icons can be drawn: until then (or if they can't be) the dots stay
         const iconDots =
-            iconPlace === "dot"
+            iconPlace === "dot" && iconAtlas
                 ? (icons?.at(marchers.drawnBeat) ?? null)
                 : null;
         const iconDotsKey = iconDots?.key ?? "";

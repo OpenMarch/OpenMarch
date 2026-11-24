@@ -4099,5 +4099,6 @@
     "actions.ui.hideView3dCameraOnField": "Command palette label of the 3D View camera action while it shows. Verb.",
     "field.view3dCamera.name": "Small chip on the 2D field shown while hovering or dragging the purple camera marker. The marker is where the separate 3D View window's camera stands. Names it.",
     "field.view3dCamera.move": "Accessible label of the purple camera marker on the 2D field: dragging it moves the 3D View window's camera across the field (it keeps looking the same way).",
-    "field.view3dCamera.aim": "Accessible label of the small ring at the end of the 3D View camera's dashed line of sight on the 2D field: dragging it turns the camera to look at that spot."
+    "field.view3dCamera.aim": "Accessible label of the small ring at the end of the 3D View camera's dashed line of sight on the 2D field: dragging it turns the camera to look at that spot.",
+    "cues.reason.endPastNext": "Why 'End cue at playhead' is greyed out: the playhead is after the next equipment change for the cue's performers, which the cue can't run past."
 }

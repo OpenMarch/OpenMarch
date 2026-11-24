@@ -3,7 +3,7 @@
  * atlas of the section icons (upstream OpenMarch #1071) rendered once from their SVG, and a batch
  * that draws many of them in one instanced call, tinted like the labels.
  */
-import { createElement } from "react";
+import { createElement, useEffect, useSyncExternalStore } from "react";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
     BufferAttribute,
@@ -45,17 +45,53 @@ const ICONS: ReadonlyMap<EquipmentIconKey, typeof MarchingTubaIcon> = new Map([
 ]);
 
 let loading: Promise<IconAtlas> | null = null;
+/** The atlas once drawn, for every layer that draws or makes room for icons */
+let loaded: IconAtlas | null = null;
+const loadedListeners = new Set<() => void>();
 
 /**
  * The icon atlas, drawn once: every icon in white on transparent, bold so its strokes survive
- * being drawn a few pixels tall. Rejects where the page can't draw (tests without a canvas).
+ * being drawn a few pixels tall. Rejects where the page can't draw (tests without a canvas); the
+ * next ask tries again.
  */
 export function loadIconAtlas(): Promise<IconAtlas> {
-    loading ??= drawAtlas().catch((error: unknown) => {
-        loading = null;
-        throw error;
-    });
+    loading ??= drawAtlas().then(
+        (atlas) => {
+            loaded = atlas;
+            for (const listener of loadedListeners) listener();
+            return atlas;
+        },
+        (error: unknown) => {
+            loading = null;
+            throw error;
+        },
+    );
     return loading;
+}
+
+/**
+ * The icon atlas once it's drawn, or null until then (or if it can't be): asks for it while
+ * `wanted`. The labels draw icons from it, and the dots give way to icons only once it's there,
+ * so a performer is never left without both.
+ */
+export function useIconAtlas(wanted: boolean): IconAtlas | null {
+    const atlas = useSyncExternalStore(
+        (changed) => {
+            loadedListeners.add(changed);
+            return () => loadedListeners.delete(changed);
+        },
+        () => loaded,
+    );
+    useEffect(() => {
+        if (!wanted || loaded) return;
+        loadIconAtlas().catch((error: unknown) =>
+            console.warn(
+                "The field's equipment icons couldn't be drawn",
+                error,
+            ),
+        );
+    }, [wanted]);
+    return atlas;
 }
 
 async function drawAtlas(): Promise<IconAtlas> {

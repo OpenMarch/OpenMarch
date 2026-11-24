@@ -54,7 +54,10 @@ import {
     clipEdgeHitInside,
     TOUCH_HIT_SIZE,
 } from "@/components/timeline/touchTargets";
-import { cueEdgeDrag, nextCueStart } from "@/cues/cueEdges";
+import { cueEdgeDrag, cueNeighbours } from "@/cues/cueEdges";
+import { withEquipmentSet } from "@/cues/equipment";
+import { compileShowCues } from "@/cues/showCues";
+import type { CueEdit } from "@/hooks/queries/useCues";
 import { fingerDragSlop } from "@/components/timeline/timelineGestures";
 import {
     MENU_ITEM_CLASS,
@@ -191,8 +194,8 @@ type CueMenu = { x: number; y: number; cueId: number };
 type LaneDrag = {
     cueId: number;
     mode: "move" | "start" | "end";
-    startDelta: number;
-    endDelta: number;
+    /** What the drop would write, drawn as the preview; null while it would change nothing */
+    edit: CueEdit | null;
 };
 
 function EquipmentLaneView({
@@ -205,7 +208,7 @@ function EquipmentLaneView({
     geometry: TimelineBandGeometry;
     lane: LaneData | null;
     show: EditorCues | null;
-    beats: readonly { id: number; duration: number }[];
+    beats: readonly { id: number; duration: number; position: number }[];
     folded: boolean;
 }) {
     const { t } = useTranslate();
@@ -243,7 +246,18 @@ function EquipmentLaneView({
                 axis.toView(countToSpecBeat(count, ids, specOf)) * ppb,
         };
     }, [beats, show, ppb]);
-    const rows = lane?.rows ?? [];
+    // While dragging, the lane as the drop would leave it: the same planned edit, compiled
+    const previewLane = useMemo(() => {
+        if (!drag?.edit || !show) return null;
+        const cues = withEquipmentSet(show.cues, drag.edit);
+        const compiled = compileShowCues(show.marchers, beats, cues);
+        return equipmentLane({
+            compiled: compiled.compiled,
+            cues,
+            usual: compiled.usual,
+        });
+    }, [drag, show, beats]);
+    const rows = (previewLane ?? lane)?.rows ?? [];
     const valueName = (value: string | null) => {
         const key = value === null ? "none" : itemKeyOf(value);
         if (key === "none" || key === "winds" || key === "battery")
@@ -304,8 +318,15 @@ function EquipmentLaneView({
         const slop = fingerDragSlop(e.pointerType, DRAG_SLOP_PX);
         const specAt = (count: number) =>
             countToSpecBeat(count, show.beatIds, specOf);
-        // Where the row's next cue starts: a lasting cue's bar ends there
-        const until = specAt(nextCueStart(row.pieces, piece.from, cueId));
+        // Its performers' cues around it: a lasting cue runs until their next lasting cue (or the
+        // show's end); a momentary one stops at their next momentary cue; a start edge stops just
+        // after the cue before it
+        const near = cueNeighbours({
+            cues: show.cues,
+            cue,
+            countOf: (beatId) => show.countOfBeat.get(beatId),
+        });
+        const until = specAt(near.nextLasting ?? show.beatIds.length);
         const pieceEnd = specAt(piece.to);
         const span = { start: at, length: cue.length };
         let dragging = false;
@@ -343,6 +364,11 @@ function EquipmentLaneView({
                 edge: mode,
                 cue: span,
                 until,
+                nextMomentary:
+                    near.nextMomentary === null
+                        ? null
+                        : specAt(near.nextMomentary),
+                previous: near.previous === null ? null : specAt(near.previous),
                 delta: landed - view,
             });
             return {
@@ -350,37 +376,36 @@ function EquipmentLaneView({
                 start: Math.min(edged.start, beats.length - 1),
             };
         };
+        /** The one write the drop makes, its performers winning where it lands; null for none */
+        const planned = () => {
+            const change = {
+                ...(result.start !== at && {
+                    beatId: beats[result.start]!.id,
+                }),
+                ...(result.length !== cue.length && { length: result.length }),
+            };
+            return Object.keys(change).length === 0
+                ? null
+                : cueChangeEdit(show, cueId, change, words);
+        };
         const onMove = (ev: PointerEvent) => {
             if (ev.pointerId !== e.pointerId) return;
             if (!dragging && Math.abs(ev.clientX - startX) < slop) return;
             dragging = true;
             result = resultAt(ev);
-            setDrag({
-                cueId,
-                mode,
-                startDelta: result.start - at,
-                endDelta: result.end - pieceEnd,
-            });
+            // Drawn from the same edit the drop writes, so the preview is what lands
+            setDrag({ cueId, mode, edit: planned() });
         };
         const done = (commit: boolean) => {
-            target.removeEventListener("pointermove", onMove);
-            target.removeEventListener("pointerup", onUp);
-            target.removeEventListener("pointercancel", onCancel);
-            const change = {
-                ...(result.start !== at && { beatId: beats[result.start]!.id }),
-                ...(result.length !== cue.length && { length: result.length }),
-            };
-            if (!dragging || !commit || Object.keys(change).length === 0) {
-                setDrag(null);
-                return;
-            }
-            // Its performers win on the count it lands on, as setting equipment there would
-            const plan = show && cueChangeEdit(show, cueId, change, words);
+            window.removeEventListener("pointermove", onMove);
+            window.removeEventListener("pointerup", onUp);
+            window.removeEventListener("pointercancel", onCancel);
+            const plan = dragging && commit ? planned() : null;
             if (!plan) {
                 setDrag(null);
                 return;
             }
-            // The bar stays where it was dropped until the cues reload
+            // The preview stays as dropped until the cues reload
             edit(plan, { onSettled: () => setDrag(null) });
         };
         const onUp = (ev: PointerEvent) => {
@@ -389,9 +414,10 @@ function EquipmentLaneView({
         const onCancel = (ev: PointerEvent) => {
             if (ev.pointerId === e.pointerId) done(false);
         };
-        target.addEventListener("pointermove", onMove);
-        target.addEventListener("pointerup", onUp);
-        target.addEventListener("pointercancel", onCancel);
+        // On the window: the preview may draw the dragged bar anew, and its element with it
+        window.addEventListener("pointermove", onMove);
+        window.addEventListener("pointerup", onUp);
+        window.addEventListener("pointercancel", onCancel);
     };
 
     const nameMenu = useLaneNameMenu("equipment");
@@ -501,14 +527,6 @@ function EquipmentLaneView({
                                     piece={piece}
                                     left={xOf(piece.from)}
                                     width={xOf(piece.to) - xOf(piece.from)}
-                                    shift={dragged ? drag.startDelta * ppb : 0}
-                                    extend={
-                                        dragged
-                                            ? (drag.endDelta -
-                                                  drag.startDelta) *
-                                              ppb
-                                            : 0
-                                    }
                                     dragging={dragged}
                                     name={valueName(piece.value)}
                                     // A start edge only where the cue starts (not a later row's
@@ -628,8 +646,6 @@ function Piece({
     piece,
     left,
     width,
-    shift,
-    extend,
     dragging,
     name,
     startsHere,
@@ -641,10 +657,6 @@ function Piece({
     piece: LanePiece;
     left: number;
     width: number;
-    /** How far a drag has moved the bar's start, in pixels */
-    shift: number;
-    /** How much a drag has widened the bar (negative: narrowed), in pixels */
-    extend: number;
     dragging: boolean;
     name: string;
     /** Whether the cue starts at this bar's start, so its start edge can be dragged here */
@@ -662,7 +674,7 @@ function Piece({
     const isCue = piece.cueId !== null;
     const momentary = piece.kind === "momentary";
     const longPress = useLongPressMenu(onMenu);
-    const drawnWidth = Math.max(width - 1 + extend, 4);
+    const drawnWidth = Math.max(width - 1, 4);
     // As a move's clip: up to 6 px handles inside each edge, none on a very short bar
     const handleWidth = clipHandleWidth(drawnWidth);
     const edges = isCue && !lockedReason && handleWidth > 0;
@@ -742,7 +754,7 @@ function Piece({
                 dragging && "z-[6] cursor-grabbing opacity-90 shadow-lg",
             )}
             style={{
-                left: left + shift,
+                left,
                 width: drawnWidth,
                 height: ROW - 4,
             }}

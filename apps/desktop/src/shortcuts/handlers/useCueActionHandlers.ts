@@ -67,6 +67,14 @@ function setReason(
     return undefined;
 }
 
+/** Why End cue at playhead can't end the cue there, by refusal. */
+const END_REASONS = {
+    noCount: "cues.reason.noCount",
+    beforeStart: "cues.reason.endBeforeStart",
+    pastNext: "cues.reason.endPastNext",
+    endsThere: "cues.reason.endsAtPlayhead",
+} as const;
+
 /** Why a cue command can't run now, or undefined when it can. */
 function cueReason(
     commands: CueCommands,
@@ -244,19 +252,17 @@ export function useCueActionHandlers() {
                   ? tolgee.t("cues.reason.atPlayhead")
                   : undefined),
     });
-    const toPlayhead = commands.lengthToPlayhead();
+    // The end edge's rule: refused before the start, or past the next cue that would stop it
+    const toPlayhead = commands.endToPlayhead();
+    const endRefused =
+        toPlayhead && "refused" in toPlayhead ? toPlayhead.refused : null;
     useActionHandler("cueEndAtPlayhead", () => commands.endAtPlayhead(), {
-        enabled:
-            editable &&
-            toPlayhead !== null &&
-            toPlayhead !== commands.cue?.length,
+        enabled: editable && toPlayhead !== null && endRefused === null,
         disabledReason:
             cueWhy ??
-            (toPlayhead === null
-                ? tolgee.t("cues.reason.endBeforeStart")
-                : toPlayhead === commands.cue?.length
-                  ? tolgee.t("cues.reason.endsAtPlayhead")
-                  : undefined),
+            (endRefused === null
+                ? undefined
+                : tolgee.t(END_REASONS[endRefused])),
     });
     useActionHandler("cueDelete", () => commands.deleteCue(), {
         enabled: editable,

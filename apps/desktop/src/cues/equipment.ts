@@ -304,3 +304,34 @@ export function planCueChange({
     } else plan.modifiedCues.push(fields);
     return plan;
 }
+
+/**
+ * `cues` as they would be after `plan` is written, for drawing a drag's preview from the very edit
+ * its drop writes: deleted cues gone, modified ones changed. A plan that makes new cues (setting
+ * equipment) isn't previewed; a cue change makes none.
+ */
+export function withEquipmentSet(
+    cues: readonly DatabaseCue[],
+    plan: {
+        readonly deletedCueIds: readonly number[];
+        readonly modifiedCues: readonly ModifiedCueArgs[];
+    },
+): DatabaseCue[] {
+    const deleted = new Set(plan.deletedCueIds);
+    const modified = new Map(plan.modifiedCues.map((m) => [m.id, m]));
+    return cues
+        .filter((c) => !deleted.has(c.id))
+        .map((c) => {
+            const change = modified.get(c.id);
+            if (!change) return c;
+            return {
+                ...c,
+                ...(change.beatId !== undefined && { beatId: change.beatId }),
+                ...(change.length !== undefined && { length: change.length }),
+                ...(change.marcherIds !== undefined && {
+                    marcherIds: [...change.marcherIds],
+                }),
+                ...(change.label !== undefined && { label: change.label }),
+            };
+        });
+}
