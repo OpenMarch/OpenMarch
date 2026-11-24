@@ -416,7 +416,7 @@
         "chapter": "marchers",
         "kind": "still",
         "width": 808,
-        "height": 424
+        "height": 480
     },
     "marchers-space": {
         "chapter": "marchers",
@@ -969,19 +969,19 @@
         "chapter": "3d-view",
         "kind": "still",
         "width": 1600,
-        "height": 924
+        "height": 886
     },
     "venue-on-field": {
         "chapter": "3d-view",
         "kind": "still",
         "width": 1600,
-        "height": 924
+        "height": 886
     },
     "venue-on-field-stands": {
         "chapter": "3d-view",
         "kind": "still",
         "width": 1600,
-        "height": 924
+        "height": 886
     },
     "window-command-palette": {
         "chapter": "workspace",
