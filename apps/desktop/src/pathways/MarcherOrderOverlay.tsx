@@ -104,6 +104,7 @@ import {
 } from "./orderLane";
 import { usePathPenStore } from "./pathPenStore";
 import OrderComet from "./OrderComet";
+import { prefersReducedMotion } from "@/components/timeline/reducedMotion";
 import type { FloorSampler } from "./floorSampler";
 import { resolveMarcherLook } from "@/entity-components/appearance";
 
@@ -111,6 +112,8 @@ import { resolveMarcherLook } from "@/entity-components/appearance";
 const LANE_INK = "#1c1f26";
 /** How far the selection box stands clear of the selection's lane and names, in CSS px (step 4j) */
 const SELECTION_CLEARANCE = 5;
+/** Whether known orders run their comet (`OrderComet`): not for someone who turned motion down */
+const cometRuns = !prefersReducedMotion();
 
 /**
  * A guessed order's colors on a light or a dark field (its hollow dashed outline has no ground of
@@ -300,6 +303,7 @@ function drawLine({
     others = [],
     floorAt,
     labels = [],
+    tipped = true,
 }: {
     points: readonly XY[];
     marchers: number;
@@ -315,13 +319,18 @@ function drawLine({
     floorAt: (p: XY) => number;
     /** Every drawn marcher's name label on screen: those the lane reaches are cut out of it */
     labels?: readonly Box[];
+    /**
+     * Draw the tip past the leader. Not while the comet runs: on a line whose last marcher stands
+     * by its leader the tip lands on the last one, and the comet already starts at the leader
+     */
+    tipped?: boolean;
 }): DrawnLine {
     const own = points.slice(0, marchers);
     // On the marchers only: Set order's pointer sits on the dot it just picked and crosses earlier
     // legs on its way to the next, which would make every pick look like a fold or a crossing
     const kind = classifyOrder(own, dotRadius);
     // The tip keeps the full width; the lane itself narrows where its own ranks are close
-    const tip = kind === "lane" ? laneTip(points, halfWidth) : null;
+    const tip = kind === "lane" && tipped ? laneTip(points, halfWidth) : null;
     const tipHalf = halfWidth;
     halfWidth = ownHalfWidth(own, halfWidth, dotRadius);
     const darts = kind === "crossed" ? threadDarts(points) : [];
@@ -685,6 +694,8 @@ export default function MarcherOrderOverlay({
                 marchers: pointsOf[l]!.length,
                 guessed: line.guessed,
                 numbered: alt,
+                // A guess runs no comet, so it keeps its tip
+                tipped: line.guessed || !cometRuns,
                 halfWidth: halfWidths[l]!,
                 dotRadius,
                 busy,
