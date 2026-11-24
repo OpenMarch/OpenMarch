@@ -162,7 +162,7 @@ export function marchersInPolygon(
 /**
  * The marchers an area selects of those `inside` it: marchers and props alike (props epic, fork
  * #1239), but never a locked item (the pit's equipment, instruments.md section 6), so a marquee
- * never picks up the pit or a riser that's locked: a click selects one.
+ * never picks up the pit or a riser that's locked: only an unlock (its right-click) lets it in.
  */
 export function areaPicks(
     inside: readonly number[],

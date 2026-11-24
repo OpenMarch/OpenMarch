@@ -1107,6 +1107,21 @@
         "category": "edit",
         "bindings": []
     },
+    "unlockSelectedItem": {
+        "label": "Unlock selected prop or equipment",
+        "category": "edit",
+        "bindings": []
+    },
+    "lockSelectedItem": {
+        "label": "Lock selected prop or equipment",
+        "category": "edit",
+        "bindings": []
+    },
+    "resizeSelectedItem": {
+        "label": "Resize and turn",
+        "category": "edit",
+        "bindings": []
+    },
     "importModel": {
         "label": "Import a 3D model…",
         "category": "file",

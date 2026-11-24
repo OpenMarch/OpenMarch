@@ -6,9 +6,10 @@ import { seedShowSql, type SeedPosition } from "../seed.mjs";
 import type { FieldTestItem } from "../../../src/field/fieldTestApi";
 
 // The front ensemble on the 2D field (instruments.md section 6): equipment
-// stands in the pit strip in front of the front sideline, a locked item has
-// one position for the whole show, area selections skip it, and a pit
-// instrument has its playing spot on its field side.
+// stands in the pit strip in front of the front sideline, starts locked, so
+// no click, drag or area selection takes it until its right-click unlocks it
+// (props epic step 2), and a pit instrument has its playing spot on its field
+// side.
 
 /** Field units per meter and per foot, as `PIXELS_PER_METER` (`src/items/itemOutlines.ts`) */
 const PIXELS_PER_METER = 0.5 / 0.0254;
@@ -81,42 +82,38 @@ test("draws the pit past the front sideline, locked, with the marimba's playing 
     expect(marimba.screen.y).toBeLessThan(canvas.y + canvas.height);
 });
 
-test("a locked marimba dragged on a later page moves on every page, in one undo step", async ({
+test("a drag from a locked marimba leaves it put; unlocked from its right-click, it moves on that page", async ({
     show,
 }) => {
     await expect.poll(() => drawnItems(show.page)).toHaveLength(2);
     await selectPage(show, "Page 2");
     const { zoom } = (await readField(show.page)).viewport;
     const [marimba] = await drawnItems(show.page);
-    await dragFrom(
-        show.page,
-        { x: marimba.screen.x + 20 * zoom, y: marimba.screen.y },
-        { x: 30 * zoom, y: 0 },
-    );
+    const grab = { x: marimba.screen.x + 20 * zoom, y: marimba.screen.y };
+    await dragFrom(show.page, grab, { x: 30 * zoom, y: 0 });
     await waitForIdle(show.page);
+    expect((await savedPosition(show, 20, 2)).x).toBe(MARIMBA.x);
 
-    // About 30 units right, as the drag's snapping rounds it
+    await show.page.mouse.click(grab.x, grab.y, { button: "right" });
+    await show.page.getByTestId("field-menu-unlockSelectedItem").click();
+    await expect
+        .poll(() => show.query("SELECT locked FROM items WHERE id = 1"))
+        .toEqual([{ locked: 0 }]);
+    // The field has it unlocked too, so the drag takes it
+    await expect
+        .poll(() => drawnItems(show.page).then((items) => items[0]?.locked))
+        .toBe(false);
+
+    await dragFrom(show.page, grab, { x: 30 * zoom, y: 0 });
+    await waitForIdle(show.page);
+    // About 30 units right on Page 2, as the drag's snapping rounds it, and where it was before
     await expect
         .poll(() => savedPosition(show, 20, 2).then((p) => p.x))
         .toBeGreaterThan(MARIMBA.x + 15);
-    for (const pageId of [0, 1, 2])
-        expect(await savedPosition(show, 20, pageId)).toEqual(
-            await savedPosition(show, 20, 2),
-        );
-    expect(
-        await show.query(
-            "SELECT id FROM timeline_assignments WHERE marcher_id = 20",
-        ),
-    ).toEqual([]);
-
-    await show.page.keyboard.press("ControlOrMeta+z");
-    await expect
-        .poll(() => savedPosition(show, 20, 2).then((p) => p.x))
-        .toBe(MARIMBA.x);
     expect((await savedPosition(show, 20, 0)).x).toBe(MARIMBA.x);
 });
 
-test("a marquee over the pit takes nothing, and a click still selects a locked item", async ({
+test("a marquee over the pit takes nothing; a click on a locked item selects nothing and shows a Locked tag that opens its menu", async ({
     show,
 }) => {
     await expect.poll(() => drawnItems(show.page)).toHaveLength(2);
@@ -136,7 +133,18 @@ test("a marquee over the pit takes nothing, and a click still selects a locked i
         .toEqual([]);
 
     await show.page.mouse.click(marimba.screen.x + 10 * zoom, marimba.screen.y);
+    await waitForIdle(show.page);
+    expect(
+        await show.page.evaluate(() => window.fieldTest!.selection()),
+    ).toEqual([]);
+
+    // The click shows that it's locked, and the tag opens its Unlock menu, as a right-click does
+    await show.page.getByTestId("field-locked-tag").click();
+    await expect(
+        show.page.getByTestId("field-menu-unlockSelectedItem"),
+    ).toBeVisible();
     await expect
         .poll(() => show.page.evaluate(() => window.fieldTest!.selection()))
         .toEqual([20]);
+    await expect(show.page.getByTestId("field-locked-tag")).toHaveCount(0);
 });

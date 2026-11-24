@@ -283,6 +283,13 @@
             "edit": "Edit selected prop or equipment",
             "editNamed": "Edit {name}",
             "editKeywords": "edit settings properties prop equipment podium instrument name size lock",
+            "unlock": "Unlock selected prop or equipment",
+            "unlockNamed": "Unlock {name}",
+            "lock": "Lock selected prop or equipment",
+            "lockNamed": "Lock {name}",
+            "lockKeywords": "lock unlock prop equipment pit protect keep select move",
+            "resize": "Resize and turn",
+            "resizeKeywords": "resize turn rotate size scale handles prop equipment",
             "importModel": "Import a 3D model…",
             "importModelKeywords": "import 3d model glb gltf prop upload file object",
             "placeImportedModel": "Place an imported model",
@@ -748,7 +755,13 @@
         "areaCount": {
             "add": "{count, plural, one {+# marcher} other {+# marchers}}",
             "select": "{count, plural, one {# marcher} other {# marchers}}",
-            "subtract": "{count, plural, one {−# marcher} other {−# marchers}}"
+            "subtract": "{count, plural, one {−# marcher} other {−# marchers}}",
+            "addProps": "{props, plural, one {+# prop} other {+# props}}",
+            "addBoth": "{marchers, plural, one {+# marcher} other {+# marchers}} and {props, plural, one {# prop} other {# props}}",
+            "selectProps": "{props, plural, one {# prop} other {# props}}",
+            "selectBoth": "{marchers, plural, one {# marcher} other {# marchers}} and {props, plural, one {# prop} other {# props}}",
+            "subtractProps": "{props, plural, one {−# prop} other {−# props}}",
+            "subtractBoth": "{marchers, plural, one {−# marcher} other {−# marchers}} and {props, plural, one {# prop} other {# props}}"
         },
         "menu": {
             "equipment": "Equipment",
@@ -758,6 +771,10 @@
             "name": "3D View camera",
             "move": "Move the 3D View camera",
             "aim": "Aim the 3D View camera"
+        },
+        "lockedItem": {
+            "tag": "Locked",
+            "open": "Locked: click to unlock or edit it"
         }
     },
     "fieldDisplay": {
@@ -971,7 +988,7 @@
             "drillNumber": "Drill Number",
             "errorLoadingCoords": "Error loading coordinates",
             "propsLook": "Prop size and look: Props panel",
-            "lockedSelected": "{count, plural, one {# locked item selected. It stays where it is: right-click it to edit it.} other {# locked items selected. They stay where they are: right-click one to edit it.}}",
+            "lockedSelected": "{count, plural, one {# locked item selected. It isn't moved here: right-click it and choose Unlock to move it.} other {# locked items selected. They aren't moved here: right-click one and choose Unlock to move it.}}",
             "playing": "Playing. Pause to see and edit the selected marchers.",
             "maxStepSize": "Largest step size",
             "minStepSize": "Smallest step size",
@@ -1619,6 +1636,8 @@
             "preset": "Couldn't apply the preset"
         },
         "height": "Height",
+        "lengthUnreadable": "Couldn't read “{text}” as a length. Type it like 4 ft 6 in, 4.5 ft or 1.4 m.",
+        "lengthTooSmall": "Too small: at least {min}.",
         "hide": "Hide on the field",
         "name": "Name",
         "offField": "Off field at the playhead. Move the playhead to a count where the prop is on the field to change its outline.",
@@ -1653,12 +1672,9 @@
         "title": "Props",
         "transition": "Transition",
         "width": "Width",
-        "units": {
-            "meters": "m"
-        },
         "locked": "Locked",
         "lockLabel": "Locked",
-        "lockHint": "One position for the whole show",
+        "lockHint": "Clicks and drags on the field pass over it",
         "imported": {
             "title": "Imported",
             "import": "Import…",
@@ -1698,7 +1714,8 @@
             },
             "size": {
                 "title": "Size",
-                "value": "{width} × {depth} m, {height} m tall",
+                "dimensionsOf": "{width} × {depth}, {height} tall",
+                "inFile": "In the file: {width} × {depth} {unit}, {height} {unit} tall",
                 "question": "Is that its real size? If not, pick the unit the file was made in.",
                 "suggested": "It looked like it was made in {unit}, so it was converted. Check the size."
             },
@@ -1812,7 +1829,7 @@
                 "validatorWarnings": "{count, plural, one {The file has # warning} other {The file has # warnings}}",
                 "sizeOutOfRange": {
                     "title": "Unusual size for a prop",
-                    "detail": "Its longest side is {largest} m; props are usually {min} to {max} m."
+                    "detailOf": "Its longest side is {largest}; props are usually {min} to {max}."
                 },
                 "overTriangleCap": "Still detailed: {triangles} triangles (the aim is {cap})"
             }
@@ -1848,7 +1865,7 @@
             "editTitle": "Edit Podium"
         },
         "default": "Default",
-        "footprint": "{width} × {depth} m",
+        "footprintSize": "{width} × {depth}",
         "groups": {
             "audio": "Audio",
             "keyboards": "Keyboards",
@@ -3612,6 +3629,7 @@
             "podium": "Podium",
             "pressBox": "Press box",
             "sideline": "Sideline",
+            "soundBoard": "Sound board",
             "topDown": "Top down",
             "tunnel": "Tunnel",
             "upperDeck": "Upper deck"
@@ -3624,6 +3642,7 @@
             "gym": "Indoor gym",
             "hs": "High school",
             "markDiesel": "Mark Diesel Stadium",
+            "nightpound": "Nightpound, OH",
             "pro": "Pro dome"
         },
         "lighting": {
@@ -3815,6 +3834,17 @@
             "unreadable": "That PNG couldn't be read.",
             "templateFailed": "The template couldn't be made.",
             "saveFailed": "Couldn't save the flag silk artwork"
+        },
+        "venueKind": {
+            "fitted": "Sized to your field",
+            "real": "Real venues",
+            "realHint": "Modeled on real buildings, at their real size.",
+            "field": "{venue}: a fixed {width} × {depth} ft field.",
+            "floor": "{venue}: a fixed {width} × {depth} ft floor."
+        },
+        "venueFit": {
+            "fallback": "This show's field is bigger than the {width} × {depth} ft floor at {venue}, so the 3D View shows the {fallback} instead.",
+            "tooBig": "{venue} has a fixed {width} × {depth} ft floor, and this show's field is {fieldWidth} × {fieldDepth} ft."
         }
     },
     "web": {
@@ -4357,6 +4387,7 @@
             "selectRow": "Select these performers",
             "selectPerformers": "Select its performers",
             "markLabel": "{name}: {value}, {where}",
+            "menuHeading": "{value} · {name}",
             "forCounts": "{count, plural, one {For # count} other {For # counts}}",
             "dragStart": "Drag to change where it starts",
             "dragEnd": "Drag to change where it ends",

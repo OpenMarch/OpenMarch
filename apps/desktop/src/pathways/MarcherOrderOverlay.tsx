@@ -40,7 +40,7 @@ import { CheckIcon, XIcon } from "@phosphor-icons/react";
 import { T } from "@tolgee/react";
 import tolgee from "@/global/singletons/Tolgee";
 import Shortcut from "@/components/ui/Shortcut";
-import { performersOnly } from "@/global/classes/Marcher";
+import { useUnlockedOnly } from "@/items/lockedItems";
 import { useSelectedMarchers } from "@/context/SelectedMarchersContext";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import {
@@ -509,12 +509,11 @@ export default function MarcherOrderOverlay({
     const isPlaying = useIsPlaying()?.isPlaying ?? false;
     const sweep = useMarcherOrderStore((s) => s.sweep);
     const forms = useMarcherOrderStore((s) => s.forms);
-    const selected = useSelectedMarchers()?.selectedMarchers;
+    // Marchers and props alike (props epic, fork #1239): a line's order runs on to the props at
+    // its end; a locked item has no place in an order
+    const selected = useUnlockedOnly(useSelectedMarchers()?.selectedMarchers);
     const ids = useMemo(
-        () =>
-            performersOnly(selected ?? [])
-                .map((m) => m.id)
-                .sort((a, b) => a - b),
+        () => selected.map((m) => m.id).sort((a, b) => a - b),
         [selected],
     );
     const beat = useTimelineSelectionStore(fieldBeat);

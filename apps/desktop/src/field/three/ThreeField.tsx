@@ -129,6 +129,9 @@ import {
 import { GlyphAtlas } from "./sdfText";
 import { selectionBoxPadding } from "./selectionRing";
 import { useSelectionCoverStore } from "@/field/editor/selectionCoverStore";
+import { itemHandlesShown } from "@/items/itemHandlesStore";
+import { hideLockedItemTag, showLockedItemTag } from "@/items/lockedItemTag";
+import LockedItemTag from "./LockedItemTag";
 import { drawnSelectionBox, selectionHandles } from "./selectionFrame";
 import { fieldObstacleSource } from "./fieldObstacles";
 import { createThreeFieldTestApi } from "./threeFieldTestApi";
@@ -147,6 +150,7 @@ import {
 import { useFieldVenueAction } from "./venueUnderlay/useFieldVenueAction";
 import { useVenueSettings } from "@/hooks/queries/useVenueSettings";
 import { KIT_FIELD_STYLE, kitFieldStyle } from "@/view3d/core/kits/fieldStyle";
+import { shownKit } from "@/view3d/core/venueSettings";
 import MarchersLayer from "./layers/MarchersLayer";
 import ItemsLayer from "./layers/ItemsLayer";
 import LabelsLayer, { type LabelStyle } from "./layers/LabelsLayer";
@@ -273,7 +277,7 @@ function ThreeFieldView() {
         })),
     );
     const { data: venue } = useVenueSettings();
-    const venueKit = venue?.kit ?? "hs";
+    const venueKit = shownKit(venue?.kit ?? "hs", fieldProperties);
     const venueStyle = fieldProperties
         ? kitFieldStyle(venueKit, fieldProperties)
         : KIT_FIELD_STYLE[venueKit];
@@ -557,8 +561,6 @@ function ThreeFieldView() {
                         dropMarchersOnTimeline(
                             positions,
                             latest.current.moveMarchers,
-                            // A locked item's drop moves it on every page
-                            (id) => items.isLocked(id),
                         ),
                     // #204: a click on a placed box's member selects the whole box
                     pressSelection: (hit, shift, reachInside) =>
@@ -572,9 +574,15 @@ function ThreeFieldView() {
                     doubleClickMarcher: enterBox,
                     // C2.1: items are hit anywhere inside their Outline
                     isItem: (id) => items.isItem(id),
-                    // The pit's locked equipment: no marquee or lasso takes it
+                    // Locked items (the pit's equipment): no click, drag or marquee takes them
                     isLocked: (id) => items.isLocked(id),
-                    itemAt: (point) => items.itemAt(point),
+                    itemAt: (point, accept) => items.itemAt(point, accept),
+                    // Shown once asked for, with an item's Resize and turn (props epic step 2)
+                    itemHandlesShown,
+                    lockedItemClicked: (id, at) =>
+                        id === null
+                            ? hideLockedItemTag()
+                            : showLockedItemTag(id, at),
                     itemFrame: (id) => items.frameOf(id),
                     previewItem: (id, size) =>
                         items.setPreview(
@@ -958,6 +966,12 @@ function ThreeFieldView() {
                 <DockedCommandBar />
                 {/* A Line's point and segment menus (#569) */}
                 <HandleMenu />
+                <LockedItemTag
+                    onOpen={(id, field, screen) => {
+                        hideLockedItemTag();
+                        editor.openLockedItemMenu(id, field, screen);
+                    }}
+                />
                 <FieldContextMenu
                     at={menu.at}
                     actions={menu.actions}

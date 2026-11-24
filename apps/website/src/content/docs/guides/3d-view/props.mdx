@@ -92,14 +92,14 @@ The model appears under <Ui k="props.imported.title" plain /> with its picture a
 
 <Media
   id="3d-props-import-review"
-  alt="The Import a model panel: a picture of a red chair, Rotate X, Rotate Y and Rotate Z, a small X, Y and Z axis drawing in the corner of the picture with Z lit and an arrow around it while the pointer is on Rotate Z, the size 0.83 × 0.57 m, 0.69 m tall, the Made in switch set to m, and the start of Detail."
+  alt="The Import a model panel: a picture of a red chair, Rotate X, Rotate Y and Rotate Z, a small X, Y and Z axis drawing in the corner of the picture with Z lit and an arrow around it while the pointer is on Rotate Z, the size 2 feet 8½ inches by 1 foot 10½ inches, 2 feet 3 inches tall, under it the file's own size in meters, 0.83 × 0.57 m, 0.69 m tall, the Made in switch set to m, and the start of Detail."
   maxWidth={480}
 />
 
 ### The review
 
 - The picture shows the model from the audience, a little to one side. Its front should face you, right side up. The import stands it the way the file says, which is right for most models. If it doesn't face you, or lies on its side or back, rotate it a quarter turn at a time: <Ui k="props.import.rotateAxis" values={{ axis: "Y" }} /> turns it like a turntable, <Ui k="props.import.rotateAxis" values={{ axis: "X" }} /> brings its top toward you, and <Ui k="props.import.rotateAxis" values={{ axis: "Z" }} /> lays its top to your right. The small drawing in the corner shows the three axes; point at a button, or tap it, and its axis lights up with an arrow showing which way the model will swing.
-- The size is the model's real size, in meters. If it's wrong, the file was made in another unit: under <Ui k="props.import.units.label" plain />, choose the one it was made in. When the size is far off, the import has already picked the likely unit, and says so.
+- The size is the model's real size, in the show's units: feet and inches when the field is imperial, meters when it's metric. When the file was made in another unit, its own numbers show under it. If the size is wrong, the file was made in another unit: under <Ui k="props.import.units.label" plain />, choose the one it was made in. When the size is far off, the import has already picked the likely unit, and says so.
 - <Ui k="props.import.detail.title" plain />, for a model with more than 20,000 triangles: <Ui k="props.import.detail.levels.light" /> simplifies it to about 20,000 so the 3D View stays smooth, and is chosen for you. <Ui k="props.import.detail.levels.detailed" /> (for a model over 100,000) keeps about 100,000, and <Ui k="props.import.detail.levels.original" /> keeps every triangle. Under the choice, the review says how many triangles the model keeps, how much it adds to the show file, and how many performers one copy of it is as heavy to draw as. Above Light, the show also keeps a Light copy: if the 3D View stutters, it draws the Light copies first, before it lowers the quality of everything else.
 - <Ui k="props.import.compare.open" /> shows the model in 3D, to compare the level you chose with the original (or, at Original, with the Light copy) and with the <Ui k="props.import.compare.farCopy" plain />: the much simpler copy the 3D View draws once the camera is far from the prop. The bigger the prop, the farther out it keeps its detail: a 1.5 m prop switches at about 30 m, a 4.5 m car at about 90 m, and none later than 100 m. Drag to turn it, scroll to zoom, and switch versions to see what simplifying changed. <Ui k="props.import.compare.stands" plain /> moves the camera 30 m away, about where the audience sees props from.
 
@@ -168,15 +168,15 @@ Every model you import is stored in the show file, whether or not a prop uses it
 
 <Media
   id="3d-props-edit"
-  alt="The Edit Prop panel: Name Riser, Locked off, Color None, Surface Floor, and under Outline from count 20, Width 6 m, Depth 2 m, Height 1.2 m, Rotation 0°, Transition 1 counts, and Roll-out set to Doesn't roll out."
+  alt="The Edit Prop panel: Name Riser, Locked off, Color None, Surface Floor, and under Outline from count 20, Width 20 feet, Depth 6 feet, Height 4 feet, Rotation 0°, Transition 1 counts, and Roll-out set to Doesn't roll out."
   maxWidth={480}
 />
 
 - <Ui k="props.name" />: shown on the field next to the prop when names are shown. Without a name, the prop goes by its number.
-- <Ui k="props.lockLabel" />: on, the prop has one position for the whole show, and dragging it on any page moves it on every page. Off, the default for a prop you draw, it can move from page to page (below).
+- <Ui k="props.lockLabel" />: on, the prop can't be selected or moved on the field ([Lock a prop](#lock-a-prop)). Off, the default for a prop you draw, it moves like a marcher (below).
 - <Ui k="props.color" />: colors the prop on the field and in the 3D View. <Ui k="props.colorNone" plain /> goes back to the plain look. To color several props at once, select them on the field: the Props panel shows one color for all of them.
 - <Ui k="props.surfaceLabel" />: <Ui k="props.surface.floor" plain />, <Ui k="props.surface.obstacle" plain /> or <Ui k="props.surface.platform" plain />. In the 3D View, marchers and props over a <Ui k="props.surface.platform" plain /> prop stand on it. On an imported model they stand on the top surface the import found over its middle, when it found one, rather than at its full height.
-- <Ui k="props.width" />, <Ui k="props.depth" /> and <Ui k="props.height" />, in meters, and <Ui k="props.rotation" /> in degrees clockwise.
+- <Ui k="props.width" />, <Ui k="props.depth" /> and <Ui k="props.height" />, in feet and inches (or meters when the field is metric), and <Ui k="props.rotation" /> in degrees clockwise. Type a length in any unit: `4'6"`, `4.5 ft`, `54 in` or `1.4 m`; a plain number is in the unit the box shows (inches when the box shows less than a foot). Text that isn't a length leaves the size as it was and says so under the box.
 - <Ui k="props.rollOut.label" /> (floor props only): which edge a tarp rolls out from. It's saved with the prop, but in this version it doesn't change how the prop is drawn.
 
 ### Grow, shrink or turn a prop during the show
@@ -197,13 +197,17 @@ Before the prop's first count, the panel says the prop is off the field, and you
 
 ## Resize and turn a prop on the field
 
-Click inside a prop's outline to select it. Drag a side or a corner handle to resize it, as you would a group of marchers: the opposite side stays where it is, so the prop's center moves with the resize. Drag the round handle to turn it about its center. Like the panel, a resize or turn is saved at the playhead's count. A resize that moves the prop is saved like a drag of the prop, in the same undo step: on a later page the prop moves there during that page's move, and where a drag would be refused the resize is too. Hold <Kbd keys="Alt" gesture="drag" /> to resize it without moving it.
+A selected prop shows no handles, so a drag anywhere on it moves it. To resize or turn it, right-click it and choose <Ui k="actions.items.resize" />: its handles appear until you select something else.
+
+Drag a side or a corner handle to resize it, as you would a group of marchers: the opposite side stays where it is, so the prop's center moves with the resize. Drag the round handle to turn it about its center. Like the panel, a resize or turn is saved at the playhead's count. A resize that moves the prop is saved like a drag of the prop, in the same undo step: on a later page the prop moves there during that page's move, and where a drag would be refused the resize is too. Hold <Kbd keys="Alt" gesture="drag" /> to resize it without moving it.
 
 Hold these keys while you drag a side or corner handle:
 
 - <Kbd keys="Alt" gesture="drag" /> resizes the prop about its center, so it doesn't move and is saved at the playhead's count alone.
 - <Kbd keys="Mod" gesture="drag" /> keeps the prop's proportions.
 - <Kbd keys="Shift" gesture="drag" /> resizes it slowly, for fine changes.
+
+While the handles show, a drag on one resizes or turns the prop, even where it covers a small prop; a drag inside the prop away from them still moves it. To move a small prop the handles cover, select something else, then drag the prop.
 
 <Media
   id="3d-props-handles"
@@ -216,9 +220,15 @@ A prop moves the way a marcher does. Select it and drag it on a later page, or u
 
 Select props together with marchers and they share the same tools. A [shape](/guides/shapes/) gives a prop a spot like any marcher, a path takes it along with the others, and align, distribute and swap treat it as one more dot. A box or a lasso picks props up with marchers, and so does <Ui k="actions.select.selectAll" plain />. To select every prop, open the <Ui k="inspector.shape.selectTab" plain /> tab, set <Ui k="toolbar.select.selectByText" plain /> to <Ui k="toolbar.select.selectBy.section" plain /> and choose <Ui k="section.prop" plain /> ([Select marchers](/guides/marchers/select-marchers/#select-a-whole-section-tag-family-or-drill-prefix)).
 
-A <Ui k="props.locked" plain /> prop stays out of all of this: selecting around it leaves it alone, and the tools leave it where it is.
+A [locked](#lock-a-prop) prop stays out of all of this.
 
-To move a small prop whose handles cover it, press inside it and drag. To resize it, grab a handle from outside its outline.
+## Lock a prop
+
+Lock a prop that should stay where it is while you work around it, such as a tarp the band marches over. Right-click it and choose the lock item, which carries its name, such as <Ui k="actions.items.lockNamed" values={{ name: "Tarp" }} />.
+
+A locked prop can't be clicked, boxed, lassoed or selected with <Ui k="actions.select.selectAll" plain />, and no tool moves it, so you can select and move the marchers on and around it. It keeps any moves it has, and still moves during the show where they say. Clicking it shows a <Ui k="field.lockedItem.tag" plain /> tag beside the pointer for a few seconds; click the tag for the same menu a right-click opens. The Props panel marks a locked prop with a lock.
+
+To change it again, right-click it and choose <Ui k="actions.items.unlockNamed" values={{ name: "Tarp" }} />, or <Ui k="actions.items.editNamed" values={{ name: "Tarp" }} /> to open its settings. The pit's equipment starts locked ([Set up the front ensemble](/guides/3d-view/front-ensemble/)).
 
 ## Hide or delete a prop
 

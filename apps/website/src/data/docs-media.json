@@ -21,7 +21,7 @@
         "chapter": "3d-view",
         "kind": "still",
         "width": 996,
-        "height": 1412
+        "height": 1356
     },
     "3d-front-ensemble-field": {
         "chapter": "3d-view",
@@ -91,7 +91,7 @@
         "chapter": "3d-view",
         "kind": "still",
         "width": 996,
-        "height": 1240
+        "height": 1260
     },
     "3d-props-handles": {
         "chapter": "3d-view",
@@ -110,7 +110,7 @@
         "chapter": "3d-view",
         "kind": "still",
         "width": 996,
-        "height": 1412
+        "height": 1356
     },
     "3d-props-imported": {
         "chapter": "3d-view",
@@ -122,7 +122,7 @@
         "chapter": "3d-view",
         "kind": "still",
         "width": 996,
-        "height": 1064
+        "height": 1072
     },
     "3d-props-polygon": {
         "chapter": "3d-view",
@@ -135,7 +135,7 @@
         "chapter": "3d-view",
         "kind": "still",
         "width": 752,
-        "height": 728
+        "height": 928
     },
     "3d-silk-artwork": {
         "chapter": "3d-view",
@@ -166,6 +166,12 @@
         "kind": "still",
         "width": 1280,
         "height": 800
+    },
+    "3d-venue-nightpound": {
+        "chapter": "3d-view",
+        "kind": "still",
+        "width": 1280,
+        "height": 464
     },
     "3d-window": {
         "chapter": "3d-view",

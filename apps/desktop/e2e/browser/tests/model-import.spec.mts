@@ -156,8 +156,13 @@ test("imports a model from the Props panel and places it as a prop", async ({
     await expect(review.getByTestId("model-import-picture")).toBeVisible({
         timeout: 60_000,
     });
+    // A new show's field is imperial: the size shows in feet and inches, and the file's meters
+    // under it
     await expect(review.getByTestId("model-import-size")).toHaveText(
-        /× .* m tall$/,
+        /× .*" tall$/,
+    );
+    await expect(review.getByTestId("model-import-size-in-file")).toHaveText(
+        /^In the file: .* m tall$/,
     );
     // The chair is past the triangle cap, so the Detail choice shows with Light chosen
     await expect(

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useId, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { LockSimpleIcon } from "@phosphor-icons/react";
 import { T, useTranslate } from "@tolgee/react";
@@ -42,6 +42,7 @@ import {
     proportionalSize,
     type ModelSide,
 } from "@/showAssets/libraryModels";
+import { useShowLengths, type ShowLengths } from "@/hooks/useMeasurementSystem";
 import { drillNumber, type ItemWithMarcher } from "./ItemRows";
 
 /**
@@ -131,6 +132,75 @@ function CommitNumber({
 }
 
 /**
+ * A length field: the stored meters in the show's units (`6' 11 7/8"`, or `2.13 m`). It takes
+ * any length typed (`4'6"`, `4.5 ft`, `54 in`, `1.4 m`; a bare number is in the unit the box
+ * shows) and commits on blur or Enter. Text it can't use shows the stored value again and says
+ * why under the box.
+ */
+function CommitLength({
+    meters,
+    minMeters,
+    label,
+    lengths,
+    onCommit,
+}: {
+    meters: number;
+    minMeters: number;
+    label: string;
+    lengths: ShowLengths;
+    onCommit: (meters: number) => void;
+}) {
+    const { t } = useTranslate();
+    const [draft, setDraft] = useState<string | null>(null);
+    const [refused, setRefused] = useState<string | null>(null);
+    const errorId = useId();
+    const shown = lengths.format(meters);
+    const commit = () => {
+        if (draft === null) return;
+        setDraft(null);
+        if (draft.trim() === shown) return;
+        const parsed = lengths.parse(draft, meters);
+        if (parsed === null)
+            setRefused(t("props.lengthUnreadable", { text: draft.trim() }));
+        else if (parsed < minMeters)
+            setRefused(
+                t("props.lengthTooSmall", { min: lengths.format(minMeters) }),
+            );
+        else if (parsed !== meters) onCommit(parsed);
+    };
+    return (
+        <label className="text-body flex flex-col gap-4">
+            <span className="text-text/70">{label}</span>
+            <Input
+                compact
+                aria-label={label}
+                aria-invalid={refused !== null}
+                aria-describedby={refused ? errorId : undefined}
+                value={draft ?? shown}
+                onChange={(e) => {
+                    setDraft(e.target.value);
+                    setRefused(null);
+                }}
+                onBlur={commit}
+                onKeyDown={(e) => {
+                    if (e.key === "Enter") commit();
+                }}
+            />
+            {refused && (
+                <span
+                    id={errorId}
+                    role="alert"
+                    className="text-sub text-red"
+                    data-testid="item-length-refused"
+                >
+                    {refused}
+                </span>
+            )}
+        </label>
+    );
+}
+
+/**
  * An item's edit view, shared by the Props and Front ensemble panels: its name, its model (for
  * equipment), its lock, its color and surface (for a prop), and its Outline at the playhead.
  */
@@ -147,6 +217,8 @@ export function ItemEditor({ itemId }: { itemId: number }) {
     );
     const [name, setName] = useState<string | null>(null);
     const { data: assets } = useQuery(showAssetsQueryOptions());
+    // Sizes are stored in meters and shown in the show's units (props-spec §3)
+    const lengths = useShowLengths();
     const library = useMemo(() => libraryModels(assets), [assets]);
 
     const item = items?.find((i) => i.id === itemId);
@@ -256,16 +328,7 @@ export function ItemEditor({ itemId }: { itemId: number }) {
                     aria-label={t("props.lockLabel")}
                     checked={item.locked}
                     onCheckedChange={(locked) =>
-                        updateItems.mutate([
-                            {
-                                itemId: item.id,
-                                locked,
-                                // Locking keeps it where it is at the playhead, not at its home
-                                lockAtBeat:
-                                    useTimelineSelectionStore.getState()
-                                        .playheadBeat,
-                            },
-                        ])
+                        updateItems.mutate([{ itemId: item.id, locked }])
                     }
                 />
             </label>
@@ -329,28 +392,25 @@ export function ItemEditor({ itemId }: { itemId: number }) {
                 )}
                 {shown ? (
                     <div className="grid grid-cols-2 gap-12">
-                        <CommitNumber
+                        <CommitLength
                             label={t("props.width")}
-                            unit={t("props.units.meters")}
-                            min={0.01}
-                            step={0.1}
-                            value={shown.width}
+                            lengths={lengths}
+                            minMeters={0.01}
+                            meters={shown.width}
                             onCommit={(width) => writeSide("width", width)}
                         />
-                        <CommitNumber
+                        <CommitLength
                             label={t("props.depth")}
-                            unit={t("props.units.meters")}
-                            min={0.01}
-                            step={0.1}
-                            value={shown.depth}
+                            lengths={lengths}
+                            minMeters={0.01}
+                            meters={shown.depth}
                             onCommit={(depth) => writeSide("depth", depth)}
                         />
-                        <CommitNumber
+                        <CommitLength
                             label={t("props.height")}
-                            unit={t("props.units.meters")}
-                            min={standsUp ? 0.01 : 0}
-                            step={0.1}
-                            value={shown.height}
+                            lengths={lengths}
+                            minMeters={standsUp ? 0.01 : 0}
+                            meters={shown.height}
                             onCommit={(height) => writeSide("height", height)}
                         />
                         <CommitNumber

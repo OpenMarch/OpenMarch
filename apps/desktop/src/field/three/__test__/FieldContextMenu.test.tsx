@@ -344,7 +344,7 @@ describe("FieldContextMenu", () => {
                 );
         }
         expect(groups).toEqual([
-            ["editSelectedItem"],
+            ["editSelectedItem", "resizeSelectedItem", "lockSelectedItem"],
             // Copy and paste (#961), and Paste mirrored
             [
                 "copyFormation",

@@ -76,10 +76,13 @@ import { isPanButton } from "./view";
  */
 
 /**
- * An item Outline narrower on screen than this many handle reaches is small: a press inside it
- * moves the item rather than taking a size handle (`pressMovesSmallItem`).
+ * The menu a right-click on a locked item opens (props epic step 2): unlock it, or open its edit
+ * view. The item is selected alone first, so both act on it.
  */
-const SMALL_ITEM_REACHES = 6;
+export const LOCKED_ITEM_MENU: readonly string[] = [
+    "unlockSelectedItem",
+    "editSelectedItem",
+];
 
 /** A point in field units, as the timeline stores positions. */
 
@@ -201,12 +204,24 @@ export type FieldEditorPorts = {
      */
     isItem?(id: number): boolean;
     /**
-     * Whether item `id` is locked to one position for the whole show (the pit's equipment): a
-     * marquee and a lasso never take it, a click still selects it.
+     * Whether item `id` is locked (the pit's equipment, a prop locked in the Props panel): no
+     * click, drag, marquee, lasso or Select all takes it, so marchers around it can be selected
+     * and moved. A right-click on it offers to unlock it ({@link LOCKED_ITEM_MENU}).
      */
     isLocked?(id: number): boolean;
-    /** The item whose Outline holds `point`, topmost first, or null. */
-    itemAt?(point: FieldPoint): number | null;
+    /** The topmost item whose Outline holds `point` among those `accept` takes, or null. */
+    itemAt?(point: FieldPoint, accept?: (id: number) => boolean): number | null;
+    /**
+     * Whether item `id`'s resize and turn handles are shown: only once asked for (its right-click
+     * menu's Resize and turn), since a prop is usually drawn at its real size and a click on it
+     * is meant to move it (owner, 2026-11-24). Absent, they always are.
+     */
+    itemHandlesShown?(id: number): boolean;
+    /**
+     * A click at `at` on locked item `id`, which passes over it: shows that it's locked, so the
+     * click isn't dead (props epic step 2). Null: a click anywhere else, which puts that away
+     */
+    lockedItemClicked?(id: number | null, at: FieldPoint): void;
     /** Item `id`'s Outline as drawn, or null when it isn't drawn. */
     itemFrame?(id: number): ItemFrame | null;
     /** Draws item `id` at this size and turn while a handle drags it; null draws it as stored. */
@@ -2058,9 +2073,6 @@ export class FieldEditor {
             thresholdsFor(pointer.kind).handleReach,
         );
         if (handle === null) return null;
-        const reach = thresholdsFor(pointer.kind).handleReach;
-        if (handle !== "rot" && this.pressMovesSmallItem(pointer, zoom, reach))
-            return null;
         const hit = this.marcherAt(pointer);
         // A box standing clear of an order lane (step 4j) draws its middle handles only while
         // they're pointed at, so one gives way to a marcher under the pointer: the grown box's
@@ -2090,34 +2102,17 @@ export class FieldEditor {
     }
 
     /**
-     * Whether a press inside the selected item's Outline moves it instead of taking a size handle:
-     * on an Outline too small on screen for room between its handles (a cube at normal zoom), the
-     * handles would cover it all and a drag meant to move it would squash it (props epic, fork
-     * #1239). Its handles still take a press from outside the Outline.
-     */
-    private pressMovesSmallItem(
-        pointer: FieldPointer,
-        zoom: number,
-        reach: number,
-    ): boolean {
-        const item = this.selectedItem();
-        if (!item) return false;
-        const { width, depth } = item.frame;
-        if (Math.min(width, depth) * zoom >= SMALL_ITEM_REACHES * reach)
-            return false;
-        return this.ports.itemAt?.(pointer.field) === item.id;
-    }
-
-    /**
-     * The one item selected and drawn, with its Outline: its handles resize
-     * and turn it (C2.1) instead of scaling or rotating a selection. Null for
-     * any other selection.
+     * The one item selected and drawn, with its Outline, while its handles are
+     * shown (`itemHandlesShown`): they resize and turn it (C2.1) instead of
+     * scaling or rotating a selection. Null for any other selection, a locked
+     * item, or one whose handles weren't asked for.
      */
     private selectedItem(): { id: number; frame: ItemFrame } | null {
         const selection = this.ports.selection.get();
         if (selection.length !== 1) return null;
         const [id] = selection;
-        if (!this.ports.isItem?.(id)) return null;
+        if (!this.ports.isItem?.(id) || this.ports.isLocked?.(id)) return null;
+        if (!(this.ports.itemHandlesShown?.(id) ?? true)) return null;
         const frame = this.ports.itemFrame?.(id) ?? null;
         return frame && { id, frame };
     }
@@ -2348,9 +2343,13 @@ export class FieldEditor {
     private drawnPositions(ids: readonly number[]): MarcherPosition[] {
         const { ids: drawn, positions, hidden } = this.ports.marchers();
         const wanted = new Set(ids);
+        const isLocked = this.ports.isLocked ?? (() => false);
         const starts: MarcherPosition[] = [];
         for (let i = 0; i < drawn.length; i++) {
-            if (!wanted.has(drawn[i]) || hidden?.[i]) continue;
+            // A locked item selected with others (from its menu or the Props panel) isn't moved,
+            // turned or boxed with them: only an unlock lets it move (props epic step 2)
+            if (!wanted.has(drawn[i]) || hidden?.[i] || isLocked(drawn[i]))
+                continue;
             starts.push({
                 id: drawn[i],
                 x: positions[i * 2],
@@ -2520,12 +2519,53 @@ export class FieldEditor {
     private openMenu(pointer: FieldPointer) {
         this.ports.takePress?.();
         const hit = this.handleAt(pointer) ? null : this.marcherAt(pointer);
+        const locked = hit === null ? this.lockedItemAt(pointer) : null;
+        if (locked !== null) {
+            // Selected alone, so the menu's Unlock and Edit name it; nothing moves it while locked
+            this.write([locked]);
+            this.ports.openMenu?.(pointer, locked, LOCKED_ITEM_MENU);
+            return;
+        }
         if (hit !== null && !this.ports.selection.get().includes(hit))
             this.write([hit]);
         this.ports.openMenu?.(pointer, hit);
     }
 
+    /**
+     * Opens locked item `id`'s own menu (Unlock, Edit) at `screen`, with it selected alone, as a
+     * right-click on it does: from the tag a click on it shows (props epic step 2)
+     */
+    openLockedItemMenu(id: number, field: FieldPoint, screen: FieldPoint) {
+        this.write([id]);
+        this.ports.openMenu?.(
+            {
+                field,
+                screen,
+                button: 2,
+                kind: "mouse",
+                shift: false,
+                alt: false,
+                ctrl: false,
+                meta: false,
+            },
+            id,
+            LOCKED_ITEM_MENU,
+        );
+    }
+
+    /** The topmost locked item drawn under `pointer` that can be selected, or null */
+    private lockedItemAt({ field }: FieldPointer): number | null {
+        const isLocked = this.ports.isLocked;
+        if (!isLocked) return null;
+        const item = this.ports.itemAt?.(field, isLocked) ?? null;
+        return item !== null && this.ports.canSelect(item) ? item : null;
+    }
+
     private click(press: FieldPress, shift: boolean) {
+        this.ports.lockedItemClicked?.(
+            press.hit === null ? this.lockedItemAt(press.start) : null,
+            press.start.field,
+        );
         const chosen =
             press.hit === null
                 ? null
@@ -2560,9 +2600,9 @@ export class FieldEditor {
 
     /**
      * The marcher a press at `point` lands on: a performer's dot, else an
-     * item whose Outline holds it, so a performer on a platform is still
+     * unlocked item whose Outline holds it, so a performer on a platform is still
      * pressed. Every press, drag, menu and hover finds performers here, so
-     * hidden ones (#558) are passed over in this one place.
+     * hidden ones (#558) and locked items are passed over in this one place.
      */
     private marcherAt({ field: point, kind }: FieldPointer) {
         const isItem = this.ports.isItem ?? (() => false);
@@ -2574,7 +2614,8 @@ export class FieldEditor {
             (id) => !isItem(id) && !hidden(id) && this.ports.canSelect(id),
         );
         if (performer !== null) return performer;
-        const item = this.ports.itemAt?.(point) ?? null;
+        const isLocked = this.ports.isLocked ?? (() => false);
+        const item = this.ports.itemAt?.(point, (id) => !isLocked(id)) ?? null;
         return item !== null && this.ports.canSelect(item) ? item : null;
     }
 

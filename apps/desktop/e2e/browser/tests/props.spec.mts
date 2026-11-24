@@ -108,7 +108,10 @@ test("moves a prop dragged from inside its Outline, and saves where it lands", a
     expect(riser.width).toBe(4);
 });
 
-/** Selects the riser with a click inside its Outline, and returns its handles. */
+/**
+ * Selects the riser with a click inside its Outline, shows its handles with its right-click
+ * menu's Resize and turn (props epic step 2: hidden otherwise), and returns them.
+ */
 async function selectRiser(page: Page) {
     await expect.poll(() => drawnItems(page)).toHaveLength(1);
     const at = await insideRiser(page, 1);
@@ -116,6 +119,8 @@ async function selectRiser(page: Page) {
     await expect
         .poll(() => page.evaluate(() => window.fieldTest!.selection()))
         .toEqual([10]);
+    await page.mouse.click(at.x, at.y, { button: "right" });
+    await page.getByTestId("field-menu-resizeSelectedItem").click();
     await expect
         .poll(() => page.evaluate(() => window.fieldTest!.handles()))
         .not.toBeNull();

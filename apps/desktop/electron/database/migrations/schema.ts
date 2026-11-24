@@ -937,8 +937,8 @@ export const items = sqliteTable(
          */
         model: text(),
         /**
-         * One position for the whole show: the item has no moves, so dragging it on any page moves
-         * it on every page, and lasso and select-all skip it. Equipment is created locked.
+         * Kept from being selected or moved on the field until it's unlocked (props epic step 2,
+         * fork #1239). It keeps its moves either way. Equipment is created locked.
          */
         locked: integer({ mode: "boolean" }).notNull().default(false),
         /**

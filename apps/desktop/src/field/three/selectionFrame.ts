@@ -1,3 +1,4 @@
+import { itemHandlesShown } from "@/items/itemHandlesStore";
 import type { FieldEditor } from "@/field/editor/fieldEditor";
 import {
     boundsOf,
@@ -45,16 +46,17 @@ export function drawnSelectionBox(
     const item = items && selectedItemFrame(marchers, items);
     if (item) return item;
     const drawn: FieldPoint[] = [];
-    // Hidden marchers aren't drawn, and the editor's handles skip them too
+    // Hidden marchers aren't drawn, and the editor's handles skip them too, as they skip a
+    // locked item, which nothing moves
     for (let i = 0; i < selected.length; i++)
-        if (selected[i] && !hidden[i])
+        if (selected[i] && !hidden[i] && !items?.isLocked(marchers.ids[i]))
             drawn.push({ x: positions[i * 2], y: positions[i * 2 + 1] });
     const box = drawn.length < 2 ? null : boundsOf(drawn);
     // Clear of the order lane drawn on the selection (step 4j)
     return box && { box, angle: 0, covers: editor.selectionCovers() };
 }
 
-/** The frame of the one item selected and drawn, or null for any other selection. */
+/** The frame of the one item selected and drawn with its handles shown, or null otherwise. */
 function selectedItemFrame(
     marchers: FieldMarchers,
     items: FieldItems,
@@ -66,7 +68,14 @@ function selectedItemFrame(
         if (only !== null) return null;
         only = ids[i];
     }
-    if (only === null || !items.isItem(only)) return null;
+    // A locked item has no handles, nor does one whose handles weren't asked for (step 2)
+    if (
+        only === null ||
+        !items.isItem(only) ||
+        items.isLocked(only) ||
+        !itemHandlesShown(only)
+    )
+        return null;
     const frame = items.frameOf(only);
     return frame && itemSelectionFrame(frame);
 }

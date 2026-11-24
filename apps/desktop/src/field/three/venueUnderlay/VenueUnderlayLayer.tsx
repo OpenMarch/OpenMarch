@@ -37,7 +37,7 @@ import {
     type TurfColors,
 } from "@/view3d/core/field";
 import { kitFieldStyle } from "@/view3d/core/kits/fieldStyle";
-import { DEFAULT_VENUE_PARAMS } from "@/view3d/core/venueSettings";
+import { DEFAULT_VENUE_PARAMS, shownKit } from "@/view3d/core/venueSettings";
 import type { KitBuilder, VenueKitId, VenueParams } from "@/view3d/core/types";
 import type {
     buildCrowd as BuildCrowd,
@@ -465,7 +465,8 @@ export default function VenueUnderlayLayer({
     const { image } = useFieldImage();
     const { theme: appTheme } = useTheme();
     const fontsReady = useFontsReady();
-    const kitId: VenueKitId = venue?.kit ?? "hs";
+    // A fixed-floor venue the field has outgrown shows as the 3D View shows it.
+    const kitId: VenueKitId = shownKit(venue?.kit ?? "hs", fieldProperties);
     const style = kitFieldStyle(kitId, fieldProperties);
     const paramsKey = JSON.stringify(venue?.params ?? DEFAULT_VENUE_PARAMS);
     const lookKey = JSON.stringify(look);

@@ -6,8 +6,9 @@ import { seedShowSql, type SeedPosition } from "../seed.mjs";
 import type { FieldTestItem } from "../../../src/field/fieldTestApi";
 
 // A drum major's podium behind the back sideline (instruments.md section 6):
-// the field draws a back strip there and fits it, and a locked podium can be
-// dragged further back, past the field, on any page.
+// the field draws a back strip there and fits it, and the podium, locked as
+// equipment starts, can be unlocked from its right-click and dragged further
+// back, past the field.
 
 /** A low podium (marcher 20) 5 ft behind the back sideline, y = 0, turned to face the field */
 const PODIUM = { x: 900, y: -30 };
@@ -63,7 +64,7 @@ test("opens fitted to the back strip, with the podium and its drum major in view
     );
 });
 
-test("a back podium dragged further back lands there on every page", async ({
+test("a back podium unlocked from its right-click and dragged further back lands there", async ({
     show,
 }) => {
     await expect.poll(() => drawnItems(show.page)).toHaveLength(1);
@@ -71,16 +72,19 @@ test("a back podium dragged further back lands there on every page", async ({
     const { zoom } = (await readField(show.page)).viewport;
     const [podium] = await drawnItems(show.page);
     // From the podium's edge, clear of the drum major's dot at its center
-    await dragFrom(
-        show.page,
-        { x: podium.screen.x + 10 * zoom, y: podium.screen.y },
-        { x: 0, y: -60 * zoom },
-    );
+    const grab = { x: podium.screen.x + 10 * zoom, y: podium.screen.y };
+    await show.page.mouse.click(grab.x, grab.y, { button: "right" });
+    await show.page.getByTestId("field-menu-unlockSelectedItem").click();
+    await expect
+        .poll(() => show.query("SELECT locked FROM items WHERE id = 1"))
+        .toEqual([{ locked: 0 }]);
+    // The field has it unlocked too, so the drag takes it
+    await expect
+        .poll(() => drawnItems(show.page).then((items) => items[0]?.locked))
+        .toBe(false);
+    await dragFrom(show.page, grab, { x: 0, y: -60 * zoom });
     await waitForIdle(show.page);
     await expect
         .poll(() => savedPosition(show, 20, 1).then((p) => p.y))
         .toBeLessThan(PODIUM.y - 40);
-    expect(await savedPosition(show, 20, 0)).toEqual(
-        await savedPosition(show, 20, 1),
-    );
 });

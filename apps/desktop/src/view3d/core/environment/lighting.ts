@@ -402,6 +402,58 @@ const dieselDay: LightingValues = {
 };
 
 /**
+ * The Nightpound kit (`kits/nightpound/lighting.ts`) as WGI runs its
+ * championships: every lamp in the roof is on. The floor's light is the
+ * kit's own spots; the hemisphere here is the grid of can lights over the
+ * stands, so the seats are dimmer than the floor but never dark, and the
+ * black steel above gets only what comes back up off the tarp and the bowl.
+ * Near neutral, as at Mark Diesel: a dark surface keeps its hue under this
+ * tone curve.
+ *
+ * `kit.roofSpotIntensity` scales the floor spots, `kit.barEmissive` the can
+ * lights' faces and glare, `kit.panelEmissive` the boards and ribbons.
+ */
+const nightpoundShow: LightingValues = {
+    ...house,
+    hemisphere: { sky: 0xdfe6f2, ground: 0x4d4b47, intensity: 0.62 },
+    exposure: 1.18,
+    toneMapping: "neutral",
+    bloom: {
+        strength: 0.9,
+        radius: 0.8,
+        threshold: 2.4,
+        knee: 0.3,
+        ghost: 0,
+        ghostThreshold: 9,
+        ghostTint: 0xffffff,
+    },
+    envGround: 0x3a3a3c,
+    kit: {
+        ...kitOff,
+        barEmissive: 1,
+        roofSpotIntensity: 1,
+        roofOpen: false,
+        panelEmissive: 1,
+    },
+};
+
+/**
+ * Nightpound between shows: the same lamps, with the house lights over the
+ * stands full up and the floor no brighter than the seats around it.
+ */
+const nightpoundHouse: LightingValues = {
+    ...nightpoundShow,
+    hemisphere: { sky: 0xf1ece2, ground: 0x5c5850, intensity: 1.15 },
+    exposure: 1.05,
+    kit: {
+        ...nightpoundShow.kit,
+        barEmissive: 0.85,
+        roofSpotIntensity: 0.34,
+        panelEmissive: 0.7,
+    },
+};
+
+/**
  * Presets a venue lights differently from the shared table. The key is the
  * kit's id. Only presets the kit lists need an entry.
  */
@@ -413,6 +465,7 @@ const VENUE_LIGHTING: Readonly<
         night: dieselNight,
         day: dieselDay,
     },
+    nightpound: { show: nightpoundShow, house: nightpoundHouse },
 };
 
 /**

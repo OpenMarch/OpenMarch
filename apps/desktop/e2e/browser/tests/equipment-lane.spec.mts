@@ -1,5 +1,6 @@
 import { test, expect, type Show } from "../fixtures.mjs";
-import { waitForField, waitForIdle } from "../app.mjs";
+import type { Locator, Page } from "@playwright/test";
+import { emulateTouchScreen, tap, waitForField, waitForIdle } from "../app.mjs";
 import { seedShowSql } from "../seed.mjs";
 
 // The Equipment lane (fork #992): a cue's bar has edges like a move's clip. Dragging the end edge
@@ -84,4 +85,72 @@ test("dragging a cue's end edge sets where it ends, and one undo puts it back", 
     await waitForIdle(page);
     await page.keyboard.press("ControlOrMeta+z");
     await expect.poll(() => savedLength(show)).toBe(2);
+});
+
+/** Where the playhead's line is drawn, in viewport pixels */
+const playheadX = async (page: Page) => {
+    const box = (await page.getByTestId("timeline-playhead").boundingBox())!;
+    return box.x + box.width / 2;
+};
+
+/** The cue's bar, one count's width, and a spot in its row on empty lane space */
+async function laneSpots(page: Page) {
+    await waitForField(page);
+    const bar = page.getByTestId("equipment-lane-cue").first();
+    await expect(bar).toBeVisible();
+    await waitForIdle(page);
+    const box = (await bar.boundingBox())!;
+    const perCount = box.width / 2;
+    // Halfway through a count, 5 counts past the bar's end: clear of every page flag and measure
+    const empty = {
+        x: box.x + box.width + perCount * 5.5,
+        y: box.y + box.height / 2,
+    };
+    return { bar, box, perCount, empty };
+}
+
+const expectPlayheadNear = async (page: Page, x: number, within: number) =>
+    expect
+        .poll(async () => Math.abs((await playheadX(page)) - x))
+        .toBeLessThanOrEqual(within);
+
+const tapOn = async (page: Page, locator: Locator) => {
+    const box = (await locator.boundingBox())!;
+    await tap(page, { x: box.x + box.width / 2, y: box.y + box.height / 2 });
+};
+
+// #1288 follow-up: a click on empty lane space moves the playhead, as on the audio lane; a click
+// on a bar picks the cue and selects its counts, as a click on a move's clip does
+test("a click on empty lane space moves the playhead there; a click on the bar selects its counts", async ({
+    show,
+}) => {
+    const { page } = show;
+    const { bar, box, perCount, empty } = await laneSpots(page);
+    await page.mouse.click(empty.x, empty.y);
+    await expectPlayheadNear(page, empty.x, perCount / 2 + 1);
+
+    await bar.click();
+    await expect(bar).toHaveClass(/ring-accent/);
+    // The window is the cue's counts: the playhead at its end
+    await expectPlayheadNear(page, box.x + box.width, 3);
+    expect(await savedLength(show)).toBe(2);
+});
+
+test("a finger's tap on empty lane space moves the playhead there; a tap on the bar selects its counts", async ({
+    show,
+}) => {
+    const { page } = show;
+    const { bar, box, perCount, empty } = await laneSpots(page);
+    const stop = await emulateTouchScreen(page);
+    try {
+        await tap(page, empty);
+        await expectPlayheadNear(page, empty.x, perCount / 2 + 1);
+
+        await tapOn(page, bar);
+        await expect(bar).toHaveClass(/ring-accent/);
+        await expectPlayheadNear(page, box.x + box.width, 3);
+        expect(await savedLength(show)).toBe(2);
+    } finally {
+        await stop();
+    }
 });

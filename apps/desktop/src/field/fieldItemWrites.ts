@@ -85,11 +85,10 @@ export function useFieldItemWrites(
                                 written = true;
                             },
                         }),
-                    (id) => items.isLocked(id),
                 );
                 if (dropped !== "saved") return dropped;
-                // An edit with no move to keep app data in (a locked item's home) saved the
-                // position alone: the Outline follows as a step of its own
+                // An edit with no move to keep app data in (a home edit) saved the position
+                // alone: the Outline follows as a step of its own
                 if (!written) await mutateAsync(outline);
                 else
                     await queryClient.invalidateQueries({

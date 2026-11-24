@@ -25,6 +25,10 @@ import { pageEndBeat } from "@/timeline/timelineCanvas";
 import { useTimelineStepSizes } from "@/timeline/useTimelineStepSizes";
 import { useTimingObjects } from "@/hooks";
 import { allItemsQueryOptions } from "@/hooks/queries/useItems";
+import { openItemEditor } from "@/components/items/openItemEditor";
+import type { ItemWithMarcher } from "@/components/items/ItemRows";
+import { PropListContents } from "@/components/items/PropsModal";
+import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import {
     FlipHorizontalIcon,
     FlipVerticalIcon,
@@ -453,20 +457,29 @@ function MarcherEditor() {
     const { data: items } = useQuery(allItemsQueryOptions());
     // The notes over the section: where a prop's size and look are edited, and why a locked
     // item isn't in the section
-    const { selectedPropCount, selectedLockedCount } = useMemo(() => {
-        const kinds = new Map(
-            (items ?? []).map((item) => [item.marcher_id, item]),
-        );
-        let props = 0;
-        let locked = 0;
-        for (const m of selection) {
-            const item = kinds.get(m.id);
-            if (!item) continue;
-            if (item.locked) locked++;
-            else if (item.kind === "prop") props++;
-        }
-        return { selectedPropCount: props, selectedLockedCount: locked };
-    }, [items, selection]);
+    const { selectedPropCount, selectedLockedCount, firstProp } =
+        useMemo(() => {
+            const kinds = new Map(
+                (items ?? []).map((item) => [item.marcher_id, item]),
+            );
+            let props = 0;
+            let locked = 0;
+            let first: ItemWithMarcher | null = null;
+            for (const m of selection) {
+                const item = kinds.get(m.id);
+                if (!item) continue;
+                if (item.locked) locked++;
+                else if (item.kind === "prop") {
+                    props++;
+                    first ??= item;
+                }
+            }
+            return {
+                selectedPropCount: props,
+                selectedLockedCount: locked,
+                firstProp: first,
+            };
+        }, [items, selection]);
     const { selectedPage } = useSelectedPage()!;
     /**
      * Playback (UI-19 review): the section keeps its place and shows a note instead of the
@@ -545,12 +558,24 @@ function MarcherEditor() {
     return (
         <>
             {selectedPropCount > 0 && (
-                <p
-                    className="text-sub text-text/60 px-6"
+                // Opens the one prop's settings, or the Props panel for several
+                <button
+                    type="button"
+                    className="text-sub text-text/60 hover:text-text px-6 text-left underline-offset-2 hover:underline"
                     data-testid="inspector-items-selected"
+                    onClick={() => {
+                        if (selectedPropCount === 1 && firstProp)
+                            openItemEditor(firstProp);
+                        else {
+                            const { setContent, setOpen } =
+                                useSidebarModalStore.getState();
+                            setContent(<PropListContents />, "props");
+                            setOpen(true);
+                        }
+                    }}
                 >
                     <T keyName="inspector.marcher.propsLook" />
-                </p>
+                </button>
             )}
             {selectedLockedCount > 0 && (
                 <p

@@ -416,6 +416,107 @@ describe("buildCrowd", () => {
         expect(triangles(crowdBlockGeometry())).toBeLessThanOrEqual(12);
     });
 
+    it.each(["blocks", "people"] as const)(
+        "clearAround from a seat also hides whoever blocks keepInView (%s)",
+        (style) => {
+            const rows = straightRows(10, 60);
+            const keepInView = { minX: -10, maxX: 10, minZ: -5, maxZ: 9 };
+            const crowd = buildCrowd(rows, {
+                density: 1,
+                style,
+                keepInView,
+            });
+            const total = crowd.count;
+            const arr = crowd.mesh.instanceMatrix.array;
+            const zeroed = () => {
+                const out: number[] = [];
+                for (let k = 0; k < total; k++)
+                    if (arr[k * 16] === 0 && arr[k * 16 + 5] === 0) out.push(k);
+                return out;
+            };
+            // In the top row's seat: the people below, in front, block the floor.
+            const eye: [number, number, number] = [0, 3.7 + 0.8, 17.2];
+            const hidden = crowd.clearAround(eye, 1);
+            expect(crowd.visibleCount()).toBe(total - hidden);
+            const gone = zeroed();
+            expect(gone.length).toBeGreaterThan(10);
+            for (const k of gone) {
+                // Everyone hidden sits between the eye and the floor's width
+                // (or right by the eye, for the blocks).
+                const x = arr[k * 16 + 12];
+                const z = arr[k * 16 + 14];
+                expect(z).toBeLessThan(eye[2]);
+                expect(Math.abs(x)).toBeLessThan(10.5);
+            }
+            // The front row straight ahead is hidden; its far ends are not.
+            const at = (x: number, z: number) => {
+                let best = -1;
+                let d = Infinity;
+                for (let k = 0; k < total; k++) {
+                    const dd =
+                        (arr[k * 16 + 12] - x) ** 2 +
+                        (arr[k * 16 + 14] - z) ** 2;
+                    if (arr[k * 16 + 15] === 1 && dd < d) {
+                        d = dd;
+                        best = k;
+                    }
+                }
+                return best;
+            };
+            const base = buildCrowd(rows, { density: 1, style });
+            const barr = base.mesh.instanceMatrix.array;
+            const index = (x: number, z: number) => {
+                let best = -1;
+                let d = Infinity;
+                for (let k = 0; k < total; k++) {
+                    const dd =
+                        (barr[k * 16 + 12] - x) ** 2 +
+                        (barr[k * 16 + 14] - z) ** 2;
+                    if (dd < d) {
+                        d = dd;
+                        best = k;
+                    }
+                }
+                return best;
+            };
+            expect(gone).toContain(index(0, 10));
+            expect(gone).not.toContain(index(29, 10));
+            expect(at(29, 10)).toBe(index(29, 10));
+
+            // Orbiting out of the seat brings them back; the radius stays.
+            crowd.follow([eye[0], eye[1] + 2, eye[2] + 2]);
+            const back = zeroed();
+            expect(back.length).toBeLessThan(gone.length);
+            for (const k of back) {
+                const dx = barr[k * 16 + 12] - eye[0];
+                const dy = barr[k * 16 + 13] - eye[1];
+                const dz = barr[k * 16 + 14] - eye[2];
+                expect(Math.hypot(dx, dy, dz)).toBeLessThan(1);
+            }
+            let hiddenNear = 0;
+            for (let k = 0; k < total; k++) {
+                const dx = barr[k * 16 + 12] - eye[0];
+                const dy = barr[k * 16 + 13] - eye[1];
+                const dz = barr[k * 16 + 14] - eye[2];
+                if (Math.hypot(dx, dy, dz) < 1) hiddenNear++;
+            }
+            expect(crowd.visibleCount()).toBe(total - hiddenNear);
+            if (style === "blocks") expect(back.length).toBe(hiddenNear);
+            else expect(back).toEqual([]);
+            base.dispose();
+
+            // Up in the air, with nobody near: only the radius applies.
+            crowd.clearAround([0, 50, 40], 1);
+            expect(zeroed()).toEqual([]);
+            expect(crowd.visibleCount()).toBe(total);
+            crowd.clearAround(eye, 1);
+            crowd.reset();
+            expect(zeroed()).toEqual([]);
+            expect(crowd.visibleCount()).toBe(total);
+            crowd.dispose();
+        },
+    );
+
     it("clearAround keeps the matrix finite", () => {
         const crowd = buildCrowd(straightRows(4, 20), { density: 1 });
         crowd.clearAround([0, 1, 10], 100);

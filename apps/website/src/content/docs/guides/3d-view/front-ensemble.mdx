@@ -77,7 +77,7 @@ Once the show has a pit, the presets move behind <Ui k="frontEnsemble.presets.re
 
 1. In the front ensemble view, select <Ui k="frontEnsemble.add.button" /> in its header, or <Ui k="frontEnsemble.custom.button" /> under <Ui k="frontEnsemble.custom.title" plain /> while the show has no pit.
 
-2. Find the piece: the pictures are grouped under <Ui k="frontEnsemble.groups.keyboards" plain />, <Ui k="frontEnsemble.groups.percussion" plain />, <Ui k="frontEnsemble.groups.audio" plain /> and <Ui k="frontEnsemble.groups.podiums" plain />, or type in <Ui k="frontEnsemble.search" plain /> ("marimba black", "tower"). Each shows its size and footprint in meters; a dot marks the usual choice.
+2. Find the piece: the pictures are grouped under <Ui k="frontEnsemble.groups.keyboards" plain />, <Ui k="frontEnsemble.groups.percussion" plain />, <Ui k="frontEnsemble.groups.audio" plain /> and <Ui k="frontEnsemble.groups.podiums" plain />, or type in <Ui k="frontEnsemble.search" plain /> ("marimba black", "tower"). Each shows its size and footprint, in feet and inches (or meters when the field is metric); a dot marks the usual choice.
 
 3. Select the picture. The panel closes, and the piece follows the pointer.
 
@@ -95,9 +95,11 @@ A piece you add this way has no player. To give it one, add a marcher and put th
 
 ## Change, move or remove a piece
 
-Equipment is <Ui k="props.locked" plain />: it has one position for the whole show. Dragging it on any page moves it on every page, and a selection box around marchers doesn't pick it up.
+Equipment starts <Ui k="props.locked" plain />: a click, a selection box or <Ui k="actions.select.selectAll" plain /> passes over it, so you can select the players and marchers in front of it without picking it up, and nothing moves it. Clicking it shows a <Ui k="field.lockedItem.tag" plain /> tag for a few seconds instead.
 
-To change a piece, right-click it on the field and choose <Ui k="actions.items.editNamed" values={{ name: "Marimba 1" }} />, or select <Ui k="frontEnsemble.equipment.edit" plain /> on its row in the front ensemble view. There you can rename it, choose another size or finish of the same instrument, or turn <Ui k="props.locked" plain /> off to move it during the show the way you move a prop ([Add props to the field](/guides/3d-view/props/)).
+To move a piece, right-click it on the field (or click its <Ui k="field.lockedItem.tag" plain /> tag) and choose <Ui k="actions.items.unlockNamed" values={{ name: "Marimba 1" }} />. From then on it moves the way a prop does ([Add props to the field](/guides/3d-view/props/#move-a-prop-during-the-show)), and its right-click menu's <Ui k="actions.items.lockNamed" values={{ name: "Marimba 1" }} /> locks it again. Locking keeps where it goes during the show.
+
+To change a piece, right-click it on the field and choose <Ui k="actions.items.editNamed" values={{ name: "Marimba 1" }} />, or select <Ui k="frontEnsemble.equipment.edit" plain /> on its row in the front ensemble view. There you can rename it, choose another size or finish of the same instrument, or turn <Ui k="props.locked" plain /> on or off.
 
 To remove a piece, select <Ui k="frontEnsemble.equipment.delete" plain /> on its row. Undo brings it back.
 

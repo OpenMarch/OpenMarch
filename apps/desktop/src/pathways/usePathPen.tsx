@@ -114,7 +114,7 @@ export function usePathPenActions(): void {
     const selectedContext = useSelectedMarchers();
     const selected = selectedContext?.selectedMarchers;
     const isPlaying = useIsPlaying()?.isPlaying ?? false;
-    // Marchers and props alike; a locked item has no moves to draw
+    // Marchers and props alike; a locked item is left alone, as every marcher tool leaves it
     const performers = useUnlockedOnly(selected);
     const one = performers.length === 1 ? performers[0]! : null;
     // Every marcher's and prop's drill number, as a group path's members are named

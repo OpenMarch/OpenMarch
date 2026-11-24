@@ -36,8 +36,8 @@ import type {
     Turn,
     UnitFix,
 } from "@/showAssets/modelImport/types";
-
-const meters = (value: number) => String(Number(value.toFixed(2)));
+import { useShowLengths } from "@/hooks/useMeasurementSystem";
+import { UNIT_FIXES } from "@/showAssets/modelImport/rules";
 
 /** The licenses offered (SPDX), most permissive first; empty means Unknown (props-spec §10) */
 export const LICENSE_OPTIONS = [
@@ -102,6 +102,7 @@ export default function ModelImportReview({
     onDone: (modelValue: string | null) => void;
 }) {
     const { t } = useTranslate();
+    const lengths = useShowLengths();
     const session = useModelImportSession();
     const { result, running, choices } = session;
     const report = result?.report;
@@ -239,6 +240,7 @@ export default function ModelImportReview({
                     <SizeConfirm
                         size={model.sidecar.sizeM}
                         unit={choices.unitFix ?? unitFix?.applied ?? "none"}
+                        sizeUnit={unitFix?.applied ?? "none"}
                         suggested={unitFix?.preselected}
                         disabled={running}
                         onUnit={(unit) => session.choose({ unitFix: unit })}
@@ -300,7 +302,11 @@ export default function ModelImportReview({
                         testId="model-import-notes"
                     >
                         {report.notes.map((note, i) => (
-                            <Line key={i} {...noteText(note, t)} muted />
+                            <Line
+                                key={i}
+                                {...noteText(note, t, lengths.format)}
+                                muted
+                            />
                         ))}
                     </ReportGroup>
                 )}
@@ -366,23 +372,33 @@ export default function ModelImportReview({
 }
 
 /**
- * The size to confirm: width × depth × height in meters, and the file's unit, one click each.
+ * The size to confirm: width × depth × height in the show's units, and the file's unit, one
+ * click each.
  * The import suggests a unit when the size is clearly off; it is never applied silently.
  */
 function SizeConfirm({
     size,
     unit,
+    sizeUnit,
     suggested,
     disabled,
     onUnit,
 }: {
     size: { width: number; height: number; depth: number };
     unit: UnitFix;
+    /** The unit `size` was read in: `unit` once a change of it has run */
+    sizeUnit: UnitFix;
     suggested: UnitFix | undefined;
     disabled: boolean;
     onUnit: (unit: UnitFix) => void;
 }) {
     const { t } = useTranslate();
+    // The size shows in the show's units; the file's own numbers show under it when the file
+    // was made in another unit (a model made in meters, in an imperial show)
+    const lengths = useShowLengths();
+    const shownUnit: UnitFix = lengths.system === "metric" ? "none" : "ft";
+    const fileFactor = UNIT_FIXES.find((f) => f.unit === sizeUnit)?.factor ?? 1;
+    const fileNumber = (meters: number) => lengths.number(meters / fileFactor);
     return (
         <section
             className="flex flex-col gap-8"
@@ -393,12 +409,25 @@ function SizeConfirm({
                     className="text-body font-medium tabular-nums"
                     data-testid="model-import-size"
                 >
-                    {t("props.import.size.value", {
-                        width: meters(size.width),
-                        depth: meters(size.depth),
-                        height: meters(size.height),
+                    {t("props.import.size.dimensionsOf", {
+                        width: lengths.format(size.width),
+                        depth: lengths.format(size.depth),
+                        height: lengths.format(size.height),
                     })}
                 </span>
+                {sizeUnit !== shownUnit && (
+                    <span
+                        className="text-sub text-text-subtitle tabular-nums"
+                        data-testid="model-import-size-in-file"
+                    >
+                        {t("props.import.size.inFile", {
+                            width: fileNumber(size.width),
+                            depth: fileNumber(size.depth),
+                            height: fileNumber(size.height),
+                            unit: t(`props.import.units.${sizeUnit}`),
+                        })}
+                    </span>
+                )}
                 <span className="text-sub text-text-subtitle">
                     {suggested && suggested !== "none"
                         ? t("props.import.size.suggested", {
