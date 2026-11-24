@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import type { FieldTheme } from "@openmarch/core";
 import { rgba01 } from "../fieldGeometry";
@@ -13,7 +13,14 @@ import { useFieldDraw } from "../fieldDrawContext";
 import { labelsShown } from "../marcherLooks";
 import { TextBatch, type GlyphAtlas } from "../sdfText";
 import { autoLabelScale, type LabelBox } from "@/field/labelForms";
-import type { LabelTags } from "@/cues/useEquipmentTags";
+import type { LabelIcons } from "@/cues/useEquipmentIcons";
+import type { EquipmentIconKey } from "@/cues/equipmentIcons";
+import {
+    IconBatch,
+    loadIconAtlas,
+    type FieldIcon,
+    type IconAtlas,
+} from "../iconBatch";
 
 /**
  * A marcher label: 14 field units, its center 2.2 dot radii above the dot,
@@ -23,9 +30,11 @@ const LABEL_SIZE = 14;
 const DOT_RADIUS = 5;
 const LABEL_LIFT = DOT_RADIUS * 2.2;
 const LABEL_BESIDE = DOT_RADIUS * 1.6;
-/** A drill number with its equipment tag after it ("G3 R"), or the number alone. */
-const withTag = (label: string, tag: string | undefined) =>
-    tag && label ? `${label} ${tag}` : label;
+/** An equipment icon's height, and the gap before it after the drill number, in em. */
+const ICON_EM = 1.05;
+const ICON_GAP_EM = 0.25;
+/** How much wider an icon makes a label, in em (for Auto's spacing). */
+const ICON_WIDTH_EM = ICON_EM + ICON_GAP_EM;
 
 /** The baseline's offset below the label's center, in em. */
 const CENTER_BASELINE = 0.35;
@@ -87,10 +96,16 @@ export function autoLabelSizeOf(
     marchers: Pick<FieldMarchers, "ids" | "positions" | "hidden">,
     labels: ReadonlyMap<number, string>,
     atlas: GlyphAtlas,
+    /** Marchers with an equipment icon after their label, which makes it wider */
+    icons?: ReadonlyMap<number, unknown>,
 ): number {
     const fixed = labelSizeOf(style);
     const { ids, positions, hidden } = marchers;
-    const widths = ids.map((id) => atlas.measure(labels.get(id) ?? ""));
+    const widths = ids.map(
+        (id) =>
+            atlas.measure(labels.get(id) ?? "") +
+            (icons?.has(id) ? ICON_WIDTH_EM : 0),
+    );
     return (
         fixed *
         autoLabelScale((scale) => {
@@ -130,7 +145,7 @@ export default function LabelsLayer({
     atlas,
     style = DEFAULT_STYLE,
     holdAutoSize = false,
-    tags = null,
+    icons = null,
 }: {
     marchers: FieldMarchers;
     /** Marchers whose labels are drawn dimmed (#201). */
@@ -146,11 +161,11 @@ export default function LabelsLayer({
     /** Keeps Auto's size as it is (during playback), so labels don't change size as marchers pass. */
     holdAutoSize?: boolean;
     /**
-     * A short tag by some drill numbers at the beat drawn: what a performer holds when it isn't
-     * their section's usual (fork #992). Read every frame; the text is laid out again only when
-     * the tags change.
+     * An icon after some drill numbers at the beat drawn: what a performer holds (fork #992), for
+     * whom the Equipment icons setting says. Read every frame; laid out again only when the icons
+     * change.
      */
-    tags?: LabelTags | null;
+    icons?: LabelIcons | null;
 }) {
     const invalidate = useThree((s) => s.invalidate);
     const draw = useFieldDraw();
@@ -162,6 +177,29 @@ export default function LabelsLayer({
         batch.mesh.renderOrder = 1.9;
         return batch;
     }, [atlas]);
+    // The icons' atlas is drawn once, the first time a field has an icon to show
+    const [iconAtlas, setIconAtlas] = useState<IconAtlas | null>(null);
+    useEffect(() => {
+        if (!icons || iconAtlas) return;
+        let live = true;
+        loadIconAtlas().then(
+            (loaded) => live && setIconAtlas(loaded),
+            () => undefined,
+        );
+        return () => {
+            live = false;
+        };
+    }, [icons, iconAtlas]);
+    const iconBatch = useMemo(() => {
+        if (!iconAtlas) return null;
+        const batch = new IconBatch(iconAtlas);
+        batch.mesh.renderOrder = 1.9;
+        return batch;
+    }, [iconAtlas]);
+    useEffect(() => {
+        invalidate();
+        return () => iconBatch?.dispose();
+    }, [iconBatch, invalidate]);
     const drawn = useRef({
         version: -1,
         idsVersion: -1,
@@ -173,7 +211,8 @@ export default function LabelsLayer({
         style,
         size: labelSizeOf(style),
         shown: new Uint8Array(0) as Uint8Array,
-        tagKey: "",
+        iconKey: "",
+        iconBatch: null as IconBatch | null,
     });
 
     useEffect(() => {
@@ -182,13 +221,14 @@ export default function LabelsLayer({
     }, [text, invalidate]);
 
     // New labels, a new theme or style lay the text out again on the next frame
-    useEffect(() => invalidate(), [labels, theme, style, tags, invalidate]);
+    useEffect(() => invalidate(), [labels, theme, style, icons, invalidate]);
     useEffect(() => {
-        text.setOffset(
-            style.beside ? LABEL_BESIDE : 0,
-            style.beside ? 0 : -LABEL_LIFT,
-        );
-    }, [text, style.beside]);
+        for (const batch of [text, iconBatch])
+            batch?.setOffset(
+                style.beside ? LABEL_BESIDE : 0,
+                style.beside ? 0 : -LABEL_LIFT,
+            );
+    }, [text, iconBatch, style.beside]);
     useEffect(() => look.subscribe(invalidate), [look, invalidate]);
 
     useFrame(() => {
@@ -197,7 +237,9 @@ export default function LabelsLayer({
         // (`QUALITY_SETTINGS`: low-quality mode hides them sooner)
         const { labelFadeFrom, labelFadeTo } = draw.quality();
         const last = drawn.current;
-        const size = labelSize(last.size);
+        const iconsNow = icons?.at(marchers.drawnBeat) ?? null;
+        const iconKey = iconsNow?.key ?? "";
+        const size = labelSize(last.size, iconsNow?.icons, iconKey);
         const opacity = Math.min(
             1,
             Math.max(
@@ -208,6 +250,10 @@ export default function LabelsLayer({
         text.opacity = opacity;
         // Hidden labels cost nothing to draw, which matters most in software GL
         text.mesh.visible = opacity > 0 && style.form !== "off";
+        if (iconBatch) {
+            iconBatch.opacity = opacity;
+            iconBatch.mesh.visible = opacity > 0 && iconKey !== "";
+        }
         let shown = last.shown;
         if (
             marchers.appearanceVersion !== last.appearanceVersion ||
@@ -217,10 +263,9 @@ export default function LabelsLayer({
             const now = labelsShown(marchers.stacks, theme);
             if (!sameBytes(now, shown)) shown = now;
         }
-        const tagged = tags?.at(marchers.drawnBeat) ?? null;
-        const tagKey = tagged?.key ?? "";
         const newLayout =
-            tagKey !== last.tagKey ||
+            iconKey !== last.iconKey ||
+            iconBatch !== last.iconBatch ||
             marchers.idsVersion !== last.idsVersion ||
             labels !== last.labels ||
             theme !== last.theme ||
@@ -239,10 +284,7 @@ export default function LabelsLayer({
                 marchers.ids.map((id, i) => ({
                     text:
                         shown[i] && dimming.labelShown(id)
-                            ? withTag(
-                                  labels.get(id) ?? "",
-                                  tagged?.tags.get(id),
-                              )
+                            ? (labels.get(id) ?? "")
                             : "",
                     size,
                     align: style.beside ? "left" : "center",
@@ -256,11 +298,14 @@ export default function LabelsLayer({
                     weight: weightOf(id),
                 })),
             );
+            iconBatch?.setIcons(iconsOf(iconsNow?.icons, shown, size, color));
         } else if (weightsChanged) {
             text.setWeights((i) => weightOf(marchers.ids[i]!));
         }
-        if (newLayout || marchers.version !== last.version)
+        if (newLayout || marchers.version !== last.version) {
             text.setAnchors(marchers.positions);
+            iconBatch?.setAnchors(marchers.positions);
+        }
         drawn.current = {
             version: marchers.version,
             idsVersion: marchers.idsVersion,
@@ -272,15 +317,60 @@ export default function LabelsLayer({
             style,
             size,
             shown,
-            tagKey,
+            iconKey,
+            iconBatch,
         };
     });
+
+    /**
+     * Each icon after its marcher's drill number, at the label's size: left of nothing when the
+     * label is off or empty (then where the label would be), and drawn like the label
+     */
+    function iconsOf(
+        byId: ReadonlyMap<number, EquipmentIconKey> | undefined,
+        shown: Uint8Array,
+        size: number,
+        color: readonly number[],
+    ): FieldIcon[] {
+        if (!byId || byId.size === 0) return [];
+        const out: FieldIcon[] = [];
+        const iconSize = ICON_EM * size;
+        // The middle of the label's capitals and digits, below its anchor
+        const y = ((CENTER_BASELINE - CENTER_CAP_TOP) / 2) * size;
+        marchers.ids.forEach((id, i) => {
+            const icon = byId.get(id);
+            if (!icon || !shown[i] || !dimming.labelShown(id)) return;
+            const text = style.form === "off" ? "" : (labels.get(id) ?? "");
+            const width = atlas.measure(text) * size;
+            const after = text ? ICON_GAP_EM * size + iconSize / 2 : 0;
+            out.push({
+                icon,
+                owner: i,
+                x: style.beside
+                    ? width + (text ? after : iconSize / 2)
+                    : width / 2 + after,
+                y,
+                size: iconSize,
+                color: [
+                    color[0],
+                    color[1],
+                    color[2],
+                    color[3] * labelOpacity(dimming, id),
+                ],
+            });
+        });
+        return out;
+    }
 
     /**
      * The size labels are drawn at: the style's, or Auto's for where the
      * marchers stand, worked out again when they move unless it's held.
      */
-    function labelSize(before: number) {
+    function labelSize(
+        before: number,
+        withIcons: ReadonlyMap<number, unknown> | undefined,
+        iconKey: string,
+    ) {
         const fixed = labelSizeOf(style);
         if (style.form !== "auto") return fixed;
         const last = drawn.current;
@@ -288,12 +378,18 @@ export default function LabelsLayer({
             marchers.version !== last.version ||
             marchers.idsVersion !== last.idsVersion ||
             labels !== last.labels ||
-            style !== last.style;
+            style !== last.style ||
+            iconKey !== last.iconKey;
         if (!moved || (holdAutoSize && style === last.style)) return before;
-        return autoLabelSizeOf(style, marchers, labels, atlas);
+        return autoLabelSizeOf(style, marchers, labels, atlas, withIcons);
     }
 
-    return <primitive object={text.mesh} />;
+    return (
+        <>
+            <primitive object={text.mesh} />
+            {iconBatch && <primitive object={iconBatch.mesh} />}
+        </>
+    );
 }
 
 const sameBytes = (a: Uint8Array, b: Uint8Array) =>

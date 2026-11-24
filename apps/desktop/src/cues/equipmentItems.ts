@@ -1,6 +1,6 @@
 /**
- * The Equipment catalog's items in the app (fork #992): each item's 3D View model, its short tag
- * on the 2D field, and the section items a show's sections hold by default. The catalog itself
+ * The Equipment catalog's items in the app (fork #992): each item's 3D View model, and the
+ * section items a show's sections hold by default (the 2D field's icons are `equipmentIcons.ts`). The catalog itself
  * (ids, names, families) is core's (`equipmentCatalog`). Pure.
  */
 import {
@@ -64,48 +64,6 @@ export function modelOfValue(valueId: string | null): ModelId | null {
 export function valueOfModel(model: ModelId): string | null {
     const key = Object.keys(ITEM_MODEL).find((k) => ITEM_MODEL[k] === model);
     return key ? itemValueId(key) : null;
-}
-
-/**
- * The tag the 2D field draws after a drill number for what a performer holds, when it isn't
- * their section's usual (fork #992). ASCII only: the field's glyph atlas has nothing else.
- */
-export const ITEM_TAG: Readonly<Record<string, string>> = {
-    flag: "F",
-    swingFlag: "SF",
-    doubleSwingFlag: "DF",
-    rifle: "R",
-    sabre: "S",
-    trumpet: "Tp",
-    mellophone: "Mel",
-    baritone: "Bar",
-    euphonium: "Eu",
-    trombone: "Tb",
-    bassTrombone: "BTb",
-    tuba: "Tu",
-    sousaphone: "Sou",
-    piccolo: "Pic",
-    flute: "Fl",
-    clarinet: "Cl",
-    bassClarinet: "BCl",
-    sopranoSax: "SS",
-    altoSax: "AS",
-    tenorSax: "TS",
-    bariSax: "BS",
-    snare: "SD",
-    tenors: "TD",
-    bassDrum: "BD",
-    cymbals: "Cym",
-    none: "N",
-    // The fallbacks a section without a catalog item holds
-    winds: "H",
-    battery: "D",
-};
-
-/** The field tag of an Equipment value; "?" for one this build doesn't know. */
-export function tagOfValue(valueId: string | null): string {
-    const key = valueId === null ? "none" : itemKeyOf(valueId);
-    return (key && ITEM_TAG[key]) ?? "?";
 }
 
 /** The catalog, by family, for menus. */

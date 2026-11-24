@@ -4,7 +4,6 @@ import { whoHolds, type CueInput } from "@openmarch/core";
 import { compileShowCues } from "../showCues";
 import {
     editedPerformers,
-    equipmentTagsAt,
     planEquipmentCues,
     planCueChange,
     planEquipmentSet,
@@ -12,6 +11,7 @@ import {
     withRecent,
 } from "../equipment";
 import { describePerformers, type LabelMarcher } from "../cueLabel";
+import { equipmentIconsAt, type EquipmentIcons } from "../equipmentIcons";
 import { equipmentLane, countToSpecBeat } from "../equipmentLane";
 
 /**
@@ -43,6 +43,19 @@ const BEATS = [
 const beatOf = (count: number) => 100 + count;
 const range = (from: number, to: number) =>
     Array.from({ length: to - from + 1 }, (_, i) => from + i);
+/** Each performer's field icon at `count`, as the field draws them with `shown`. */
+const iconsAt = (
+    show: ReturnType<typeof compileShowCues>,
+    count: number,
+    shown: EquipmentIcons = "changed",
+) =>
+    equipmentIconsAt({
+        compiled: show.compiled,
+        usualValue: show.usualValue,
+        sectionOf: (id) => MARCHERS.find((m) => m.id === id)?.section,
+        count,
+        shown,
+    });
 
 let nextId = 1;
 const cue = (
@@ -66,10 +79,10 @@ describe("equipment cues (#992)", () => {
         expect(whoHolds(show.compiled, "rifle", 0)).toEqual(range(1, 6));
         expect(whoHolds(show.compiled, "flag", 0)).toEqual(range(7, 12));
         expect(whoHolds(show.compiled, "winds", 0)).toEqual([13, 14, 15]);
-        expect(equipmentTagsAt(show.compiled, show.usualValue, 0).size).toBe(0);
+        expect(iconsAt(show, 0).size).toBe(0);
     });
 
-    it("a rifle from a count: Select Rifles picks them there and not before, and the field tags them", () => {
+    it("a rifle from a count: Select Rifles picks them there and not before, and the field shows its icon", () => {
         const cues = [cue(24, "rifle", [7, 8, 13])];
         const show = compileShowCues(MARCHERS, BEATS, cues);
         expect(whoHolds(show.compiled, "rifle", 23)).toEqual(range(1, 6));
@@ -79,33 +92,40 @@ describe("equipment cues (#992)", () => {
             8,
             13,
         ]);
-        // Only the performers off their section's usual get a tag
-        expect([
-            ...equipmentTagsAt(show.compiled, show.usualValue, 24),
-        ]).toEqual([
-            [7, "R"],
-            [8, "R"],
-            [13, "R"],
+        // Only the performers off their section's usual get an icon
+        expect([...iconsAt(show, 24)]).toEqual([
+            [7, "Rifle"],
+            [8, "Rifle"],
+            [13, "Rifle"],
         ]);
-        expect(equipmentTagsAt(show.compiled, show.usualValue, 23).size).toBe(
-            0,
-        );
+        expect(iconsAt(show, 23).size).toBe(0);
     });
 
-    it("tags a brass item on the guard and a guard item on the brass, and not their own", () => {
+    it("shows a brass item on the guard and a guard item on the brass, and not their own", () => {
         const cues = [
             cue(8, "trumpet", [7]),
             cue(8, "sabre", [13]),
             cue(8, "trumpet", [14]),
         ];
         const show = compileShowCues(MARCHERS, BEATS, cues);
-        expect([...equipmentTagsAt(show.compiled, show.usualValue, 8)]).toEqual(
-            [
-                [7, "Tp"],
-                [13, "S"],
-            ],
-        );
+        // A sabre has no icon of its own: Other
+        expect([...iconsAt(show, 8)]).toEqual([
+            [7, "Trumpet"],
+            [13, "Other"],
+        ]);
         expect(whoHolds(show.compiled, "winds", 8)).toContain(7);
+    });
+
+    it("the field's equipment icons: off, changed only, or everyone with their own instrument", () => {
+        const show = compileShowCues(MARCHERS, BEATS, [cue(8, "tuba", [1])]);
+        expect(iconsAt(show, 8, "off").size).toBe(0);
+        expect([...iconsAt(show, 8, "changed")]).toEqual([[1, "MarchingTuba"]]);
+        const everyone = iconsAt(show, 8, "everyone");
+        expect(everyone.size).toBe(MARCHERS.length);
+        expect(everyone.get(1)).toBe("MarchingTuba");
+        expect(everyone.get(2)).toBe("Rifle");
+        expect(everyone.get(7)).toBe("ColorGuard");
+        expect(everyone.get(13)).toBe("Trumpet");
     });
 
     it("a momentary sabre goes back to what they held after its counts", () => {

@@ -706,6 +706,32 @@ const STATIC_ACTIONS = {
         scope: "global",
         defaultBindings: [],
     },
+    // Who shows an equipment icon after their drill number on the field (fork #992): the field
+    // display bar's Equipment icons choice. Unbound
+    equipmentIconsOff: {
+        labelKey: "actions.cues.equipmentIconsOff",
+        keywordsKey: "actions.cues.equipmentIconsKeywords",
+        category: "field",
+        scope: "canvas",
+        defaultBindings: [],
+        args: { shown: "off" },
+    },
+    equipmentIconsChanged: {
+        labelKey: "actions.cues.equipmentIconsChanged",
+        keywordsKey: "actions.cues.equipmentIconsKeywords",
+        category: "field",
+        scope: "canvas",
+        defaultBindings: [],
+        args: { shown: "changed" },
+    },
+    equipmentIconsEveryone: {
+        labelKey: "actions.cues.equipmentIconsEveryone",
+        keywordsKey: "actions.cues.equipmentIconsKeywords",
+        category: "field",
+        scope: "canvas",
+        defaultBindings: [],
+        args: { shown: "everyone" },
+    },
     toggleEquipmentLane: {
         labelKey: "actions.cues.toggleEquipmentLane",
         keywordsKey: "actions.cues.laneKeywords",

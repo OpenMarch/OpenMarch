@@ -2,6 +2,8 @@ import { equipmentCatalog, EQUIPMENT_NONE } from "@openmarch/core";
 import { useIsPlaying } from "@/context/IsPlayingContext";
 import tolgee from "@/global/singletons/Tolgee";
 import { useIsBasicMode } from "@/stores/EditorModeStore";
+import { useUiSettingsStore } from "@/stores/UiSettingsStore";
+import type { EquipmentIcons } from "@/cues/equipmentIcons";
 import { useCueCommands, type CueCommands } from "@/cues/useCueCommands";
 import { useCueCarryNotices } from "@/cues/useCueCarryNotices";
 import { itemValueId } from "@/cues/equipmentItems";
@@ -105,6 +107,34 @@ function useLaneToggle(lane: TimelineLaneDefinition, basic: boolean) {
     });
 }
 
+/** The Equipment icons choices' actions, by who shows an icon. */
+export const EQUIPMENT_ICONS_ACTIONS: Readonly<
+    Record<EquipmentIcons, ActionId>
+> = {
+    off: "equipmentIconsOff",
+    changed: "equipmentIconsChanged",
+    everyone: "equipmentIconsEveryone",
+};
+
+/** Sets who shows an equipment icon on the field (saved with the UI settings). */
+export function setEquipmentIcons(shown: EquipmentIcons) {
+    const { uiSettings, setUiSettings } = useUiSettingsStore.getState();
+    if (uiSettings.equipmentIcons !== shown)
+        setUiSettings({ ...uiSettings, equipmentIcons: shown });
+}
+
+/** One Equipment icons choice: checked while it's the one in effect. */
+function useEquipmentIconsChoice(shown: EquipmentIcons) {
+    const current = useUiSettingsStore(
+        (s) => s.uiSettings.equipmentIcons ?? "changed",
+    );
+    useActionHandler(
+        EQUIPMENT_ICONS_ACTIONS[shown],
+        () => setEquipmentIcons(shown),
+        { checked: current === shown },
+    );
+}
+
 /**
  * Equipment cues (ADR 0015; fork #992): set what the selection holds from the paused playhead
  * (an item from the catalog, their own instrument, or nothing), select who holds something there,
@@ -187,6 +217,10 @@ export function useCueActionHandlers() {
         enabled: editable,
         disabledReason: cueWhy,
     });
+
+    useEquipmentIconsChoice("off");
+    useEquipmentIconsChoice("changed");
+    useEquipmentIconsChoice("everyone");
 
     const basic = useIsBasicMode();
     for (const lane of TIMELINE_LANES)

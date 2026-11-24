@@ -13,8 +13,10 @@ import {
     ShortcutTooltip,
     TransportTooltipProvider,
 } from "@/components/timeline/ShortcutTooltip";
+import { SECTION_ICONS } from "@/components/marcher/sectionIcons/SectionIcon";
 import {
     useUiSettingsStore,
+    type EquipmentIcons,
     type MarcherLabelForm,
     type ShapeOutlines,
     type UiSettings,
@@ -45,6 +47,13 @@ const SHAPE_CHOICES: readonly Choice<ShapeOutlines>[] = [
     { value: "off", key: "toolbar.view.shapesOff" },
 ];
 
+/** Who shows an equipment icon after their drill number (fork #992); the palette's names */
+const EQUIPMENT_CHOICES: readonly Choice<EquipmentIcons>[] = [
+    { value: "changed", key: "toolbar.view.equipmentChanged" },
+    { value: "everyone", key: "toolbar.view.equipmentEveryone" },
+    { value: "off", key: "toolbar.view.equipmentOff" },
+];
+
 const ORDER_CHOICES: readonly Choice<ShapeOutlines>[] = [
     { value: "selected", key: "toolbar.view.orderSelected" },
     { value: "always", key: "toolbar.view.orderAlways" },
@@ -54,7 +63,8 @@ const ORDER_CHOICES: readonly Choice<ShapeOutlines>[] = [
 /**
  * How the field is displayed, apart from the timeline: a small bar at the field's top right (the
  * zoom controls hold the bottom right). It replaced the toolbar's View tab. Path overlays, marcher
- * labels, placed shapes' outlines and a line's order (pathways step 4g). The Select tool's Box
+ * labels, equipment icons (fork #992), placed shapes' outlines and a line's order (pathways step
+ * 4g). The Select tool's Box
  * and Lasso sit above it in a bar of their own, outside the touch layout (whose pill has its own
  * drag modes).
  */
@@ -86,6 +96,15 @@ export default function FieldDisplayBar() {
                         icon={TagIcon}
                         labelKey="toolbar.view.labels"
                         testId="field-display-labels"
+                    />
+                    {/* What performers hold, as an icon after their drill numbers (fork #992) */}
+                    <ChoiceButton
+                        setting="equipmentIcons"
+                        fallback="changed"
+                        choices={EQUIPMENT_CHOICES}
+                        icon={SECTION_ICONS.Trumpet}
+                        labelKey="toolbar.view.equipment"
+                        testId="field-display-equipment"
                     />
                     {/* Placed boxes' outlines (docs/timeline/research/shapes/07-placed-boxes.md) */}
                     <ChoiceButton
@@ -125,7 +144,9 @@ interface Choice<T extends string> {
  * choices beside the bar as radio buttons, dimmed while the setting is off. Picking one closes
  * them, as the View tab's select did.
  */
-function ChoiceButton<K extends "marcherLabels" | "shapes" | "marcherOrder">({
+function ChoiceButton<
+    K extends "marcherLabels" | "shapes" | "marcherOrder" | "equipmentIcons",
+>({
     setting,
     fallback,
     choices,

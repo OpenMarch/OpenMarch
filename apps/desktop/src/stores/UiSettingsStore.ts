@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import type { EquipmentIcons } from "@/cues/equipmentIcons";
 import { parseTimelineHeight } from "@/components/timeline/timelineSplit";
 import { syncFromStorage } from "@/stores/syncFromStorage";
 import {
@@ -102,6 +103,11 @@ export interface UiSettings {
      */
     marcherOrder?: ShapeOutlines;
     /**
+     * Who shows an icon after their drill number on the field for what they hold (fork #992):
+     * performers holding something other than their own instrument, everyone, or nobody
+     */
+    equipmentIcons?: EquipmentIcons;
+    /**
      * Whether an open shape shows its walks and start rings (#403): the floating editor's
      * Pathways toggle. Off by default.
      */
@@ -127,6 +133,7 @@ export interface UiSettings {
 export type MarcherLabelForm = "auto" | "names" | "numbers" | "off";
 export type MarcherLabelSize = "small" | "normal" | "large";
 export type ShapeOutlines = "selected" | "always" | "off";
+export type { EquipmentIcons };
 
 /** How much each label size scales the labels' normal size */
 export const LABEL_SIZE_SCALE: Record<MarcherLabelSize, number> = {
@@ -174,6 +181,7 @@ export const defaultSettings: UiSettings = {
     marcherLabels: "auto",
     shapes: "selected",
     marcherOrder: "selected",
+    equipmentIcons: "changed",
     shapeWalks: false,
     followTheLeader: false,
     showPropNames: false,
@@ -235,6 +243,7 @@ const parseSettings = (raw: string): UiSettings => {
         timelineLanes: booleanMap(parsed.timelineLanes),
         timelineFoldedCueLanes: stringList(parsed.timelineFoldedCueLanes),
         recentEquipment: stringList(parsed.recentEquipment).slice(0, 4),
+        equipmentIcons: parseEquipmentIcons(parsed.equipmentIcons),
         startFlagPositions: parseStartFlagPositions(parsed.startFlagPositions),
         mouseSettings: mergedMouseSettings,
         coordinateRounding: parsed.coordinateRounding
@@ -245,6 +254,10 @@ const parseSettings = (raw: string): UiSettings => {
             : defaultSettings.coordinateRounding,
     };
 };
+
+/** A stored Equipment icons choice, or the default for anything else. */
+const parseEquipmentIcons = (value: unknown): EquipmentIcons =>
+    value === "off" || value === "everyone" ? value : "changed";
 
 // Helper function to load settings from localStorage
 const loadSettings = (): UiSettings => {

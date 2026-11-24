@@ -21,10 +21,10 @@ export type FieldTestMarcher = {
     /** The marcher's label text, as drawn on the field (its drill number). */
     label: string;
     /**
-     * The equipment tag drawn after the label at the beat shown ("R" for a rifle), only when the
-     * performer holds something other than their section's usual (#992); "" for none.
+     * The equipment icon drawn after the label at the beat shown ("Rifle"), for whom the
+     * Equipment icons setting shows one (#992); "" for none.
      */
-    tag: string;
+    equipmentIcon: string;
     /** Where the dot is drawn, in field units. */
     x: number;
     y: number;

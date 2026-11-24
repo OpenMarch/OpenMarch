@@ -4040,5 +4040,13 @@
     "assets.errors.credits": "Error toast when saving an imported file's license and author fails.",
     "props.modelMissing": "Note in a prop's edit panel when the imported 3D model it names isn't in the show any more (it was removed, then an undo brought the prop back). The prop draws as a plain block.",
     "props.imported.manage": "Small link under the Props panel's Imported group that opens the Assets panel, where imported models' size, use and license are shown.",
-    "cues.reason.pausedSelect": "Why the Select-by-equipment entries are greyed out while the show plays: they select whoever holds something at the playhead, which moves while playing."
+    "cues.reason.pausedSelect": "Why the Select-by-equipment entries are greyed out while the show plays: they select whoever holds something at the playhead, which moves while playing.",
+    "toolbar.view.equipment": "Button in the field display bar (top right of the field) and its popup's heading: whether an icon for what each performer holds (an instrument, a flag, a rifle) is drawn after their drill number on the field.",
+    "toolbar.view.equipmentChanged": "Choice under 'Equipment icons': an icon only for performers holding something other than their own instrument (after an equipment change). The default.",
+    "toolbar.view.equipmentEveryone": "Choice under 'Equipment icons': an icon for every performer, their own instrument included.",
+    "toolbar.view.equipmentOff": "Choice under 'Equipment icons': no icons.",
+    "actions.cues.equipmentIconsOff": "Name of an action in the command palette, the same choice as 'Off' under the field display bar's 'Equipment icons': no equipment icons on the field.",
+    "actions.cues.equipmentIconsChanged": "Name of an action in the command palette, the same choice as 'Changed only' under the field display bar's 'Equipment icons': icons only for performers holding something other than their own instrument.",
+    "actions.cues.equipmentIconsEveryone": "Name of an action in the command palette, the same choice as 'Everyone' under the field display bar's 'Equipment icons': an icon for every performer.",
+    "actions.cues.equipmentIconsKeywords": "Extra search words for the Equipment icons actions in the command palette, space-separated. Translate each word."
 }

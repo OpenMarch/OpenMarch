@@ -14,7 +14,7 @@ import type {
     ModifiedCueArgs,
     NewCueArgs,
 } from "@/db-functions/cues";
-import { itemValueId, tagOfValue } from "./equipmentItems";
+import { itemValueId } from "./equipmentItems";
 
 /**
  * What an Equipment command sets: a catalog item's key ("trumpet", "rifle"), "usual" for the
@@ -63,27 +63,6 @@ export const heldValueAt = (
     marcherId: number,
     count: number,
 ): string | null => cueValueAt(compiled, marcherId, "equipment", count);
-
-/**
- * Each performer's field tag at `count` (fork #992 decision 1), for those holding something other
- * than their section's usual: "R" for a rifle, "Tp" for a trumpet.
- */
-export function equipmentTagsAt(
-    compiled: CompiledCues,
-    usualValue: ReadonlyMap<number, string | null>,
-    count: number,
-): Map<number, string> {
-    const tags = new Map<number, string>();
-    for (const [id, usual] of usualValue) {
-        const held = heldValueAt(compiled, id, count);
-        if (held !== usual) tags.set(id, tagOfValue(held));
-    }
-    return tags;
-}
-
-/** A stable key for a tag map, so a hook only hands out a new map when a tag changes. */
-export const tagsKey = (tags: ReadonlyMap<number, string>): string =>
-    [...tags].map(([id, tag]) => `${id}${tag}`).join(",");
 
 /** The Equipment cues on `beatId` (newest last). */
 export const equipmentCuesOn = (
