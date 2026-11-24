@@ -15,7 +15,9 @@ type Choice = (typeof CHOICES)[number];
 
 /**
  * What a preset places, as a list: one line per kind of equipment, its count then its name,
- * podium and mixer included. Two columns keep the Large preset's ten lines short.
+ * podium and mixer included. Two columns keep the Large preset's ten lines short. Spans with list
+ * roles, since the cards are buttons and a button can't hold a real list; a hidden comma between
+ * lines keeps the spoken description from running them together.
  */
 export function PitPresetContents({
     size,
@@ -27,26 +29,35 @@ export function PitPresetContents({
     className?: string;
 }) {
     const { t } = useTranslate();
+    const contents = pitPresetContents(size);
     return (
-        <ul
+        <span
             id={id}
+            role="list"
             className={clsx(
                 "text-sub grid grid-cols-2 gap-x-12 gap-y-2",
                 className,
             )}
             data-testid={`pit-preset-contents-${size}`}
         >
-            {pitPresetContents(size).map(({ familyId, count }) => (
-                <li key={familyId} className="flex min-w-0 gap-6">
+            {contents.map(({ familyId, count }, i) => (
+                <span
+                    key={familyId}
+                    role="listitem"
+                    className="flex min-w-0 gap-6"
+                >
                     <span className="text-text-subtitle w-12 shrink-0 text-right tabular-nums">
                         {count}
-                    </span>
+                    </span>{" "}
                     <span className="text-text truncate">
                         {t(`pit.family.${familyId}`)}
                     </span>
-                </li>
+                    {i < contents.length - 1 && (
+                        <span className="sr-only">, </span>
+                    )}
+                </span>
             ))}
-        </ul>
+        </span>
     );
 }
 
@@ -102,7 +113,7 @@ export default function PitPresetCards({
                             "focus-visible:outline-accent outline-hidden focus-visible:outline-2 focus-visible:outline-offset-2",
                             checked
                                 ? "bg-accent/20 border-accent"
-                                : "bg-fg-2 border-stroke hover:bg-fg-3",
+                                : "bg-fg-2 border-stroke hover:border-accent/60",
                         )}
                     >
                         <PitPresetPicture
