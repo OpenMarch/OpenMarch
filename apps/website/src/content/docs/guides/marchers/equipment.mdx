@@ -14,6 +14,10 @@ covers:
   - action:equipmentIconsChanged
   - action:equipmentIconsEveryone
   - action:equipmentIconsOff
+  - action:equipmentIconsBeside
+  - action:equipmentIconsOnDot
+  - action:equipmentIconsOnNumber
+  - action:cueEndAtPlayhead
   - i18n:toolbar.view.equipment
   - apps/desktop/src/view3d/window/performers/cueSections.ts
   - packages/core/src/cues/library.ts
@@ -91,10 +95,30 @@ The change is a **cue**: it remembers the performers who were selected when you 
   - <Ui k="toolbar.view.equipmentEveryone" />: every performer. Those holding their own instrument show their section's icon: a trumpet for the Trumpets, a flag crossed with a sabre for the Color Guard. A section without an icon of its own, such as Timpani, shows the plain figure.
   - <Ui k="toolbar.view.equipmentOff" />: no icons.
 
+  Under <Ui k="toolbar.view.equipmentPlace" /> in the same popup, choose where the icons go:
+
+  - <Ui k="toolbar.view.equipmentBeside" />, the starting choice: after the drill number, as above.
+  - <Ui k="toolbar.view.equipmentOnDot" />: the icon stands in for the dot, centered on the performer's spot in the dot's color. You select and drag them as you would the dot, and a selected performer's ring goes around it.
+  - <Ui k="toolbar.view.equipmentOnNumber" />: the icon stands in for the drill number. Point at the performer, or select them, to see the number.
+
+  With <Ui k="toolbar.view.equipmentOff" plain /> chosen there's nothing to place, so these choices are greyed out; the ? beside <Ui k="toolbar.view.equipmentPlace" plain /> says why.
+
   <Media
     id="marchers-equipment-icons-setting"
-    alt="The bar at the top right of the field with its Equipment icons choices open beside it: Changed only, which is chosen, Everyone and Off."
+    alt="The bar at the top right of the field with its Equipment icons popup open beside it: Changed only, which is chosen, Everyone and Off, then under Where: Next to the number, which is chosen, In place of the dot and In place of the number."
     maxWidth={480}
+  />
+
+  <Media
+    id="marchers-equipment-icons-on-dot"
+    alt="The same part of the field with In place of the dot chosen: G6 to G10 are drawn as a plain figure and G14, G19 and G22 as a tuba, each in the guard's green where its dot was, with the drill number above as usual."
+    maxWidth={720}
+  />
+
+  <Media
+    id="marchers-equipment-icons-on-number"
+    alt="The same part of the field with In place of the number chosen: G6 to G10 show the figure and G14, G19 and G22 the tuba above their dots, where their drill numbers were. The other performers keep their numbers."
+    maxWidth={720}
   />
 
   <Media
@@ -128,15 +152,22 @@ The Equipment lane appears under the moves as soon as the show has an equipment 
 ## Move a change, or change how long it lasts
 
 - **Move it:** drag its bar sideways. It moves in whole counts, and near a page's flag or a measure it snaps to it; hold <Kbd keys="Alt" gesture="drag" /> to turn that snapping off (it still moves in whole counts). A change made for performers in several rows moves in all of them, since it's one cue. On its new count it replaces any other change made the same way for those performers, and a change to the same item there becomes part of it.
-- **Change how long it lasts:** a change for a few counts (a rounded bar) has an end you can drag. A change that lasts until the next one has no end to drag.
-- **Without dragging:** move the playhead to the new count, then choose <Ui k="actions.cues.moveToPlayhead" /> from the bar's menu or the command palette. It replaces and joins changes on that count the same way. That's also the way on a tablet when a drag is fiddly.
+- **Change where it ends:** drag the bar's right edge, as you would a move's. On a change for a few counts (a rounded bar), that changes how many. On a change that lasts until the next one, it makes it a change for that many counts, after which the performers go back to what they held before; drag it back to the next change for them and it lasts again. It ends at least a count after it starts. The edge snaps and <Kbd keys="Alt" gesture="drag" /> works as for moving it.
+- **Change where it starts:** drag the bar's left edge. Where it ends stays put.
+- **Without dragging:** move the playhead to the new count, then choose <Ui k="actions.cues.moveToPlayhead" /> or <Ui k="actions.cues.endAtPlayhead" /> from the bar's menu or the command palette. They replace and join changes on that count the same way.
+- **On a tablet**, tap the bar to pick it: its edges then take a finger, as a picked move's do. The menu commands work too.
 
 <Media
   id="marchers-equipment-drag"
   alt="The Sabre bar in the Equipment lane is dragged four counts to the right; the icons after G6 to G10 leave the field, because the playhead is now before the change."
 />
 
-Each drag is one step of undo (<Kbd action="performUndo" />).
+<Media
+  id="marchers-equipment-edge"
+  alt="The Sabre bar in the Equipment lane has its right edge dragged left, so it lasts four counts and then the guard go back to their flags; an undo puts it back."
+/>
+
+Each drag is one step of undo (<Kbd action="performUndo" />). None of them works while the show plays: pause first.
 
 ## Change who a cue applies to
 
@@ -150,7 +181,7 @@ Each drag is one step of undo (<Kbd action="performUndo" />).
 
 Performers you add hold the cue's item from its count. Performers you take out go back to what they held before. The lane's rows change to match, and the cue is renamed for its new performers. Taking out everyone deletes the cue.
 
-The bar's menu also has <Ui k="cues.lane.selectPerformers" />, <Ui k="actions.cues.moveToPlayhead" />, <Ui k="actions.cues.makeLasting" />, <Ui k="actions.cues.makeMomentary" /> for a number of counts, after which the performers go back to what they held, and <Ui k="actions.cues.delete" />.
+The bar's menu also has <Ui k="cues.lane.selectPerformers" />, <Ui k="actions.cues.moveToPlayhead" />, <Ui k="actions.cues.endAtPlayhead" />, <Ui k="actions.cues.makeLasting" />, <Ui k="actions.cues.makeMomentary" /> for a number of counts, after which the performers go back to what they held, and <Ui k="actions.cues.delete" />.
 
 Every change is one step of undo (<Kbd action="performUndo" />).
 

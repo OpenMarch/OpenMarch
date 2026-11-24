@@ -38,6 +38,8 @@ beforeEach(() => {
         marcherLabels: "auto",
         shapes: "selected",
         nextPaths: false,
+        equipmentIcons: "changed",
+        equipmentIconPlace: "beside",
     });
 });
 afterEach(() => {
@@ -117,5 +119,40 @@ describe("FieldDisplayBar", () => {
         ).toMatch(/Next paths\s*M/);
         fireEvent.click(screen.getByTestId("field-display-next-paths"));
         expect(settings().nextPaths).toBe(true);
+    });
+
+    it("Equipment icons: who, then where, both in one popup that stays open (#992)", () => {
+        open();
+        fireEvent.click(screen.getByTestId("field-display-equipment"));
+        fireEvent.click(screen.getByTestId("field-display-equipment-everyone"));
+        expect(settings().equipmentIcons).toBe("everyone");
+        fireEvent.click(
+            screen.getByTestId("field-display-equipment-place-dot"),
+        );
+        expect(settings().equipmentIconPlace).toBe("dot");
+        expect(
+            screen
+                .getByTestId("field-display-equipment-place-dot")
+                .getAttribute("aria-checked"),
+        ).toBe("true");
+    });
+
+    it("greys Where out while the icons are off, with its reason, and a press changes nothing (#992)", () => {
+        open();
+        fireEvent.click(screen.getByTestId("field-display-equipment"));
+        fireEvent.click(screen.getByTestId("field-display-equipment-off"));
+        const onNumber = screen.getByTestId(
+            "field-display-equipment-place-label",
+        );
+        expect(onNumber.getAttribute("aria-disabled")).toBe("true");
+        expect(
+            screen
+                .getByTestId("field-display-equipment-place-reason")
+                .getAttribute("aria-label"),
+        ).toBe(
+            "Equipment icons are off. Choose Changed only or Everyone to show them.",
+        );
+        fireEvent.click(onNumber);
+        expect(settings().equipmentIconPlace).toBe("beside");
     });
 });

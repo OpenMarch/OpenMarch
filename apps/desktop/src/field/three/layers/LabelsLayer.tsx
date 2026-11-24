@@ -40,8 +40,8 @@ const LABEL_BESIDE = DOT_RADIUS * 1.6;
  */
 const ICON_EM = 1.6;
 const ICON_GAP_EM = 0.1;
-/** An icon in place of a dot: its box in field units, its drawing about a dot's size. */
-const DOT_ICON = DOT_RADIUS * 3.2;
+/** An icon in place of a dot: its box in field units (the drawing fills about two thirds). */
+const DOT_ICON = DOT_RADIUS * 4.4;
 /** How much wider an icon makes a label, in em (for Auto's spacing). */
 const ICON_WIDTH_EM = ICON_EM + ICON_GAP_EM;
 

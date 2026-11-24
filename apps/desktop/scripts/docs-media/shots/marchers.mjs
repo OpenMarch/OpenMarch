@@ -156,12 +156,18 @@ async function setEquipmentIcons(page, value, wait) {
  * The guard given sabres and tubas at the end of Page 1, at the field's normal zoom, with the
  * Equipment icons choice `value`: the field around them, nothing selected.
  */
-async function equipmentIconsField(page, wait, value) {
+async function equipmentIconsField(page, wait, value, place = "beside") {
     await toPage1(page, wait);
     await setEquipment(page, SABRES, "guard", "equipmentSabre", wait);
     await setEquipment(page, TUBAS, "brass", "equipmentTuba", wait);
     await page.keyboard.press("Escape");
     await setEquipmentIcons(page, value, wait);
+    if (place !== "beside") {
+        await page
+            .getByTestId(`field-display-equipment-place-${place}`)
+            .click();
+        await wait(800);
+    }
     await page.keyboard.press("Escape");
     await page.mouse.move(800, 990);
     await wait(1000);
@@ -865,6 +871,22 @@ const shots = [
         },
     },
     {
+        id: "marchers-equipment-icons-on-dot",
+        kind: "still",
+        // In place of the dot: the sabre and tuba icons where those guard's dots were
+        async setup({ page, wait }) {
+            return await equipmentIconsField(page, wait, "changed", "dot");
+        },
+    },
+    {
+        id: "marchers-equipment-icons-on-number",
+        kind: "still",
+        // In place of the number: the icons where those guard's drill numbers were
+        async setup({ page, wait }) {
+            return await equipmentIconsField(page, wait, "changed", "label");
+        },
+    },
+    {
         id: "marchers-equipment-icons-setting",
         kind: "still",
         // The field display bar's Equipment icons choices, open beside the bar
@@ -917,6 +939,66 @@ const shots = [
                 { x: grab.x + 4 * 24.5, y: grab.y },
                 1.2,
             );
+            await film.hold(1.5);
+        },
+    },
+    {
+        id: "marchers-equipment-edge",
+        kind: "clip",
+        // G6–G10 take sabres at the end of Page 1 and their flags back eight counts later. The Sabre
+        // bar's right edge dragged four counts left: a change for four counts, after which they hold
+        // their flags again. Then an undo puts it back
+        async setup({ page, wait }) {
+            await toPage1(page, wait);
+            await setEquipment(page, SABRES, "guard", "equipmentSabre", wait);
+            for (let i = 0; i < 8; i++) await page.keyboard.press("Shift+KeyE");
+            await wait(800);
+            const all = await marchers(page);
+            const points = named(all, SABRES);
+            await page.mouse.click(points[0].x, points[0].y);
+            await shiftSelect(page, points.slice(1), wait);
+            await openEquipmentMenu(page, points[0], wait);
+            await page.getByTestId("field-menu-equipmentUsual").click();
+            await wait(1200);
+            await page.keyboard.press("Escape");
+            for (let i = 0; i < 6; i++) await page.keyboard.press("Shift+KeyQ");
+            await showEquipmentLane(page, wait);
+            await page.mouse.move(800, 990);
+            await wait(800);
+            await hideToasts(page);
+            const pane = await page.getByTestId("timeline-pane").boundingBox();
+            const b = bounds(named(await marchers(page), SABRES));
+            const top = Math.max(0, b.top - 60);
+            return {
+                box: {
+                    x: pane.x,
+                    y: top,
+                    width: pane.width,
+                    height: pane.y + pane.height - top,
+                },
+            };
+        },
+        async perform({ page, film, overlay, wait }) {
+            await overlay.enable();
+            const bar = await page
+                .getByTestId("equipment-lane-cue")
+                .first()
+                .boundingBox();
+            const grab = {
+                x: bar.x + bar.width - 2,
+                y: bar.y + bar.height / 2,
+            };
+            await film.moveTo(page, { x: grab.x, y: grab.y - 120 }, grab, 0.6);
+            await film.hold(0.6);
+            await film.drag(
+                page,
+                grab,
+                { x: grab.x - bar.width / 2, y: grab.y },
+                1.2,
+            );
+            await film.hold(1.5);
+            await page.keyboard.press("ControlOrMeta+z");
+            await wait(300);
             await film.hold(1.5);
         },
     },

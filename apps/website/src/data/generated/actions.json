@@ -648,6 +648,26 @@
         "category": "field",
         "bindings": []
     },
+    "equipmentIconsBeside": {
+        "label": "Equipment icons: Next to the number",
+        "category": "field",
+        "bindings": []
+    },
+    "equipmentIconsOnDot": {
+        "label": "Equipment icons: In place of the dot",
+        "category": "field",
+        "bindings": []
+    },
+    "equipmentIconsOnNumber": {
+        "label": "Equipment icons: In place of the number",
+        "category": "field",
+        "bindings": []
+    },
+    "cueEndAtPlayhead": {
+        "label": "End cue at playhead",
+        "category": "batchEdit",
+        "bindings": []
+    },
     "toggleEquipmentLane": {
         "label": "Show or hide the Equipment lane",
         "category": "timeline",
