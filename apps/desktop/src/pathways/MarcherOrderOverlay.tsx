@@ -842,6 +842,22 @@ export default function MarcherOrderOverlay({
         zoom,
     ]);
 
+    // The names the halos and the comet are cut away from, as the lanes are: a halo or the comet's
+    // ring reaches out to where a name sits above its dot
+    const nameCut = useMemo(() => {
+        const names = [...new Set(drawn.flatMap((line) => line.labelHoles))];
+        if (names.length === 0) return null;
+        // Wide enough for the comet's widest ring round the outermost dots
+        const margin = 60;
+        return {
+            names,
+            minX: Math.min(...drawn.map((l) => l.box.minX)) - margin,
+            minY: Math.min(...drawn.map((l) => l.box.minY)) - margin,
+            maxX: Math.max(...drawn.map((l) => l.box.maxX)) + margin,
+            maxY: Math.max(...drawn.map((l) => l.box.maxY)) + margin,
+        };
+    }, [drawn]);
+
     const prefix = useId().replace(/:/g, "");
     if (!showing) return null;
     return (
@@ -896,37 +912,75 @@ export default function MarcherOrderOverlay({
                     {drawn.map((line, i) => (
                         <LaneMarks key={i} line={line} ink={ink} />
                     ))}
-                    {halos.map(({ at, r, width, tone }, i) => (
-                        <circle
-                            key={i}
-                            cx={at.x}
-                            cy={at.y}
-                            r={r}
-                            fill="none"
-                            stroke={
-                                tone === "dark"
-                                    ? "rgba(28,31,38,0.9)"
-                                    : "rgba(255,255,255,0.92)"
-                            }
-                            strokeWidth={width}
-                            data-testid="marcherOrderHalo"
-                            data-tone={tone}
-                        />
-                    ))}
-                    {!sweep &&
-                        drawn.map(
-                            (line, i) =>
-                                !line.guessed &&
-                                line.points.length >= 2 && (
-                                    <OrderComet
-                                        key={`comet-${i}`}
-                                        points={line.points}
-                                        radius={reach + haloWidth(dotRadius)}
-                                        dotRadius={dotRadius}
-                                        light={isDarkField(fieldBackground)}
+                    {nameCut && (
+                        <defs>
+                            <mask
+                                id={`${prefix}-names`}
+                                maskUnits="userSpaceOnUse"
+                                x={nameCut.minX}
+                                y={nameCut.minY}
+                                width={nameCut.maxX - nameCut.minX}
+                                height={nameCut.maxY - nameCut.minY}
+                            >
+                                <rect
+                                    x={nameCut.minX}
+                                    y={nameCut.minY}
+                                    width={nameCut.maxX - nameCut.minX}
+                                    height={nameCut.maxY - nameCut.minY}
+                                    fill="white"
+                                />
+                                {nameCut.names.map((b, i) => (
+                                    <rect
+                                        key={i}
+                                        x={b.minX - 1}
+                                        y={b.minY - 1}
+                                        width={b.maxX - b.minX + 2}
+                                        height={b.maxY - b.minY + 2}
+                                        rx={1.5}
+                                        fill="black"
                                     />
-                                ),
-                        )}
+                                ))}
+                            </mask>
+                        </defs>
+                    )}
+                    <g
+                        mask={nameCut ? `url(#${prefix}-names)` : undefined}
+                        data-testid="marcherOrderRings"
+                    >
+                        {halos.map(({ at, r, width, tone }, i) => (
+                            <circle
+                                key={i}
+                                cx={at.x}
+                                cy={at.y}
+                                r={r}
+                                fill="none"
+                                stroke={
+                                    tone === "dark"
+                                        ? "rgba(28,31,38,0.9)"
+                                        : "rgba(255,255,255,0.92)"
+                                }
+                                strokeWidth={width}
+                                data-testid="marcherOrderHalo"
+                                data-tone={tone}
+                            />
+                        ))}
+                        {!sweep &&
+                            drawn.map(
+                                (line, i) =>
+                                    !line.guessed &&
+                                    line.points.length >= 2 && (
+                                        <OrderComet
+                                            key={`comet-${i}`}
+                                            points={line.points}
+                                            radius={
+                                                reach + haloWidth(dotRadius)
+                                            }
+                                            dotRadius={dotRadius}
+                                            light={isDarkField(fieldBackground)}
+                                        />
+                                    ),
+                            )}
+                    </g>
                     {drawn.flatMap((line, l) =>
                         line.numbers.map((badge, i) => (
                             <OrderBadge
