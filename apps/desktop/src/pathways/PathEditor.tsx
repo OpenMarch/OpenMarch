@@ -92,7 +92,7 @@ import {
     type PathSession,
 } from "./pathPenStore";
 import { drawingOf, ownLineDrawingOf } from "./pathPenMode";
-import { useFollowHoverProps } from "./marcherOrderStore";
+import { useOrderHoverProps } from "./marcherOrderStore";
 import {
     besideArc,
     besideArcReason,
@@ -527,7 +527,7 @@ function PathEditorBar({
     const footprint = useMemo(() => followFootprint(session), [session]);
     const followTheLeader = useFollowTheLeader();
     // Pointing at Follow shows who will lead
-    const followHover = useFollowHoverProps();
+    const orderHover = useOrderHoverProps();
     const place = stackedPlacement(
         {
             outline: outline.map((p) => fieldToElement(view, p.x, p.y)),
@@ -638,7 +638,7 @@ function PathEditorBar({
                                 </IconButton>
                                 <span
                                     className="flex items-center"
-                                    {...followHover}
+                                    {...orderHover}
                                 >
                                     <IconButton
                                         label={tolgee.t(

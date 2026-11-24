@@ -53,35 +53,37 @@ interface MarcherOrderState {
     readonly formsScope: string | null;
     readonly sweep: OrderSweep | null;
     /**
-     * A Follow button is pointed at or focused: the selection's order shows (guessed ones too)
-     * whatever the display bar says, so you see who will lead before you follow
+     * A button that uses the order (Follow, Set order, Reverse order, Clear order) is pointed at
+     * or focused: the selection's order shows (guessed ones too) whatever the display bar says,
+     * so you see who leads before you follow, set, turn round or forget it
      */
-    readonly followHover: boolean;
+    readonly orderHover: boolean;
 }
 
 export const useMarcherOrderStore = create<MarcherOrderState>(() => ({
     forms: null,
     formsScope: null,
     sweep: null,
-    followHover: false,
+    orderHover: false,
 }));
 
-const hoverFollow = (followHover: boolean) =>
-    useMarcherOrderStore.setState({ followHover });
+const hoverOrder = (orderHover: boolean) =>
+    useMarcherOrderStore.setState({ orderHover });
 
 /**
- * Props for what holds a Follow button: pointing at it or focusing it shows the selection's
- * order. Going away while pointed at lets go, so the order never sticks
+ * Props for what holds a button that uses the order (Follow, Set, Reverse, Clear order):
+ * pointing at it or focusing it shows the selection's order. Going away while pointed at lets
+ * go, so the order never sticks
  */
-export function useFollowHoverProps() {
-    useEffect(() => () => hoverFollow(false), []);
-    return FOLLOW_HOVER_PROPS;
+export function useOrderHoverProps() {
+    useEffect(() => () => hoverOrder(false), []);
+    return ORDER_HOVER_PROPS;
 }
-const FOLLOW_HOVER_PROPS = {
-    onPointerEnter: () => hoverFollow(true),
-    onPointerLeave: () => hoverFollow(false),
-    onFocus: () => hoverFollow(true),
-    onBlur: () => hoverFollow(false),
+const ORDER_HOVER_PROPS = {
+    onPointerEnter: () => hoverOrder(true),
+    onPointerLeave: () => hoverOrder(false),
+    onFocus: () => hoverOrder(true),
+    onBlur: () => hoverOrder(false),
 } as const;
 
 /** Whose forms the next read reads */

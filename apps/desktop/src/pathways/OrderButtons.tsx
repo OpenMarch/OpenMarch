@@ -10,7 +10,7 @@ import ActionButton from "@/shortcuts/ActionButton";
 import type { ActionId } from "@/shortcuts/definitions";
 import { Tip } from "@/components/ui/Tip";
 import ToolbarSection from "@/components/toolbar/ToolbarSection";
-import { useMarcherOrderStore } from "./marcherOrderStore";
+import { useMarcherOrderStore, useOrderHoverProps } from "./marcherOrderStore";
 import { orderRefusal } from "./useMarcherOrder";
 
 const BUTTON =
@@ -19,11 +19,13 @@ const BUTTON =
 /**
  * The toolbar's line order (pathways step 4g): Set order (lit while it's on), Reverse and Clear
  * order, each running its action. Greyed with fewer than two marchers, the tooltip saying why.
+ * Pointing at any of them shows the selection's order, so you see what it changes.
  */
 export function OrderButtons({ performers }: { performers: number }) {
     const sweeping = useMarcherOrderStore((s) => s.sweep !== null);
     const refusal = orderRefusal(performers, false);
     const label = tolgee.t("pathways.toolbar.order", "Order");
+    const orderHover = useOrderHoverProps();
     return (
         <ToolbarSection aria-label={label}>
             <OrderButton
@@ -36,6 +38,7 @@ export function OrderButtons({ performers }: { performers: number }) {
                 refusal={refusal}
                 pressed={sweeping}
                 testId="toolbar-set-order"
+                hover={orderHover}
             >
                 <ListNumbersIcon size={22} />
                 {tolgee.t("actions.path.setOrder", "Set order")}
@@ -49,6 +52,7 @@ export function OrderButtons({ performers }: { performers: number }) {
                 )}
                 refusal={refusal}
                 testId="toolbar-reverse-order"
+                hover={orderHover}
             >
                 <ArrowsLeftRightIcon size={22} />
             </OrderButton>
@@ -61,6 +65,7 @@ export function OrderButtons({ performers }: { performers: number }) {
                 )}
                 refusal={refusal}
                 testId="toolbar-clear-order"
+                hover={orderHover}
             >
                 <EraserIcon size={22} />
             </OrderButton>
@@ -75,6 +80,7 @@ function OrderButton({
     refusal,
     pressed,
     testId,
+    hover,
     children,
 }: {
     action: ActionId;
@@ -83,6 +89,8 @@ function OrderButton({
     refusal: string | null;
     pressed?: boolean;
     testId: string;
+    /** Shows the selection's order while pointed at */
+    hover: ReturnType<typeof useOrderHoverProps>;
     children: ReactNode;
 }) {
     return (
@@ -90,7 +98,7 @@ function OrderButton({
             label={refusal ? `${label}: ${refusal}` : tip}
             action={refusal ? undefined : action}
         >
-            <span>
+            <span {...hover}>
                 <ActionButton
                     action={action}
                     tooltip=""

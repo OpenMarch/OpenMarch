@@ -9,9 +9,9 @@
  * shows its numbers.
  *
  * When it shows: the display bar's Order (off by default; While selected, Always), and for a moment
- * the selection's order while Follow is pointed at or open (who will lead), while Alt is held, and
- * while Set order is on. A guessed order isn't drawn at rest; Alt and Follow show it hollow and
- * dashed. Position badges show while Alt is held, and always while Set order is on (touch has no
+ * the selection's order while Follow is pointed at or open (who will lead), while Set, Reverse or
+ * Clear order is pointed at (what it changes), while Alt is held, and while Set order is on. A
+ * guessed order isn't drawn at rest; Alt, Follow and the order buttons show it hollow and dashed. Position badges show while Alt is held, and always while Set order is on (touch has no
  * Alt). Set order draws the lane it has picked so far, growing behind the pointer, with the bar that
  * says how to go on and keeps or cancels it. The selection box stands clear of the lane only when
  * the display bar shows it, so a peek never moves the box.
@@ -480,8 +480,9 @@ export default function MarcherOrderOverlay({
     const beat = useTimelineSelectionStore(fieldBeat);
     const always = setting === "always";
     // Follow shows who leads: pointed at (its toolbar button or the path bar's choice) and open.
+    // Set, Reverse and Clear order show it while pointed at, so you see what they change.
     // While a trail is dragged the Follow tool walks the line itself, so the order steps aside
-    const followHover = useMarcherOrderStore((s) => s.followHover);
+    const orderHover = useMarcherOrderStore((s) => s.orderHover);
     const followOpen = usePathPenStore(
         (s) => !!s.session?.follow && s.session.phase !== "closed",
     );
@@ -497,15 +498,15 @@ export default function MarcherOrderOverlay({
     // Alt peeks at the selection's order (with its numbers) whatever the display bar says
     const alt = useAltHeld(clear && (always || ids.length >= 2));
     // Shown for a moment, not by the display bar: the selection's order only
-    const peek = ids.length >= 2 && (followHover || followOpen || alt);
+    const peek = ids.length >= 2 && (orderHover || followOpen || alt);
     // The display bar's choice, which the selection box stands clear of (step 4j)
     const atRest = setting !== "off" && (always || ids.length >= 2);
     // Set order on has the field, so it shows over either (opening it closes them)
     const showing =
         !isPlaying && (sweep !== null || (clear && (atRest || peek)));
-    // A guessed order isn't drawn at rest; Alt and Follow show it, hollow and dashed (Follow
-    // will take it)
-    const showGuessed = alt || followHover || followOpen;
+    // A guessed order isn't drawn at rest; Alt, Follow and the order buttons show it, hollow and
+    // dashed (Follow will take it)
+    const showGuessed = alt || orderHover || followOpen;
 
     // The forms, read while anything shows the order: the selection's, or everyone's for Always
     const key = ids.join(",");
@@ -672,7 +673,7 @@ export default function MarcherOrderOverlay({
                 }),
             ];
         }
-        // A guessed order isn't drawn at rest; Alt and Follow show it, hollow and dashed
+        // A guessed order isn't drawn at rest; Alt, Follow and the order buttons show it, dashed
         const shown = lines.filter((line) => !line.guessed || showGuessed);
         const pointsOf = shown.map((line) =>
             line.order.flatMap((id) => {
