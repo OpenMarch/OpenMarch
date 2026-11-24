@@ -8,17 +8,22 @@
 import { create } from "zustand";
 import type { QueryClient } from "@tanstack/react-query";
 import {
+    VIEW3D_CAMERA_MOVE_CHANNEL,
+    VIEW3D_CAMERA_WANTED_CHANNEL,
     VIEW3D_CLOCK_CHANNEL,
     VIEW3D_HIDDEN_PROPS_CHANNEL,
     VIEW3D_INVALIDATE_CHANNEL,
     VIEW3D_SELECTION_CHANNEL,
+    isView3dCameraWanted,
     isView3dClock,
     isView3dHiddenProps,
     isView3dInvalidate,
     isView3dSelection,
     newerClock,
+    parseCameraMove,
     showTimeAt,
     wallNowMs,
+    type View3dCameraMove,
     type View3dClock,
     type View3dSelection,
 } from "./protocol";
@@ -29,6 +34,10 @@ export interface View3dSyncState {
     selection: View3dSelection;
     /** `items.id` of the props hidden on the field in the editor */
     hiddenItemIds: ReadonlySet<number>;
+    /** The 2D field shows the camera, so the window sends it (`view3d:camera`) */
+    cameraWanted: boolean;
+    /** The newest camera move from the 2D field; a new object for every move */
+    cameraMove: View3dCameraMove | null;
     /** Keeps `clock` unless `incoming` has a newer `seq`. */
     receiveClock: (incoming: View3dClock) => void;
     receiveSelection: (selection: View3dSelection) => void;
@@ -46,6 +55,8 @@ export const useView3dSyncStore = create<View3dSyncState>()((set, get) => ({
     clock: null,
     selection: EMPTY_SELECTION,
     hiddenItemIds: new Set(),
+    cameraWanted: false,
+    cameraMove: null,
     receiveClock: (incoming) =>
         set((state) => {
             const clock = newerClock(state.clock, incoming);
@@ -93,6 +104,14 @@ export function startView3dSync(
         api.on(VIEW3D_HIDDEN_PROPS_CHANNEL, (payload) => {
             if (isView3dHiddenProps(payload))
                 receiveHiddenItemIds(payload.hiddenItemIds);
+        }),
+        api.on(VIEW3D_CAMERA_WANTED_CHANNEL, (payload) => {
+            if (isView3dCameraWanted(payload))
+                useView3dSyncStore.setState({ cameraWanted: payload.wanted });
+        }),
+        api.on(VIEW3D_CAMERA_MOVE_CHANNEL, (payload) => {
+            const cameraMove = parseCameraMove(payload);
+            if (cameraMove) useView3dSyncStore.setState({ cameraMove });
         }),
         api.on(VIEW3D_INVALIDATE_CHANNEL, (payload) => {
             if (isView3dInvalidate(payload)) {

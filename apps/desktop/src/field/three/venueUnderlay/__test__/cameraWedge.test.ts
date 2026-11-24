@@ -2,7 +2,13 @@ import { describe, expect, it } from "vitest";
 import { worldToPixels } from "@openmarch/core";
 import FieldPropertiesTemplates from "@/global/classes/FieldProperties.templates";
 import type { View3dCameraPose } from "@/view3d/sync/protocol";
-import { cameraWedge } from "../cameraWedge";
+import {
+    cameraAim,
+    cameraAimedAt,
+    cameraMovedTo,
+    cameraWedge,
+    poseLooking,
+} from "../cameraWedge";
 
 const fp = FieldPropertiesTemplates.HIGH_SCHOOL_FOOTBALL_FIELD_NO_END_ZONES;
 const pose = (over: Partial<View3dCameraPose> = {}): View3dCameraPose => ({
@@ -50,5 +56,67 @@ describe("cameraWedge", () => {
         expect(
             cameraWedge(pose({ direction: [0, 0.2, -0.98] }), fp),
         ).not.toBeNull();
+    });
+});
+
+describe("moving the camera from the field", () => {
+    it("aims at the ground where the middle of the view meets it", () => {
+        // 15 m up, tipped 30° down: the ground 15·√3 ≈ 26 m ahead
+        const [x, y, z] = cameraAim(pose());
+        expect(x).toBeCloseTo(0);
+        expect(y).toBeCloseTo(0);
+        expect(z).toBeCloseTo(20 - 15 * Math.sqrt(3));
+    });
+
+    it("aims level ahead when the camera looks at the horizon", () => {
+        const [, y, z] = cameraAim(pose({ direction: [0, 0, -1] }));
+        expect(y).toBe(15);
+        expect(z).toBeLessThan(20);
+    });
+
+    it("carries the camera across the ground at its height, looking the same way", () => {
+        const start = pose();
+        const moved = cameraMovedTo(start, 10, 5);
+        expect(moved.position).toEqual([10, 15, 5]);
+        const after = poseLooking(start, moved.position, moved.target);
+        after.direction.forEach((n, i) =>
+            expect(n).toBeCloseTo(start.direction[i]),
+        );
+    });
+
+    it("turns the camera to look at a spot on the ground, where it stands", () => {
+        const aimed = cameraAimedAt(pose(), 30, -10);
+        expect(aimed.position).toEqual([0, 15, 20]);
+        expect(aimed.target).toEqual([30, 0, -10]);
+        expect(
+            cameraAim(poseLooking(pose(), aimed.position, aimed.target))[0],
+        ).toBeCloseTo(30);
+    });
+
+    it("keeps the pitch exactly, even looking up at the stands", () => {
+        const start = pose({ direction: [0, 0.2, -Math.sqrt(0.96)] });
+        const moved = cameraMovedTo(start, 5, 0);
+        const after = poseLooking(start, moved.position, moved.target);
+        after.direction.forEach((n, i) =>
+            expect(n).toBeCloseTo(start.direction[i]),
+        );
+    });
+
+    it("moves a camera looking straight down", () => {
+        const start = pose({ position: [0, 40, -25], direction: [0, -1, 0] });
+        const moved = cameraMovedTo(start, 10, -25);
+        expect(moved.target).not.toEqual(moved.position);
+        expect(cameraAim(start)).toEqual([0, 0, -25]);
+    });
+
+    it("keeps the ring under the pointer when aiming far across the stadium", () => {
+        const aimed = cameraAimedAt(pose(), 0, -150);
+        const after = poseLooking(pose(), aimed.position, aimed.target);
+        expect(cameraAim(after)[2]).toBeCloseTo(-150);
+    });
+
+    it("keeps a direction when aimed at its own feet", () => {
+        const aimed = cameraAimedAt(pose(), 0, 20);
+        expect(aimed.target[2]).toBeLessThan(20);
     });
 });

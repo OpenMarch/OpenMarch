@@ -1389,6 +1389,56 @@ const shots = [
             return { box: await ctx.around(canvas, 0) };
         },
     },
+    {
+        id: "venue-camera-on-field",
+        kind: "still",
+        // The 3D View's camera on the 2D field (#1227): the camera chip, its wedge and the ring it
+        // looks at, zoomed out, with the 3D View open on its default camera
+        covers: [
+            "apps/desktop/src/field/three/venueUnderlay/CameraHandle.tsx",
+            "apps/desktop/src/field/three/venueUnderlay/CameraMarkerLayer.tsx",
+        ],
+        async setup(ctx) {
+            const { page } = ctx;
+            await tidy(page);
+            await page.getByTestId("field-display-venue").click();
+            await page.getByTestId("field-display-venue-faint").click();
+            await page.getByTestId("field-display-venue-around-edge").click();
+            await page.getByTestId("field-display-venue-camera").click();
+            await page.keyboard.press("Escape");
+            await open3d(ctx);
+            await page.bringToFront();
+            await page.evaluate(() =>
+                /** @type {HTMLElement | null} */ (
+                    document.activeElement
+                )?.blur(),
+            );
+            const canvas = page.getByTestId("fieldCanvas").first();
+            const c = await canvas.boundingBox();
+            // Out (ctrl-wheel, as a trackpad pinch), so the camera in front of the field shows
+            await page.evaluate(
+                ([x, y]) => {
+                    const target = document.elementFromPoint(x, y);
+                    for (let i = 0; i < 5; i++)
+                        target.dispatchEvent(
+                            new WheelEvent("wheel", {
+                                deltaY: 100,
+                                ctrlKey: true,
+                                clientX: x,
+                                clientY: y,
+                                bubbles: true,
+                                cancelable: true,
+                            }),
+                        );
+                },
+                [c.x + c.width / 2, c.y + c.height / 2],
+            );
+            await page.getByTestId("fieldView3dCameraMove").waitFor();
+            await page.mouse.move(4, ctx.window.height / 2);
+            await ctx.wait(1500);
+            return { box: await ctx.around(canvas, 0) };
+        },
+    },
 ];
 
 export default shots;

@@ -136,6 +136,7 @@ import FieldLayer from "./layers/FieldLayer";
 import BackgroundImageLayer from "./layers/BackgroundImageLayer";
 import VenueUnderlayLayer from "./venueUnderlay/VenueUnderlayLayer";
 import CameraMarkerLayer from "./venueUnderlay/CameraMarkerLayer";
+import CameraHandle from "./venueUnderlay/CameraHandle";
 import {
     styleBaseColor,
     venueAround,
@@ -893,6 +894,9 @@ function ThreeFieldView() {
                         editor={editor}
                         theme={fieldProperties.theme}
                     />
+                )}
+                {fieldProperties && (
+                    <CameraHandle fieldProperties={fieldProperties} />
                 )}
                 {/* A line's order, and Set order's sweep (pathways step 4g): only with
                     Follow-the-leader on (#1095) */}

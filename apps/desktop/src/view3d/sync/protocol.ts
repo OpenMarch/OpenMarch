@@ -46,6 +46,20 @@ export const VIEW3D_PLAYBACK_REQUEST_CHANNEL = "view3d:playback-request";
 export const VIEW3D_CAMERA_CHANNEL = "view3d:camera";
 
 /**
+ * Editor → window: whether the 2D field shows the 3D View's camera
+ * (`View3dCameraWanted`). The window sends `view3d:camera` only while it does.
+ * Sent when the View setting changes and after every hello.
+ */
+export const VIEW3D_CAMERA_WANTED_CHANNEL = "view3d:camera-wanted";
+
+/**
+ * Editor → window: put the camera here (`View3dCameraMove`), as the viewer
+ * drags it on the 2D field. A free view, like an orbit: it ends following a
+ * performer and the Director. Camera only: nothing is written to the show.
+ */
+export const VIEW3D_CAMERA_MOVE_CHANNEL = "view3d:camera-move";
+
+/**
  * The app setting (`settings:get` and `settings:set`) that opens the 3D View
  * whenever the editor opens a show. A boolean; missing means off.
  */
@@ -74,6 +88,8 @@ export const VIEW3D_PUBLISH_CHANNELS = [
     VIEW3D_SELECTION_CHANNEL,
     VIEW3D_INVALIDATE_CHANNEL,
     VIEW3D_HIDDEN_PROPS_CHANNEL,
+    VIEW3D_CAMERA_WANTED_CHANNEL,
+    VIEW3D_CAMERA_MOVE_CHANNEL,
 ] as const;
 export type View3dPublishChannel = (typeof VIEW3D_PUBLISH_CHANNELS)[number];
 
@@ -203,6 +219,8 @@ export interface View3dPayloads {
     [VIEW3D_SELECTION_CHANNEL]: View3dSelection;
     [VIEW3D_INVALIDATE_CHANNEL]: View3dInvalidate;
     [VIEW3D_HIDDEN_PROPS_CHANNEL]: View3dHiddenProps;
+    [VIEW3D_CAMERA_WANTED_CHANNEL]: View3dCameraWanted;
+    [VIEW3D_CAMERA_MOVE_CHANNEL]: View3dCameraMove;
 }
 
 /**
@@ -322,4 +340,35 @@ export function parseCameraPose(value: unknown): View3dCameraPose | null {
         fov,
         aspect,
     };
+}
+
+export interface View3dCameraWanted {
+    wanted: boolean;
+}
+
+export function isView3dCameraWanted(
+    value: unknown,
+): value is View3dCameraWanted {
+    return (
+        typeof value === "object" &&
+        value !== null &&
+        typeof (value as { wanted?: unknown }).wanted === "boolean"
+    );
+}
+
+/** Where the 2D field puts the 3D View's camera, in world meters. */
+export interface View3dCameraMove {
+    position: [number, number, number];
+    /** The point it looks at. */
+    target: [number, number, number];
+}
+
+/** The move in an unchecked payload, or null when it isn't one. */
+export function parseCameraMove(value: unknown): View3dCameraMove | null {
+    if (typeof value !== "object" || value === null) return null;
+    const { position, target } = value as Record<string, unknown>;
+    if (!finiteTriple(position) || !finiteTriple(target)) return null;
+    // Looking from a point at itself has no direction
+    if (position.every((n, i) => Math.abs(n - target[i]) < 1e-6)) return null;
+    return { position: [...position], target: [...target] };
 }

@@ -2,6 +2,8 @@ import { useEffect, useMemo, useRef } from "react";
 import { useFrame, useThree } from "@react-three/fiber";
 import { PerspectiveCamera, Vector3 } from "three";
 import type { View3dCameraPose } from "@/view3d/sync/protocol";
+import { useView3dSyncStore } from "@/view3d/sync/view3dSyncStore";
+import { requestDraw } from "../drawWake";
 
 /** Fastest the pose goes out while the camera moves, and how often while it stands still. */
 const MOVING_MS = 100;
@@ -11,7 +13,7 @@ const STILL_MS = 1000;
  * Tells the editor where the camera is (`view3d:camera`, ADR 0010 D-4), so
  * the 2D field can show it (fork #1207): on drawn frames while it moves, and
  * once a second from a timer, since the window draws only when something
- * changes.
+ * changes. Only while the editor shows the camera (`view3d:camera-wanted`).
  */
 export default function CameraPosePublisher() {
     const camera = useThree((s) => s.camera);
@@ -23,10 +25,15 @@ export default function CameraPosePublisher() {
     /** A newer pose held back by the throttle, sent when it ends */
     const pending = useRef<{ key: string; pose: View3dCameraPose }>(null);
     const trailing = useRef(0);
-    const send = window.view3d?.sendCamera;
+    const wanted = useView3dSyncStore((s) => s.cameraWanted);
+    const send = wanted ? window.view3d?.sendCamera : undefined;
 
     useEffect(() => {
         if (!send) return;
+        // Turned on: the next frame sends where the camera is now
+        last.current = null;
+        pending.current = null;
+        requestDraw(50);
         const timer = window.setInterval(() => {
             if (last.current) send(last.current.pose);
         }, STILL_MS);

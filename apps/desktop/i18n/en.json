@@ -705,6 +705,11 @@
             "add": "{count, plural, one {+# marcher} other {+# marchers}}",
             "select": "{count, plural, one {# marcher} other {# marchers}}",
             "subtract": "{count, plural, one {−# marcher} other {−# marchers}}"
+        },
+        "view3dCamera": {
+            "name": "3D View camera",
+            "move": "Move the 3D View camera",
+            "aim": "Aim the 3D View camera"
         }
     },
     "fieldDisplay": {

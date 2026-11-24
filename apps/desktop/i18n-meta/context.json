@@ -3942,5 +3942,8 @@
     "actions.ui.hideFieldVenue": "Command palette label of the venue action while the venue shows. Verb.",
     "actions.ui.toggleView3dCameraOnField": "Name of an action in the command palette and shortcut settings. Shows on the 2D field where the 3D View's camera stands and what it sees.",
     "actions.ui.showView3dCameraOnField": "Command palette label of the 3D View camera action while it's hidden. Verb.",
-    "actions.ui.hideView3dCameraOnField": "Command palette label of the 3D View camera action while it shows. Verb."
+    "actions.ui.hideView3dCameraOnField": "Command palette label of the 3D View camera action while it shows. Verb.",
+    "field.view3dCamera.name": "Small chip on the 2D field shown while hovering or dragging the purple camera marker. The marker is where the separate 3D View window's camera stands. Names it.",
+    "field.view3dCamera.move": "Accessible label of the purple camera marker on the 2D field: dragging it moves the 3D View window's camera across the field (it keeps looking the same way).",
+    "field.view3dCamera.aim": "Accessible label of the small ring at the end of the 3D View camera's dashed line of sight on the 2D field: dragging it turns the camera to look at that spot."
 }

@@ -333,6 +333,23 @@ export default function CameraRig() {
         return () => unsubscribe.forEach((u) => u());
     }, [follow]);
 
+    // The camera dragged on the 2D field (#1207): a free view from there, as an orbit is.
+    useEffect(
+        () =>
+            useView3dSyncStore.subscribe((state, prev) => {
+                const move = state.cameraMove;
+                if (!move || move === prev.cameraMove) return;
+                endFollowRef.current();
+                useDirectorStore.getState().setDirecting(false);
+                const store = useCameraStore.getState();
+                store.setPickMode(false);
+                if (store.activeCameraId !== null) store._setActive(null);
+                rig.jumpTo(move.position, move.target);
+                requestDraw(INPUT_WAKE_MS);
+            }),
+        [rig],
+    );
+
     // selectCamera() from the overlay.
     useEffect(
         () =>

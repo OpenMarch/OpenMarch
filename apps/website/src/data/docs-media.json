@@ -891,6 +891,12 @@
         "height": 296,
         "seconds": 6.9
     },
+    "venue-camera-on-field": {
+        "chapter": "3d-view",
+        "kind": "still",
+        "width": 1600,
+        "height": 924
+    },
     "venue-on-field": {
         "chapter": "3d-view",
         "kind": "still",

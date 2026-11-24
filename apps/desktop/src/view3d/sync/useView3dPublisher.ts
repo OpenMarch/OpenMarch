@@ -68,6 +68,7 @@ import {
     VIEW3D_AUTO_OPEN_SETTING,
     VIEW3D_CLOCK_CHANNEL,
     VIEW3D_HIDDEN_PROPS_CHANNEL,
+    VIEW3D_CAMERA_WANTED_CHANNEL,
     VIEW3D_HOLD_STYLES_QUERY_KEY,
     VIEW3D_INVALIDATE_CHANNEL,
     VIEW3D_SELECTION_CHANNEL,
@@ -249,6 +250,15 @@ export function useView3dPublisher() {
         );
     }, []);
 
+    // The window sends its camera only while the field shows it (#1207)
+    const sendCameraWanted = useCallback(() => {
+        window.electron.publishToView3d(VIEW3D_CAMERA_WANTED_CHANNEL, {
+            wanted:
+                useUiSettingsStore.getState().uiSettings.view3dCameraOnField ===
+                true,
+        });
+    }, []);
+
     // Window state, hello and venue requests. Main pushes the state when the
     // window opens or closes; a hello also means it's open. An editor that
     // (re)loads with a window already open asks, after subscribing.
@@ -275,6 +285,7 @@ export function useView3dPublisher() {
                 sendClock();
                 sendSelection();
                 sendHiddenProps();
+                sendCameraWanted();
             }),
             electron.onView3dVenueChangeRequest((request) => {
                 if (request?.silkArtwork !== undefined) {
@@ -326,6 +337,7 @@ export function useView3dPublisher() {
         sendClock,
         sendSelection,
         sendHiddenProps,
+        sendCameraWanted,
         updateVenue,
         updateCameras,
         setSilkArtwork,
@@ -393,6 +405,13 @@ export function useView3dPublisher() {
     useEffect(() => {
         if (windowOpen) sendHiddenProps();
     }, [windowOpen, hiddenPropIds, sendHiddenProps]);
+
+    const cameraWanted = useUiSettingsStore(
+        (s) => s.uiSettings.view3dCameraOnField === true,
+    );
+    useEffect(() => {
+        if (windowOpen) sendCameraWanted();
+    }, [windowOpen, cameraWanted, sendCameraWanted]);
 
     useEffect(() => {
         if (!windowOpen) return;
