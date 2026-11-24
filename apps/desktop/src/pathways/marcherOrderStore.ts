@@ -8,6 +8,11 @@
  * - `sweep`: Set order while it's on: the selected marchers, where they stand at its beat, who has
  *   been picked so far and where the pointer is. Its line redraws on the pointer's frame.
  */
+import {
+    useEffect,
+    type FocusEvent as ReactFocusEvent,
+    type PointerEvent as ReactPointerEvent,
+} from "react";
 import { create } from "zustand";
 import { db } from "@/global/database/db";
 import { subscribeHistoryChanges } from "@/db-functions/history";
@@ -51,13 +56,51 @@ interface MarcherOrderState {
     /** Whose `forms` are (`orderScopeKey`): they hold every form of those marchers */
     readonly formsScope: string | null;
     readonly sweep: OrderSweep | null;
+    /**
+     * A button that uses the order is pointed at or focused from the keyboard: the selection's
+     * order shows (a guessed one too) whatever the display bar says. `order`: Set, Reverse or
+     * Clear order, so you see what it changes. `follow`: Follow, which shows the order without
+     * its tip, since the end you drag from leads
+     */
+    readonly orderHover: OrderHover | null;
 }
+
+/** Which kind of button is pointed at (`orderHover`) */
+export type OrderHover = "follow" | "order";
 
 export const useMarcherOrderStore = create<MarcherOrderState>(() => ({
     forms: null,
     formsScope: null,
     sweep: null,
+    orderHover: null,
 }));
+
+const hoverOrder = (orderHover: OrderHover | null) =>
+    useMarcherOrderStore.setState({ orderHover });
+
+/**
+ * Props for what holds a button that uses the order (`orderHover`): a mouse or pen pointing at
+ * it, or keyboard focus on it, shows the selection's order. A finger's tap counts as neither (it
+ * would leave the order showing after the finger lifts), and nor does focus a click leaves
+ * behind. Going away while pointed at lets go, so the order never sticks
+ */
+export function useOrderHoverProps(kind: OrderHover) {
+    useEffect(() => () => hoverOrder(null), []);
+    return kind === "follow" ? FOLLOW_HOVER_PROPS : ORDER_HOVER_PROPS;
+}
+const hoverPropsOf = (kind: OrderHover) =>
+    ({
+        onPointerEnter: (event: ReactPointerEvent) => {
+            if (event.pointerType !== "touch") hoverOrder(kind);
+        },
+        onPointerLeave: () => hoverOrder(null),
+        onFocus: (event: ReactFocusEvent) => {
+            if (event.target.matches(":focus-visible")) hoverOrder(kind);
+        },
+        onBlur: () => hoverOrder(null),
+    }) as const;
+const FOLLOW_HOVER_PROPS = hoverPropsOf("follow");
+const ORDER_HOVER_PROPS = hoverPropsOf("order");
 
 /** Whose forms the next read reads */
 let scope: OrderFormsScope = "all";

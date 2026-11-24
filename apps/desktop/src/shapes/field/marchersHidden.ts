@@ -227,5 +227,7 @@ export function shapeAlone(drawing: FieldModeDrawing): FieldModeDrawing {
         groupLabels: undefined,
         // The step runs from one spot to the next
         offsetStep: undefined,
+        // The rows' gap runs from a spot
+        rowsGap: undefined,
     };
 }

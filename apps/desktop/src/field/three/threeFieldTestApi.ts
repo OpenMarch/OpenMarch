@@ -288,6 +288,16 @@ function shapeOverlayOf(field: ThreeFieldState): FieldTestShapeOverlay | null {
                   deep: drawing.offsetStep.deep,
               }
             : null,
+        rowsGap: drawing.rowsGap
+            ? {
+                  from: copy(drawing.rowsGap.from),
+                  corner: copy(drawing.rowsGap.corner),
+                  to: copy(drawing.rowsGap.to),
+                  outward: { ...drawing.rowsGap.outward },
+                  apart: drawing.rowsGap.apart,
+                  slant: drawing.rowsGap.slant,
+              }
+            : null,
     };
     function screen(at: FieldPoint) {
         const { x, y } = fieldToElement(view, at.x, at.y);

@@ -50,6 +50,7 @@ import { outlineGapAt } from "../distribute/outlineGap";
 import { openHandleMenu } from "../field/handleMenu";
 import { groupDrawing } from "../field/groupDrawing";
 import { stepDrawing } from "../field/stepDrawing";
+import { rowsGapDrawing } from "../field/rowsGapDrawing";
 import type { GroupMenuState } from "../field/shapePointer";
 import type { AnyToolKind } from "../tool/toolKind";
 import type { XY } from "../types";
@@ -90,6 +91,8 @@ interface Shown {
     readonly groupMenu: GroupMenuState | null;
     /** A number setting the kind's step is engaged: the step drawn (owner on #596) */
     readonly stepShown: boolean;
+    /** A Rows apart or Slant number is engaged: the rows' gap drawn (#1190) */
+    readonly rowsGapShown: boolean;
 }
 
 const drawingOf = memoDrawing(
@@ -100,6 +103,7 @@ const drawingOf = memoDrawing(
         scrubbing,
         groupMenu,
         stepShown,
+        rowsGapShown,
     }: Shown) => {
         const live =
             preview && !saved.gesture ? { ...saved, params: preview } : saved;
@@ -123,6 +127,7 @@ const drawingOf = memoDrawing(
             stage: "open" as const,
             outline: shapeOutline(kind, live.params, n),
             openOutline: kind.outlineOpen?.(live.params, n) ?? false,
+            rows: kind.rowOutlines?.(live.params, n, env.stepPx) ?? [],
             construction: kind.construction?.(live.params, n) ?? [],
             // While a gesture goes, where the marchers will stand, and who
             spots: targets,
@@ -145,6 +150,7 @@ const drawingOf = memoDrawing(
                 live.gesture,
                 env.stepPx,
             ),
+            ...rowsGapDrawing(kind, live.params, n, rowsGapShown, env.stepPx),
             ...frameDrawing(
                 kind,
                 live.params,
@@ -522,7 +528,7 @@ export class LiveBoxMode implements FieldMode {
     drawing() {
         const preview = usePlacedBoxPreviewStore.getState().params;
         const calm = shapeCalm(this.live.gesture !== null);
-        const { pivotPreview, scrubbing, groupMenu, stepShown } =
+        const { pivotPreview, scrubbing, groupMenu, stepShown, rowsGapShown } =
             useShapePointerStore.getState();
         if (
             this.shown?.live !== this.live ||
@@ -531,7 +537,8 @@ export class LiveBoxMode implements FieldMode {
             this.shown.pivotPreview !== pivotPreview ||
             this.shown.scrubbing !== scrubbing ||
             this.shown.groupMenu !== groupMenu ||
-            this.shown.stepShown !== stepShown
+            this.shown.stepShown !== stepShown ||
+            this.shown.rowsGapShown !== rowsGapShown
         )
             this.shown = {
                 live: this.live,
@@ -541,6 +548,7 @@ export class LiveBoxMode implements FieldMode {
                 scrubbing,
                 groupMenu,
                 stepShown,
+                rowsGapShown,
             };
         return drawingOf(this.shown);
     }

@@ -1407,7 +1407,7 @@
                 "front-fascia": [1.4767, 0.08]
             },
             "bottom": 0.0,
-            "bytes": 334512,
+            "bytes": 334500,
             "parts": 6,
             "sizeM": {
                 "depth": 0.841,
@@ -1421,7 +1421,7 @@
                 "front-fascia": [1.4759, 0.08]
             },
             "bottom": 0.0061,
-            "bytes": 100332,
+            "bytes": 100320,
             "parts": 6,
             "sizeM": {
                 "depth": 0.841,
@@ -1467,7 +1467,7 @@
                 "front-fascia": [1.6022, 0.08]
             },
             "bottom": 0.0,
-            "bytes": 361896,
+            "bytes": 361884,
             "parts": 6,
             "sizeM": {
                 "depth": 0.914,
@@ -1481,7 +1481,7 @@
                 "front-fascia": [1.6011, 0.08]
             },
             "bottom": 0.0061,
-            "bytes": 107844,
+            "bytes": 107832,
             "parts": 6,
             "sizeM": {
                 "depth": 0.914,

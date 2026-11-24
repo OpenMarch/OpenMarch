@@ -7,6 +7,7 @@ import ToolbarSection from "@/components/toolbar/ToolbarSection";
 import { usePathPenStore } from "./pathPenStore";
 import { penRefusal } from "./usePathPen";
 import { useFollowTheLeader } from "./followTheLeader";
+import { useOrderHoverProps } from "./marcherOrderStore";
 
 const BUTTON =
     "enabled:hover:text-accent flex items-center gap-6 outline-hidden duration-150 ease-out focus-visible:-translate-y-4 disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50";
@@ -28,6 +29,8 @@ export function PathPenButton({ performers }: { performers: number }) {
     const refusal = penRefusal(performers);
     const label = tolgee.t("actions.path.pen", "Path pen");
     const followTheLeader = useFollowTheLeader();
+    // Pointing at Follow shows who will lead
+    const orderHover = useOrderHoverProps("follow");
     return (
         <ToolbarSection aria-label={label}>
             <Tip
@@ -67,7 +70,7 @@ export function PathPenButton({ performers }: { performers: number }) {
                     }
                     action={performers < 2 ? undefined : "followTrail"}
                 >
-                    <span>
+                    <span {...orderHover}>
                         <ActionButton
                             action="followTrail"
                             tooltip=""

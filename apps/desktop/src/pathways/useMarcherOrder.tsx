@@ -124,10 +124,10 @@ export function useMarcherOrderActions(): void {
 
     useActionHandler("toggleMarcherOrder", () => {
         const { uiSettings, setUiSettings } = useUiSettingsStore.getState();
-        const now = uiSettings.marcherOrder ?? "selected";
+        const now = uiSettings.lineOrder ?? "off";
         setUiSettings({
             ...uiSettings,
-            marcherOrder: now === "off" ? "selected" : "off",
+            lineOrder: now === "off" ? "selected" : "off",
         });
     });
 

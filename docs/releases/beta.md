@@ -27,7 +27,7 @@ You need org-admin rights on `OpenMarch/OpenMarch` (the landing push bypasses it
 
 ### 1. Bump the version on fork main
 
-Open a pull request on the fork that changes `apps/desktop/package.json` to the next beta (`0.2.0-beta.2`) and merge it into `main` like any other. You can include it in another pull request, but a separate one makes the beta commit easy to find.
+Open a pull request on the fork that changes `apps/desktop/package.json` to the next beta (`0.2.0-beta.2`) and merge it into `main`. Don't wait for its checks: the sync pull request in step 2 runs every check on the same commit, and that's the gate. If a check fails there, fix it on fork main and sync the fixed commit; the version stays the same because nothing is tagged until step 3. Keep the bump in its own pull request so it's the only change merged without waiting, and so the beta commit is easy to find.
 
 Everything on fork main at that point goes into the beta. If main has work you don't want testers to have yet, either wait or ship an older main commit that already has the bump.
 

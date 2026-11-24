@@ -378,6 +378,8 @@ export type FieldModeDrawing = {
     barHandles?: readonly { at: FieldPoint; from: FieldPoint }[];
     /** The outline is open: drawn without joining its last point to its first (a line, #524) */
     openOutline?: boolean;
+    /** The shape's other rows (spec #1190), open lines drawn like its outline */
+    rows?: readonly (readonly FieldPoint[])[];
     /**
      * The outline is a drawn path (pathways): drawn solid and heavier than a shape's outline, so it
      * reads over a group's faint lanes; heaviest while drawn or open (`edited`), a little lighter
@@ -582,6 +584,20 @@ export type FieldModeDrawing = {
         to: FieldPoint;
         across: string;
         deep: string;
+    };
+    /**
+     * While a Line's Rows apart or Slant number is pointed at, focused or dragged (#1190): the gap
+     * at an end of the block, from the drawn row's end spot straight across to the next row
+     * (`corner`), then along it by the slant (`to`), dashed, labeled ("4 steps apart · Slant 1";
+     * no slant leg when `slant` is null) on the `outward` side, a unit vector away from the block
+     */
+    rowsGap?: {
+        from: FieldPoint;
+        corner: FieldPoint;
+        to: FieldPoint;
+        outward: FieldPoint;
+        apart: string;
+        slant: string | null;
     };
 };
 

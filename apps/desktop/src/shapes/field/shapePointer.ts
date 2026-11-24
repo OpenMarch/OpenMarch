@@ -14,7 +14,9 @@ import type { PivotKey } from "../frame/frame";
  * of a Line's interval groups is open, and the group whose row is pointed at, focused or edited
  * (`lit`, null for none), for the field to color each group's spots (#526 follow-up). `stepShown`:
  * a number that sets the kind's step (a Line's offset) is pointed at, focused or dragged, so the
- * field draws the step and lights the pivot it grows from (owner on #596).
+ * field draws the step and lights the pivot it grows from (owner on #596). `rowsGapShown`: a Line's
+ * Rows apart or Slant number is pointed at, focused or dragged, so the field draws the gap from one
+ * row to the next with its numbers (#1190).
  */
 export const useShapePointerStore = create<{
     over: boolean;
@@ -24,6 +26,7 @@ export const useShapePointerStore = create<{
     scrubbing: boolean;
     groupMenu: GroupMenuState | null;
     stepShown: boolean;
+    rowsGapShown: boolean;
 }>(() => ({
     over: false,
     dragging: false,
@@ -32,6 +35,7 @@ export const useShapePointerStore = create<{
     scrubbing: false,
     groupMenu: null,
     stepShown: false,
+    rowsGapShown: false,
 }));
 
 /** The editor's group menu while it's open: the group lit on the field, or null for none */
@@ -59,6 +63,21 @@ export function engageStep(key: string, on: boolean): void {
     const stepShown = stepEngaged.size > 0;
     if (useShapePointerStore.getState().stepShown !== stepShown)
         useShapePointerStore.setState({ stepShown });
+}
+
+/** The Rows apart and Slant numbers engaged now, each by its own key */
+const rowsGapEngaged = new Set<string>();
+
+/**
+ * Notes a number that sets the gap between a Line's rows (`ToolParam.showsRowsGap`) engaged or
+ * let go, by `key`: the field draws the gap while any is (#1190)
+ */
+export function engageRowsGap(key: string, on: boolean): void {
+    if (on) rowsGapEngaged.add(key);
+    else rowsGapEngaged.delete(key);
+    const rowsGapShown = rowsGapEngaged.size > 0;
+    if (useShapePointerStore.getState().rowsGapShown !== rowsGapShown)
+        useShapePointerStore.setState({ rowsGapShown });
 }
 
 /** Notes whether a spacing number in the floating editor is being dragged (#452) */
@@ -106,6 +125,8 @@ export function resetShapePointer(): void {
     setGroupMenu(null);
     stepEngaged.clear();
     engageStep("", false);
+    rowsGapEngaged.clear();
+    engageRowsGap("", false);
 }
 
 /**

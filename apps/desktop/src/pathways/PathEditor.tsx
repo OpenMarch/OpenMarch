@@ -92,6 +92,7 @@ import {
     type PathSession,
 } from "./pathPenStore";
 import { drawingOf, ownLineDrawingOf } from "./pathPenMode";
+import { useOrderHoverProps } from "./marcherOrderStore";
 import {
     besideArc,
     besideArcReason,
@@ -525,6 +526,8 @@ function PathEditorBar({
     // for the field's note (the hover note, the step readout), so the bar never covers the work
     const footprint = useMemo(() => followFootprint(session), [session]);
     const followTheLeader = useFollowTheLeader();
+    // Pointing at Follow shows who will lead
+    const orderHover = useOrderHoverProps("follow");
     const place = stackedPlacement(
         {
             outline: outline.map((p) => fieldToElement(view, p.x, p.y)),
@@ -633,19 +636,27 @@ function PathEditorBar({
                                         "Together",
                                     )}
                                 </IconButton>
-                                <IconButton
-                                    label={tolgee.t(
-                                        "pathways.editor.followTip",
-                                        "Follow: the line follows its leader along the trail into its end spots",
-                                    )}
-                                    action="followTrail"
-                                    pressed={!!session.target.trail}
-                                    onClick={() => runAction("followTrail")}
-                                    testId="path-kind-follow"
+                                <span
+                                    className="flex items-center"
+                                    {...orderHover}
                                 >
-                                    <PathIcon size={14} />
-                                    {tolgee.t("actions.path.follow", "Follow")}
-                                </IconButton>
+                                    <IconButton
+                                        label={tolgee.t(
+                                            "pathways.editor.followTip",
+                                            "Follow: the line follows its leader along the trail into its end spots",
+                                        )}
+                                        action="followTrail"
+                                        pressed={!!session.target.trail}
+                                        onClick={() => runAction("followTrail")}
+                                        testId="path-kind-follow"
+                                    >
+                                        <PathIcon size={14} />
+                                        {tolgee.t(
+                                            "actions.path.follow",
+                                            "Follow",
+                                        )}
+                                    </IconButton>
+                                </span>
                             </span>
                             <Divider />
                         </>

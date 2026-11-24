@@ -1289,6 +1289,21 @@ const ShapeBody = memo(function ShapeBody({
                         vectorEffect="non-scaling-stroke"
                     />
                 ))}
+            {/* The shape's other rows (spec #1190): each drawn as its own line is */}
+            {drawing.rows?.map((row, i) => (
+                <polyline
+                    key={`row-${i}`}
+                    points={row.map((p) => `${p.x},${p.y}`).join(" ")}
+                    fill="none"
+                    stroke={shape}
+                    strokeWidth={SHAPE_OUTLINE_WIDTH}
+                    strokeDasharray={open ? undefined : SHAPE_OUTLINE_DASH}
+                    strokeLinejoin="round"
+                    strokeLinecap="round"
+                    vectorEffect="non-scaling-stroke"
+                    data-testid="fieldShapeRow"
+                />
+            ))}
             {/* Over the muted group line: the one heavy line while a lane is worked on */}
             {drawing.lanePicked !== undefined &&
                 drawing.lanes?.[drawing.lanePicked] && (
@@ -1600,6 +1615,85 @@ function OffsetStep({
     );
 }
 
+/**
+ * The gap from a Line's drawn row to the next (#1190), while Rows apart or Slant is engaged, at an
+ * end of the block: a dashed leg across in the pivot's yellow on a dark edge, ticked at both rows,
+ * then one along the next row by the slant, and the numbers in one pill outside the block, so it
+ * never covers a spot
+ */
+function RowsGapMark({
+    gap,
+    at,
+}: {
+    gap: NonNullable<FieldModeDrawing["rowsGap"]>;
+    at: (point: { x: number; y: number }) => { x: number; y: number };
+}) {
+    const a = at(gap.from);
+    const c = at(gap.corner);
+    const b = at(gap.to);
+    // Away from the block on screen
+    const o = at({
+        x: gap.from.x + gap.outward.x,
+        y: gap.from.y + gap.outward.y,
+    });
+    const ol = Math.hypot(o.x - a.x, o.y - a.y);
+    const u =
+        ol > 1e-6
+            ? { x: (o.x - a.x) / ol, y: (o.y - a.y) / ol }
+            : { x: 1, y: 0 };
+    const tick = (p: { x: number; y: number }) =>
+        `M ${p.x - u.x * 2} ${p.y - u.y * 2} L ${p.x + u.x * 6} ${p.y + u.y * 6}`;
+    const d = [
+        gap.slant
+            ? `M ${a.x} ${a.y} L ${c.x} ${c.y} L ${b.x} ${b.y}`
+            : `M ${a.x} ${a.y} L ${c.x} ${c.y}`,
+        tick(a),
+        tick(c),
+    ].join(" ");
+    const text = gap.slant ? `${gap.apart} · ${gap.slant}` : gap.apart;
+    const h = GROUP_LABEL_HEIGHT;
+    const w = groupLabelWidth(text);
+    // Clear of the leg, its ticks and the end spot's handle
+    const r = (Math.abs(u.x) * w) / 2 + (Math.abs(u.y) * h) / 2 + 12;
+    const x = (a.x + c.x) / 2 + u.x * r;
+    const y = (a.y + c.y) / 2 + u.y * r;
+    return (
+        <g data-testid="fieldShapeRowsGap" pointerEvents="none">
+            <path d={d} fill="none" stroke="black" strokeWidth={3.5} />
+            <path
+                d={d}
+                fill="none"
+                stroke={PIVOT_COLOR}
+                strokeWidth={1.5}
+                strokeDasharray="5 3"
+            />
+            <rect
+                x={x - w / 2}
+                y={y - h / 2}
+                width={w}
+                height={h}
+                rx={h / 2}
+                fill={PIVOT_COLOR}
+                stroke="black"
+                strokeWidth={1}
+            />
+            <text
+                x={x}
+                y={y}
+                fontSize={GROUP_LABEL_PX}
+                fontWeight={600}
+                className="font-sans"
+                fill="black"
+                textAnchor="middle"
+                dominantBaseline="central"
+                data-testid="fieldShapeRowsGapLabel"
+            >
+                {text}
+            </text>
+        </g>
+    );
+}
+
 /** The shape a mode's spots take: its marchers' when they share one (`spotShapeOf`). */
 function useSpotShape(
     drawing: FieldModeDrawing,
@@ -1789,6 +1883,7 @@ function ModeDrawing({
                     abovePx={drawing.labels?.length ? SPOT_LABEL_PX + 1 : 0}
                 />
             )}
+            {drawing.rowsGap && <RowsGapMark gap={drawing.rowsGap} at={at} />}
             {drawing.labels?.map(({ at: point, text }, i) => {
                 const p = at(point);
                 return (
