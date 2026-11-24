@@ -30,7 +30,7 @@ export function PathPenButton({ performers }: { performers: number }) {
     const label = tolgee.t("actions.path.pen", "Path pen");
     const followTheLeader = useFollowTheLeader();
     // Pointing at Follow shows who will lead
-    const orderHover = useOrderHoverProps();
+    const orderHover = useOrderHoverProps("follow");
     return (
         <ToolbarSection aria-label={label}>
             <Tip

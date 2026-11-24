@@ -527,7 +527,7 @@ function PathEditorBar({
     const footprint = useMemo(() => followFootprint(session), [session]);
     const followTheLeader = useFollowTheLeader();
     // Pointing at Follow shows who will lead
-    const orderHover = useOrderHoverProps();
+    const orderHover = useOrderHoverProps("follow");
     const place = stackedPlacement(
         {
             outline: outline.map((p) => fieldToElement(view, p.x, p.y)),

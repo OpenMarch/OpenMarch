@@ -9,9 +9,9 @@
  * shows its numbers.
  *
  * When it shows: the display bar's Order (off by default; While selected, Always), and for a moment
- * the selection's order while Follow is pointed at or open (who will lead), while Set, Reverse or
- * Clear order is pointed at (what it changes), while Alt is held, and while Set order is on. A
- * guessed order isn't drawn at rest; Alt, Follow and the order buttons show it hollow and dashed. Position badges show while Alt is held, and always while Set order is on (touch has no
+ * the selection's order while Follow (without the tip: the end you drag from leads) or Set, Reverse
+ * or Clear order (what it changes) is pointed at, while Alt is held, and while Set order is on. A
+ * guessed order isn't drawn at rest; Alt and those buttons show it hollow and dashed. Position badges show while Alt is held, and always while Set order is on (touch has no
  * Alt). Set order draws the lane it has picked so far, growing behind the pointer, with the bar that
  * says how to go on and keeps or cancels it. The selection box stands clear of the lane only when
  * the display bar shows it, so a peek never moves the box.
@@ -19,11 +19,12 @@
  * The forms are read once per edit (`followOrderForms`), the selection's only unless Always shows
  * every line; what's drawn follows the camera and where the lines' marchers are drawn
  * (`FieldMarchers`), so it's worked out again only when either changes. It sits over the selection
- * box and its handles, takes no presses, and hides while a shape tool is open (it draws its own
- * ends) and while Follow drags a trail (the line walks it).
+ * box and its handles, takes no presses, and hides while the Follow tool or a shape tool is open
+ * (they draw their own lines and ends).
  */
 import {
     memo,
+    useCallback,
     useEffect,
     useId,
     useLayoutEffect,
@@ -296,6 +297,7 @@ function drawLine({
     marchers,
     guessed,
     numbered,
+    tipless = false,
     halfWidth,
     dotRadius,
     busy,
@@ -308,6 +310,8 @@ function drawLine({
     marchers: number;
     guessed: boolean;
     numbered: boolean;
+    /** No tip past the leader: Follow's look, where the end you drag from leads */
+    tipless?: boolean;
     halfWidth: number;
     dotRadius: number;
     busy: readonly Box[];
@@ -324,7 +328,7 @@ function drawLine({
     // legs on its way to the next, which would make every pick look like a fold or a crossing
     const kind = classifyOrder(own, dotRadius);
     // The tip keeps the full width; the lane itself narrows where its own ranks are close
-    const tip = kind === "lane" ? laneTip(points, halfWidth) : null;
+    const tip = kind === "lane" && !tipless ? laneTip(points, halfWidth) : null;
     const tipHalf = halfWidth;
     halfWidth = ownHalfWidth(own, halfWidth, dotRadius);
     const darts = kind === "crossed" ? threadDarts(points) : [];
@@ -479,34 +483,25 @@ export default function MarcherOrderOverlay({
     );
     const beat = useTimelineSelectionStore(fieldBeat);
     const always = setting === "always";
-    // Follow shows who leads: pointed at (its toolbar button or the path bar's choice) and open.
-    // Set, Reverse and Clear order show it while pointed at, so you see what they change.
-    // While a trail is dragged the Follow tool walks the line itself, so the order steps aside
+    // Pointing at Follow or Set, Reverse or Clear order shows the selection's order (Follow's
+    // without its tip: the end you drag from leads). The Follow tool and a shape tool draw their
+    // own lines and ends, so the order waits till they close
     const orderHover = useMarcherOrderStore((s) => s.orderHover);
     const followOpen = usePathPenStore(
         (s) => !!s.session?.follow && s.session.phase !== "closed",
     );
-    const followDragging = usePathPenStore(
-        (s) =>
-            !!s.session?.follow &&
-            s.session.phase !== "closed" &&
-            s.session.follow.grabbed !== null,
-    );
-    // A shape tool draws its own ends; the order waits till it closes
     const shapeOpen = useShapeToolStore((s) => s.tool !== null);
-    const clear = !isPlaying && !shapeOpen && !followDragging;
+    const clear = !isPlaying && !shapeOpen && !followOpen;
     // Alt peeks at the selection's order (with its numbers) whatever the display bar says
     const alt = useAltHeld(clear && (always || ids.length >= 2));
     // Shown for a moment, not by the display bar: the selection's order only
-    const peek = ids.length >= 2 && (orderHover || followOpen || alt);
+    const peek = ids.length >= 2 && (orderHover !== null || alt);
     // The display bar's choice, which the selection box stands clear of (step 4j)
     const atRest = setting !== "off" && (always || ids.length >= 2);
     // Set order on has the field, so it shows over either (opening it closes them)
     const showing =
         !isPlaying && (sweep !== null || (clear && (atRest || peek)));
-    // A guessed order isn't drawn at rest; Alt, Follow and the order buttons show it, hollow and
-    // dashed (Follow will take it)
-    const showGuessed = alt || orderHover || followOpen;
+    const tipless = orderHover === "follow";
 
     // The forms, read while anything shows the order: the selection's, or everyone's for Always
     const key = ids.join(",");
@@ -623,6 +618,14 @@ export default function MarcherOrderOverlay({
         [labels, labelSize, zoom],
     );
     const selectedSet = useMemo(() => new Set(ids), [ids]);
+    // A guessed order isn't drawn at rest. Alt shows every one showing, hollow and dashed; the
+    // buttons show the selection's (Follow will take it)
+    const guessShown = useCallback(
+        (order: readonly number[]) =>
+            alt ||
+            (orderHover !== null && order.some((id) => selectedSet.has(id))),
+        [alt, orderHover, selectedSet],
+    );
     const drawn = useMemo((): DrawnLine[] => {
         const onScreen = (p: XY): XY => ({ x: p.x * zoom, y: p.y * zoom });
         const floorAt = (p: XY) => floor.brightnessAt(p.x / zoom, p.y / zoom);
@@ -674,7 +677,9 @@ export default function MarcherOrderOverlay({
             ];
         }
         // A guessed order isn't drawn at rest; Alt, Follow and the order buttons show it, dashed
-        const shown = lines.filter((line) => !line.guessed || showGuessed);
+        const shown = lines.filter(
+            (line) => !line.guessed || guessShown(line.order),
+        );
         const pointsOf = shown.map((line) =>
             line.order.flatMap((id) => {
                 const p = linesAt.get(id);
@@ -700,6 +705,7 @@ export default function MarcherOrderOverlay({
                 marchers: pointsOf[l]!.length,
                 guessed: line.guessed,
                 numbered: alt,
+                tipless,
                 halfWidth: halfWidths[l]!,
                 dotRadius,
                 busy,
@@ -722,7 +728,8 @@ export default function MarcherOrderOverlay({
         dotRadius,
         reach,
         alt,
-        showGuessed,
+        guessShown,
+        tipless,
         everyone,
         labels,
         labelBox,
@@ -743,7 +750,9 @@ export default function MarcherOrderOverlay({
             own.guessed
         )
             return null;
-        const shownLines = lines.filter((line) => !line.guessed || showGuessed);
+        const shownLines = lines.filter(
+            (line) => !line.guessed || guessShown(line.order),
+        );
         const l = shownLines.findIndex(
             (line) =>
                 !line.guessed &&
@@ -779,7 +788,7 @@ export default function MarcherOrderOverlay({
         ids,
         own,
         lines,
-        showGuessed,
+        guessShown,
         drawn,
         linesAt,
         labelBox,

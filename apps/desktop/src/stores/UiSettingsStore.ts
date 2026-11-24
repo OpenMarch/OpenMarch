@@ -213,16 +213,21 @@ const clampZoomSensitivity = (value: number): number =>
 // Helper function to parse settings from a JSON string
 // Throws on bad JSON or invalid structure. Exported for tests
 export const parseSettings = (raw: string): UiSettings => {
-    // Dropped: `previousPaths` (Previous paths) gave way to start flag positions (#331), and
-    // `focussedComponent` went with the old timeline focus (beat editor)
+    // Dropped: `previousPaths` (Previous paths) gave way to start flag positions (#331),
+    // `focussedComponent` went with the old timeline focus (beat editor), and `marcherOrder`
+    // became `lineOrder` with Off for its default (an Always picked before carries over)
     const {
         previousPaths: _previousPaths,
         focussedComponent: _focussedComponent,
+        marcherOrder,
         ...parsed
     } = JSON.parse(raw) as UiSettings & {
         previousPaths?: unknown;
         focussedComponent?: unknown;
+        marcherOrder?: unknown;
     };
+    if (marcherOrder === "always" && parsed.lineOrder === undefined)
+        parsed.lineOrder = "always";
     const mergedMouseSettings = {
         ...defaultSettings.mouseSettings,
         ...parsed.mouseSettings,

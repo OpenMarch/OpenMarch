@@ -25,7 +25,7 @@ export function OrderButtons({ performers }: { performers: number }) {
     const sweeping = useMarcherOrderStore((s) => s.sweep !== null);
     const refusal = orderRefusal(performers, false);
     const label = tolgee.t("pathways.toolbar.order", "Order");
-    const orderHover = useOrderHoverProps();
+    const orderHover = useOrderHoverProps("order");
     return (
         <ToolbarSection aria-label={label}>
             <OrderButton
