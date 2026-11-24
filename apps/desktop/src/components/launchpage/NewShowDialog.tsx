@@ -546,7 +546,7 @@ export default function NewShowDialog({
         <>
             <Dialog open={open} onOpenChange={handleOpenChange}>
                 <DialogContent
-                    className="touch:h-[min(85dvh,52rem)] touch:max-h-[min(85dvh,52rem)] flex h-[min(88vh,50rem)] max-h-[88vh] w-[54rem] max-w-[95vw] flex-col overflow-hidden"
+                    className="touch:h-[min(85dvh,52rem)] touch:max-h-[min(85dvh,52rem)] flex h-[min(88vh,50rem)]! max-h-[88vh]! w-[54rem] max-w-[95vw] flex-col overflow-hidden"
                     onPointerDownOutside={(e) => {
                         if (isCompleting || isCreatingDraft) {
                             e.preventDefault();
