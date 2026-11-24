@@ -1,9 +1,21 @@
 {
+    "3d-camera-row-menu": {
+        "chapter": "3d-view",
+        "kind": "still",
+        "width": 816,
+        "height": 816
+    },
+    "3d-camera-settings": {
+        "chapter": "3d-view",
+        "kind": "still",
+        "width": 1600,
+        "height": 1000
+    },
     "3d-cameras-panel": {
         "chapter": "3d-view",
         "kind": "still",
-        "width": 752,
-        "height": 836
+        "width": 816,
+        "height": 908
     },
     "3d-controls": {
         "chapter": "3d-view",

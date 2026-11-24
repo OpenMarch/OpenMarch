@@ -63,7 +63,8 @@ import {
     type Environment,
     type LightingValues,
 } from "@/view3d/core/environment";
-import { supportsPostPipeline } from "@/view3d/core/post";
+import { supportsPostPipeline, type BloomSettings } from "@/view3d/core/post";
+import { useCameraStore } from "./camera/cameraStore";
 import { buildFieldSurface, venueFootprint } from "@/view3d/core/field";
 import {
     DEFAULT_CROWD_DENSITY,
@@ -226,6 +227,17 @@ interface SceneContentsProps {
 
 /** How long the scene must add no shaders before the warm-up runs (ms). */
 const WARM_AFTER_MS = 1000;
+
+/** The post pass without bloom: depth of field alone. */
+const NO_BLOOM: BloomSettings = Object.freeze({
+    strength: 0,
+    radius: 0,
+    threshold: 1,
+    knee: 0,
+    ghost: 0,
+    ghostThreshold: 8,
+    ghostTint: 0,
+}) as BloomSettings;
 
 // eslint-disable-next-line max-lines-per-function
 function SceneContents({
@@ -478,8 +490,9 @@ function SceneContents({
     }, [gl, scene, appliedLighting, lightingVenue]);
 
     // Bloom and lens ghosts, for a venue whose lighting asks for them and
-    // only at high quality (`PostFx.tsx`). Every other venue, and low
-    // quality, draws straight to the canvas as before.
+    // only at high quality (`PostFx.tsx`), and depth of field while the view
+    // focuses, at any quality: the viewer asked for it. Everything else
+    // draws straight to the canvas as before.
     const bloom = useMemo(
         () =>
             quality === "high" && appliedLighting && supportsPostPipeline(gl)
@@ -487,6 +500,9 @@ function SceneContents({
                 : undefined,
         [gl, quality, appliedLighting, lightingVenue],
     );
+    const focusing = useCameraStore((s) => s.focus !== null);
+    const post =
+        bloom ?? (focusing && supportsPostPipeline(gl) ? NO_BLOOM : undefined);
 
     // Clear the store when the scene goes away.
     useEffect(
@@ -548,7 +564,7 @@ function SceneContents({
 
     return (
         <>
-            {bloom && <PostFx settings={bloom} />}
+            {post && <PostFx settings={post} />}
             <Performers fieldProperties={fieldProperties} />
             <PropBlocks fieldProperties={fieldProperties} />
             <PitModels fieldProperties={fieldProperties} />

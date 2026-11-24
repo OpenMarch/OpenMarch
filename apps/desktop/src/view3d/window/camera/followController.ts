@@ -28,12 +28,15 @@ import {
     POV_FOV_DEG,
     POV_FOV_MAX,
     POV_FOV_MIN,
+    povFraming,
+    povLookOf,
     povPose,
+    thirdPersonFraming,
     thirdPersonPose,
     type PerformerPose,
     type PovLook,
 } from "./followMath";
-import type { Follow } from "./followStore";
+import type { Follow, FollowFraming } from "./followStore";
 
 /** The point of view turns with the performer with this half-life (ms). */
 export const POV_TURN_HALF_LIFE_MS = 150;
@@ -159,8 +162,17 @@ export class FollowController {
      */
     change(next: Follow | null, nowMs: number): boolean {
         const prev = this.following;
-        if (prev?.marcherId === next?.marcherId && prev?.mode === next?.mode)
+        if (prev?.marcherId === next?.marcherId && prev?.mode === next?.mode) {
+            // The same performer and mode with a new aim or field of view:
+            // a follow camera's settings, changed or being dragged.
+            if (
+                next &&
+                prev &&
+                (prev.framing !== next.framing || prev.fovDeg !== next.fovDeg)
+            )
+                this.reframe(next);
             return true;
+        }
         const generation = ++this.generation;
         // Into someone's eyes, their head goes as the camera gets there;
         // out of them, it comes back once the camera is clear.
@@ -196,8 +208,8 @@ export class FollowController {
         this.inEyes = false;
         this.lastMs = null;
         if (next.mode === "pov") {
-            this.look = { yaw: 0, pitch: POV_DEFAULT_PITCH };
-            this.fovDeg = POV_FOV_DEG;
+            this.look = povLookOf(next.framing);
+            this.fovDeg = povFovOf(next);
             this.heading = pose.heading;
             this.hideForEyes(next.marcherId);
             const view = povPose(pose, this.look, this.hooks.showOwnBody());
@@ -216,17 +228,53 @@ export class FollowController {
         // is out of their head.
         const leavingEyes = prev?.mode === "pov";
         if (!leavingEyes) this.hooks.setHidden(null);
-        const view = thirdPersonPose(pose);
+        const view = thirdPersonPose(pose, next.framing);
         this.rig.flyTo(view.position, view.target, {
             nowMs,
             instant: this.hooks.instant(),
-            fovDeg: SEAT_FOV_DEG,
+            fovDeg: next.fovDeg ?? SEAT_FOV_DEG,
             onArrive: () => {
                 if (leavingEyes && generation === this.generation)
                     this.hooks.setHidden(null);
             },
         });
         return true;
+    }
+
+    /** Puts the view at a new aim and field of view on the performer it follows now, at once. */
+    private reframe(next: Follow) {
+        this.following = next;
+        if (next.mode === "pov") {
+            this.look = povLookOf(next.framing);
+            this.fovDeg = povFovOf(next);
+            if (this.inEyes) this.place();
+            return;
+        }
+        const pose = this.pose;
+        if (!this.hooks.poseInto(next.marcherId, pose)) return;
+        this.anchor = [pose.x, pose.y, pose.z];
+        this.chase = pose.heading;
+        const view = thirdPersonPose(pose, next.framing);
+        this.rig.jumpTo(
+            view.position,
+            view.target,
+            next.fovDeg ?? SEAT_FOV_DEG,
+        );
+        this.camera.updateMatrixWorld();
+    }
+
+    /**
+     * Where the follow aims now, with any orbit or look the viewer added
+     * (for "Set to current view"); null when not following.
+     */
+    framing(): FollowFraming | null {
+        const following = this.following;
+        if (!following) return null;
+        if (following.mode === "pov") return povFraming(this.look);
+        const pose = this.pose;
+        if (!this.hooks.poseInto(following.marcherId, pose)) return null;
+        const c = this.camera.position;
+        return thirdPersonFraming(pose, [c.x, c.y, c.z]);
     }
 
     /**
@@ -354,4 +402,12 @@ export class FollowController {
         this.rig.jumpTo(view.position, view.target, this.fovDeg);
         this.camera.updateMatrixWorld();
     }
+}
+
+/** The point of view's field of view for a follow: its own, kept to the point of view's range. */
+function povFovOf(follow: Follow): number {
+    return Math.min(
+        POV_FOV_MAX,
+        Math.max(POV_FOV_MIN, follow.fovDeg ?? POV_FOV_DEG),
+    );
 }
