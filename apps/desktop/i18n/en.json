@@ -313,6 +313,7 @@
             "selectHolding": "Select {item}",
             "equipmentUsual": "Equipment: Their own instrument",
             "moveToPlayhead": "Move cue to playhead",
+            "endAtPlayhead": "End cue at playhead",
             "toggleMovesLane": "Show or hide the Moves lane"
         },
         "path": {
@@ -4222,7 +4223,8 @@
             "selectPerformers": "Select its performers",
             "markLabel": "{name}: {value}, {where}",
             "forCounts": "{count, plural, one {For # count} other {For # counts}}",
-            "resize": "Drag to change how many counts it lasts",
+            "dragStart": "Drag to change where it starts",
+            "dragEnd": "Drag to change where it ends",
             "hide": "Hide this lane",
             "lanes": "Lanes",
             "hiddenCount": "· {count} hidden",
@@ -4306,6 +4308,8 @@
             "allIn": "The selected performers are already in this cue",
             "noneIn": "None of the selected performers is in this cue",
             "atPlayhead": "The cue is already on the playhead's count",
+            "endBeforeStart": "Move the playhead after the cue's start first.",
+            "endsAtPlayhead": "The cue already ends at the playhead.",
             "movesBasic": "Moves have bars in Expert only"
         }
     },

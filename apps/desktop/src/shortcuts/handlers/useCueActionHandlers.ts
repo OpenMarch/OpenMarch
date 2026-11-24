@@ -244,6 +244,20 @@ export function useCueActionHandlers() {
                   ? tolgee.t("cues.reason.atPlayhead")
                   : undefined),
     });
+    const toPlayhead = commands.lengthToPlayhead();
+    useActionHandler("cueEndAtPlayhead", () => commands.endAtPlayhead(), {
+        enabled:
+            editable &&
+            toPlayhead !== null &&
+            toPlayhead !== commands.cue?.length,
+        disabledReason:
+            cueWhy ??
+            (toPlayhead === null
+                ? tolgee.t("cues.reason.endBeforeStart")
+                : toPlayhead === commands.cue?.length
+                  ? tolgee.t("cues.reason.endsAtPlayhead")
+                  : undefined),
+    });
     useActionHandler("cueDelete", () => commands.deleteCue(), {
         enabled: editable,
         disabledReason: cueWhy,

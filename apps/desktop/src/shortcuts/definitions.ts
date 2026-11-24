@@ -757,6 +757,14 @@ const STATIC_ACTIONS = {
         defaultBindings: [],
         args: { place: "label" },
     },
+    // The keyboard and touch way to set where a cue ends (dragging its bar's end is the mouse's)
+    cueEndAtPlayhead: {
+        labelKey: "actions.cues.endAtPlayhead",
+        keywordsKey: "actions.cues.cueKeywords",
+        category: "batchEdit",
+        scope: "canvas",
+        defaultBindings: [],
+    },
     toggleEquipmentLane: {
         labelKey: "actions.cues.toggleEquipmentLane",
         keywordsKey: "actions.cues.laneKeywords",

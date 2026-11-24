@@ -727,6 +727,7 @@ export class FieldEditor {
     private hover: FieldCursor = "default";
     private hoverHandle: HandleId | null = null;
     private hoverMarcherId: number | null = null;
+    private readonly hoverMarcherListeners = new Set<() => void>();
     /** The selection box's cover when a rotation started: the box turns with it until the release */
     private rotateCovers: FieldRect | null = null;
     /**
@@ -1483,6 +1484,15 @@ export class FieldEditor {
      */
     hoveredMarcher(): number | null {
         return this.hoverMarcherId;
+    }
+
+    /**
+     * Calls `listener` when {@link hoveredMarcher} changes (apart from {@link subscribe}, which a
+     * marcher pointed at doesn't wake). Returns the unsubscribe.
+     */
+    subscribeHoveredMarcher(listener: () => void): () => void {
+        this.hoverMarcherListeners.add(listener);
+        return () => this.hoverMarcherListeners.delete(listener);
     }
 
     /**
@@ -2537,7 +2547,7 @@ export class FieldEditor {
     private setHoverMarcher(id: number | null) {
         if (id === this.hoverMarcherId) return;
         this.hoverMarcherId = id;
-        this.emit();
+        for (const listener of this.hoverMarcherListeners) listener();
     }
 
     private setHoverHandle(handle: HandleId | null) {

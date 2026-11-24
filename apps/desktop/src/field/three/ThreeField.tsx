@@ -575,7 +575,8 @@ function ThreeFieldView() {
     const hoveredMarcher = useMemo(
         () => ({
             get: () => editor.hoveredMarcher(),
-            subscribe: (changed: () => void) => editor.subscribe(changed),
+            subscribe: (changed: () => void) =>
+                editor.subscribeHoveredMarcher(changed),
         }),
         [editor],
     );

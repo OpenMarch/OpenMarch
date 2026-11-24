@@ -45,8 +45,16 @@ import {
 import {
     clamp,
     isPageSnapDisabled,
+    snapBoundary,
     snapRangeOffset,
 } from "@/components/timeline/TimelineGeometry";
+import { clipHandleWidth } from "@/components/timeline/TimelineClipResize";
+import { TouchHitArea } from "@/components/timeline/TouchHitArea";
+import {
+    clipEdgeHitInside,
+    TOUCH_HIT_SIZE,
+} from "@/components/timeline/touchTargets";
+import { cueEdgeDrag, nextCueStart } from "@/cues/cueEdges";
 import { fingerDragSlop } from "@/components/timeline/timelineGestures";
 import {
     MENU_ITEM_CLASS,
@@ -85,6 +93,7 @@ import {
     equipmentLane,
     type EquipmentLane as LaneData,
     type LanePiece,
+    type LaneRow,
 } from "@/cues/equipmentLane";
 
 const HEADER = 20;
@@ -175,7 +184,16 @@ export function useEquipmentLaneBand(): TimelineBand | undefined {
 
 type CueMenu = { x: number; y: number; cueId: number };
 /** A cue being dragged: moved by `delta` beats, or its length changed by `delta` counts. */
-type LaneDrag = { cueId: number; mode: "move" | "resize"; delta: number };
+/**
+ * A cue being dragged: its body (`move`), or its start or end edge, and how far each end of its bar
+ * has gone, in beats
+ */
+type LaneDrag = {
+    cueId: number;
+    mode: "move" | "start" | "end";
+    startDelta: number;
+    endDelta: number;
+};
 
 function EquipmentLaneView({
     geometry,
@@ -238,6 +256,11 @@ function EquipmentLaneView({
     const rowName = (ids: readonly number[], label: string | null) =>
         label ??
         describePerformers({ ids, marchers: show?.marchers ?? [], words });
+    /** The count a cue starts on */
+    const startCountOf = (cueId: number) => {
+        const cue = show?.cues.find((c) => c.id === cueId);
+        return cue ? show?.countOfBeat.get(cue.beatId) : undefined;
+    };
     /** A cue's name, what it sets and where, for a mark that only shows its color */
     const cueWords = (cueId: number) => {
         const cue = show?.cues.find((c) => c.id === cueId);
@@ -258,59 +281,99 @@ function EquipmentLaneView({
     };
 
     /**
-     * A press on a cue (`move`) or a momentary cue's end (`resize`): past the slop it drags, and
-     * on release it writes the new count or length as one undo step. Short of the slop it's a
-     * click, which only picks the cue.
+     * A press on a cue's body (`move`) or one of its edges (`start`, `end`), as on a move's clip:
+     * past the slop it drags, pulled to page flags and measures (Alt: any count), and on release it
+     * writes the new start or length as one undo step, its performers winning where it lands. The
+     * end edge of a lasting cue makes it momentary; dragged back to the row's next cue it lasts
+     * again. Short of the slop it's a click, which only picks the cue.
      */
     const startDrag = (
         e: ReactPointerEvent<HTMLElement>,
-        cueId: number,
+        piece: LanePiece,
+        row: LaneRow,
         mode: LaneDrag["mode"],
     ) => {
-        if (isPlaying) return;
+        if (isPlaying || piece.cueId === null) return;
+        const cueId = piece.cueId;
         const cue = show?.cues.find((c) => c.id === cueId);
         const at = cue ? specOf.get(cue.beatId) : undefined;
-        if (!cue || at === undefined || e.button !== 0) return;
-        if (mode === "resize" && cue.length === null) return;
+        if (!cue || !show || at === undefined || e.button !== 0) return;
         const target = e.currentTarget;
         target.setPointerCapture(e.pointerId);
         const startX = e.clientX;
         const slop = fingerDragSlop(e.pointerType, DRAG_SLOP_PX);
-        const view = axis.toView(at);
+        const specAt = (count: number) =>
+            countToSpecBeat(count, show.beatIds, specOf);
+        // Where the row's next cue starts: a lasting cue's bar ends there
+        const until = specAt(nextCueStart(row.pieces, piece.from, cueId));
+        const pieceEnd = specAt(piece.to);
+        const span = { start: at, length: cue.length };
         let dragging = false;
-        let delta = 0;
-        const deltaAt = (ev: PointerEvent) => {
+        let result = { ...span, end: pieceEnd };
+        const resultAt = (ev: PointerEvent) => {
             const offset = (ev.clientX - startX) / ppb;
-            if (mode === "resize")
-                return Math.max(1 - cue.length!, Math.round(offset));
-            const requested = snapRangeOffset({
-                range: { startBeatIndex: view, endBeatIndex: view },
-                offset,
-                snapBeats: isPageSnapDisabled(ev) ? [] : geometry.snapBeats,
-                pixelsPerBeat: ppb,
+            if (mode === "move") {
+                const view = axis.toView(at);
+                const requested = snapRangeOffset({
+                    range: { startBeatIndex: view, endBeatIndex: view },
+                    offset,
+                    snapBeats: isPageSnapDisabled(ev) ? [] : geometry.snapBeats,
+                    pixelsPerBeat: ppb,
+                });
+                // Home and the fixed first beat are one moment: a cue goes no earlier than beat 1
+                const delta = clamp(requested, 1 - at, beats.length - 1 - at);
+                return { ...span, start: at + delta, end: pieceEnd + delta };
+            }
+            // An edge lands on a page flag or measure near it, as a clip's edge does
+            const edgeAt =
+                mode === "start"
+                    ? at
+                    : span.length !== null
+                      ? at + span.length
+                      : until;
+            const view = axis.toView(edgeAt);
+            const landed = isPageSnapDisabled(ev)
+                ? Math.round(view + offset)
+                : snapBoundary({
+                      beat: view + offset,
+                      snapBeats: geometry.snapBeats,
+                      pixelsPerBeat: ppb,
+                  });
+            const edged = cueEdgeDrag({
+                edge: mode,
+                cue: span,
+                until,
+                delta: landed - view,
             });
-            // Home and the fixed first beat are one moment: a cue goes no earlier than beat 1
-            return clamp(requested, 1 - at, beats.length - 1 - at);
+            return {
+                ...edged,
+                start: Math.min(edged.start, beats.length - 1),
+            };
         };
         const onMove = (ev: PointerEvent) => {
             if (ev.pointerId !== e.pointerId) return;
             if (!dragging && Math.abs(ev.clientX - startX) < slop) return;
             dragging = true;
-            delta = deltaAt(ev);
-            setDrag({ cueId, mode, delta });
+            result = resultAt(ev);
+            setDrag({
+                cueId,
+                mode,
+                startDelta: result.start - at,
+                endDelta: result.end - pieceEnd,
+            });
         };
         const done = (commit: boolean) => {
             target.removeEventListener("pointermove", onMove);
             target.removeEventListener("pointerup", onUp);
             target.removeEventListener("pointercancel", onCancel);
-            if (!dragging || !commit || delta === 0) {
+            const change = {
+                ...(result.start !== at && { beatId: beats[result.start]!.id }),
+                ...(result.length !== cue.length && { length: result.length }),
+            };
+            if (!dragging || !commit || Object.keys(change).length === 0) {
                 setDrag(null);
                 return;
             }
-            const change =
-                mode === "move"
-                    ? { beatId: beats[at + delta]!.id }
-                    : { length: cue.length! + delta };
             // Its performers win on the count it lands on, as setting equipment there would
             const plan = show && cueChangeEdit(show, cueId, change, words);
             if (!plan) {
@@ -438,19 +501,22 @@ function EquipmentLaneView({
                                     piece={piece}
                                     left={xOf(piece.from)}
                                     width={xOf(piece.to) - xOf(piece.from)}
-                                    shift={
-                                        dragged && drag.mode === "move"
-                                            ? drag.delta * ppb
-                                            : 0
-                                    }
+                                    shift={dragged ? drag.startDelta * ppb : 0}
                                     extend={
-                                        dragged && drag.mode === "resize"
-                                            ? drag.delta * ppb
+                                        dragged
+                                            ? (drag.endDelta -
+                                                  drag.startDelta) *
+                                              ppb
                                             : 0
                                     }
                                     dragging={dragged}
                                     name={valueName(piece.value)}
-                                    resizeLabel={t("cues.lane.resize")}
+                                    // A start edge only where the cue starts (not a later row's
+                                    // continuation of it)
+                                    startsHere={
+                                        piece.cueId !== null &&
+                                        startCountOf(piece.cueId) === piece.from
+                                    }
                                     lockedReason={
                                         isPlaying
                                             ? t("cues.reason.paused")
@@ -463,7 +529,7 @@ function EquipmentLaneView({
                                     onPress={(e, mode) => {
                                         if (piece.cueId === null) return;
                                         if (e.button === 0) pick(piece.cueId);
-                                        startDrag(e, piece.cueId, mode);
+                                        startDrag(e, piece, row, mode);
                                     }}
                                     onMenu={(x, y) =>
                                         piece.cueId !== null &&
@@ -566,7 +632,7 @@ function Piece({
     extend,
     dragging,
     name,
-    resizeLabel,
+    startsHere,
     lockedReason,
     picked,
     onPress,
@@ -575,25 +641,83 @@ function Piece({
     piece: LanePiece;
     left: number;
     width: number;
-    /** How far a drag has moved the cue, in pixels */
+    /** How far a drag has moved the bar's start, in pixels */
     shift: number;
-    /** How far a drag of its end has stretched it, in pixels */
+    /** How much a drag has widened the bar (negative: narrowed), in pixels */
     extend: number;
     dragging: boolean;
     name: string;
-    resizeLabel: string;
+    /** Whether the cue starts at this bar's start, so its start edge can be dragged here */
+    startsHere: boolean;
     /** Why it can't be dragged now (while playing), or undefined when it can */
     lockedReason?: string;
     picked: boolean;
     onPress: (
         e: ReactPointerEvent<HTMLElement>,
-        mode: "move" | "resize",
+        mode: LaneDrag["mode"],
     ) => void;
     onMenu: (clientX: number, clientY: number) => void;
 }) {
+    const { t } = useTranslate();
     const isCue = piece.cueId !== null;
     const momentary = piece.kind === "momentary";
     const longPress = useLongPressMenu(onMenu);
+    const drawnWidth = Math.max(width - 1 + extend, 4);
+    // As a move's clip: up to 6 px handles inside each edge, none on a very short bar
+    const handleWidth = clipHandleWidth(drawnWidth);
+    const edges = isCue && !lockedReason && handleWidth > 0;
+    /** One edge's handle: an ew-resize cursor, a bar on hover, and a finger's 44 px while picked */
+    const edge = (side: "start" | "end") => {
+        const label = t(
+            side === "start" ? "cues.lane.dragStart" : "cues.lane.dragEnd",
+        );
+        return (
+            <span
+                data-testid={`equipment-lane-cue-${side}`}
+                data-timeline-interactive=""
+                title={label}
+                aria-label={label}
+                className="group/resize absolute top-0 z-[1] h-full cursor-ew-resize touch-none"
+                style={{
+                    width: handleWidth,
+                    ...(side === "start" ? { left: 0 } : { right: 0 }),
+                }}
+                onPointerDown={(e) => {
+                    e.stopPropagation();
+                    onPress(e, side);
+                }}
+            >
+                <span
+                    data-touch-drawn=""
+                    className={clsx(
+                        "bg-text/60 pointer-events-none absolute inset-y-[2px] hidden w-[2px] rounded-full group-hover/resize:block",
+                        side === "start" ? "left-0" : "right-0",
+                        picked && "touch:block",
+                    )}
+                />
+                {picked && (
+                    <TouchHitArea
+                        selected
+                        className="touch:block pointer-events-auto absolute top-1/2 hidden h-full min-h-44 -translate-y-1/2"
+                        style={{
+                            width: TOUCH_HIT_SIZE,
+                            left:
+                                side === "start"
+                                    ? clipEdgeHitInside(
+                                          drawnWidth,
+                                          handleWidth,
+                                      ) - TOUCH_HIT_SIZE
+                                    : handleWidth -
+                                      clipEdgeHitInside(
+                                          drawnWidth,
+                                          handleWidth,
+                                      ),
+                        }}
+                    />
+                )}
+            </span>
+        );
+    };
     return (
         <div
             data-testid={
@@ -605,7 +729,7 @@ function Piece({
             data-timeline-interactive={isCue ? "" : undefined}
             title={isCue ? lockedReason : undefined}
             className={clsx(
-                "text-micro absolute top-2 flex items-center overflow-hidden px-4 leading-none whitespace-nowrap",
+                "text-micro absolute top-2 flex items-center px-4 leading-none whitespace-nowrap",
                 momentary ? "rounded-full" : "rounded-4",
                 isCue
                     ? clsx(
@@ -619,7 +743,7 @@ function Piece({
             )}
             style={{
                 left: left + shift,
-                width: Math.max(width - 1 + extend, 4),
+                width: drawnWidth,
                 height: ROW - 4,
             }}
             {...(isCue
@@ -637,25 +761,9 @@ function Piece({
                 longPress.start(e);
             }}
         >
-            <span className="truncate">{name}</span>
-            {isCue && momentary && (
-                // The end of a momentary cue: drag it to change how many counts it lasts. A
-                // finger gets a 44 px target over the pill's end
-                <span
-                    data-testid="equipment-lane-cue-end"
-                    data-timeline-interactive=""
-                    title={lockedReason ?? resizeLabel}
-                    aria-label={resizeLabel}
-                    className={clsx(
-                        "touch:w-44 absolute top-0 right-0 h-full w-6 touch-none",
-                        !lockedReason && "cursor-ew-resize",
-                    )}
-                    onPointerDown={(e) => {
-                        e.stopPropagation();
-                        onPress(e, "resize");
-                    }}
-                />
-            )}
+            <span className="min-w-0 truncate">{name}</span>
+            {edges && startsHere && edge("start")}
+            {edges && edge("end")}
         </div>
     );
 }
@@ -845,6 +953,7 @@ function CueMenuView({
                     </DropdownMenu.Item>
                     <DropdownMenu.Separator className={MENU_SEPARATOR_CLASS} />
                     {item("cueMoveToPlayhead")}
+                    {item("cueEndAtPlayhead")}
                     {item("cueMakeLasting")}
                     <DropdownMenu.Label className={MENU_LABEL_CLASS}>
                         {label("cueMakeMomentary")}

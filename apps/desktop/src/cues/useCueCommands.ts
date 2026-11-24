@@ -90,6 +90,13 @@ export interface CueCommands {
     readonly setLength: (length: number | null) => void;
     /** Moves the cue to the playhead's count, as one undo step. */
     readonly moveToPlayhead: () => void;
+    /**
+     * How many counts the cue would last if it ended at the playhead's count, or null when the
+     * playhead isn't after its start.
+     */
+    readonly lengthToPlayhead: () => number | null;
+    /** Ends the cue at the playhead's count (momentary for that many counts), as one undo step. */
+    readonly endAtPlayhead: () => void;
     readonly deleteCue: () => void;
 }
 
@@ -185,6 +192,12 @@ export function useCueCommands(): CueCommands {
         const cue = picked ?? (onBeat.length === 1 ? onBeat[0] : null);
         const edited = (edit: "add" | "remove") =>
             cue ? editedPerformers(cue, selectedIds, edit) : null;
+        const lengthToPlayhead = () => {
+            const from = cue ? show?.countOfBeat.get(cue.beatId) : undefined;
+            if (from === undefined || count === null || count <= from)
+                return null;
+            return count - from;
+        };
         const holdsAlready = (choice: EquipmentChoice) =>
             selectedIds.length > 0 &&
             selectedIds.every((id) => {
@@ -272,6 +285,13 @@ export function useCueCommands(): CueCommands {
                     { beatId: beat.id },
                     words,
                 );
+                if (plan) edit(plan);
+            },
+            lengthToPlayhead,
+            endAtPlayhead: () => {
+                const length = lengthToPlayhead();
+                if (!cue || !show || length === null) return;
+                const plan = cueChangeEdit(show, cue.id, { length }, words);
                 if (plan) edit(plan);
             },
             deleteCue: () => {

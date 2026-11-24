@@ -3828,7 +3828,8 @@
     "actions.cues.equipmentUsual": "Name of an action in the command palette: the selected performers go back to their section's usual equipment (a trumpet player's trumpet, the guard's flag) from the playhead's count on.",
     "actions.cues.moveToPlayhead": "Name of an action in the command palette and a cue's menu in the timeline's Equipment lane: moves the picked cue (a change of what performers hold) to the playhead's count.",
     "field.menu.selectByEquipment": "A submenu in the field's right-click menu: commands that select everyone holding a piece of equipment (or a group of them) at the playhead.",
-    "cues.lane.resize": "Tooltip on the end of a short (momentary) cue in the timeline's Equipment lane.",
+    "cues.lane.dragStart": "Tooltip on the start edge of a cue's bar in the timeline's Equipment lane: dragging it moves where the cue starts and keeps where it ends.",
+    "cues.lane.dragEnd": "Tooltip on the end edge of a cue's bar in the timeline's Equipment lane: dragging it sets where the cue ends (a cue that lasted until the next change then lasts a number of counts).",
     "cues.lane.hide": "Button beside a cue lane's name in the timeline: hides the lane. It can be shown again from the timeline's Lanes menu.",
     "cues.value.usual": "Entry in the field menu's Equipment submenu: the selected performers go back to their section's usual equipment (a trumpet player's trumpet, the guard's flag) from the playhead on.",
     "timeline.lanes.moves": "Name of a timeline lane (row) in the Lanes menu and on the lane itself: the move tracks, the bars for each move of the marchers. It can be shown or hidden.",
@@ -4056,5 +4057,8 @@
     "toolbar.view.equipmentPlaceOffReason": "Why the 'Where' choices of the 'Equipment icons' popup are greyed out: no icons are shown. 'Changed only' and 'Everyone' are the other choices in the same popup.",
     "actions.cues.equipmentIconsBeside": "Name of an action in the command palette, the same choice as 'Next to the number' under 'Where' in the field display bar's 'Equipment icons' popup.",
     "actions.cues.equipmentIconsOnDot": "Name of an action in the command palette, the same choice as 'In place of the dot' under 'Where' in the field display bar's 'Equipment icons' popup.",
-    "actions.cues.equipmentIconsOnNumber": "Name of an action in the command palette, the same choice as 'In place of the number' under 'Where' in the field display bar's 'Equipment icons' popup."
+    "actions.cues.equipmentIconsOnNumber": "Name of an action in the command palette, the same choice as 'In place of the number' under 'Where' in the field display bar's 'Equipment icons' popup.",
+    "actions.cues.endAtPlayhead": "Name of an action in the command palette and a cue's menu in the timeline's Equipment lane: the cue then lasts until the playhead's count (a number of counts), after which the performers go back to what they held before.",
+    "cues.reason.endBeforeStart": "Why 'End cue at playhead' is greyed out: the playhead is at or before the count where the cue starts.",
+    "cues.reason.endsAtPlayhead": "Why 'End cue at playhead' is greyed out: the cue already ends at the playhead's count."
 }
