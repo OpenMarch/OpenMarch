@@ -1,6 +1,7 @@
 import { useMemo } from "react";
 import { useTimingObjects } from "@/hooks/useTimingObjects";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
+import { isPerformer } from "@/global/classes/Marcher";
 import {
     equipmentIconsAt,
     iconsKey,
@@ -39,6 +40,13 @@ export function useEquipmentIcons(): LabelIcons | null {
         )
             return null;
         const sections = new Map(show.marchers.map((m) => [m.id, m.section]));
+        // Props and equipment are marchers rows too (props epic, fork #1239), but hold nothing
+        const performers = new Set(
+            show.marchers.filter(isPerformer).map((m) => m.id),
+        );
+        const usualValue = new Map(
+            [...show.usualValue].filter(([id]) => performers.has(id)),
+        );
         let lastCount: number | null = null;
         let last: {
             key: string;
@@ -54,7 +62,7 @@ export function useEquipmentIcons(): LabelIcons | null {
                 if (count === lastCount) return last;
                 const icons = equipmentIconsAt({
                     compiled: show.compiled,
-                    usualValue: show.usualValue,
+                    usualValue,
                     sectionOf: (id) => sections.get(id),
                     count,
                     shown,
