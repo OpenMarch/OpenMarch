@@ -3,8 +3,8 @@ import { CheckCircleIcon, CircleIcon, ImageIcon } from "@phosphor-icons/react";
 import { Button, UnitInput } from "@openmarch/ui";
 import { useTranslate } from "@tolgee/react";
 import clsx from "clsx";
-import { useEffect, useId, useState } from "react";
-import type { FieldProperties } from "@openmarch/core";
+import { useEffect, useId, useMemo, useState } from "react";
+import { FieldProperties } from "@openmarch/core";
 import type { DrillChartFieldImage } from "@/components/exporting/utils/drillChartSvg";
 import { pickImage } from "@/field/editMode/useFieldImageActions";
 import {
@@ -77,8 +77,8 @@ const CUSTOM = "custom";
 const roundTenth = (value: number) => Math.round(value * 10) / 10;
 
 /**
- * A number typed in a unit, saved when the field loses focus or on Enter. A number outside
- * `range` isn't saved; `rangeHint` says which numbers work.
+ * A number typed in a unit, saved as it's typed while it's in `range`. Outside the range it isn't
+ * saved: `rangeHint` shows under it, and `onValidChange(false)` lets the wizard hold Next.
  */
 function NumberField({
     label,
@@ -87,6 +87,7 @@ function NumberField({
     range,
     rangeHint,
     onCommit,
+    onValidChange,
     testId,
 }: {
     label: string;
@@ -95,25 +96,28 @@ function NumberField({
     range: { min: number; max: number };
     rangeHint: string;
     onCommit: (value: number) => void;
+    onValidChange: (valid: boolean) => void;
     testId: string;
 }) {
     const id = useId();
+    const hintId = `${id}-hint`;
     const [draft, setDraft] = useState(String(value));
-    const [invalid, setInvalid] = useState(false);
+    const parsed = parseFloat(draft);
+    const invalid = isNaN(parsed) || parsed < range.min || parsed > range.max;
+
+    // A value set from outside (an image's shape, another activity) replaces what's typed;
+    // the value just saved from typing leaves the draft alone, so "22." can become "22.5"
     useEffect(() => {
-        setDraft(String(value));
-        setInvalid(false);
+        setDraft((current) =>
+            parseFloat(current) === value ? current : String(value),
+        );
     }, [value]);
 
-    const commit = () => {
-        const parsed = parseFloat(draft);
-        if (isNaN(parsed) || parsed < range.min || parsed > range.max) {
-            setInvalid(true);
-            return;
-        }
-        setInvalid(false);
-        if (parsed !== value) onCommit(parsed);
-    };
+    useEffect(() => {
+        onValidChange(!invalid);
+    }, [invalid, onValidChange]);
+    // A field that goes away (another card picked) no longer holds Next
+    useEffect(() => () => onValidChange(true), [onValidChange]);
 
     return (
         <div className="flex min-w-0 flex-col gap-4">
@@ -127,21 +131,25 @@ function NumberField({
                 unit={unit}
                 value={draft}
                 aria-invalid={invalid}
+                aria-describedby={invalid ? hintId : undefined}
                 onChange={(e) => {
-                    const filtered = e.target.value.replace(/[^\d.]/g, "");
-                    setDraft(filtered.replace(/\.+/g, "."));
-                }}
-                // Saved once focus has moved on: saving during the blur changes the page while
-                // nothing has focus, and the dialog's focus trap then takes focus from the
-                // next field
-                onBlur={() => setTimeout(commit)}
-                onKeyDown={(e) => {
-                    if (e.key === "Enter") commit();
+                    const next = e.target.value
+                        .replace(/[^\d.]/g, "")
+                        .replace(/\.+/g, ".");
+                    setDraft(next);
+                    const number = parseFloat(next);
+                    if (
+                        !isNaN(number) &&
+                        number >= range.min &&
+                        number <= range.max &&
+                        number !== value
+                    )
+                        onCommit(number);
                 }}
                 data-testid={testId}
             />
             {invalid && (
-                <span className="text-red text-sub" role="alert">
+                <span id={hintId} className="text-red text-sub">
                     {rangeHint}
                 </span>
             )}
@@ -207,7 +215,7 @@ function OptionCards<V extends string>({
                                     className="text-text/50 shrink-0"
                                 />
                             )}
-                            <span className="text-text text-body font-medium whitespace-nowrap tabular-nums">
+                            <span className="text-text text-body font-medium tabular-nums">
                                 {option.title}
                             </span>
                         </span>
@@ -234,6 +242,7 @@ export default function IndoorFloorPicker({
     drawn,
     onChange,
     onOtherFields,
+    onIncompleteChange,
 }: {
     template: FieldProperties;
     /** The floor's art, or null for none */
@@ -243,6 +252,8 @@ export default function IndoorFloorPicker({
     onChange: (template: FieldProperties, image: Uint8Array | null) => void;
     /** Shows every field template instead */
     onOtherFields: () => void;
+    /** True while a custom number is out of range, so the wizard holds Next */
+    onIncompleteChange: (incomplete: boolean) => void;
 }) {
     const { t } = useTranslate();
     const idPrefix = useId();
@@ -264,11 +275,50 @@ export default function IndoorFloorPicker({
     const feet = t("fieldProperties.indoorFloor.feet");
     const inches = t("fieldProperties.units.inches");
 
+    // Which custom number fields hold a number out of range
+    const [invalidFields, setInvalidFields] = useState<ReadonlySet<string>>(
+        () => new Set(),
+    );
+    const validity = useMemo(() => {
+        const track = (name: string) => (valid: boolean) =>
+            setInvalidFields((current) => {
+                if (valid !== current.has(name)) return current;
+                const next = new Set(current);
+                if (valid) next.delete(name);
+                else next.add(name);
+                return next;
+            });
+        return {
+            depth: track("depth"),
+            width: track("width"),
+            step: track("step"),
+        };
+    }, []);
+    const incomplete = invalidFields.size > 0;
+    useEffect(() => {
+        onIncompleteChange(incomplete);
+    }, [incomplete, onIncompleteChange]);
+    // Leaving the picker (Other fields, another activity) leaves nothing to finish
+    useEffect(() => () => onIncompleteChange(false), [onIncompleteChange]);
+
     const choose = (
         size: IndoorFloorSize,
         stepInches: IndoorStepInches,
         nextImage = image,
-    ) => onChange(indoorFloorTemplate(size, stepInches), nextImage);
+    ) => {
+        // A new floor keeps the step size warning threshold already set
+        const next = indoorFloorTemplate(size, stepInches);
+        const threshold = template.stepSizeWarningThresholdInches;
+        onChange(
+            next.stepSizeWarningThresholdInches === threshold
+                ? next
+                : new FieldProperties({
+                      ...next,
+                      stepSizeWarningThresholdInches: threshold,
+                  }),
+            nextImage,
+        );
+    };
 
     /** Picks a size from the cards or the image, leaving the custom size behind */
     const chooseStockSize = (size: IndoorFloorSize, nextImage = image) => {
@@ -285,7 +335,10 @@ export default function IndoorFloorPicker({
             return;
         }
         setUnreadable(false);
-        const match = floorSizeForImage(read.width, read.height, floor.size);
+        // A floor that already has the art's shape stays, custom or not
+        const match = floorFitsImage(read.width, read.height, floor.size)
+            ? null
+            : floorSizeForImage(read.width, read.height, floor.size);
         if (match) chooseStockSize(match, bytes);
         else choose(floor.size, floor.stepInches, bytes);
     };
@@ -475,6 +528,7 @@ export default function IndoorFloorPicker({
                                     floor.stepInches,
                                 )
                             }
+                            onValidChange={validity.depth}
                             testId="indoor-floor-custom-depth"
                         />
                         <NumberField
@@ -492,6 +546,7 @@ export default function IndoorFloorPicker({
                                     floor.stepInches,
                                 )
                             }
+                            onValidChange={validity.width}
                             testId="indoor-floor-custom-width"
                         />
                     </div>
@@ -546,6 +601,7 @@ export default function IndoorFloorPicker({
                             onCommit={(stepInches) =>
                                 choose(floor.size, stepInches)
                             }
+                            onValidChange={validity.step}
                             testId="indoor-floor-custom-step"
                         />
                     </div>

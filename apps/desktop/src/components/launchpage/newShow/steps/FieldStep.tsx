@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { FieldProperties } from "@openmarch/core";
 import { UnitInput } from "@openmarch/ui";
 import FieldPropertiesSelector from "@/components/field/FieldPropertiesSelector";
@@ -42,6 +42,8 @@ export default function FieldStep({
     );
     const prevActivity = useRef(activity);
     const hasInitializedField = useRef(field !== null);
+    const fieldRef = useRef(field);
+    fieldRef.current = field;
 
     useEffect(() => {
         if (!hasInitializedField.current && !field) {
@@ -54,7 +56,15 @@ export default function FieldStep({
         }
 
         if (prevActivity.current === activity) return;
+        const wasIndoor = isIndoorFloorActivity(prevActivity.current);
         prevActivity.current = activity;
+        // Indoor to indoor (guard to percussion) is the same floor: keep it and its art
+        if (
+            wasIndoor &&
+            isIndoorFloorActivity(activity) &&
+            indoorFloorOf(currentTemplate) !== null
+        )
+            return;
         setCurrentTemplate(defaultTemplate);
         setAllFields(false);
         onChange({
@@ -62,7 +72,7 @@ export default function FieldStep({
             isCustom: defaultTemplate.isCustom ?? false,
             image: null,
         });
-    }, [activity, field, defaultTemplate, onChange]);
+    }, [activity, field, defaultTemplate, currentTemplate, onChange]);
 
     // Field image only comes from the indoor floor picker; any other field drops it
     const image = field?.image ?? null;
@@ -79,8 +89,18 @@ export default function FieldStep({
             template,
             isCustom: template.isCustom ?? false,
             image: nextImage,
+            incomplete: fieldRef.current?.incomplete,
         });
     };
+
+    const handleIncompleteChange = useCallback(
+        (incomplete: boolean) => {
+            const current = fieldRef.current;
+            if (current && (current.incomplete ?? false) !== incomplete)
+                onChange({ ...current, incomplete });
+        },
+        [onChange],
+    );
 
     const { t } = useTranslate();
 
@@ -94,7 +114,12 @@ export default function FieldStep({
             stepSizeWarningThresholdInches: inches,
         });
         setCurrentTemplate(template);
-        onChange({ template, isCustom: template.isCustom ?? false, image });
+        onChange({
+            template,
+            isCustom: template.isCustom ?? false,
+            image,
+            incomplete: fieldRef.current?.incomplete,
+        });
     };
 
     const activityPicker = onEnsembleChange && (
@@ -154,6 +179,7 @@ export default function FieldStep({
                     e.target.value = filtered.replace(/\.+/g, ".");
                 }}
                 defaultValue={currentTemplate.stepSizeWarningThresholdInUnits}
+                // A new field shows its threshold; floor choices carry the threshold over
                 key={currentTemplate.name}
             />
         </div>
@@ -171,10 +197,13 @@ export default function FieldStep({
                         drawn={drawnImage}
                         onChange={handleTemplateChange}
                         onOtherFields={() => setAllFields(true)}
+                        onIncompleteChange={handleIncompleteChange}
+                        // A new activity starts its floor choices afresh
+                        key={activity}
                     />
                 </div>
                 <div className="flex min-w-0 flex-col gap-16 lg:sticky lg:top-0 lg:self-start">
-                    {preview("h-[260px]")}
+                    {preview("h-260")}
                     {threshold}
                 </div>
             </div>
@@ -196,7 +225,7 @@ export default function FieldStep({
                     {backToFloors}
                 </div>
             </div>
-            {preview("h-[340px]")}
+            {preview("h-340")}
             <div className="max-w-xs">{threshold}</div>
         </div>
     );

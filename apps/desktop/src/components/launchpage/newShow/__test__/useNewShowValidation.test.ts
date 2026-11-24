@@ -119,6 +119,22 @@ describe("useNewShowValidation", () => {
         expect(result.current).toBe(true);
     });
 
+    it("holds the field step while a custom floor number is out of range", () => {
+        const state: NewShowWizardState = {
+            ...DEFAULT_NEW_SHOW_WIZARD_STATE,
+            ensemble: { activity: "Winter Guard" },
+            field: {
+                template: FieldPropertiesTemplates.INDOOR_60x90_8to5,
+                isCustom: false,
+                incomplete: true,
+            },
+        };
+        const { result } = renderHook(() =>
+            useNewShowValidation(state, "field"),
+        );
+        expect(result.current).toBe(false);
+    });
+
     it("requires the activity on the field step, where a blank show picks it", () => {
         const state: NewShowWizardState = {
             ...DEFAULT_NEW_SHOW_WIZARD_STATE,

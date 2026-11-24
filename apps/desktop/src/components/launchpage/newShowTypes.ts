@@ -67,6 +67,8 @@ export interface NewShowFieldData {
     isCustom: boolean;
     /** The floor's printed art, picked on an indoor floor; shown under the grid */
     image?: Uint8Array | null;
+    /** A custom floor number is out of range, so the step can't go on yet */
+    incomplete?: boolean;
 }
 
 export interface PreviousDotsCoordinateData {

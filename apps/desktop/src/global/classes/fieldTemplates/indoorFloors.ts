@@ -71,8 +71,8 @@ export const sameFloorSize = (a: IndoorFloorSize, b: IndoorFloorSize) =>
 
 /**
  * The field for a floor size and step size: the stock template when floor makers sell that
- * floor at that step size, else a custom grid field with the same lines (every 4 steps from
- * the center and the front).
+ * floor at that step size, else a custom grid field with the same lines: every 4 steps out
+ * from the center side to side, and every 4 steps front to back, centered between the edges.
  */
 export function indoorFloorTemplate(
     size: IndoorFloorSize,
@@ -81,7 +81,9 @@ export function indoorFloorTemplate(
     const key = templateKey(size, stepInches);
     const stock = key ? GridFieldTemplates[key] : undefined;
     if (stock) return stock;
-    const steps = (feet: number) => (feet * 12) / stepInches;
+    // Rounded so float error can't move a line: 83 ft at 16.6 in is 60 steps, not 59.99999…
+    const steps = (feet: number) =>
+        Math.round(((feet * 12) / stepInches) * 1e6) / 1e6;
     return new FieldProperties({
         name: customFloorName(size, stepInches),
         xCheckpoints: createGridXCheckpoints({ xSteps: steps(size.widthFeet) }),
@@ -112,22 +114,23 @@ export function indoorFloorOf(
 }
 
 /**
- * A floor with the image's shape: as deep as `size`, and as wide as the image makes it, to the
- * nearest foot. Null when that width is outside FLOOR_FEET_RANGE.
+ * How far an image's shape may be from a floor's and still count as that floor: 2%, under half
+ * the gap between the closest two floors (50 × 70 and 55 × 80, about 4% apart).
  */
-export function floorShapedLikeImage(
-    imageWidth: number,
-    imageHeight: number,
-    size: IndoorFloorSize,
-): IndoorFloorSize | null {
-    if (imageWidth <= 0 || imageHeight <= 0) return null;
-    const shape =
-        Math.max(imageWidth, imageHeight) / Math.min(imageWidth, imageHeight);
-    const widthFeet = Math.round(size.depthFeet * shape);
-    if (widthFeet < FLOOR_FEET_RANGE.min || widthFeet > FLOOR_FEET_RANGE.max)
+const SHAPE_TOLERANCE = 0.02;
+
+/**
+ * An image's shape as a floor reads it: side to side over front to back. Null for a portrait
+ * image, which the field would draw upright inside a landscape floor, so it matches no floor.
+ */
+function imageShape(imageWidth: number, imageHeight: number): number | null {
+    if (imageWidth <= 0 || imageHeight <= 0 || imageWidth < imageHeight)
         return null;
-    return { depthFeet: size.depthFeet, widthFeet };
+    return imageWidth / imageHeight;
 }
+
+const shapeOff = (size: IndoorFloorSize, shape: number) =>
+    Math.abs(size.widthFeet / size.depthFeet / shape - 1);
 
 /** Whether a floor has the image's shape, within the slack floorSizeForImage allows */
 export function floorFitsImage(
@@ -135,23 +138,38 @@ export function floorFitsImage(
     imageHeight: number,
     size: IndoorFloorSize,
 ): boolean {
-    if (imageWidth <= 0 || imageHeight <= 0) return false;
-    const shape =
-        Math.max(imageWidth, imageHeight) / Math.min(imageWidth, imageHeight);
-    return (
-        Math.abs(size.widthFeet / size.depthFeet / shape - 1) <= SHAPE_TOLERANCE
-    );
+    const shape = imageShape(imageWidth, imageHeight);
+    return shape !== null && shapeOff(size, shape) <= SHAPE_TOLERANCE;
 }
 
 /**
- * How far an image's shape may be from a floor's and still count as that floor: 2%, under half
- * the gap between the closest two floors (50 × 70 and 55 × 80, about 4% apart).
+ * A floor with the image's shape: as deep as `size`, and as wide as the image makes it, to the
+ * nearest foot. Null for a portrait image, a width outside FLOOR_FEET_RANGE, or when rounding
+ * to a foot leaves the floor off the image's shape (a shallow floor).
  */
-const SHAPE_TOLERANCE = 0.02;
+export function floorShapedLikeImage(
+    imageWidth: number,
+    imageHeight: number,
+    size: IndoorFloorSize,
+): IndoorFloorSize | null {
+    const shape = imageShape(imageWidth, imageHeight);
+    if (shape === null) return null;
+    const shaped = {
+        depthFeet: size.depthFeet,
+        widthFeet: Math.round(size.depthFeet * shape),
+    };
+    if (
+        shaped.widthFeet < FLOOR_FEET_RANGE.min ||
+        shaped.widthFeet > FLOOR_FEET_RANGE.max ||
+        !floorFitsImage(imageWidth, imageHeight, shaped)
+    )
+        return null;
+    return shaped;
+}
 
 /**
- * The floor size an image of the floor was made for, from its shape (side to side over front to
- * back; a portrait image is read turned on its side). Floors with the same shape (40 × 60 and
+ * The stock floor size an image of the floor was made for, from its shape (side to side over
+ * front to back; a portrait image matches none). Floors with the same shape (40 × 60 and
  * 60 × 90) go to `preferred` when it is one of them, else to the bigger floor. Null when no
  * floor is within 2% of the image's shape.
  */
@@ -160,11 +178,9 @@ export function floorSizeForImage(
     imageHeight: number,
     preferred?: IndoorFloorSize,
 ): IndoorFloorSize | null {
-    if (imageWidth <= 0 || imageHeight <= 0) return null;
-    const shape =
-        Math.max(imageWidth, imageHeight) / Math.min(imageWidth, imageHeight);
-    const off = (size: IndoorFloorSize) =>
-        Math.abs(size.widthFeet / size.depthFeet / shape - 1);
+    const shape = imageShape(imageWidth, imageHeight);
+    if (shape === null) return null;
+    const off = (size: IndoorFloorSize) => shapeOff(size, shape);
     const matches = INDOOR_FLOOR_SIZES.filter(
         (size) => off(size) <= SHAPE_TOLERANCE,
     );

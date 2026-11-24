@@ -83,6 +83,16 @@ describe("custom indoor floors", () => {
         },
     );
 
+    it("lands on whole steps despite float error in the step count", () => {
+        // 83 ft at 16.6 in is 60 steps; unrounded it's 59.99999…, which moved the front line
+        const template = indoorFloorTemplate(size(83, 90), 16.6);
+        const front = template.yCheckpoints
+            .filter((c) => c.visible)
+            .map((c) => c.stepsFromCenterFront);
+        expect(Math.max(...front)).toBe(0);
+        expect(Math.min(...front)).toBe(-60);
+    });
+
     it("labels lines every 4 steps, so a 22.5-inch step puts them 7.5 ft apart", () => {
         const template = indoorFloorTemplate(size(60, 90), 22.5);
         const lines = template.xCheckpoints
@@ -116,6 +126,14 @@ describe("floorShapedLikeImage and floorFitsImage", () => {
     it("gives up on a width the picker wouldn't take", () => {
         expect(floorShapedLikeImage(5000, 1000, size(60, 90))).toBeNull();
     });
+
+    it("gives up when a foot's rounding leaves a shallow floor off the image's shape", () => {
+        // 20 ft deep: 1.08 × 20 = 21.6 rounds to 22, 1.9% off; 1.075 × 20 = 21.5 rounds to 22, 2.3% off
+        expect(floorShapedLikeImage(1080, 1000, size(20, 20))).toEqual(
+            size(20, 22),
+        );
+        expect(floorShapedLikeImage(1075, 1000, size(20, 20))).toBeNull();
+    });
 });
 
 describe("floorSizeForImage", () => {
@@ -128,8 +146,10 @@ describe("floorSizeForImage", () => {
         expect(floorSizeForImage(1024, 704)).toEqual(size(55, 80));
     });
 
-    it("reads a portrait image turned on its side", () => {
-        expect(floorSizeForImage(1000, 1600)).toEqual(size(50, 80));
+    it("matches no floor with a portrait image, which the field draws upright", () => {
+        expect(floorSizeForImage(1000, 1600)).toBeNull();
+        expect(floorFitsImage(1000, 1600, size(50, 80))).toBe(false);
+        expect(floorShapedLikeImage(1000, 1600, size(50, 80))).toBeNull();
     });
 
     it("gives 40 × 60 and 60 × 90, the same shape, to the one already picked, else the full-size floor", () => {

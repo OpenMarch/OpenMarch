@@ -39,7 +39,11 @@ export function useNewShowValidation(
                 return state.ensemble !== null;
             case "field":
                 // A blank show's activity is picked on this step too
-                return state.field !== null && state.ensemble !== null;
+                return (
+                    state.field !== null &&
+                    !state.field.incomplete &&
+                    state.ensemble !== null
+                );
             case "tempo": {
                 const tempo = state.tempo;
                 if (!tempo || tempo.method !== "tempo_only") {
