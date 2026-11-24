@@ -412,7 +412,7 @@ const shots = [
         kind: "still",
         show: TEMPO_SHOW,
         // Edit music's Import button with its menu open: Audio file and MusicXML score, at the
-        // header's right end beside the question mark and Done
+        // header's right end beside Done
         async setup({ page, wait, union }) {
             await wait(3000);
             await editMusic(page, wait);

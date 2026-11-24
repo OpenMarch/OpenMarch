@@ -18,7 +18,7 @@ import Term from "@/components/docs/Term.astro";
 import InShort from "@/components/docs/InShort.astro";
 import { Steps } from "@astrojs/starlight/components";
 
-<InShort>Select <Ui k="tempoMode.button.text" /> in the timeline's controls (<Kbd keys="Shift+T" />), drag the tempo line up or down until the clicks match the music, and right-click a count or a measure for fermatas, time signatures and more.</InShort>
+<InShort>Select the music notes button, <Ui k="tempoMode.button.label" />, in the timeline's controls (<Kbd keys="Shift+T" />), drag the tempo line up or down until the clicks match the music, and right-click a count or a measure for fermatas, time signatures and more.</InShort>
 
 Edit music is where you make the show's counts follow the recording. The recording never changes: every edit changes how long counts are, or how many there are, and pages and moves stay on their counts, so the drill follows. What counts, <Term id="tempo">tempo</Term> and time signatures are is on [How counts and the music fit together](/guides/music/counts-and-music/).
 
@@ -26,7 +26,7 @@ Add the music file first, and set where it starts so count 1 lands on the first 
 
 ## Open and leave Edit music
 
-<Ui k="tempoMode.button.text" /> is near the right end of the timeline's controls. To leave, select <Ui k="tempoMode.toolbar.done" />, press <Kbd keys="Escape" /> with nothing selected, or press <Kbd keys="Shift+T" /> again.
+The music notes button, <Ui k="tempoMode.button.label" />, is at the end of the timeline's controls. While Edit music is on, it's hidden. To leave, select <Ui k="tempoMode.toolbar.done" />, press <Kbd keys="Escape" /> with nothing selected, or press <Kbd keys="Shift+T" /> again.
 
 <Media
   id="music-edit-music"
@@ -40,7 +40,9 @@ The timeline shows four lanes in place of the moves:
 - <Ui k="tempoMode.lanes.tempo.name" />: the tempo of each count, drawn as a line. Higher is faster.
 - <Ui k="tempoMode.lanes.music.name" />: the waveform. Click it to move the <Term id="playhead">playhead</Term>.
 
-While Edit music is on, the rest of the window is dimmed. Moving around the show, go to (<Kbd action="timelineGoTo" />), playback, undo and saving still work. Each edit to the lanes is one step to undo. The <Ui k="tempoMode.help.label" /> button (the question mark in the header) lists the gestures.
+In the <Ui k="tempoMode.lanes.marks.name" /> and <Ui k="tempoMode.lanes.measures.name" /> lanes, the measure under the pointer is highlighted. Right-click it for its menu.
+
+While Edit music is on, the rest of the window is dimmed. Moving around the show, go to (<Kbd action="timelineGoTo" />), playback, undo and saving still work. Each edit to the lanes is one step to undo.
 
 ## Listen against the music
 

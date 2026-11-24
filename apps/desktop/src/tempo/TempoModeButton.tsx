@@ -1,5 +1,7 @@
 /**
- * Edit music: the timeline bar's "Edit music" button turns tempo mode on (Shift+T). Tempo mode is
+ * Edit music: the timeline bar's music-notes button turns tempo mode on (Shift+T); its tooltip and
+ * label name it (owner, 2026-11-24: the icon, no words). It sits last in the bar, after a divider,
+ * apart from the view controls (Fit, Compact). Tempo mode is
  * the code's name; the app calls it editing the music (owner, 2026-11-04). While the mode is on the
  * bar leaves this button out: the mode's header has Done, the one way out (owner, 2026-11-24).
  * Shift+T and tempo mode's key guard are the timeline panel's (`useTempoModeKeys`), so they work
@@ -27,12 +29,9 @@ export function TempoModeButton() {
                 aria-label={tolgee.t("tempoMode.button.label", "Edit music")}
                 onMouseDown={(event) => event.preventDefault()}
                 onClick={() => setOn(true)}
-                className="rounded-4 focus-visible:ring-accent hover:bg-fg-2 text-text hover:text-accent flex h-24 items-center justify-center gap-4 px-6 outline-hidden duration-150 focus-visible:ring-2"
+                className="rounded-4 focus-visible:ring-accent enabled:hover:bg-fg-2 text-text enabled:hover:text-accent flex size-24 items-center justify-center outline-hidden duration-150 ease-out focus-visible:ring-2"
             >
-                <MusicNotesIcon size={16} />
-                <span className="text-sub">
-                    {tolgee.t("tempoMode.button.text", "Edit music")}
-                </span>
+                <MusicNotesIcon size={16} aria-hidden />
             </button>
         </ShortcutTooltip>
     );
