@@ -23,7 +23,7 @@ import {
     venueAround,
     venueShows,
 } from "@/field/three/venueUnderlay/fieldVenue";
-import { DISPLAY_BUTTON_CLASS, DisplayCaption } from "./displayButton";
+import { DISPLAY_BUTTON_CLASS } from "./displayButton";
 
 const LOOKS: readonly { value: FieldVenueLook; key: string }[] = [
     { value: "off", key: "toolbar.view.venueOff" },
@@ -91,7 +91,6 @@ export default function VenueButton() {
                         )}
                     >
                         <MapTrifoldIcon size={16} />
-                        <DisplayCaption>{label}</DisplayCaption>
                     </button>
                 </Popover.Trigger>
             </ShortcutTooltip>

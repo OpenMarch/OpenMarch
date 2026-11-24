@@ -22,7 +22,7 @@ import {
     type StartFlagPositionsSettings,
 } from "@/timeline/startFlagLevels";
 import { ShortcutTooltip } from "@/components/timeline/ShortcutTooltip";
-import { DISPLAY_BUTTON_CLASS, DisplayCaption } from "./displayButton";
+import { DISPLAY_BUTTON_CLASS } from "./displayButton";
 
 type State = keyof StartFlagPositionsSettings;
 type Part = keyof StartFlagLevels;
@@ -184,9 +184,6 @@ export function StartFlagPositionsButton() {
                             size={16}
                             weight={hold ? "bold" : "regular"}
                         />
-                        <DisplayCaption>
-                            {t("timeline.startFlagPositions.paths")}
-                        </DisplayCaption>
                     </button>
                 </Popover.Trigger>
             </ShortcutTooltip>

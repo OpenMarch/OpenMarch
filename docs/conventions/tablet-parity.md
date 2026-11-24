@@ -19,8 +19,8 @@ control, palette row) runs that action.
 2. Put the behavior in exactly one handler: `useActionHandler(id, run, { enabled, checked })`
    in a `shortcuts/handlers/use*ActionHandlers.ts` hook.
 3. Mouse controls use `<ActionButton action=…>`. It adds the tooltip with the shortcut,
-   disables the button when the action can't run and, in the tablet layout, the caption
-   and the long-press explanation.
+   disables the button when the action can't run and, in the tablet layout, the long-press
+   explanation.
 4. Touch-only controls also use `<ActionButton>` or `runAction(id, args)`. **Never call a
    store setter directly from a control.** That skips the enabled state and the shared
    undo path.
@@ -61,8 +61,10 @@ timeline, it also needs a visible touch path (section 2).
   sizes.
 - It must fit the tablet layout at **744 px wide** (iPad mini portrait) and 1024 px
   landscape, with the Inspector as a drawer.
-- Icon-only buttons need a name (`ActionButton` caption or `aria-label`). The long press
-  explains a control by its accessible name.
+- Icon-only buttons need a name (`ActionButton` gives one, else `aria-label`). The long press
+  explains a control by its accessible name. Controls always on screen show no text under
+  their icons on touch (#1292); only a panel that opens like a menu (the timeline's "…"
+  panel) captions its buttons with `ActionButton`'s `caption`.
 - Show keyboard hints ("Hold R for…") only through `useShowShortcutHints` /
   `KeyboardSeenStore`, so they don't appear on a tablet without a keyboard.
 

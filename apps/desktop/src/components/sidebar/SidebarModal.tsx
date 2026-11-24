@@ -2,7 +2,6 @@ import { useSidebarModalStore } from "@/stores/SidebarModalStore";
 import clsx from "clsx";
 import { type ReactNode, useEffect, useState } from "react";
 import { twMerge } from "tailwind-merge";
-import { TouchCaption } from "@/components/ui/InfoTip";
 import { FIELD_EDIT_PANEL_ID } from "@/field/editMode/fieldEditPanelId";
 
 export default function SidebarModal() {
@@ -70,7 +69,7 @@ export function SidebarModalLauncher({
     testId,
 }: {
     buttonLabel: string | ReactNode;
-    /** What the button opens, e.g. "Marchers": its accessible name, and its caption in touch mode. */
+    /** What the button opens, e.g. "Marchers": its accessible name, and what a long press says. */
     name?: string;
     contents: ReactNode;
     newContentId: string;
@@ -106,11 +105,6 @@ export function SidebarModalLauncher({
             data-testid={testId}
         >
             {buttonLabel}
-            {name !== undefined && (
-                <TouchCaption className="max-w-full text-center leading-tight whitespace-normal">
-                    {name}
-                </TouchCaption>
-            )}
         </button>
     );
 }

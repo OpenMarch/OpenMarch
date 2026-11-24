@@ -1,5 +1,4 @@
 import { useEffect } from "react";
-import { useTranslate } from "@tolgee/react";
 import clsx from "clsx";
 import ActionButton from "@/shortcuts/ActionButton";
 import {
@@ -18,13 +17,11 @@ import { useSidebarModalStore } from "@/stores/SidebarModalStore";
  * beside it. Pressed again, it's Done.
  */
 export default function FieldModal() {
-    const { t } = useTranslate();
     const editing = useIsFieldEditMode();
     useFieldEditPanel();
     return (
         <ActionButton
             action="fieldEditMode"
-            caption={t("sidebar.field")}
             aria-pressed={editing}
             id="sidebar-launcher-field"
             data-testid="sidebar-field"

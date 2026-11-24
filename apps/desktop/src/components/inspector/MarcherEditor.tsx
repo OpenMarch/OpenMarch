@@ -262,7 +262,6 @@ export function ArrangeButtons({ rotate }: { rotate: ReactNode }) {
             <div className="flex gap-8">
                 <ActionButton
                     action="alignVertically"
-                    caption={t("inspector.marcher.alignVerticallyCaption")}
                     className={clsx(
                         getButtonClassName({
                             variant: "secondary",
@@ -275,7 +274,6 @@ export function ArrangeButtons({ rotate }: { rotate: ReactNode }) {
                 </ActionButton>
                 <ActionButton
                     action="alignHorizontally"
-                    caption={t("inspector.marcher.alignHorizontallyCaption")}
                     className={clsx(
                         getButtonClassName({
                             variant: "secondary",
@@ -289,7 +287,6 @@ export function ArrangeButtons({ rotate }: { rotate: ReactNode }) {
 
                 <ActionButton
                     action="flipHorizontal"
-                    caption={t("inspector.marcher.flipHorizontalCaption")}
                     className={clsx(
                         getButtonClassName({
                             variant: "secondary",
@@ -302,7 +299,6 @@ export function ArrangeButtons({ rotate }: { rotate: ReactNode }) {
                 </ActionButton>
                 <ActionButton
                     action="flipVertical"
-                    caption={t("inspector.marcher.flipVerticalCaption")}
                     className={clsx(
                         getButtonClassName({
                             variant: "secondary",

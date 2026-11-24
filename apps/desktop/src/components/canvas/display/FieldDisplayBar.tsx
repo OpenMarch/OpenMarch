@@ -26,7 +26,7 @@ import {
     type UiSettings,
 } from "@/stores/UiSettingsStore";
 import type { ActionId } from "@/shortcuts/definitions";
-import { DISPLAY_BUTTON_CLASS, DisplayCaption } from "./displayButton";
+import { DISPLAY_BUTTON_CLASS } from "./displayButton";
 import { StartFlagPositionsButton } from "./StartFlagPositionsButton";
 import SelectToolBar from "./SelectToolBar";
 import VenueButton from "./VenueButton";
@@ -228,7 +228,6 @@ function ChoiceButton<
                         )}
                     >
                         <IconComponent size={16} />
-                        <DisplayCaption>{label}</DisplayCaption>
                     </button>
                 </Popover.Trigger>
             </ShortcutTooltip>

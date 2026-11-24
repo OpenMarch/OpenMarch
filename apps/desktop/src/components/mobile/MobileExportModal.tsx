@@ -7,7 +7,6 @@ import {
 } from "@phosphor-icons/react";
 import clsx from "clsx";
 import { twMerge } from "tailwind-merge";
-import { TouchCaption } from "@/components/ui/InfoTip";
 import EnsembleList from "./EnsembleList";
 import MobileExportView from "./MobileExportView";
 import DetachButton from "./DetachButton";
@@ -172,9 +171,6 @@ export default function MobileExportModal({
                 id="sidebar-launcher-mobile-export"
             >
                 <span aria-hidden>{label}</span>
-                <TouchCaption className="max-w-full text-center leading-tight whitespace-normal">
-                    {t("sidebar.mobile")}
-                </TouchCaption>
             </button>
         </>
     );
