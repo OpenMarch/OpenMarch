@@ -968,10 +968,6 @@
                     "title": "团体类型",
                     "typeLabel": "团体类型"
                 },
-                "field": {
-                    "description": "为表演选择场地模板。",
-                    "title": "场地设置"
-                },
                 "performers": {
                     "description": "现在添加队员，或跳过并稍后在编辑器中添加。",
                     "noneAdded": "尚未添加队员。",

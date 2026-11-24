@@ -1,11 +1,16 @@
 import { useMemo } from "react";
 import { FieldProperties } from "@openmarch/core";
 import { defaultSettings } from "@/stores/UiSettingsStore";
-import { fieldSvg } from "@/components/exporting/utils/drillChartSvg";
+import {
+    fieldSvg,
+    type DrillChartFieldImage,
+} from "@/components/exporting/utils/drillChartSvg";
 
 interface FieldPreviewProps {
     fieldProperties: FieldProperties;
     className?: string;
+    /** Drawn under the grid when the field properties show the field image */
+    image?: DrillChartFieldImage;
 }
 
 /**
@@ -16,21 +21,24 @@ const MARGIN = 0.125;
 
 /**
  * A picture of a field template, drawn as SVG from its properties with the drill charts'
- * field (`fieldSvg`), with no canvas (#207). It has no field image: a template has none yet.
+ * field (`fieldSvg`), with no canvas (#207). A template has no field image of its own; the new
+ * show's floor step passes the one picked there.
  */
 export default function FieldPreview({
     fieldProperties,
     className = "",
+    image,
 }: FieldPreviewProps) {
     const src = useMemo(() => {
         const { width, height } = fieldProperties;
         const field = fieldSvg(fieldProperties, {
             gridLines: defaultSettings.gridLines,
             halfLines: defaultSettings.halfLines,
+            image,
         });
-        const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="${-width * MARGIN} ${-height * MARGIN} ${width * (1 + 2 * MARGIN)} ${height * (1 + 2 * MARGIN)}" preserveAspectRatio="xMidYMid meet">${field}</svg>`;
+        const svg = `<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="${-width * MARGIN} ${-height * MARGIN} ${width * (1 + 2 * MARGIN)} ${height * (1 + 2 * MARGIN)}" preserveAspectRatio="xMidYMid meet">${field}</svg>`;
         return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
-    }, [fieldProperties]);
+    }, [fieldProperties, image]);
 
     return (
         <div
