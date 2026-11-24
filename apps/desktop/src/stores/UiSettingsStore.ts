@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import type { EquipmentIcons } from "@/cues/equipmentIcons";
+import type { EquipmentIconPlace, EquipmentIcons } from "@/cues/equipmentIcons";
 import { parseTimelineHeight } from "@/components/timeline/timelineSplit";
 import { syncFromStorage } from "@/stores/syncFromStorage";
 import {
@@ -107,6 +107,8 @@ export interface UiSettings {
      * performers holding something other than their own instrument, everyone, or nobody
      */
     equipmentIcons?: EquipmentIcons;
+    /** Where those icons go: after the drill number, in place of the dot, or of the number */
+    equipmentIconPlace?: EquipmentIconPlace;
     /**
      * Whether an open shape shows its walks and start rings (#403): the floating editor's
      * Pathways toggle. Off by default.
@@ -133,7 +135,7 @@ export interface UiSettings {
 export type MarcherLabelForm = "auto" | "names" | "numbers" | "off";
 export type MarcherLabelSize = "small" | "normal" | "large";
 export type ShapeOutlines = "selected" | "always" | "off";
-export type { EquipmentIcons };
+export type { EquipmentIconPlace, EquipmentIcons };
 
 /** How much each label size scales the labels' normal size */
 export const LABEL_SIZE_SCALE: Record<MarcherLabelSize, number> = {
@@ -182,6 +184,7 @@ export const defaultSettings: UiSettings = {
     shapes: "selected",
     marcherOrder: "selected",
     equipmentIcons: "changed",
+    equipmentIconPlace: "beside",
     shapeWalks: false,
     followTheLeader: false,
     showPropNames: false,
@@ -244,6 +247,7 @@ const parseSettings = (raw: string): UiSettings => {
         timelineFoldedCueLanes: stringList(parsed.timelineFoldedCueLanes),
         recentEquipment: stringList(parsed.recentEquipment).slice(0, 4),
         equipmentIcons: parseEquipmentIcons(parsed.equipmentIcons),
+        equipmentIconPlace: parseEquipmentIconPlace(parsed.equipmentIconPlace),
         startFlagPositions: parseStartFlagPositions(parsed.startFlagPositions),
         mouseSettings: mergedMouseSettings,
         coordinateRounding: parsed.coordinateRounding
@@ -258,6 +262,10 @@ const parseSettings = (raw: string): UiSettings => {
 /** A stored Equipment icons choice, or the default for anything else. */
 const parseEquipmentIcons = (value: unknown): EquipmentIcons =>
     value === "off" || value === "everyone" ? value : "changed";
+
+/** A stored Equipment icons place, or the default for anything else. */
+const parseEquipmentIconPlace = (value: unknown): EquipmentIconPlace =>
+    value === "dot" || value === "label" ? value : "beside";
 
 // Helper function to load settings from localStorage
 const loadSettings = (): UiSettings => {

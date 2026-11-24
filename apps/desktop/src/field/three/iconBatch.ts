@@ -116,11 +116,13 @@ attribute vec2 aAnchor;
 attribute vec4 aRect;  // left, top, width, height in field units from the anchor, y down
 attribute vec4 aUv;    // u0, v0, u1, v1
 attribute vec4 aColor;
+attribute float aScaled; // 1 for an icon in place of a dot: it grows as dots do when zoomed out
 uniform vec2 uOffset;
+uniform float uDotScale;
 varying vec2 vUv;
 varying vec4 vColor;
 void main() {
-    vec2 local = aRect.xy + position.xy * aRect.zw;
+    vec2 local = (aRect.xy + position.xy * aRect.zw) * mix(1.0, uDotScale, aScaled);
     // y runs down on the field and up in the texture
     vUv = vec2(mix(aUv.x, aUv.z, position.x), mix(aUv.w, aUv.y, position.y));
     vColor = aColor;
@@ -150,6 +152,8 @@ export interface FieldIcon {
     readonly size: number;
     /** `[r, g, b, a]`, 0 to 1 */
     readonly color: readonly [number, number, number, number];
+    /** In place of a dot: scaled with the dots ({@link IconBatch.dotScale}) */
+    readonly scaled?: boolean;
 }
 
 /**
@@ -182,6 +186,7 @@ export class IconBatch {
                     uAtlas: { value: atlas.texture },
                     uOpacity: { value: 1 },
                     uOffset: { value: [0, 0] },
+                    uDotScale: { value: 1 },
                 },
                 transparent: true,
                 depthTest: false,
@@ -199,6 +204,7 @@ export class IconBatch {
         const rect = new Float32Array(count * 4);
         const uv = new Float32Array(count * 4);
         const color = new Float32Array(count * 4);
+        const scaled = new Float32Array(count);
         this.owner = new Int32Array(count);
         this.anchors = new Float32Array(count * 2);
         icons.forEach((icon, i) => {
@@ -217,12 +223,17 @@ export class IconBatch {
                 i * 4,
             );
             color.set(icon.color, i * 4);
+            scaled[i] = icon.scaled ? 1 : 0;
             this.owner[i] = icon.owner;
         });
         const geometry = this.mesh.geometry;
         geometry.setAttribute("aRect", new InstancedBufferAttribute(rect, 4));
         geometry.setAttribute("aUv", new InstancedBufferAttribute(uv, 4));
         geometry.setAttribute("aColor", new InstancedBufferAttribute(color, 4));
+        geometry.setAttribute(
+            "aScaled",
+            new InstancedBufferAttribute(scaled, 1),
+        );
         this.anchorAttr = new InstancedBufferAttribute(this.anchors, 2);
         this.anchorAttr.setUsage(DynamicDrawUsage);
         geometry.setAttribute("aAnchor", this.anchorAttr);
@@ -245,6 +256,11 @@ export class IconBatch {
     /** Moves every icon by the same amount, in field units. */
     setOffset(x: number, y: number) {
         this.mesh.material.uniforms.uOffset.value = [x, y];
+    }
+
+    /** How much larger than its field size a dot is drawn (`dotSizes`): icons in its place follow */
+    set dotScale(value: number) {
+        this.mesh.material.uniforms.uDotScale.value = value;
     }
 
     set opacity(value: number) {

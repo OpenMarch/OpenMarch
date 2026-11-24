@@ -3,7 +3,7 @@ import { useIsPlaying } from "@/context/IsPlayingContext";
 import tolgee from "@/global/singletons/Tolgee";
 import { useIsBasicMode } from "@/stores/EditorModeStore";
 import { useUiSettingsStore } from "@/stores/UiSettingsStore";
-import type { EquipmentIcons } from "@/cues/equipmentIcons";
+import type { EquipmentIconPlace, EquipmentIcons } from "@/cues/equipmentIcons";
 import { useCueCommands, type CueCommands } from "@/cues/useCueCommands";
 import { useCueCarryNotices } from "@/cues/useCueCarryNotices";
 import { itemValueId } from "@/cues/equipmentItems";
@@ -123,6 +123,37 @@ export function setEquipmentIcons(shown: EquipmentIcons) {
         setUiSettings({ ...uiSettings, equipmentIcons: shown });
 }
 
+/** The Equipment icons Where choices' actions, by place. */
+export const EQUIPMENT_PLACE_ACTIONS: Readonly<
+    Record<EquipmentIconPlace, ActionId>
+> = {
+    beside: "equipmentIconsBeside",
+    dot: "equipmentIconsOnDot",
+    label: "equipmentIconsOnNumber",
+};
+
+/** One Where choice: checked while in effect, greyed out with the reason while icons are off. */
+function useEquipmentPlaceChoice(place: EquipmentIconPlace) {
+    const settings = useUiSettingsStore((s) => s.uiSettings);
+    const off = (settings.equipmentIcons ?? "changed") === "off";
+    const current = settings.equipmentIconPlace ?? "beside";
+    useActionHandler(
+        EQUIPMENT_PLACE_ACTIONS[place],
+        () => {
+            const { uiSettings, setUiSettings } = useUiSettingsStore.getState();
+            if (uiSettings.equipmentIconPlace !== place)
+                setUiSettings({ ...uiSettings, equipmentIconPlace: place });
+        },
+        {
+            enabled: !off && current !== place,
+            checked: !off && current === place,
+            disabledReason: off
+                ? tolgee.t("toolbar.view.equipmentPlaceOffReason")
+                : undefined,
+        },
+    );
+}
+
 /** One Equipment icons choice: checked while it's the one in effect. */
 function useEquipmentIconsChoice(shown: EquipmentIcons) {
     const current = useUiSettingsStore(
@@ -221,6 +252,9 @@ export function useCueActionHandlers() {
     useEquipmentIconsChoice("off");
     useEquipmentIconsChoice("changed");
     useEquipmentIconsChoice("everyone");
+    useEquipmentPlaceChoice("beside");
+    useEquipmentPlaceChoice("dot");
+    useEquipmentPlaceChoice("label");
 
     const basic = useIsBasicMode();
     for (const lane of TIMELINE_LANES)

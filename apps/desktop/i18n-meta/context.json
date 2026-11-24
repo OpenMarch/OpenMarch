@@ -4048,5 +4048,13 @@
     "actions.cues.equipmentIconsOff": "Name of an action in the command palette, the same choice as 'Off' under the field display bar's 'Equipment icons': no equipment icons on the field.",
     "actions.cues.equipmentIconsChanged": "Name of an action in the command palette, the same choice as 'Changed only' under the field display bar's 'Equipment icons': icons only for performers holding something other than their own instrument.",
     "actions.cues.equipmentIconsEveryone": "Name of an action in the command palette, the same choice as 'Everyone' under the field display bar's 'Equipment icons': an icon for every performer.",
-    "actions.cues.equipmentIconsKeywords": "Extra search words for the Equipment icons actions in the command palette, space-separated. Translate each word."
+    "actions.cues.equipmentIconsKeywords": "Extra search words for the Equipment icons actions in the command palette, space-separated. Translate each word.",
+    "toolbar.view.equipmentPlace": "Heading of the second row in the 'Equipment icons' popup (field display bar): where on the field each performer's equipment icon goes.",
+    "toolbar.view.equipmentBeside": "Choice under 'Where' in the 'Equipment icons' popup: the icon goes right after the performer's drill number on the field. The default.",
+    "toolbar.view.equipmentOnDot": "Choice under 'Where' in the 'Equipment icons' popup: the icon replaces the performer's dot on the field, centered on their spot, in the dot's color.",
+    "toolbar.view.equipmentOnNumber": "Choice under 'Where' in the 'Equipment icons' popup: the icon replaces the performer's drill number on the field; the number still shows while they're pointed at or selected.",
+    "toolbar.view.equipmentPlaceOffReason": "Why the 'Where' choices of the 'Equipment icons' popup are greyed out: no icons are shown. 'Changed only' and 'Everyone' are the other choices in the same popup.",
+    "actions.cues.equipmentIconsBeside": "Name of an action in the command palette, the same choice as 'Next to the number' under 'Where' in the field display bar's 'Equipment icons' popup.",
+    "actions.cues.equipmentIconsOnDot": "Name of an action in the command palette, the same choice as 'In place of the dot' under 'Where' in the field display bar's 'Equipment icons' popup.",
+    "actions.cues.equipmentIconsOnNumber": "Name of an action in the command palette, the same choice as 'In place of the number' under 'Where' in the field display bar's 'Equipment icons' popup."
 }

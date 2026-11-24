@@ -732,6 +732,31 @@ const STATIC_ACTIONS = {
         defaultBindings: [],
         args: { shown: "everyone" },
     },
+    // Where those icons go: the popup's Where choice. Unbound
+    equipmentIconsBeside: {
+        labelKey: "actions.cues.equipmentIconsBeside",
+        keywordsKey: "actions.cues.equipmentIconsKeywords",
+        category: "field",
+        scope: "canvas",
+        defaultBindings: [],
+        args: { place: "beside" },
+    },
+    equipmentIconsOnDot: {
+        labelKey: "actions.cues.equipmentIconsOnDot",
+        keywordsKey: "actions.cues.equipmentIconsKeywords",
+        category: "field",
+        scope: "canvas",
+        defaultBindings: [],
+        args: { place: "dot" },
+    },
+    equipmentIconsOnNumber: {
+        labelKey: "actions.cues.equipmentIconsOnNumber",
+        keywordsKey: "actions.cues.equipmentIconsKeywords",
+        category: "field",
+        scope: "canvas",
+        defaultBindings: [],
+        args: { place: "label" },
+    },
     toggleEquipmentLane: {
         labelKey: "actions.cues.toggleEquipmentLane",
         keywordsKey: "actions.cues.laneKeywords",

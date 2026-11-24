@@ -77,6 +77,13 @@ export function sectionIconKey(sectionName: string): EquipmentIconKey {
 export type EquipmentIcons = "off" | "changed" | "everyone";
 
 /**
+ * Where an equipment icon goes: after the drill number (the default), centered on the performer's
+ * spot instead of their dot, or instead of their drill number (which still shows while they're
+ * hovered or selected).
+ */
+export type EquipmentIconPlace = "beside" | "dot" | "label";
+
+/**
  * Each performer's icon at `count`. A performer holding something other than their section's
  * usual item gets that item's icon; with `everyone`, the others get their section's own icon
  * (a section's icon, such as Marimba, says more than its usual item, which some sections lack).

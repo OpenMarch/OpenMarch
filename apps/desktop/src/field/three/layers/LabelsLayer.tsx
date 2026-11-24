@@ -10,11 +10,15 @@ import {
     type FieldNotDefined,
 } from "../fieldNotDefined";
 import { useFieldDraw } from "../fieldDrawContext";
-import { labelsShown } from "../marcherLooks";
+import { labelsShown, writeMarcherLooks } from "../marcherLooks";
+import { dotSizes } from "../selectionRing";
 import { TextBatch, type GlyphAtlas } from "../sdfText";
 import { autoLabelScale, type LabelBox } from "@/field/labelForms";
 import type { LabelIcons } from "@/cues/useEquipmentIcons";
-import type { EquipmentIconKey } from "@/cues/equipmentIcons";
+import type {
+    EquipmentIconKey,
+    EquipmentIconPlace,
+} from "@/cues/equipmentIcons";
 import {
     IconBatch,
     loadIconAtlas,
@@ -36,6 +40,8 @@ const LABEL_BESIDE = DOT_RADIUS * 1.6;
  */
 const ICON_EM = 1.6;
 const ICON_GAP_EM = 0.1;
+/** An icon in place of a dot: its box in field units, its drawing about a dot's size. */
+const DOT_ICON = DOT_RADIUS * 3.2;
 /** How much wider an icon makes a label, in em (for Auto's spacing). */
 const ICON_WIDTH_EM = ICON_EM + ICON_GAP_EM;
 
@@ -149,6 +155,8 @@ export default function LabelsLayer({
     style = DEFAULT_STYLE,
     holdAutoSize = false,
     icons = null,
+    iconPlace = "beside",
+    hovered = null,
 }: {
     marchers: FieldMarchers;
     /** Marchers whose labels are drawn dimmed (#201). */
@@ -169,6 +177,16 @@ export default function LabelsLayer({
      * change.
      */
     icons?: LabelIcons | null;
+    /** Where the icons go: after the drill number, in place of the dot, or of the number */
+    iconPlace?: EquipmentIconPlace;
+    /**
+     * The marcher the pointer rests on, read every frame, and when it changes: in place of the
+     * number, an icon gives way to the number while its marcher is hovered or selected
+     */
+    hovered?: {
+        get(): number | null;
+        subscribe(changed: () => void): () => void;
+    } | null;
 }) {
     const invalidate = useThree((s) => s.invalidate);
     const draw = useFieldDraw();
@@ -216,6 +234,9 @@ export default function LabelsLayer({
         shown: new Uint8Array(0) as Uint8Array,
         iconKey: "",
         iconBatch: null as IconBatch | null,
+        iconPlace,
+        hoveredId: null as number | null,
+        selectionVersion: -1,
     });
 
     useEffect(() => {
@@ -224,14 +245,18 @@ export default function LabelsLayer({
     }, [text, invalidate]);
 
     // New labels, a new theme or style lay the text out again on the next frame
-    useEffect(() => invalidate(), [labels, theme, style, icons, invalidate]);
+    useEffect(
+        () => invalidate(),
+        [labels, theme, style, icons, iconPlace, invalidate],
+    );
+    useEffect(() => hovered?.subscribe(invalidate), [hovered, invalidate]);
+    // The icons carry the label's offset themselves: one in place of a dot has none
     useEffect(() => {
-        for (const batch of [text, iconBatch])
-            batch?.setOffset(
-                style.beside ? LABEL_BESIDE : 0,
-                style.beside ? 0 : -LABEL_LIFT,
-            );
-    }, [text, iconBatch, style.beside]);
+        text.setOffset(
+            style.beside ? LABEL_BESIDE : 0,
+            style.beside ? 0 : -LABEL_LIFT,
+        );
+    }, [text, style.beside]);
     useEffect(() => look.subscribe(invalidate), [look, invalidate]);
 
     useFrame(() => {
@@ -253,10 +278,16 @@ export default function LabelsLayer({
         text.opacity = opacity;
         // Hidden labels cost nothing to draw, which matters most in software GL
         text.mesh.visible = opacity > 0 && style.form !== "off";
+        const onDots = iconPlace === "dot";
         if (iconBatch) {
-            iconBatch.opacity = opacity;
-            iconBatch.mesh.visible = opacity > 0 && iconKey !== "";
+            // In place of a dot it's drawn as the dot is: never faded, and as large when zoomed out
+            iconBatch.opacity = onDots ? 1 : opacity;
+            iconBatch.dotScale = dotSizes(zoom).scale;
+            iconBatch.mesh.visible = iconKey !== "" && (onDots || opacity > 0);
         }
+        const hoveredId = hovered?.get() ?? null;
+        // In place of the number, who's hovered or selected decides which numbers show
+        const byNumber = iconPlace === "label" && iconKey !== "";
         let shown = last.shown;
         if (
             marchers.appearanceVersion !== last.appearanceVersion ||
@@ -269,6 +300,12 @@ export default function LabelsLayer({
         const newLayout =
             iconKey !== last.iconKey ||
             iconBatch !== last.iconBatch ||
+            iconPlace !== last.iconPlace ||
+            (byNumber &&
+                (hoveredId !== last.hoveredId ||
+                    marchers.selectionVersion !== last.selectionVersion)) ||
+            // The dots' colors
+            (onDots && marchers.appearanceVersion !== last.appearanceVersion) ||
             marchers.idsVersion !== last.idsVersion ||
             labels !== last.labels ||
             theme !== last.theme ||
@@ -286,7 +323,13 @@ export default function LabelsLayer({
             text.setLabels(
                 marchers.ids.map((id, i) => ({
                     text:
-                        shown[i] && dimming.labelShown(id)
+                        shown[i] &&
+                        dimming.labelShown(id) &&
+                        !(
+                            byNumber &&
+                            iconsNow?.icons.has(id) &&
+                            !revealed(id, i, hoveredId)
+                        )
                             ? (labels.get(id) ?? "")
                             : "",
                     size,
@@ -301,7 +344,9 @@ export default function LabelsLayer({
                     weight: weightOf(id),
                 })),
             );
-            iconBatch?.setIcons(iconsOf(iconsNow?.icons, shown, size, color));
+            iconBatch?.setIcons(
+                iconsOf(iconsNow?.icons, shown, size, color, hoveredId),
+            );
         } else if (weightsChanged) {
             text.setWeights((i) => weightOf(marchers.ids[i]!));
         }
@@ -322,36 +367,58 @@ export default function LabelsLayer({
             shown,
             iconKey,
             iconBatch,
+            iconPlace,
+            hoveredId,
+            selectionVersion: marchers.selectionVersion,
         };
     });
 
+    /** Whether a marcher's drill number shows in place of its icon: hovered or selected. */
+    function revealed(id: number, i: number, hoveredId: number | null) {
+        return hoveredId === id || marchers.selected[i] === 1;
+    }
+
     /**
-     * Each icon after its marcher's drill number, at the label's size: left of nothing when the
-     * label is off or empty (then where the label would be), and drawn like the label
+     * Each marcher's icon, where `iconPlace` says. After the drill number (or where the label would
+     * be when it's off or empty) and in place of the number, it's drawn like the label: its size,
+     * color and dimming. In place of the dot it's centered on the marcher's spot in the dot's
+     * color, about the dot's size.
      */
     function iconsOf(
         byId: ReadonlyMap<number, EquipmentIconKey> | undefined,
         shown: Uint8Array,
         size: number,
         color: readonly number[],
+        hoveredId: number | null,
     ): FieldIcon[] {
         if (!byId || byId.size === 0) return [];
+        if (iconPlace === "dot") return iconsOnDots(byId);
         const out: FieldIcon[] = [];
         const iconSize = ICON_EM * size;
-        // The middle of the label's capitals and digits, below its anchor
-        const y = ((CENTER_BASELINE - CENTER_CAP_TOP) / 2) * size;
+        // The label's offset from the dot, and the middle of its capitals and digits
+        const ox = style.beside ? LABEL_BESIDE : 0;
+        const y =
+            (style.beside ? 0 : -LABEL_LIFT) +
+            ((CENTER_BASELINE - CENTER_CAP_TOP) / 2) * size;
         marchers.ids.forEach((id, i) => {
             const icon = byId.get(id);
             if (!icon || !shown[i] || !dimming.labelShown(id)) return;
-            const text = style.form === "off" ? "" : (labels.get(id) ?? "");
+            const numberShows =
+                iconPlace === "beside" || revealed(id, i, hoveredId);
+            const text =
+                style.form === "off" || !numberShows
+                    ? ""
+                    : (labels.get(id) ?? "");
             const width = atlas.measure(text) * size;
             const after = text ? ICON_GAP_EM * size + iconSize / 2 : 0;
             out.push({
                 icon,
                 owner: i,
-                x: style.beside
-                    ? width + (text ? after : iconSize / 2)
-                    : width / 2 + after,
+                x:
+                    ox +
+                    (style.beside
+                        ? width + (text ? after : iconSize / 2)
+                        : width / 2 + after),
                 y,
                 size: iconSize,
                 color: [
@@ -359,6 +426,40 @@ export default function LabelsLayer({
                     color[1],
                     color[2],
                     color[3] * labelOpacity(dimming, id),
+                ],
+            });
+        });
+        return out;
+    }
+
+    /** Icons in place of the dots, in each dot's color, faded as a dimmed dot is. */
+    function iconsOnDots(
+        byId: ReadonlyMap<number, EquipmentIconKey>,
+    ): FieldIcon[] {
+        const n = marchers.ids.length;
+        const fill = new Float32Array(n * 4);
+        writeMarcherLooks(marchers.stacks, theme, {
+            fill,
+            outline: new Float32Array(n * 4),
+            shape: new Float32Array(n),
+        });
+        const out: FieldIcon[] = [];
+        marchers.ids.forEach((id, i) => {
+            const icon = byId.get(id);
+            const alpha = fill[i * 4 + 3];
+            if (!icon || marchers.isItem[i] || alpha === 0) return;
+            out.push({
+                icon,
+                owner: i,
+                x: 0,
+                y: 0,
+                size: DOT_ICON,
+                scaled: true,
+                color: [
+                    fill[i * 4],
+                    fill[i * 4 + 1],
+                    fill[i * 4 + 2],
+                    alpha * dimming.opacityOf(id),
                 ],
             });
         });
@@ -382,9 +483,17 @@ export default function LabelsLayer({
             marchers.idsVersion !== last.idsVersion ||
             labels !== last.labels ||
             style !== last.style ||
-            iconKey !== last.iconKey;
+            iconKey !== last.iconKey ||
+            iconPlace !== last.iconPlace;
         if (!moved || (holdAutoSize && style === last.style)) return before;
-        return autoLabelSizeOf(style, marchers, labels, atlas, withIcons);
+        // Only after the number does an icon make a label wider
+        return autoLabelSizeOf(
+            style,
+            marchers,
+            labels,
+            atlas,
+            iconPlace === "beside" ? withIcons : undefined,
+        );
     }
 
     return (
