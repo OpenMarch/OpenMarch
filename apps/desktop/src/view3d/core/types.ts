@@ -88,6 +88,25 @@ export interface CameraSeat {
     target: Vector3Tuple;
     /** Vertical field of view; defaults to the window's. */
     fovDeg?: number;
+    /** Saved views only: the camera's roll, degrees clockwise as seen from behind. */
+    rollDeg?: number;
+    /** Saved views only: follow this performer instead of staying put. */
+    follow?: {
+        marcherId: number;
+        mode: "third" | "pov";
+        /** The follow camera's aim (`cameraList.ts` `cameraFollowSchema`). */
+        angleDeg?: number;
+        tiltDeg?: number;
+        distanceM?: number;
+    };
+    /** Saved views only: what is sharp, and the f-number (see `cameraList.ts`). */
+    focus?: {
+        fStop: number;
+        on:
+            | { kind: "lookAt" }
+            | { kind: "distance"; meters: number }
+            | { kind: "performer"; marcherId: number };
+    };
 }
 
 /**

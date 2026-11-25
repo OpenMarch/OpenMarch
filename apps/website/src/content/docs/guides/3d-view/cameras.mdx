@@ -1,13 +1,16 @@
 ---
 title: Move the camera
-description: Pan, orbit and zoom the 3D View, jump to a camera, sit in a seat in the stands, follow a performer or see through their eyes, and save your own camera positions.
+description: Pan, orbit and zoom the 3D View, jump to a camera, sit in a seat in the stands, follow a performer or see through their eyes, save your own camera positions, and set a camera's exact position, lens and focus.
 type: how-to
 covers:
   - apps/desktop/src/view3d/window/camera
   - apps/desktop/src/view3d/window/overlay/CameraBar.tsx
   - apps/desktop/src/view3d/window/overlay/CamerasPanel.tsx
+  - apps/desktop/src/view3d/window/overlay/CameraSettings.tsx
   - apps/desktop/src/view3d/core/cameraList.ts
+  - apps/desktop/src/view3d/core/cameraSettings.ts
   - i18n:view3d.cameras
+  - i18n:view3d.cameraSettings
   - i18n:view3d.camera
   - i18n:view3d.overlay
   - i18n:view3d.settings.followTurns
@@ -141,17 +144,51 @@ The cameras are a list you can change. It's saved in the show, one list for each
 
 <Media
   id="3d-cameras-panel"
-  alt="The Cameras panel under the camera menu: six cameras, each row with its number, name and buttons to set it to the current view, move it up or down, or remove it; the note that the number is the camera's key and the view opens on camera 1; and Add current view and Reset to defaults at the bottom."
+  alt="The Cameras panel under the camera menu: six cameras, each row with a drag handle, its number, its name, a Camera settings button and a More button; the note that the number is the camera's key and the view opens on camera 1; and Add current view, Reset to defaults, Export and Import at the bottom."
   maxWidth={480}
 />
 
-Each row starts with the camera's number key: select it to fly there. Then comes the name, which you can change in place, and these buttons:
+Each row starts with a handle: drag it up or down to change the order, and with it the number keys. The camera at the top is the one the 3D View opens on. Next comes the camera's number key, which you can select to fly there, then the name, which you can change in place.
 
-- <Ui k="view3d.cameras.setView" />: moves the camera to where the view is now.
-- <Ui k="view3d.cameras.moveUp" /> and <Ui k="view3d.cameras.moveDown" />: change the order, and with it the number keys. The camera at the top is the one the 3D View opens on.
+<Ui k="view3d.cameras.settings" /> (the sliders) opens the camera's exact settings under its row ([Set a camera exactly](#set-a-camera-exactly)). The other commands are in the row's menu: select the three dots, or right-click the row.
+
+- <Ui k="view3d.cameras.setView" />: moves the camera to where the view is now. A camera that follows a performer keeps who it follows and how you've turned the view around them.
+- <Ui k="view3d.cameras.duplicate" />: adds a copy right below it, named like "Front row copy", with all of its settings.
+- <Ui k="view3d.cameras.moveUp" /> and <Ui k="view3d.cameras.moveDown" />: change the order without dragging.
 - <Ui k="view3d.cameras.remove" />: removes the camera. Select <Ui k="view3d.cameras.undo" /> in the panel within a few seconds to bring it back.
 
+<Media
+  id="3d-camera-row-menu"
+  alt="The Cameras panel with the menu of the Front row camera open, listing Camera settings, Set to current view, Duplicate, Move up, Move down and Remove."
+  maxWidth={480}
+/>
+
 A venue can have up to 30 cameras. <Ui k="view3d.cameras.reset" /> replaces your list with the venue's own cameras; if you've changed the list, it asks first, because your list isn't kept anywhere else.
+
+## Set a camera exactly
+
+Select <Ui k="view3d.cameras.settings" /> on a camera's row to see and change everything about it. The view goes to the camera as you change it, and each change is saved with the show. A venue's own camera becomes one of yours the first time you change it.
+
+To change a number, type it and press <Kbd keys="Enter" />, or press <Kbd keys="Escape" /> to put it back. You can also drag left or right on a number, or on its name, and the view moves as you drag; hold <Kbd keys="Shift" gesture="drag" /> to change it faster or <Kbd keys="Alt" gesture="drag" /> for finer steps. <Kbd keys="Up" /> and <Kbd keys="Down" /> step a number you're typing in. Angles go round past 180°.
+
+- <Ui k="view3d.cameraSettings.follows" />: <Ui k="view3d.cameraSettings.nobody" plain /> for a camera that stays where you put it, or a performer for a camera that goes with them, as in [Follow a performer](#follow-a-performer). A camera that follows someone has a <Ui k="view3d.cameraSettings.followView" plain /> choice:
+  - <Ui k="view3d.cameraSettings.behind" />: films them from outside. <Ui k="view3d.cameraSettings.around" plain /> is where the camera is around them (0° behind, 90° their right, 180° in front, −90° their left), <Ui k="view3d.cameraSettings.tilt" plain /> how high above them it looks down from, and <Ui k="view3d.cameraSettings.distance" plain /> how far away it is.
+  - <Ui k="view3d.cameraSettings.eyes" />: looks out of their eyes. <Ui k="view3d.cameraSettings.lookTurn" plain /> turns the look to their right (below 0, to their left) and <Ui k="view3d.cameraSettings.tilt" plain /> looks up (below 0, down, for example at a drum).
+- <Ui k="view3d.cameraSettings.position" plain />, for a camera that stays put: where the camera is and the point it looks at, <Ui k="view3d.cameraSettings.across" plain /> toward side 2, <Ui k="view3d.cameraSettings.height" plain /> above the field and <Ui k="view3d.cameraSettings.front" plain /> toward the audience, in feet or meters (the field's measurement system) from the center of the front sideline. The line under them says where the camera is in drill terms. <Ui k="view3d.cameraSettings.pan" plain /> and <Ui k="view3d.cameraSettings.tilt" plain /> aim it from where it stands, and <Ui k="view3d.cameraSettings.roll" plain /> tilts the picture.
+- <Ui k="view3d.cameraSettings.lens" plain />: <Ui k="view3d.cameraSettings.focalLength" plain />, as on a full-frame camera, and <Ui k="view3d.cameraSettings.fieldOfView" plain /> are one setting shown two ways. A longer lens zooms in.
+- <Ui k="view3d.cameraSettings.focus" plain />: what stays sharp while the rest blurs, as with a real lens: the point the camera looks at (<Ui k="view3d.cameraSettings.focusLookAt" plain />), a <Ui k="view3d.cameraSettings.focusPerformer" plain /> as they march, or a <Ui k="view3d.cameraSettings.focusDistance" plain /> from the camera. A lower <Ui k="view3d.cameraSettings.fStop" plain /> blurs more, and the line under it says how near and how far things look sharp.
+
+<Media
+  id="3d-camera-settings"
+  alt="The Front row camera's settings open in the Cameras panel, with an 85 mm lens and focus on the point it looks at, at f/1.4. In the view, the performers where the camera looks are sharp and the stands behind them are soft."
+  caption="An 85 mm lens at f/1.4, focused where the camera looks: the stands behind the band blur."
+/>
+
+Blur shows most with a long lens close to what it focuses on, as with a real camera: from the stands, a performer is far enough away that most of the field stays sharp.
+
+## Share cameras with another show
+
+<Ui k="view3d.cameras.export" /> at the bottom of the <Ui k="view3d.cameras.title" plain /> panel saves the venue's cameras to a file. <Ui k="view3d.cameras.import" /> replaces the cameras with a file's, after asking if you've changed the list; select <Ui k="view3d.cameras.undo" /> right after to go back. The file lists each camera's position, lens, focus and who it follows, in meters, so you can also read or edit it outside OpenMarch.
 
 ## Related
 

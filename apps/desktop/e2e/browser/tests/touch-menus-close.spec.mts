@@ -137,6 +137,12 @@ test.describe("touch layout", () => {
         // A short window, as on a tablet in landscape: the touch menu fits neither below nor
         // above a marcher near the field's top
         await page.setViewportSize({ width: 1180, height: 600 });
+        // Two key steps off the timeline: the field gets back the height of the timeline's Lanes
+        // row (fork #992), so two marchers sit clear of the shape bar and the zoom box
+        const splitter = page.getByTestId("timeline-splitter");
+        await splitter.focus();
+        for (let i = 0; i < 2; i++) await splitter.press("ArrowDown");
+        await splitter.blur();
         // Two marchers the field takes a press on, once the layout has settled
         await expect
             .poll(async () => (await pressableMarchers(page)).length)

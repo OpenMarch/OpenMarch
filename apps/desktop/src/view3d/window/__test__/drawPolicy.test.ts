@@ -11,6 +11,7 @@ import {
     nextFrameDelay,
     noteFrame,
     wake,
+    onlyUnlitChanged,
 } from "../drawPolicy";
 
 describe("nextFrameDelay", () => {
@@ -67,5 +68,23 @@ describe("shadow refresh", () => {
         refreshShadows(s, 1000, SHADOW_REFRESH_MS);
         expect(shadowsNeedUpdate(s, 1001)).toBe(true);
         expect(shadowsNeedUpdate(s, 1000 + SHADOW_REFRESH_MS + 1)).toBe(false);
+    });
+});
+
+describe("onlyUnlitChanged", () => {
+    const base = { kit: 1, lighting: "day", cameras: [1], focus: [0, 0, 0] };
+    it("is true when only camera fields changed", () => {
+        expect(
+            onlyUnlitChanged({ ...base, cameras: [2], focus: [1, 0, 0] }, base),
+        ).toBe(true);
+        expect(onlyUnlitChanged(base, base)).toBe(true);
+    });
+    it("is false when anything that casts or lights changed", () => {
+        expect(onlyUnlitChanged({ ...base, lighting: "night" }, base)).toBe(
+            false,
+        );
+        expect(onlyUnlitChanged({ ...base, kit: 2, cameras: [2] }, base)).toBe(
+            false,
+        );
     });
 });
