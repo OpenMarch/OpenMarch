@@ -195,10 +195,6 @@ function InspectorTab({
                 )}
             >
                 <Icon size={16} weight="bold" />
-                {/* In touch mode the tab says what it opens, written down the edge */}
-                <span className="text-sub touch:block hidden font-medium [writing-mode:vertical-rl]">
-                    {t("inspector.title", "Inspector")}
-                </span>
                 {hint && (
                     <span className="bg-accent absolute top-6 left-4 size-6 rounded-full" />
                 )}

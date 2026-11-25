@@ -31,7 +31,6 @@ export default function AlignmentTab() {
                 <ActionButton
                     toggleState={uiSettings.lockX ? "off" : "on"}
                     action="lockX"
-                    caption={t("toolbar.alignment.lockXCaption")}
                     className={clsx(
                         "touch:min-h-44 flex items-center gap-6",
                         uiSettings.lockX ? "text-accent" : "text-text",
@@ -42,7 +41,6 @@ export default function AlignmentTab() {
                 <ActionButton
                     toggleState={uiSettings.lockY ? "off" : "on"}
                     action="lockY"
-                    caption={t("toolbar.alignment.lockYCaption")}
                     className={`touch:min-h-44 flex items-center gap-6 ${uiSettings.lockY ? "text-accent" : "text-text"}`}
                 >
                     <ArrowsHorizontalIcon size={24} />
@@ -52,7 +50,6 @@ export default function AlignmentTab() {
                 <ActionButton
                     toggleState={uiSettings.snap ? "off" : "on"}
                     action="toggleSnap"
-                    caption={t("toolbar.alignment.snapToggleCaption")}
                     aria-pressed={!uiSettings.snap}
                     data-testid="toolbar-snap-toggle"
                     className={clsx(
@@ -64,7 +61,6 @@ export default function AlignmentTab() {
                 </ActionButton>
                 <ActionButton
                     action="snapToNearestCustomFraction"
-                    caption={t("toolbar.alignment.snapCaption")}
                     className="touch:min-h-44 flex items-center gap-6"
                 >
                     <ArrowsInCardinalIcon size={24} />

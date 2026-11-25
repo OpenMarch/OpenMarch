@@ -66,8 +66,9 @@ export type ActionButtonProps =
         /** Selects the toggle on/off label for toggle actions */
         toggleState?: "on" | "off";
         /**
-         * A short word or two shown with the icon in touch mode, where the tooltip
-         * can't be seen. Give it to icon-only buttons.
+         * A short word or two shown under the icon in touch mode, for buttons in a panel that
+         * opens like a menu (the timeline's "…" panel), where the words are the entries. Buttons
+         * always on screen go without: a long press names them (#1292).
          */
         caption?: string;
         /**

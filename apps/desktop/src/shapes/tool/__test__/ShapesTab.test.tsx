@@ -75,13 +75,13 @@ describe("ShapesTab", () => {
         expect(screen.getByTestId("shapes-tab-ring")).toBeInTheDocument();
     });
 
-    it("captions each shape kind on a tablet", () => {
+    it("on a tablet, each shape kind is an icon named for a long press, with no caption (#1292)", () => {
         setMode("touch");
         renderTab();
         const box = screen.getByRole("button", { name: "Box" });
-        expect(box.querySelector("[data-touch-caption]")).toHaveTextContent(
-            "Box",
-        );
+        expect(box.querySelector("[data-touch-caption]")).toBeNull();
+        expect(screen.getByTestId("shapes-tab-ring")).toHaveAccessibleName();
+        expect(document.querySelector("[data-touch-caption]")).toBeNull();
     });
 
     it("with a mouse, the tab is unchanged: the hint, no Ring button, no captions", () => {
