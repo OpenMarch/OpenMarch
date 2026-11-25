@@ -64,16 +64,7 @@ export async function completeNewShowWizard(
     await dialog.getByRole("button", { name: "Next", exact: true }).click();
     await expect(
         dialog.getByRole("heading", {
-            name: "Activity",
-            exact: true,
-            level: 2,
-        }),
-    ).toBeVisible();
-    await dialog.getByRole("button", { name: "Next", exact: true }).click();
-
-    await expect(
-        dialog.getByRole("heading", {
-            name: "Field setup",
+            name: "Activity and field",
             exact: true,
             level: 2,
         }),

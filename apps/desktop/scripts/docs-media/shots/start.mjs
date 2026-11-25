@@ -100,9 +100,7 @@ async function newShowToPerformers({ page, wait }) {
     await wait(600);
     await next(); // Project details
     await wait(800);
-    await next(); // Activity
-    await wait(800);
-    await next(); // Field setup
+    await next(); // Activity and field
     await wait(1000);
     await dialog.getByLabel(/quantity/i).fill("8");
     await dialog.getByRole("combobox").first().click();

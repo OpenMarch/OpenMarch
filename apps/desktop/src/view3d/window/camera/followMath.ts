@@ -8,6 +8,7 @@
  * `core/marchers/facing.ts` has them.
  */
 import type { Vector3Tuple } from "three";
+import type { FollowFraming } from "./followStore";
 
 /** Where a performer stands and faces right now, as the scene draws them. */
 export interface PerformerPose {
@@ -101,20 +102,81 @@ export function followTarget(pose: PerformerPose): Vector3Tuple {
     return [pose.x, pose.y + pose.height * THIRD_PERSON_AIM, pose.z];
 }
 
-/** The third-person view: behind the performer and above, looking at them. */
-export function thirdPersonPose(pose: PerformerPose): {
+const DEG = Math.PI / 180;
+
+/** The third-person camera stays at least this high above the performer's feet (m). */
+export const FOLLOW_MIN_HEIGHT = 0.3;
+
+/** How high the third-person camera looks down from by default (degrees). */
+export const THIRD_PERSON_TILT_DEG =
+    Math.asin(THIRD_PERSON_RISE / THIRD_PERSON_DISTANCE) / DEG;
+/** How far the point of view looks down by default (degrees). */
+export const POV_DEFAULT_TILT_DEG = -8;
+
+/**
+ * The third-person view, looking at the performer's chest: by default
+ * behind them and above. `framing` moves it round them (`angleDeg`: 0
+ * behind, 90 their right, 180 in front), up or down (`tiltDeg`) and in or
+ * out (`distanceM`).
+ */
+export function thirdPersonPose(
+    pose: PerformerPose,
+    framing: FollowFraming = {},
+): {
     position: Vector3Tuple;
     target: Vector3Tuple;
 } {
     const target = followTarget(pose);
-    const back = Math.sqrt(THIRD_PERSON_DISTANCE ** 2 - THIRD_PERSON_RISE ** 2);
+    const distance = framing.distanceM ?? THIRD_PERSON_DISTANCE;
+    const tilt = (framing.tiltDeg ?? THIRD_PERSON_TILT_DEG) * DEG;
+    // Facing +Z, a performer's right is −X: the bearing turns the other way.
+    const bearing = pose.heading + Math.PI + (framing.angleDeg ?? 0) * DEG;
+    const flat = Math.cos(tilt) * distance;
     return {
         position: [
-            target[0] - Math.sin(pose.heading) * back,
-            target[1] + THIRD_PERSON_RISE,
-            target[2] - Math.cos(pose.heading) * back,
+            target[0] + Math.sin(bearing) * flat,
+            // Looking up at them from low down stops at the ground.
+            Math.max(
+                target[1] + Math.sin(tilt) * distance,
+                pose.y + FOLLOW_MIN_HEIGHT,
+            ),
+            target[2] + Math.cos(bearing) * flat,
         ],
         target,
+    };
+}
+
+/** The framing that puts a third-person camera at `position` (the inverse of `thirdPersonPose`). */
+export function thirdPersonFraming(
+    pose: PerformerPose,
+    position: Vector3Tuple,
+): Required<FollowFraming> {
+    const target = followTarget(pose);
+    const dx = position[0] - target[0];
+    const dy = position[1] - target[1];
+    const dz = position[2] - target[2];
+    const distance = Math.hypot(dx, dy, dz);
+    const bearing = Math.atan2(dx, dz);
+    return {
+        angleDeg: angleDelta(pose.heading + Math.PI, bearing) / DEG,
+        tiltDeg: distance > 1e-9 ? Math.asin(dy / distance) / DEG : 0,
+        distanceM: distance,
+    };
+}
+
+/** The point-of-view look for a framing: `angleDeg` to their right, `tiltDeg` up. */
+export function povLookOf(framing: FollowFraming = {}): PovLook {
+    return {
+        yaw: -(framing.angleDeg ?? 0) * DEG,
+        pitch: clampPitch((framing.tiltDeg ?? POV_DEFAULT_TILT_DEG) * DEG),
+    };
+}
+
+/** The framing of a point-of-view look (the inverse of `povLookOf`). */
+export function povFraming(look: PovLook): FollowFraming {
+    return {
+        angleDeg: angleDelta(0, -look.yaw) / DEG,
+        tiltDeg: look.pitch / DEG,
     };
 }
 

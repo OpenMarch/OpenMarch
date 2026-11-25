@@ -976,10 +976,6 @@
                     "title": "Uri ng grupo",
                     "typeLabel": "Uri ng grupo"
                 },
-                "field": {
-                    "description": "Pumili ng field template para sa palabas mo.",
-                    "title": "Setup ng field"
-                },
                 "performers": {
                     "description": "Magdagdag ng mga miyembro ngayon, o laktawan at idagdag sila mamaya sa editor.",
                     "noneAdded": "Wala pang naidagdag na miyembro.",
@@ -1673,12 +1669,8 @@
             "medium": "Katamtaman",
             "large": "Malaki",
             "summary": {
-                "small": "2 marimba, 2 vibes, isang rack, isang synth at 2 speaker",
-                "medium": "4 na marimba, 3 vibes, xylophone, glockenspiel, rack, drum set, synth at 4 na speaker",
-                "large": "6 na marimba, 4 na vibes, xylophone, glockenspiel, 2 rack, drum set, 2 synth at 6 na speaker",
                 "none": "Walang pit. Puwede kang mag-set up nito mamaya sa panel na Mga miyembro."
             },
-            "always": "Nagdadagdag din ang bawat isa ng podium sa 50 at mixer sa likod ng pit.",
             "addPerformers": "Magdagdag din ng mga performer",
             "apply": "Ilapat",
             "replaces": "Pinapalitan nito ang kagamitang idinagdag ng huling preset. Lilipat sa mga bagong puwesto ang mga tumutugtog nito; aalisin ang mga maiiwang walang instrumento, maliban kung may mga galaw pa sila sa bandang huli ng palabas. Maibabalik ang lahat gamit ang I-undo. Mananatili ang kagamitang ikaw mismo ang nagdagdag.",

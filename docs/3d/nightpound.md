@@ -1,10 +1,13 @@
 <!-- cspell:ignore Daktronics sportsvideo -->
 
-# Nightpound, OH
+# Taydon, OH
 
-Nightpound is a fictional indoor arena for the 3D View, modeled on the University of Dayton Arena as WGI
+Taydon is a fictional indoor arena for the 3D View, modeled on the University of Dayton Arena as WGI
 dresses it for its World Championships. The model follows the real building's dimensions; every mark in it
 is OpenMarch's own (no WGI, university or sponsor marks).
+
+It was first called Nightpound, and the code still uses that name: the venue id stored in shows is
+`nightpound`, and the kit lives in `kits/nightpound/`. Only the name people see changed.
 
 Unlike the other venues, Nightpound doesn't grow to fit the show's field. Its floor is WGI's competition
 area, so only a field that fits it can be shown there.

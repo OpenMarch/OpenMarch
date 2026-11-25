@@ -7,6 +7,7 @@ import {
     FEET,
     PIT_PRESET_SIZES,
     pitPreset,
+    pitPresetContents,
     pitPresetOnCanvas,
     type PitPreset,
     type PitPresetEquipment,
@@ -324,6 +325,33 @@ describe("pitPreset", () => {
             }
         },
     );
+});
+
+describe("pitPresetContents", () => {
+    it("lists what the Medium preset places, by family, in reading order", () => {
+        expect(pitPresetContents("medium")).toEqual([
+            { familyId: "marimba", count: 4 },
+            { familyId: "vibraphone", count: 3 },
+            { familyId: "xylophone", count: 1 },
+            { familyId: "glockenspiel", count: 1 },
+            { familyId: "drumSet", count: 1 },
+            { familyId: "auxRack", count: 1 },
+            { familyId: "synth", count: 1 },
+            { familyId: "speaker", count: 4 },
+            { familyId: "podium", count: 1 },
+            { familyId: "mixer", count: 1 },
+        ]);
+    });
+
+    it("counts every piece each preset places", () => {
+        for (const size of PIT_PRESET_SIZES) {
+            const total = pitPresetContents(size).reduce(
+                (sum, { count }) => sum + count,
+                0,
+            );
+            expect(total).toBe(pitPreset(size).equipment.length);
+        }
+    });
 });
 
 describe("pitPresetOnCanvas", () => {

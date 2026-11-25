@@ -41,6 +41,8 @@ export interface FlyOptions {
     instant?: boolean;
     /** Field of view to arrive with; keeps the current one when omitted. */
     fovDeg?: number;
+    /** Roll to arrive with (degrees, see `RigController.rollDeg`); level when omitted. */
+    rollDeg?: number;
     /** Called once when the camera lands. */
     onArrive?: (position: Vector3Tuple) => void;
 }
@@ -50,6 +52,8 @@ interface ActiveTween {
     startMs: number;
     fromFov: number;
     toFov: number;
+    fromRoll: number;
+    toRoll: number;
     onArrive?: (position: Vector3Tuple) => void;
     /** The look-at point at the last update, so a new fly starts from it. */
     currentTarget: Vector3Tuple;
@@ -58,6 +62,12 @@ interface ActiveTween {
 export class RigController {
     target: Vector3Tuple = [0, 0, 0];
     spherical: Spherical = { radius: 100, phi: 1, theta: 0 };
+    /**
+     * The camera turned about its line of sight, degrees; positive rolls it
+     * clockwise as seen from behind. Orbit, pan and zoom keep it; a jump or
+     * a fly-to sets it (level unless they say otherwise).
+     */
+    rollDeg = 0;
     private active: ActiveTween | null = null;
     private lastUpdateMs: number | null = null;
     /** Wheel zoom still to apply, as a log of the radius ratio. */
@@ -90,11 +100,17 @@ export class RigController {
     }
 
     /** Places the camera at once and makes the pose the orbit state. */
-    jumpTo(position: Vector3Tuple, target: Vector3Tuple, fovDeg?: number) {
+    jumpTo(
+        position: Vector3Tuple,
+        target: Vector3Tuple,
+        fovDeg?: number,
+        rollDeg = 0,
+    ) {
         this.active = null;
         this.stopMotion();
         this.dropZoom();
         this.setPose(position, target);
+        this.rollDeg = rollDeg;
         if (fovDeg !== undefined) this.setFov(fovDeg);
         this.apply();
     }
@@ -118,6 +134,11 @@ export class RigController {
             startMs: options.nowMs,
             fromFov,
             toFov: options.fovDeg ?? fromFov,
+            fromRoll: this.rollDeg,
+            // The short way round: +170° to −170° turns 20°, not 340°.
+            toRoll:
+                this.rollDeg +
+                shortestTurnDeg(this.rollDeg, options.rollDeg ?? 0),
             onArrive: options.onArrive,
             currentTarget: [...this.target],
         };
@@ -317,12 +338,14 @@ export class RigController {
         if (a) {
             const pose = tweenPose(a.tween, nowMs - a.startMs);
             a.currentTarget = pose.target;
-            this.camera.position.set(...pose.position);
-            this.camera.lookAt(...pose.target);
             const u =
                 a.tween.durationMs > 0
                     ? Math.min(1, (nowMs - a.startMs) / a.tween.durationMs)
                     : 1;
+            this.rollDeg = a.fromRoll + (a.toRoll - a.fromRoll) * u;
+            this.camera.position.set(...pose.position);
+            this.camera.lookAt(...pose.target);
+            this.applyRoll();
             this.setFov(a.fromFov + (a.toFov - a.fromFov) * u);
             if (pose.done) {
                 this.active = null;
@@ -438,8 +461,14 @@ export class RigController {
         const pos = positionFromSpherical(this.spherical, this.target);
         this.camera.position.set(...pos);
         this.camera.lookAt(...this.target);
+        this.applyRoll();
         this.camera.updateMatrixWorld();
         this.setNear(nearFor(this.spherical.radius));
+    }
+
+    private applyRoll() {
+        if (this.rollDeg !== 0)
+            this.camera.rotateZ((-this.rollDeg * Math.PI) / 180);
     }
 
     private setNear(near: number) {
@@ -459,4 +488,10 @@ export class RigController {
         this.camera.fov = fov;
         this.camera.updateProjectionMatrix();
     }
+}
+
+/** The shortest signed turn from `from` to `to`, degrees, in [-180, 180). */
+function shortestTurnDeg(from: number, to: number): number {
+    const d = (((to - from) % 360) + 540) % 360;
+    return d - 180;
 }

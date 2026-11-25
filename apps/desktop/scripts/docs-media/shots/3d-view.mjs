@@ -571,6 +571,65 @@ const shots = [
         },
     },
     {
+        id: "3d-camera-row-menu",
+        kind: "still",
+        async setup(ctx) {
+            await seekInPage(ctx.page, 3, 0.5);
+            const { view } = await open3d(ctx);
+            await view.getByTestId("view3d-camera-menu").click();
+            await ctx.wait(400);
+            await view.getByTestId("view3d-camera-edit").click();
+            const panel = view.getByTestId("view3d-cameras-panel");
+            await panel.waitFor();
+            await view.getByTestId("view3d-camera-more").nth(1).click();
+            const menu = view.getByTestId("view3d-camera-menu-items");
+            await menu.waitFor();
+            await ctx.wait(600);
+            return {
+                box: ctx.union(
+                    await ctx.around(panel, 16),
+                    await ctx.around(menu, 16),
+                ),
+                target: view,
+            };
+        },
+    },
+    {
+        id: "3d-camera-settings",
+        kind: "still",
+        async setup(ctx) {
+            await seekInPage(ctx.page, 3, 0.5);
+            const { view } = await open3d(ctx);
+            await view.getByTestId("view3d-camera-menu").click();
+            await ctx.wait(400);
+            await view.getByTestId("view3d-camera-edit").click();
+            await view.getByTestId("view3d-cameras-panel").waitFor();
+            // Front row, with a long lens focused where it looks, wide open
+            await view
+                .getByTestId("view3d-camera-settings-toggle")
+                .nth(1)
+                .click();
+            await view.getByTestId("view3d-camera-settings").waitFor();
+            const set = async (key, value) => {
+                const field = view.getByTestId(`view3d-camera-setting-${key}`);
+                await field.click();
+                await field.fill(String(value));
+                await field.press("Enter");
+                await ctx.wait(600);
+            };
+            await set("focal", 85);
+            await view
+                .getByTestId("view3d-camera-focus-mode")
+                .getByText("Look-at", { exact: true })
+                .click();
+            await ctx.wait(600);
+            await set("fstop", 1.4);
+            await view.mouse.move(ctx.window.width - 4, ctx.window.height / 2);
+            await ctx.wait(1500);
+            return { box: ctx.whole, target: view };
+        },
+    },
+    {
         id: "3d-settings",
         kind: "still",
         async setup(ctx) {
@@ -687,7 +746,7 @@ const shots = [
             "apps/desktop/src/view3d/core/kits/nightpound.ts",
             "apps/desktop/src/view3d/core/kits/nightpound",
         ],
-        // Nightpound, OH under Show lights from its Floor camera. Its floor is fixed, so the
+        // Taydon, OH under Show lights from its Floor camera. Its floor is fixed, so the
         // sample show's football field is switched to an indoor floor first; the band's spots
         // stay where they were, off that floor, so the floor is empty
         async setup(ctx) {

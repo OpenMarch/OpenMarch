@@ -11,7 +11,9 @@
  *   still work around them); `"pov"` looks out of their eyes (drag looks
  *   around, scroll zooms).
  * - `followMarcher(id, mode)`, `setMode(mode)`, `toggleMode()` and `stop()`
- *   change it. `backOut()` is Esc: the point of view goes back to the
+ *   change it. `setFraming` changes the aim and field of view of the follow
+ *   now (a follow camera's settings), and `currentFraming()` reads back
+ *   where the viewer has orbited or looked to. `backOut()` is Esc: the point of view goes back to the
  *   third-person view, the third-person view stops following.
  *
  * The rig ends following on its own when the viewer pans, double-clicks,
@@ -35,9 +37,23 @@ import { create } from "zustand";
 
 export type FollowMode = "third" | "pov";
 
+/**
+ * Where a follow camera aims, each the mode's own default when omitted
+ * (`cameraList.ts` `cameraFollowSchema` says what each means per mode).
+ */
+export interface FollowFraming {
+    angleDeg?: number;
+    tiltDeg?: number;
+    distanceM?: number;
+}
+
 export interface Follow {
     marcherId: number;
     mode: FollowMode;
+    /** Field of view to start with (a saved follow camera's); the mode's own when omitted. */
+    fovDeg?: number;
+    /** Where to aim (a saved follow camera's); the mode's own when omitted. */
+    framing?: FollowFraming;
 }
 
 export const TURN_WITH_PERFORMER_STORAGE_KEY = "view3d.followTurns";
@@ -65,7 +81,18 @@ export interface FollowState {
     picking: boolean;
     setPicking: (on: boolean) => void;
     follow: Follow | null;
-    followMarcher: (marcherId: number, mode?: FollowMode) => void;
+    followMarcher: (
+        marcherId: number,
+        mode?: FollowMode,
+        fovDeg?: number,
+        framing?: FollowFraming,
+    ) => void;
+    /** Changes the field of view and aim of the follow now, if any. */
+    setFraming: (fovDeg: number | undefined, framing: FollowFraming) => void;
+    /** Where the follow aims now, with the viewer's orbit or look; null when not following. */
+    currentFraming: () => FollowFraming | null;
+    /** Rig only: what `currentFraming` reads. */
+    _setFramingSource: (source: (() => FollowFraming | null) | null) => void;
     setMode: (mode: FollowMode) => void;
     toggleMode: () => void;
     stop: () => void;
@@ -83,16 +110,59 @@ export interface FollowState {
     _setHeadless: (marcherId: number | null) => void;
 }
 
+/** A saved follow's aim, as the follow store takes it; none when it has none. */
+export function framingOf(follow: FollowFraming): FollowFraming | undefined {
+    const { angleDeg, tiltDeg, distanceM } = follow;
+    if (
+        angleDeg === undefined &&
+        tiltDeg === undefined &&
+        distanceM === undefined
+    )
+        return undefined;
+    return {
+        ...(angleDeg === undefined ? {} : { angleDeg }),
+        ...(tiltDeg === undefined ? {} : { tiltDeg }),
+        ...(distanceM === undefined ? {} : { distanceM }),
+    };
+}
+
+/** Registered by the rig; outside the state so setting it draws nothing. */
+let framingSource: (() => FollowFraming | null) | null = null;
+
 export const useFollowStore = create<FollowState>()((set, get) => ({
     picking: false,
     setPicking: (on) => set({ picking: on }),
     follow: null,
-    followMarcher: (marcherId, mode = "third") =>
-        set({ follow: { marcherId, mode }, picking: false }),
+    followMarcher: (marcherId, mode = "third", fovDeg, framing) =>
+        set({
+            follow: {
+                marcherId,
+                mode,
+                ...(fovDeg === undefined ? {} : { fovDeg }),
+                ...(framing ? { framing } : {}),
+            },
+            picking: false,
+        }),
+    setFraming: (fovDeg, framing) => {
+        const { follow } = get();
+        if (!follow) return;
+        set({
+            follow: {
+                marcherId: follow.marcherId,
+                mode: follow.mode,
+                ...(fovDeg === undefined ? {} : { fovDeg }),
+                framing,
+            },
+        });
+    },
+    currentFraming: () => framingSource?.() ?? null,
+    _setFramingSource: (source) => {
+        framingSource = source;
+    },
     setMode: (mode) => {
         const { follow } = get();
         if (!follow || follow.mode === mode) return;
-        set({ follow: { ...follow, mode } });
+        set({ follow: { marcherId: follow.marcherId, mode } });
     },
     toggleMode: () => {
         const { follow } = get();

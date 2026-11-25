@@ -12,7 +12,13 @@
  *   name. Its position comes from the kit, so it still fits when the field's
  *   size changes. Entries the kit no longer has are skipped.
  * - A `view` entry is a snapshot of the view: the eye, the point it looks
- *   at and the field of view, in world meters and degrees.
+ *   at and the field of view, in world meters and degrees, with an optional
+ *   roll (the picture tilted about the line of sight). A view can instead
+ *   follow a performer (`follow`): from behind them, or out of their eyes.
+ *   Then the camera goes to them and keeps up as they move, and its
+ *   position and look-at point are only where it was saved. A view can
+ *   also focus (`focus`): what is sharp, and the lens's f-number, which
+ *   sets how soft everything nearer and farther gets.
  *
  * Plain TypeScript and zod only, like the rest of `view3d/core/`.
  */
@@ -27,8 +33,66 @@ export const CAMERA_NAME_MAX = 40;
 /** Field of view limits for a saved view, in degrees. */
 export const MIN_FOV_DEG = 5;
 export const MAX_FOV_DEG = 120;
+/** Roll limit for a saved view, in degrees either way. */
+export const MAX_ROLL_DEG = 180;
 
 const pointSchema = z.tuple([z.number(), z.number(), z.number()]);
+
+/** Follow-camera aim limits: tilt either way and distance from the performer (m). */
+export const MAX_FOLLOW_TILT_DEG = 85;
+export const MIN_FOLLOW_DISTANCE_M = 1;
+export const MAX_FOLLOW_DISTANCE_M = 100;
+
+/**
+ * A camera that follows a performer: from outside them (`third`) or out of
+ * their eyes (`pov`). Its aim, each the mode's own default when omitted:
+ *
+ * - `third`: `angleDeg` round them from behind (0), toward their right
+ *   (90) to in front (180); `tiltDeg` how high the camera looks down from;
+ *   `distanceM` from their chest.
+ * - `pov`: `angleDeg` turns the look to their right (negative: left) and
+ *   `tiltDeg` up (negative: down, at an instrument).
+ */
+export const cameraFollowSchema = z.object({
+    marcherId: z.number().int(),
+    mode: z.enum(["third", "pov"]),
+    angleDeg: z.number().min(-180).max(180).optional(),
+    tiltDeg: z
+        .number()
+        .min(-MAX_FOLLOW_TILT_DEG)
+        .max(MAX_FOLLOW_TILT_DEG)
+        .optional(),
+    distanceM: z
+        .number()
+        .min(MIN_FOLLOW_DISTANCE_M)
+        .max(MAX_FOLLOW_DISTANCE_M)
+        .optional(),
+});
+export type CameraFollow = z.infer<typeof cameraFollowSchema>;
+
+/** The f-numbers a camera can focus at, widest first. */
+export const MIN_F_STOP = 0.95;
+export const MAX_F_STOP = 32;
+/** The farthest a camera can focus at a set distance (m). */
+export const MAX_FOCUS_M = 10000;
+
+/**
+ * What a camera keeps sharp: the point it looks at, a distance from it
+ * (meters), or a performer as they move. `fStop` sets how quickly things
+ * nearer or farther go soft: lower is softer, as on a real lens.
+ */
+export const cameraFocusSchema = z.object({
+    fStop: z.number().min(MIN_F_STOP).max(MAX_F_STOP),
+    on: z.discriminatedUnion("kind", [
+        z.object({ kind: z.literal("lookAt") }),
+        z.object({
+            kind: z.literal("distance"),
+            meters: z.number().positive().max(MAX_FOCUS_M),
+        }),
+        z.object({ kind: z.literal("performer"), marcherId: z.number().int() }),
+    ]),
+});
+export type CameraFocus = z.infer<typeof cameraFocusSchema>;
 
 export const savedCameraSchema = z.discriminatedUnion("kind", [
     z.object({
@@ -45,6 +109,12 @@ export const savedCameraSchema = z.discriminatedUnion("kind", [
         position: pointSchema,
         target: pointSchema,
         fovDeg: z.number().min(MIN_FOV_DEG).max(MAX_FOV_DEG),
+        /** The camera turned about its line of sight, degrees; positive rolls it clockwise as seen from behind. Level when omitted. */
+        rollDeg: z.number().min(-MAX_ROLL_DEG).max(MAX_ROLL_DEG).optional(),
+        /** Follows this performer instead of staying put. */
+        follow: cameraFollowSchema.optional(),
+        /** Focuses, softening what is nearer and farther. Everything sharp when omitted. */
+        focus: cameraFocusSchema.optional(),
     }),
 ]);
 
@@ -70,6 +140,8 @@ export interface ViewPose {
     position: Vector3Tuple;
     target: Vector3Tuple;
     fovDeg: number;
+    /** Degrees; positive rolls the camera clockwise as seen from behind. Level when omitted. */
+    rollDeg?: number;
 }
 
 /** The kit's defaults as an editable list. */
@@ -104,6 +176,9 @@ export function resolveCameras(
                 position: [...entry.position],
                 target: [...entry.target],
                 fovDeg: entry.fovDeg,
+                ...(entry.rollDeg ? { rollDeg: entry.rollDeg } : {}),
+                ...(entry.follow ? { follow: { ...entry.follow } } : {}),
+                ...(entry.focus ? { focus: structuredClone(entry.focus) } : {}),
             });
         }
     }
@@ -134,15 +209,120 @@ function roundPoint(point: Vector3Tuple): Vector3Tuple {
 }
 
 function clampFov(fovDeg: number): number {
-    return Math.min(MAX_FOV_DEG, Math.max(MIN_FOV_DEG, fovDeg));
+    // Hundredths of a degree are plenty and keep the stored JSON short.
+    const fov = Math.round(fovDeg * 100) / 100;
+    return Math.min(MAX_FOV_DEG, Math.max(MIN_FOV_DEG, fov));
+}
+
+/** Wraps a roll into -180..180 degrees, to a hundredth of a degree. */
+export function normalizeRoll(rollDeg: number): number {
+    if (!Number.isFinite(rollDeg)) return 0;
+    const r = rollDeg - 360 * Math.round(rollDeg / 360);
+    return Math.round(r * 100) / 100 || 0;
+}
+
+/** An angle in degrees as -180 (exclusive) to 180, so straight round is 180. */
+export function wrapAngle(deg: number): number {
+    return deg - 360 * Math.ceil((deg - 180) / 360);
+}
+
+/** How a view camera behaves besides its pose: following and focus. None when omitted. */
+export interface ViewExtras {
+    follow?: CameraFollow | null;
+    focus?: CameraFocus | null;
+}
+
+/** A follow setting as stored: aim wrapped, clamped and rounded, defaults left out. */
+export function followFields(follow: CameraFollow): CameraFollow {
+    const out: CameraFollow = {
+        marcherId: follow.marcherId,
+        mode: follow.mode,
+    };
+    if (follow.angleDeg !== undefined) {
+        const angle = Math.round(wrapAngle(follow.angleDeg) * 100) / 100 || 0;
+        if (angle !== 0) out.angleDeg = angle;
+    }
+    if (follow.tiltDeg !== undefined && Number.isFinite(follow.tiltDeg))
+        out.tiltDeg = clampRound(
+            follow.tiltDeg,
+            -MAX_FOLLOW_TILT_DEG,
+            MAX_FOLLOW_TILT_DEG,
+            100,
+        );
+    if (follow.mode === "third" && follow.distanceM !== undefined)
+        out.distanceM = clampRound(
+            follow.distanceM,
+            MIN_FOLLOW_DISTANCE_M,
+            MAX_FOLLOW_DISTANCE_M,
+            1000,
+        );
+    return out;
+}
+
+function clampRound(v: number, min: number, max: number, per: number) {
+    return Math.min(max, Math.max(min, Math.round(v * per) / per));
+}
+
+/** The stored fields of a pose, following and focus for a view entry. */
+function viewFields(
+    pose: ViewPose,
+    { follow, focus }: ViewExtras,
+): Pick<
+    SavedView,
+    "position" | "target" | "fovDeg" | "rollDeg" | "follow" | "focus"
+> {
+    const roll = normalizeRoll(pose.rollDeg ?? 0);
+    return {
+        position: roundPoint(pose.position),
+        target: roundPoint(pose.target),
+        fovDeg: clampFov(pose.fovDeg),
+        ...(roll !== 0 ? { rollDeg: roll } : {}),
+        ...(follow ? { follow: followFields(follow) } : {}),
+        ...(focus
+            ? {
+                  focus: {
+                      fStop: Math.min(
+                          MAX_F_STOP,
+                          Math.max(
+                              MIN_F_STOP,
+                              Math.round(focus.fStop * 100) / 100,
+                          ),
+                      ),
+                      on:
+                          focus.on.kind === "distance"
+                              ? {
+                                    kind: "distance",
+                                    meters: Math.min(
+                                        MAX_FOCUS_M,
+                                        Math.max(0.1, focus.on.meters),
+                                    ),
+                                }
+                              : { ...focus.on },
+                  },
+              }
+            : {}),
+    };
 }
 
 /** Edits to a camera list. Each returns a new list. */
 export type CameraListEdit =
-    | { kind: "add"; id: string; name: string; pose: ViewPose }
+    | ({
+          kind: "add";
+          id: string;
+          name: string;
+          pose: ViewPose;
+          /** Puts the new camera right after this one (a duplicate); last when omitted. */
+          after?: string;
+      } & ViewExtras)
     | { kind: "rename"; id: string; name: string }
-    | { kind: "setView"; id: string; pose: ViewPose }
+    /**
+     * Sets the camera's pose, following and focus (none when omitted): "Set
+     * to current view" and the exact settings both use it.
+     */
+    | ({ kind: "setView"; id: string; pose: ViewPose } & ViewExtras)
     | { kind: "move"; id: string; by: -1 | 1 }
+    /** Moves a camera to a place in the list (a drag), clamped to the list. */
+    | { kind: "moveTo"; id: string; index: number }
     | { kind: "remove"; id: string };
 
 /**
@@ -158,19 +338,22 @@ export function editCameraList(
 ): SavedCamera[] {
     const index = list.findIndex((camera) => camera.id === edit.id);
     switch (edit.kind) {
-        case "add":
+        case "add": {
             if (index >= 0 || list.length >= MAX_CAMERAS) return [...list];
+            const added: SavedCamera = {
+                kind: "view",
+                id: edit.id,
+                name: edit.name.trim().slice(0, CAMERA_NAME_MAX),
+                ...viewFields(edit.pose, edit),
+            };
+            const after = list.findIndex((camera) => camera.id === edit.after);
+            if (after < 0) return [...list, added];
             return [
-                ...list,
-                {
-                    kind: "view",
-                    id: edit.id,
-                    name: edit.name.trim().slice(0, CAMERA_NAME_MAX),
-                    position: roundPoint(edit.pose.position),
-                    target: roundPoint(edit.pose.target),
-                    fovDeg: clampFov(edit.pose.fovDeg),
-                },
+                ...list.slice(0, after + 1),
+                added,
+                ...list.slice(after + 1),
             ];
+        }
         case "rename": {
             if (index < 0) return [...list];
             const name = edit.name.trim().slice(0, CAMERA_NAME_MAX);
@@ -190,9 +373,7 @@ export function editCameraList(
                 kind: "view",
                 id: camera.id,
                 name: camera.kind === "view" ? camera.name : label(camera),
-                position: roundPoint(edit.pose.position),
-                target: roundPoint(edit.pose.target),
-                fovDeg: clampFov(edit.pose.fovDeg),
+                ...viewFields(edit.pose, edit),
             };
             return list.map((c, i) => (i === index ? next : c));
         }
@@ -201,6 +382,16 @@ export function editCameraList(
             if (index < 0 || to < 0 || to >= list.length) return [...list];
             const next = [...list];
             [next[index], next[to]] = [next[to], next[index]];
+            return next;
+        }
+        case "moveTo": {
+            if (index < 0) return [...list];
+            const next = list.filter((_, i) => i !== index);
+            const to = Math.max(
+                0,
+                Math.min(next.length, Math.round(edit.index)),
+            );
+            next.splice(to, 0, list[index]);
             return next;
         }
         case "remove":

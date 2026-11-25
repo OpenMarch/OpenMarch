@@ -976,10 +976,6 @@
                     "title": "Activité",
                     "typeLabel": "Activité"
                 },
-                "field": {
-                    "description": "Choisissez un modèle de terrain pour votre spectacle.",
-                    "title": "Configuration du terrain"
-                },
                 "performers": {
                     "description": "Ajoutez des marcheurs maintenant, ou passez cette étape et ajoutez-les plus tard dans l’éditeur.",
                     "noneAdded": "Aucun marcheur ajouté pour l’instant.",
@@ -1673,12 +1669,8 @@
             "medium": "Moyen",
             "large": "Grand",
             "summary": {
-                "small": "2 marimbas, 2 vibraphones, un rack, un synthé et 2 enceintes",
-                "medium": "4 marimbas, 3 vibraphones, xylophone, glockenspiel, rack, batterie, synthé et 4 enceintes",
-                "large": "6 marimbas, 4 vibraphones, xylophone, glockenspiel, 2 racks, batterie, 2 synthés et 6 enceintes",
                 "none": "Pas de pit. Vous pourrez en installer un plus tard dans le panneau Marcheurs."
             },
-            "always": "Chacun ajoute aussi un podium sur le 50 et une table de mixage derrière le pit.",
             "addPerformers": "Ajouter aussi les interprètes",
             "apply": "Appliquer",
             "replaces": "Remplace l’équipement ajouté par le dernier préréglage. Ses musiciens vont aux nouvelles places ; ceux qui se retrouvent sans instrument sont retirés, sauf s’ils ont des mouvements plus loin dans le spectacle. Annuler rétablit tout. L’équipement que vous avez ajouté vous-même reste en place.",

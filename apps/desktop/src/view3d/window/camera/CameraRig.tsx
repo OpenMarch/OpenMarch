@@ -8,7 +8,10 @@
  *   view;
  * - flies to a listed camera (`useView3dSceneStore().cameras`) on
  *   `useCameraStore().selectCamera(id)` and on keys 1–9, over 1.1 s with an
- *   upward arc, or jumps under reduced motion;
+ *   upward arc, or jumps under reduced motion; a camera that follows a
+ *   performer follows them instead, and goes to its saved place when they
+ *   aren't drawn; jumps to a pose the overlay shows (`showPose`, typed
+ *   camera settings);
  * - tells `useCameraStore().currentPose()` where the view is, for saving
  *   cameras;
  * - moves on drag and scroll as the viewer's control scheme says
@@ -75,8 +78,9 @@ import {
     useDirectorStore,
 } from "../cinema/directorStore";
 import { useCinemaContext } from "../cinema/subjectPoints";
-import { FOLLOW_KEY, POV_KEY, useFollowStore } from "./followStore";
+import { FOLLOW_KEY, framingOf, POV_KEY, useFollowStore } from "./followStore";
 import { FollowController } from "./followController";
+import { followTarget, type PerformerPose } from "./followMath";
 import { installFollowTestApi } from "./followTestApi";
 import {
     onPerformersMoved,
@@ -86,6 +90,9 @@ import {
 
 /** Pointer travel (px) under which a press counts as a click, for picking. */
 const CLICK_SLOP_PX = 6;
+/** Focus out of someone's eyes: where the look meets the ground, kept to this range (m). */
+const POV_FOCUS_MIN_M = 1;
+const POV_FOCUS_MAX_M = 60;
 /** Input keeps the scene drawing this long (ms), covering eases and coasts that start from it. */
 const INPUT_WAKE_MS = 1500;
 /** Zoom per pinch delta unit (a trackpad pinch reports small deltas). */
@@ -188,6 +195,12 @@ export default function CameraRig() {
             }),
         [rig, camera],
     );
+    // Where the follow aims now, for "Set to current view".
+    useEffect(() => {
+        const store = useFollowStore.getState();
+        store._setFramingSource(() => follow.framing());
+        return () => store._setFramingSource(null);
+    }, [follow]);
     /** Stops following without moving the camera: something else takes it over. */
     const endFollowRef = useRef(() => {});
     endFollowRef.current = () => {
@@ -220,12 +233,40 @@ export default function CameraRig() {
             );
     }, [directing, hasTrack, countGrid]);
 
+    /** True while a camera starts following, so the follow doesn't clear the active camera. */
+    const cameraFollowRef = useRef(false);
     const flyToSeat = (seat: CameraSeat) => {
+        if (seat.follow) {
+            cameraFollowRef.current = true;
+            try {
+                useFollowStore
+                    .getState()
+                    .followMarcher(
+                        seat.follow.marcherId,
+                        seat.follow.mode,
+                        seat.fovDeg,
+                        framingOf(seat.follow),
+                    );
+            } finally {
+                cameraFollowRef.current = false;
+            }
+            // Following started (the performer is drawn): it moves the camera.
+            if (useFollowStore.getState().follow) {
+                useCameraStore.getState()._setActive(seat.id);
+                useCameraStore.getState()._setFocus(seat.focus ?? null);
+                return;
+            }
+        }
+        // A follow camera whose performer isn't drawn flies to where it was
+        // saved, and is still the camera chosen.
+        if (seat.follow) useCameraStore.getState()._setActive(seat.id);
+        useCameraStore.getState()._setFocus(seat.focus ?? null);
         const aim = seatAim(seat);
         rig.flyTo(aim.position, aim.target, {
             nowMs: performance.now(),
             instant: prefersReducedMotion(),
             fovDeg: seat.fovDeg ?? SEAT_FOV_DEG,
+            rollDeg: seat.rollDeg,
             onArrive: clearCrowdAround,
         });
     };
@@ -296,9 +337,61 @@ export default function CameraRig() {
                     camera instanceof PerspectiveCamera
                         ? camera.fov
                         : SEAT_FOV_DEG,
+                rollDeg: rig.rollDeg,
             };
         });
         return () => store._setPoseSource(null);
+    }, [camera, rig]);
+
+    // How far the focus is: a set distance, the performer as they move, or
+    // the point the camera looks at.
+    useEffect(() => {
+        const store = useCameraStore.getState();
+        const pose: PerformerPose = {
+            x: 0,
+            y: 0,
+            z: 0,
+            heading: 0,
+            height: 0,
+            eye: [0, 0, 0],
+            hasEye: false,
+        };
+        const eye = new Vector3();
+        const look = new Vector3();
+        store._setFocusSource(() => {
+            const focus = useCameraStore.getState().focus;
+            if (!focus) return null;
+            camera.getWorldPosition(eye);
+            const on = focus.on;
+            if (on.kind === "distance") return on.meters;
+            // Out of someone's eyes, the look-at point is a hand's width
+            // ahead and their own body is at the lens: focus where the look
+            // meets the ground instead.
+            const followed = useFollowStore.getState().follow;
+            if (
+                followed?.mode === "pov" &&
+                (on.kind === "lookAt" ||
+                    (on.kind === "performer" &&
+                        on.marcherId === followed.marcherId))
+            ) {
+                camera.getWorldDirection(look);
+                return look.y < -0.01
+                    ? Math.min(
+                          POV_FOCUS_MAX_M,
+                          Math.max(POV_FOCUS_MIN_M, eye.y / -look.y),
+                      )
+                    : POV_FOCUS_MAX_M;
+            }
+            const point =
+                on.kind === "performer" && performerPoseInto(on.marcherId, pose)
+                    ? followTarget(pose)
+                    : rig.lookAt;
+            return Math.max(
+                0.1,
+                eye.distanceTo(scratch.set(point[0], point[1], point[2])),
+            );
+        });
+        return () => store._setFocusSource(null);
     }, [camera, rig]);
 
     // Following a performer: fly to them as the store says; one pick mode at
@@ -310,9 +403,22 @@ export default function CameraRig() {
                     useCameraStore.getState().setPickMode(false);
                 if (state.follow === prev.follow) return;
                 requestDraw(INPUT_WAKE_MS);
+                const cameraStore = useCameraStore.getState();
                 if (state.follow) {
                     useDirectorStore.getState().setDirecting(false);
-                    useCameraStore.getState()._setActive(null);
+                    // Following from a camera keeps it the active camera and its focus.
+                    if (!cameraFollowRef.current) {
+                        cameraStore._setActive(null);
+                        cameraStore._setFocus(null);
+                    }
+                } else if (cameraStore.activeCameraId !== null) {
+                    // Stopping a follow camera leaves a free view.
+                    const active = useView3dSceneStore
+                        .getState()
+                        .cameras.find(
+                            (c) => c.id === cameraStore.activeCameraId,
+                        );
+                    if (active?.follow) cameraStore._setActive(null);
                 }
                 if (!follow.change(state.follow, performance.now()))
                     state.stop();
@@ -324,7 +430,10 @@ export default function CameraRig() {
                     endFollowRef.current();
             }),
             useDirectorStore.subscribe((state, prev) => {
-                if (state.directing && !prev.directing) endFollowRef.current();
+                if (state.directing && !prev.directing) {
+                    endFollowRef.current();
+                    useCameraStore.getState()._setFocus(null);
+                }
             }),
             // Keep up with the performer in the frame they moved.
             onPerformersMoved(() => follow.apply(performance.now())),
@@ -345,6 +454,26 @@ export default function CameraRig() {
                 store.setPickMode(false);
                 if (store.activeCameraId !== null) store._setActive(null);
                 rig.jumpTo(move.position, move.target);
+                requestDraw(INPUT_WAKE_MS);
+            }),
+        [rig],
+    );
+
+    // showPose() from the overlay: typed or scrubbed settings, shown at once.
+    useEffect(
+        () =>
+            useCameraStore.subscribe((state, prev) => {
+                const shown = state._shown;
+                if (!shown || shown === prev._shown) return;
+                endFollowRef.current();
+                useDirectorStore.getState().setDirecting(false);
+                const { pose } = shown;
+                rig.jumpTo(
+                    pose.position,
+                    pose.target,
+                    pose.fovDeg,
+                    pose.rollDeg,
+                );
                 requestDraw(INPUT_WAKE_MS);
             }),
         [rig],

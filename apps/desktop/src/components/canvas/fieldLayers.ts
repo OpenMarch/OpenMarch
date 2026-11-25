@@ -13,7 +13,8 @@ import {
  * - `task`: a bar or card that holds the current task's buttons and stays where it is: the line
  *   and prop tools' cards, the isolation bar, the "Editing Page N's move" line. It always wins.
  * - `mover`: a task bar that moves itself clear of the controls and covers instead of making them
- *   move: the shape editor bar, which follows its shape.
+ *   move: the shape editor bar, which follows its shape. Where no spot is clear, it draws over the
+ *   controls (the Inspector's tab too), so its buttons stay reachable.
  * - `info`: a line that only says something, with no buttons: the "Editing …" line. The pill's
  *   automatic spot keeps off it, but a spot the user chose doesn't give way to it.
  * - `control`: a fixed control over the field's edge: the zoom box, the Inspector's edge tab, the

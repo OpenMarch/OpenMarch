@@ -331,11 +331,12 @@ async function applyPreviousDotsCoordinates(
     });
 }
 
-async function applyPreviousDotsFieldImage(
+/** The field image picked in the Field step, or the one a previous show's file brought */
+async function applyFieldImage(
     form: NewShowFormState,
     queryClient: QueryClient,
 ): Promise<void> {
-    const fieldImage = form.previousDotsImport?.fieldImage;
+    const fieldImage = form.fieldImage ?? form.previousDotsImport?.fieldImage;
     if (fieldImage == null || fieldImage.length === 0) return;
 
     await updateFieldPropertiesImage(fieldImage);
@@ -773,7 +774,7 @@ export async function completeNewShow(
     await applyProjectSettings(form);
     await applyMusicSettings(form.audio, form.tempo);
     await updateFieldProperties(form.fieldTemplate);
-    await applyPreviousDotsFieldImage(form, queryClient);
+    await applyFieldImage(form, queryClient);
     if (form.tempo?.method === "tempo_only") {
         await createTempoOnlyBeatsMeasuresAndPages(form, queryClient);
     } else {
