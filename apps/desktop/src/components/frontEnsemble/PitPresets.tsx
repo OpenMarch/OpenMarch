@@ -15,7 +15,7 @@ import {
     type PitPresetSize,
 } from "@/view3d/core/pit/presets";
 import { pitPresetApplyArgs } from "./pitPresetArgs";
-import PitPresetCards from "./PitPresetCards";
+import PitPresetCards, { PitPresetContents } from "./PitPresetCards";
 
 /**
  * Applies a preset in front of the front sideline at the 50, as one undo step. It replaces the
@@ -75,7 +75,8 @@ function AddPerformersCheckbox({
 /**
  * The empty front ensemble view's first choice (owner, 2026-11-22: a lone "Start from a preset"
  * button looked lost in an empty panel, and two Add buttons hid that there are two ways to
- * start): Small, Medium and Large as pictured cards, "Also add performers" and "Use this preset".
+ * start): Small, Medium and Large as pictured rows listing what each places, "Also add performers"
+ * and "Use this preset".
  */
 export function PitPresetStart() {
     const { t } = useTranslate();
@@ -95,12 +96,8 @@ export function PitPresetStart() {
                 value={size}
                 onChange={(next) => next && setSize(next)}
                 includeNone={false}
-                layout="list"
                 aria-label={t("frontEnsemble.presets.size")}
             />
-            <p className="text-sub text-text-subtitle">
-                <T keyName="frontEnsemble.presets.always" />
-            </p>
             <div className="flex items-center justify-between gap-12">
                 <AddPerformersCheckbox
                     checked={addPerformers}
@@ -167,12 +164,7 @@ export default function PitPresets() {
                         selected={size}
                         setSelected={(value) => setSize(value as PitPresetSize)}
                     />
-                    <div className="text-sub text-text-subtitle flex flex-col gap-4">
-                        <p>{t(`frontEnsemble.presets.summary.${size}`)}</p>
-                        <p>
-                            <T keyName="frontEnsemble.presets.always" />
-                        </p>
-                    </div>
+                    <PitPresetContents size={size} />
                     <AddPerformersCheckbox
                         checked={addPerformers}
                         onChange={setAddPerformers}

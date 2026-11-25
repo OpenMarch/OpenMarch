@@ -605,7 +605,10 @@ const shots = [
             await view.getByTestId("view3d-camera-edit").click();
             await view.getByTestId("view3d-cameras-panel").waitFor();
             // Front row, with a long lens focused where it looks, wide open
-            await view.getByTestId("view3d-camera-settings-toggle").nth(1).click();
+            await view
+                .getByTestId("view3d-camera-settings-toggle")
+                .nth(1)
+                .click();
             await view.getByTestId("view3d-camera-settings").waitFor();
             const set = async (key, value) => {
                 const field = view.getByTestId(`view3d-camera-setting-${key}`);
