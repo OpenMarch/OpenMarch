@@ -746,7 +746,7 @@ const shots = [
             "apps/desktop/src/view3d/core/kits/nightpound.ts",
             "apps/desktop/src/view3d/core/kits/nightpound",
         ],
-        // Nightpound, OH under Show lights from its Floor camera. Its floor is fixed, so the
+        // Taydon, OH under Show lights from its Floor camera. Its floor is fixed, so the
         // sample show's football field is switched to an indoor floor first; the band's spots
         // stay where they were, off that floor, so the floor is empty
         async setup(ctx) {
