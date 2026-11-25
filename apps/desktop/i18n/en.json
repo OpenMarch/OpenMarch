@@ -1879,12 +1879,8 @@
             "medium": "Medium",
             "large": "Large",
             "summary": {
-                "small": "2 marimbas, 2 vibes, a rack, a synth and 2 speakers",
-                "medium": "4 marimbas, 3 vibes, xylophone, glockenspiel, rack, drum set, synth and 4 speakers",
-                "large": "6 marimbas, 4 vibes, xylophone, glockenspiel, 2 racks, drum set, 2 synths and 6 speakers",
                 "none": "No pit. You can set one up later in the Marchers panel."
             },
-            "always": "Each also adds a podium on the 50 and a mixer behind the pit.",
             "addPerformers": "Also add performers",
             "apply": "Apply",
             "use": "Use this preset",
@@ -3642,7 +3638,7 @@
             "gym": "Indoor gym",
             "hs": "High school",
             "markDiesel": "Mark Diesel Stadium",
-            "nightpound": "Nightpound, OH",
+            "nightpound": "Taydon, OH",
             "pro": "Pro dome"
         },
         "lighting": {

@@ -230,6 +230,36 @@ function keyboardRowFamilies(counts: Counts): PitFamilyId[] {
     ];
 }
 
+/** The order a preset's contents are listed in: keyboards, the back line, then the rest */
+const CONTENTS_ORDER: readonly PitFamilyId[] = [
+    "marimba",
+    "vibraphone",
+    "xylophone",
+    "glockenspiel",
+    "drumSet",
+    "auxRack",
+    "synth",
+    "speaker",
+    "podium",
+    "mixer",
+];
+
+/** What a preset places, one entry per family with how many of it, podium and mixer included */
+export function pitPresetContents(
+    size: PitPresetSize,
+): { familyId: PitFamilyId; count: number }[] {
+    const counts = new Map<PitFamilyId, number>();
+    for (const { familyId } of pitPreset(size).equipment)
+        counts.set(familyId, (counts.get(familyId) ?? 0) + 1);
+    const rank = (familyId: PitFamilyId) => {
+        const i = CONTENTS_ORDER.indexOf(familyId);
+        return i === -1 ? CONTENTS_ORDER.length : i;
+    };
+    return [...counts]
+        .map(([familyId, count]) => ({ familyId, count }))
+        .sort((a, b) => rank(a.familyId) - rank(b.familyId));
+}
+
 /** The equipment and performers of a preset, in meters from the 50 on the front sideline */
 export function pitPreset(size: PitPresetSize): PitPreset {
     const counts = COUNTS[size];

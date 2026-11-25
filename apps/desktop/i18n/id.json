@@ -1669,12 +1669,8 @@
             "medium": "Sedang",
             "large": "Besar",
             "summary": {
-                "small": "2 marimba, 2 vibrafon, satu rak, satu synth, dan 2 speaker",
-                "medium": "4 marimba, 3 vibrafon, xilofon, glockenspiel, rak, drum set, synth, dan 4 speaker",
-                "large": "6 marimba, 4 vibrafon, xilofon, glockenspiel, 2 rak, drum set, 2 synth, dan 6 speaker",
                 "none": "Tanpa pit. Anda dapat menyiapkannya nanti di panel Pemain."
             },
-            "always": "Setiap preset juga menambahkan podium di garis 50 dan mixer di belakang pit.",
             "addPerformers": "Tambahkan juga pemain",
             "apply": "Terapkan",
             "replaces": "Menggantikan peralatan yang ditambahkan preset terakhir. Pemainnya pindah ke posisi baru; pemain yang tidak lagi memiliki instrumen dihapus, kecuali mereka memiliki gerakan di bagian pertunjukan selanjutnya. Urungkan akan mengembalikan semuanya. Peralatan yang Anda tambahkan sendiri tetap ada.",

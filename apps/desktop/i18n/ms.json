@@ -1669,12 +1669,8 @@
             "medium": "Sederhana",
             "large": "Besar",
             "summary": {
-                "small": "2 marimba, 2 vibrafon, satu rak, satu sintesizer dan 2 pembesar suara",
-                "medium": "4 marimba, 3 vibrafon, zilofon, glockenspiel, rak, set dram, sintesizer dan 4 pembesar suara",
-                "large": "6 marimba, 4 vibrafon, zilofon, glockenspiel, 2 rak, set dram, 2 sintesizer dan 6 pembesar suara",
                 "none": "Tiada pit. Anda boleh menyediakannya kemudian dalam panel Pemain."
             },
-            "always": "Setiap satu juga menambah podium di garisan 50 dan pengadun di belakang pit.",
             "addPerformers": "Tambah juga pemain",
             "apply": "Guna",
             "replaces": "Menggantikan peralatan yang ditambah oleh pratetap terakhir. Pemainnya beralih ke kedudukan baharu; yang tiada alat muzik akan dialih keluar, kecuali mereka mempunyai gerakan kemudian dalam persembahan. Buat asal mengembalikan semuanya. Peralatan yang anda tambah sendiri kekal.",

@@ -1669,12 +1669,8 @@
             "medium": "Mediano",
             "large": "Grande",
             "summary": {
-                "small": "2 marimbas, 2 vibráfonos, un rack, un sintetizador y 2 altavoces",
-                "medium": "4 marimbas, 3 vibráfonos, xilófono, glockenspiel, rack, batería, sintetizador y 4 altavoces",
-                "large": "6 marimbas, 4 vibráfonos, xilófono, glockenspiel, 2 racks, batería, 2 sintetizadores y 6 altavoces",
                 "none": "Sin pit. Puedes configurarlo más tarde en el panel Integrantes."
             },
-            "always": "Cada uno agrega también un podio en la 50 y una consola detrás del pit.",
             "addPerformers": "Agregar también ejecutantes",
             "apply": "Aplicar",
             "replaces": "Reemplaza el equipo que agregó el último preajuste. Sus ejecutantes pasan a las nuevas posiciones; los que quedan sin instrumento se eliminan, a menos que tengan movimientos más adelante en el show. Deshacer lo devuelve todo. El equipo que agregaste tú se queda.",

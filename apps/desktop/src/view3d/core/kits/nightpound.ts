@@ -20,7 +20,7 @@ import {
 import { ARENA_CENTER_Z, DRAPE_RUN, DRAPE_Z, FLOOR } from "./nightpound/plan";
 
 /**
- * The Nightpound kit: Nightpound, OH, a fictional arena modeled on the
+ * The Nightpound kit: Taydon, OH, a fictional arena modeled on the
  * University of Dayton Arena as WGI dresses it for its World Championships.
  * Unlike the other venues it doesn't grow to fit the field: the floor is
  * WGI's 106 by 78 ft competition area, and only a field that fits it can be

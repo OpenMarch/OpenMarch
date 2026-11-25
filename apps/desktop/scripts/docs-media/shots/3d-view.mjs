@@ -605,7 +605,10 @@ const shots = [
             await view.getByTestId("view3d-camera-edit").click();
             await view.getByTestId("view3d-cameras-panel").waitFor();
             // Front row, with a long lens focused where it looks, wide open
-            await view.getByTestId("view3d-camera-settings-toggle").nth(1).click();
+            await view
+                .getByTestId("view3d-camera-settings-toggle")
+                .nth(1)
+                .click();
             await view.getByTestId("view3d-camera-settings").waitFor();
             const set = async (key, value) => {
                 const field = view.getByTestId(`view3d-camera-setting-${key}`);
@@ -743,7 +746,7 @@ const shots = [
             "apps/desktop/src/view3d/core/kits/nightpound.ts",
             "apps/desktop/src/view3d/core/kits/nightpound",
         ],
-        // Nightpound, OH under Show lights from its Floor camera. Its floor is fixed, so the
+        // Taydon, OH under Show lights from its Floor camera. Its floor is fixed, so the
         // sample show's football field is switched to an indoor floor first; the band's spots
         // stay where they were, off that floor, so the floor is empty
         async setup(ctx) {
