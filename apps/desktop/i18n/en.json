@@ -449,7 +449,7 @@
         "title": "Command palette",
         "unavailable": "Not available right now",
         "offInPreview": "Not in Preview — exit Preview to edit",
-        "offInEditMusic": "Not while editing music — select Edit music to go back",
+        "offInEditMusic": "Not while editing music — select Done to go back",
         "shape": "Shape",
         "next": "Next",
         "done": "Done",

@@ -162,7 +162,7 @@ const MOVES_HIDDEN_STRIP = <MovesHiddenStrip />;
 /**
  * Tempo mode: the Edit music button ends the transport's row, after a divider, so it isn't read as
  * one of the view controls (Fit, Compact) before it (owner, 2026-11-24). In tempo mode it's left
- * out: the mode's header has Done, the one way out, and Play loops the selected measures, so no
+ * out: the mode's header has Done, the one button out, and Play loops the selected measures, so no
  * Loop button
  */
 const TEMPO_VIEW_CONTROLS = null;

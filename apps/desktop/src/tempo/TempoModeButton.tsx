@@ -3,7 +3,7 @@
  * label name it (owner, 2026-11-24: the icon, no words). It sits last in the bar, after a divider,
  * apart from the view controls (Fit, Compact). Tempo mode is
  * the code's name; the app calls it editing the music (owner, 2026-11-04). While the mode is on the
- * bar leaves this button out: the mode's header has Done, the one way out (owner, 2026-11-24).
+ * bar leaves this button out: the mode's header has Done, the one button out (Esc and Shift+T also leave) (owner, 2026-11-24).
  * Shift+T and tempo mode's key guard are the timeline panel's (`useTempoModeKeys`), so they work
  * in the touch layout too, where this button isn't shown.
  */

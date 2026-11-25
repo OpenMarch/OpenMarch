@@ -234,6 +234,12 @@ function TempoLanes({ geometry }: { geometry: TimelineBandGeometry }) {
     const [hoverMeasure, setHoverMeasure] = useState<number | null>(null);
     // It explains what was under the pointer: scrolling or zooming moves that away
     useEffect(() => setTip(null), [win.left, ppb]);
+    // The lit measure likewise: and a menu, editor or drag over the band can end with the pointer
+    // elsewhere, where the band never hears it leave
+    useEffect(
+        () => setHoverMeasure(null),
+        [win.left, ppb, menu, editor, ask, gesture],
+    );
 
     /** Counts every change to the show's history (an edit, an undo, a redo) */
     const historyVersion = useRef(0);
