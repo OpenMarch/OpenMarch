@@ -694,7 +694,7 @@ test("change: while a box is open everyone else fades, and nobody once it closes
     await expect.poll(dimmedIds).toEqual([]);
 });
 
-test("change: the field display bar holds paths, labels, shapes and the venue; the rest is in Settings › Field", async ({
+test("change: the field display bar holds paths, labels, equipment icons, shapes and the venue; the rest is in Settings › Field", async ({
     show,
 }) => {
     const { page } = show;
@@ -704,13 +704,15 @@ test("change: the field display bar holds paths, labels, shapes and the venue; t
     for (const id of [
         "start-flag-positions",
         "field-display-labels",
+        // What each performer holds, as an icon by the drill number (fork #992)
+        "field-display-equipment",
         "field-display-shapes",
         // The show's 3D venue under the grid (#1207), off by default
         "field-display-venue",
     ])
         await expect(bar.getByTestId(id)).toBeVisible();
     // Nothing else crept in
-    await expect(bar.getByRole("button")).toHaveCount(4);
+    await expect(bar.getByRole("button")).toHaveCount(5);
     await expect(page.getByTestId("open-view3d")).toBeVisible();
 
     const settings = await openSettings(page, "Field");

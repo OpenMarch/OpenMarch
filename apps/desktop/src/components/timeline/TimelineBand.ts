@@ -40,5 +40,11 @@ export interface TimelineBand {
     focus?: boolean;
     /** A row the timeline draws over its transport while the band shows: the band's own header */
     header?: ReactNode;
+    /**
+     * Lanes under the clip rows: something in them takes presses (a cue lane shows), so the
+     * playhead and start flag are grabbed only above them. Without it (only the Lanes row shows),
+     * they're grabbed the whole way down, as with no lanes.
+     */
+    takesPresses?: boolean;
     render(geometry: TimelineBandGeometry): ReactNode;
 }

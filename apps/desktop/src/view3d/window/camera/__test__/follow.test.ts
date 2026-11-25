@@ -16,8 +16,13 @@ import {
     POV_FOV_DEG,
     POV_FOV_MAX,
     POV_MAX_PITCH,
+    povFraming,
+    povLookOf,
     povPose,
     THIRD_PERSON_DISTANCE,
+    THIRD_PERSON_TILT_DEG,
+    FOLLOW_MIN_HEIGHT,
+    thirdPersonFraming,
     thirdPersonPose,
     type PerformerPose,
 } from "../followMath";
@@ -507,5 +512,107 @@ describe("FollowController", () => {
         const { follow } = setup(null);
         expect(follow.change({ marcherId: 9, mode: "third" }, 0)).toBe(false);
         expect(follow.active).toBe(false);
+    });
+});
+
+describe("follow camera aim", () => {
+    it("moves the outside view round, up and out", () => {
+        const p = pose();
+        const target = followTarget(p);
+        // Facing the audience (+Z): behind is −Z, in front +Z, their right −X.
+        expect(thirdPersonPose(p).position[2]).toBeLessThan(target[2]);
+        expect(
+            thirdPersonPose(p, { angleDeg: 180 }).position[2],
+        ).toBeGreaterThan(target[2]);
+        const right = thirdPersonPose(p, { angleDeg: 90, tiltDeg: 0 });
+        close(right.position, [
+            target[0] - THIRD_PERSON_DISTANCE,
+            target[1],
+            target[2],
+        ]);
+        const far = thirdPersonPose(p, { distanceM: 20, tiltDeg: 90 - 1e-9 });
+        expect(far.position[1] - target[1]).toBeCloseTo(20, 4);
+    });
+
+    it("reads an outside view's aim back", () => {
+        const p = pose({ heading: 0.7, x: 3, z: -2 });
+        const framing = { angleDeg: -120, tiltDeg: 15, distanceM: 12 };
+        const back = thirdPersonFraming(
+            p,
+            thirdPersonPose(p, framing).position,
+        );
+        expect(back.angleDeg).toBeCloseTo(-120, 6);
+        expect(back.tiltDeg).toBeCloseTo(15, 6);
+        expect(back.distanceM).toBeCloseTo(12, 6);
+        expect(
+            thirdPersonFraming(p, thirdPersonPose(p).position).tiltDeg,
+        ).toBeCloseTo(THIRD_PERSON_TILT_DEG, 6);
+    });
+
+    it("turns the point of view to their right and down", () => {
+        const p = pose();
+        const view = povPose(p, povLookOf({ angleDeg: 90, tiltDeg: -60 }));
+        // Facing +Z, their right is −X; looking down.
+        expect(view.target[0]).toBeLessThan(view.position[0]);
+        expect(view.target[1]).toBeLessThan(view.position[1]);
+        const back = povFraming(povLookOf({ angleDeg: -45, tiltDeg: 20 }));
+        expect(back.angleDeg).toBeCloseTo(-45, 6);
+        expect(back.tiltDeg).toBeCloseTo(20, 6);
+        expect(povLookOf().pitch).toBeCloseTo(POV_DEFAULT_PITCH, 9);
+    });
+
+    it("re-aims a follow camera live without flying again", () => {
+        const camera = new PerspectiveCamera();
+        const rig = new RigController(camera);
+        const p = pose();
+        const controller = new FollowController(rig, camera, {
+            poseInto: (_id, out) => {
+                Object.assign(out, p);
+                return true;
+            },
+            setHidden: () => {},
+            setHeadless: () => {},
+            instant: () => true,
+            turnWithPerformer: () => true,
+            showOwnBody: () => true,
+        });
+        controller.change({ marcherId: 1, mode: "third" }, 0);
+        controller.apply(0);
+        rig.update(FLY_MS + 1);
+        controller.change(
+            {
+                marcherId: 1,
+                mode: "third",
+                framing: { angleDeg: 180, tiltDeg: 0 },
+            },
+            100,
+        );
+        camera.updateMatrixWorld();
+        const target = followTarget(p);
+        close(
+            [camera.position.x, camera.position.y, camera.position.z],
+            [target[0], target[1], target[2] + THIRD_PERSON_DISTANCE],
+            4,
+        );
+        const read = controller.framing();
+        expect(read?.angleDeg).toBeCloseTo(180, 3);
+    });
+});
+
+describe("follow camera limits", () => {
+    it("keeps an outside camera looking up from below above the ground", () => {
+        const view = thirdPersonPose(pose(), { tiltDeg: -85 });
+        expect(view.position[1]).toBeCloseTo(FOLLOW_MIN_HEIGHT, 9);
+    });
+
+    it("rolls the short way round when flying", () => {
+        const camera = new PerspectiveCamera();
+        const rig = new RigController(camera);
+        rig.jumpTo([0, 10, 10], [0, 0, 0], SEAT_FOV_DEG, 170);
+        rig.flyTo([0, 10, 10], [0, 0, 0], { nowMs: 0, rollDeg: -170 });
+        rig.update(0);
+        rig.update(FLY_MS / 2);
+        // Halfway from 170° to −170° the short way is 180°, not 0°.
+        expect(Math.abs(rig.rollDeg)).toBeGreaterThan(170);
     });
 });

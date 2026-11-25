@@ -21,11 +21,13 @@ import {
     createShadowState,
     nextFrameDelay,
     noteFrame,
+    onlyUnlitChanged,
     refreshShadows,
     shadowsNeedUpdate,
     wake,
 } from "./drawPolicy";
 import { registerDrawWaker } from "./drawWake";
+import { showCamerasKeys } from "@/hooks/queries/useShowCameras";
 
 /** How long each kind of change keeps the window drawing (ms). */
 const WAKE = {
@@ -68,14 +70,27 @@ export default function DrawWhenNeeded() {
         kickLit(WAKE.scene);
 
         const unsubscribe = [
-            useView3dSceneStore.subscribe(() => kickLit(WAKE.scene)),
+            useView3dSceneStore.subscribe((next, prev) =>
+                onlyUnlitChanged(next, prev)
+                    ? kick(WAKE.camera)
+                    : kickLit(WAKE.scene),
+            ),
             useCameraStore.subscribe(() => kick(WAKE.camera)),
             // The Director turning on or off, or getting its track.
             useDirectorStore.subscribe(() => kick(WAKE.camera)),
             // Following a performer, its settings, or a body left out.
             useFollowStore.subscribe(() => kick(WAKE.camera)),
             useView3dSyncStore.subscribe(() => kickLit(WAKE.sync)),
-            queryClient.getQueryCache().subscribe(() => kickLit(WAKE.data)),
+            queryClient.getQueryCache().subscribe((event) => {
+                // A component starting or stopping to read a query, or the
+                // show's camera lists, change nothing that casts or lights.
+                if (
+                    event.type.startsWith("observer") ||
+                    event.query.queryKey[0] === showCamerasKeys.all()[0]
+                )
+                    kick(WAKE.data);
+                else kickLit(WAKE.data);
+            }),
         ];
         const onWindow = () => kick(WAKE.window);
         window.addEventListener("resize", onWindow);

@@ -12,7 +12,7 @@ import {
     SelectLabel,
     SelectSeparator,
 } from "@openmarch/ui";
-import { StaticFormField } from "../ui/FormField";
+import { StaticFormField, WizardFormField } from "../ui/FormField";
 import { T, useTranslate } from "@tolgee/react";
 import {
     fieldPropertiesQueryOptions,
@@ -26,11 +26,14 @@ import { useDatabaseReady } from "@/hooks/useDatabaseReady";
 interface FieldPropertiesSelectorProps {
     onTemplateChange?: (template: FieldProperties) => void;
     currentTemplate?: FieldProperties;
+    /** The label above the dropdown, as the new show wizard's fields have it */
+    stackedLabel?: boolean;
 }
 
 export default function FieldPropertiesSelector({
     onTemplateChange,
     currentTemplate: externalCurrentTemplate,
+    stackedLabel = false,
 }: FieldPropertiesSelectorProps = {}) {
     const queryClient = useQueryClient();
     const databaseReady = useDatabaseReady();
@@ -92,79 +95,81 @@ export default function FieldPropertiesSelector({
         ? "Custom"
         : currentTemplate?.name || fieldProperties?.name || "";
 
+    const templateSelect = (
+        <Select
+            onValueChange={handleFieldTypeChange}
+            {...(isControlled
+                ? { value: selectValue }
+                : {
+                      defaultValue: fieldProperties?.isCustom
+                          ? "Custom"
+                          : fieldProperties?.name,
+                  })}
+            ref={selectRef}
+        >
+            <SelectTriggerButton
+                label={
+                    currentTemplate?.name ||
+                    fieldProperties?.name ||
+                    t("fieldProperties.fieldType.label")
+                }
+                // In the wizard it fills its column, as the activity beside it does
+                className={stackedLabel ? "w-full" : undefined}
+            />
+            <SelectContent>
+                <SelectGroup>
+                    <SelectLabel>
+                        {t("fieldProperties.fieldTemplate.football")}
+                    </SelectLabel>
+                    {Object.values(FootballTemplates).map((template) => (
+                        <SelectItem key={template.name} value={template.name}>
+                            {template.name}
+                        </SelectItem>
+                    ))}
+                </SelectGroup>
+                <SelectSeparator />
+                <SelectGroup>
+                    <SelectLabel>
+                        {t("fieldProperties.fieldTemplate.grid")}
+                    </SelectLabel>
+                    {Object.values(GridFieldTemplates).map((template) => (
+                        <SelectItem key={template.name} value={template.name}>
+                            {template.name}
+                        </SelectItem>
+                    ))}
+                </SelectGroup>
+                <SelectSeparator />
+                <SelectGroup>
+                    <SelectLabel>
+                        {t("fieldProperties.fieldTemplate.custom")}
+                    </SelectLabel>
+                    {(currentTemplate?.isCustom ||
+                        fieldProperties?.isCustom) && (
+                        <SelectItem key="custom" value="Custom">
+                            {t("fieldProperties.customFieldName")}
+                        </SelectItem>
+                    )}
+                </SelectGroup>
+            </SelectContent>
+        </Select>
+    );
+
     return (
         <div className="flex w-full min-w-0 flex-col gap-16">
             <div className="flex w-full min-w-0 flex-col gap-16">
-                <StaticFormField
-                    label={t("fieldProperties.fieldTemplate.label")}
-                >
-                    <Select
-                        onValueChange={handleFieldTypeChange}
-                        {...(isControlled
-                            ? { value: selectValue }
-                            : {
-                                  defaultValue: fieldProperties?.isCustom
-                                      ? "Custom"
-                                      : fieldProperties?.name,
-                              })}
-                        ref={selectRef}
+                {stackedLabel ? (
+                    <WizardFormField
+                        label={t("fieldProperties.fieldTemplate.label")}
                     >
-                        <SelectTriggerButton
-                            label={
-                                currentTemplate?.name ||
-                                fieldProperties?.name ||
-                                t("fieldProperties.fieldType.label")
-                            }
-                        />
-                        <SelectContent>
-                            <SelectGroup>
-                                <SelectLabel>
-                                    {t(
-                                        "fieldProperties.fieldTemplate.football",
-                                    )}
-                                </SelectLabel>
-                                {Object.values(FootballTemplates).map(
-                                    (template) => (
-                                        <SelectItem
-                                            key={template.name}
-                                            value={template.name}
-                                        >
-                                            {template.name}
-                                        </SelectItem>
-                                    ),
-                                )}
-                            </SelectGroup>
-                            <SelectSeparator />
-                            <SelectGroup>
-                                <SelectLabel>
-                                    {t("fieldProperties.fieldTemplate.grid")}
-                                </SelectLabel>
-                                {Object.values(GridFieldTemplates).map(
-                                    (template) => (
-                                        <SelectItem
-                                            key={template.name}
-                                            value={template.name}
-                                        >
-                                            {template.name}
-                                        </SelectItem>
-                                    ),
-                                )}
-                            </SelectGroup>
-                            <SelectSeparator />
-                            <SelectGroup>
-                                <SelectLabel>
-                                    {t("fieldProperties.fieldTemplate.custom")}
-                                </SelectLabel>
-                                {(currentTemplate?.isCustom ||
-                                    fieldProperties?.isCustom) && (
-                                    <SelectItem key="custom" value="Custom">
-                                        {t("fieldProperties.customFieldName")}
-                                    </SelectItem>
-                                )}
-                            </SelectGroup>
-                        </SelectContent>
-                    </Select>
-                </StaticFormField>
+                        {templateSelect}
+                    </WizardFormField>
+                ) : (
+                    <StaticFormField
+                        label={t("fieldProperties.fieldTemplate.label")}
+                    >
+                        {templateSelect}
+                    </StaticFormField>
+                )}
                 {!isControlled && (
                     <Button
                         className={`h-[2.5rem] items-center ${currentTemplate?.name === fieldProperties?.name ? "hidden" : ""}`}

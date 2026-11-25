@@ -3,6 +3,8 @@ import { describe, expect, it } from "vitest";
 import type { CameraSeat } from "../types";
 import {
     cameraListSchema,
+    followFields,
+    normalizeRoll,
     defaultCameraList,
     EMPTY_SHOW_CAMERAS,
     parseShowCamerasJson,
@@ -110,6 +112,44 @@ describe("editCameraList", () => {
         ).toHaveLength(MAX_CAMERAS);
     });
 
+    it("moves a camera to a place in the list", () => {
+        const ids = list.map((c) => c.id);
+        const moved = (id: string, index: number) =>
+            editCameraList(list, { kind: "moveTo", id, index }).map(
+                (c) => c.id,
+            );
+        expect(moved(ids[0], 2)).toEqual([ids[1], ids[2], ids[0]]);
+        expect(moved(ids[2], 0)).toEqual([ids[2], ids[0], ids[1]]);
+        expect(moved(ids[1], 99)).toEqual([ids[0], ids[2], ids[1]]);
+        expect(moved("gone", 0)).toEqual(ids);
+    });
+
+    it("adds a duplicate right after its original", () => {
+        const next = editCameraList(list, {
+            kind: "add",
+            id: "view1",
+            name: "Front row copy",
+            pose,
+            after: list[1].id,
+        });
+        expect(next.map((c) => c.id)).toEqual([
+            list[0].id,
+            list[1].id,
+            "view1",
+            list[2].id,
+        ]);
+        // An unknown original puts it last.
+        expect(
+            editCameraList(list, {
+                kind: "add",
+                id: "view1",
+                name: "x",
+                pose,
+                after: "gone",
+            })[3].id,
+        ).toBe("view1");
+    });
+
     it("renames, and an empty name gives a default camera its label back", () => {
         const named = editCameraList(list, {
             kind: "rename",
@@ -155,6 +195,59 @@ describe("editCameraList", () => {
             fovDeg: 50,
         });
         expect(next.slice(1)).toEqual(list.slice(1));
+    });
+
+    it("stores roll and follow, and setView without follow makes a fixed camera again", () => {
+        const following = editCameraList([], {
+            kind: "add",
+            id: "view1",
+            name: "Drum major",
+            pose: { ...pose, rollDeg: 370 },
+            follow: { marcherId: 7, mode: "pov" },
+        });
+        expect(following[0]).toMatchObject({
+            rollDeg: 10,
+            follow: { marcherId: 7, mode: "pov" },
+        });
+        expect(cameraListSchema.safeParse(following).success).toBe(true);
+        const fixed = editCameraList(following, {
+            kind: "setView",
+            id: "view1",
+            pose,
+        });
+        expect(fixed[0]).not.toHaveProperty("follow");
+        // Level is the default, so a zero roll isn't stored.
+        expect(fixed[0]).not.toHaveProperty("rollDeg");
+        const resolved = resolveCameras([], following)[0];
+        expect(resolved).toMatchObject({
+            rollDeg: 10,
+            follow: { marcherId: 7, mode: "pov" },
+        });
+    });
+
+    it("stores focus, clamping the f-stop, and drops it when set to none", () => {
+        const focused = editCameraList([], {
+            kind: "add",
+            id: "view1",
+            name: "Soloist",
+            pose,
+            focus: { fStop: 0.5, on: { kind: "performer", marcherId: 4 } },
+        });
+        expect(focused[0]).toMatchObject({
+            focus: { fStop: 0.95, on: { kind: "performer", marcherId: 4 } },
+        });
+        expect(cameraListSchema.safeParse(focused).success).toBe(true);
+        expect(resolveCameras([], focused)[0].focus).toEqual({
+            fStop: 0.95,
+            on: { kind: "performer", marcherId: 4 },
+        });
+        const sharp = editCameraList(focused, {
+            kind: "setView",
+            id: "view1",
+            pose,
+            focus: null,
+        });
+        expect(sharp[0]).not.toHaveProperty("focus");
     });
 
     it("moves within bounds and removes", () => {
@@ -258,5 +351,47 @@ describe("the show's cameras", () => {
                 }),
             ),
         ).toEqual({ version: 1, venues: { hs: { list } } });
+    });
+});
+
+describe("normalizeRoll", () => {
+    it("wraps into -180..180 and drops non-numbers", () => {
+        expect(normalizeRoll(190)).toBe(-170);
+        expect(normalizeRoll(-190)).toBe(170);
+        expect(normalizeRoll(45.678)).toBe(45.68);
+        expect(normalizeRoll(Number.NaN)).toBe(0);
+        expect(Object.is(normalizeRoll(-0), 0)).toBe(true);
+    });
+});
+
+describe("followFields", () => {
+    it("wraps, clamps and rounds a follow camera's aim, dropping defaults", () => {
+        expect(
+            followFields({
+                marcherId: 3,
+                mode: "third",
+                angleDeg: 450,
+                tiltDeg: 99,
+                distanceM: 12.34567,
+            }),
+        ).toEqual({
+            marcherId: 3,
+            mode: "third",
+            angleDeg: 90,
+            tiltDeg: 85,
+            distanceM: 12.346,
+        });
+        expect(
+            followFields({
+                marcherId: 3,
+                mode: "pov",
+                angleDeg: 0,
+                distanceM: 5,
+            }),
+        ).toEqual({ marcherId: 3, mode: "pov" });
+        expect(
+            followFields({ marcherId: 3, mode: "third", angleDeg: -180 })
+                .angleDeg,
+        ).toBe(180);
     });
 });

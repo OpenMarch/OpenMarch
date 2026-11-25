@@ -94,3 +94,29 @@ export function refreshShadows(
 export function shadowsNeedUpdate(state: ShadowState, now: number): boolean {
     return now < state.refreshUntil;
 }
+
+/**
+ * Scene store fields that only move or list cameras: a change to them draws,
+ * but nothing that casts or lights changed, so the shadow map stays. Editing
+ * a camera's settings changes them on every save, and redrawing the shadows
+ * every frame after each one dropped slower machines to low quality.
+ */
+const UNLIT_SCENE_FIELDS: ReadonlySet<string> = new Set([
+    "cameras",
+    "camerasCustomized",
+    "savedCameras",
+    "focus",
+    "onBattery",
+    "controlScheme",
+    "qualityMode",
+    "autoLowered",
+]);
+
+/** True when only fields that don't touch shadows changed. */
+export function onlyUnlitChanged(next: object, prev: object): boolean {
+    const a = next as Record<string, unknown>;
+    const b = prev as Record<string, unknown>;
+    return Object.keys(a).every(
+        (key) => a[key] === b[key] || UNLIT_SCENE_FIELDS.has(key),
+    );
+}

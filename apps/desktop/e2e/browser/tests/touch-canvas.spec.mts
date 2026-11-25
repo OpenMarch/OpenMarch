@@ -418,7 +418,12 @@ test("the tap on another marcher that closes the long press menu doesn't touch t
     await expect(fieldMenu(page)).toBeVisible();
     expect(await selectedDrillNumbers(page)).toEqual(["T2"]);
 
-    await tap(page, await screenOf(page, "T3"));
+    // T1, left of T2: the menu opens to T2's right and is tall enough to cover T3. A tap on one of
+    // its entries closes it too, so the marcher must be clear of it
+    const t1 = await screenOf(page, "T1");
+    const menu = (await fieldMenu(page).boundingBox())!;
+    expect(t1.x, "T1 is clear of the menu").toBeLessThan(menu.x - 8);
+    await tap(page, t1);
     await expect(fieldMenu(page)).toBeHidden();
     await page.waitForTimeout(300);
     expect(await selectedDrillNumbers(page)).toEqual(["T2"]);
