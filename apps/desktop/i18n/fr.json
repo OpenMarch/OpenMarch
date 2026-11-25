@@ -4083,9 +4083,7 @@
         },
         "button": {
             "hint": "Le fichier musical, et le calage des temps sur celui-ci : tempo, chiffrages de mesure, lettres de répétition",
-            "hintOn": "Calez les temps sur la musique. <escape></escape> ou <toggle></toggle> pour quitter.",
             "label": "Modifier la musique",
-            "labelOn": "Modification de la musique",
             "text": "Musique"
         },
         "errors": {
@@ -4093,53 +4091,6 @@
             "moveOneCountLong": "Ce mouvement ne dure qu'un temps",
             "wouldHideSet": "Une image clé finirait alors sur le même temps que le mouvement en dessous, ce qui masquerait la formation de ce mouvement. Supprimez moins de temps, ou faites finir l'image clé un temps plus tôt.",
             "wouldRemovePage": "Cela supprimerait une page. Supprimez moins de temps, ou supprimez d'abord la page."
-        },
-        "help": {
-            "doubleClickLane": {
-                "title": "Ajouter un changement de tempo",
-                "text": "Double-cliquez sur la piste de tempo là où il doit changer. Double-cliquez sur le point d'un changement pour le supprimer."
-            },
-            "dragChangeDot": {
-                "title": "Déplacer un changement de tempo",
-                "text": "Faites glisser son point vers le haut ou le bas pour changer le tempo, ou sur le côté pour déplacer l'endroit où il change."
-            },
-            "dragEndDot": {
-                "title": "Régler la fin d'un rit.",
-                "text": "Faites glisser le point carré à la fin d'un segment, pour que le tempo suivant puisse revenir d'un coup (a tempo)."
-            },
-            "dragLine": {
-                "title": "Régler un tempo",
-                "text": "Faites glisser la ligne de tempo vers le haut ou le bas. Pour saisir un tempo, faites un clic droit et choisissez Définir le tempo…"
-            },
-            "dragMeasures": {
-                "title": "Sélectionner des temps",
-                "text": "Faites glisser le long des mesures ou de la musique, puis modifiez-les tous en une fois."
-            },
-            "dragRoundHandle": {
-                "title": "Changer le tempo progressivement",
-                "text": "Faites glisser la poignée ronde au milieu d'un segment. Double-cliquez dessus pour revenir à un saut."
-            },
-            "keys": {
-                "escape": "Effacer la sélection ou annuler un glissement ; s'il n'y a rien à effacer, arrêter de modifier la musique",
-                "play": "Lire depuis la tête de lecture, ou arrêter là où elle est",
-                "tap": "Tap tempo : tapez sur chaque temps pour voir à quelle vitesse il va",
-                "toggle": "Commencer ou arrêter de modifier la musique",
-                "metronome": "Activer ou désactiver le métronome"
-            },
-            "label": "Comment fonctionne la modification de la musique",
-            "rightClick": {
-                "title": "Points d'orgue et temps",
-                "text": "Faites un clic droit sur un temps pour en faire un point d'orgue, changer le tempo progressivement, ou ajouter et supprimer des temps."
-            },
-            "rightClickMeasure": {
-                "title": "Mesures et lettres de répétition",
-                "text": "Faites un clic droit sur une mesure pour la renuméroter, régler son chiffrage ou ajouter une lettre. Faites glisser une lettre pour la déplacer."
-            },
-            "title": "Caler les temps sur la musique",
-            "musicFile": {
-                "title": "Changer la musique",
-                "text": "Cliquez sur le nom du fichier dans l'en-tête pour changer, importer ou supprimer l'audio, ou régler le décalage de la musique."
-            }
         },
         "importScore": {
             "choose": "Choisir un fichier…",
