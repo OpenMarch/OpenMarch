@@ -2,6 +2,7 @@ words:
   - autocheckpoint
   - FULLFSYNC
   - fsyncs
+  - fstop
   - xattr
   - retarget
   - recents
