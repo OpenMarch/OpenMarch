@@ -947,10 +947,11 @@ const TimelineSurface = memo(function TimelineSurface({
     const bandFocus = !!band?.focus;
     // The cue lanes take presses below their top (as a focused band does): the playhead and the
     // start flag are grabbed above them, so a cue's edge under either line is still the cue's
-    const lanesScroll = useScrollTop(viewportRef, lanes !== undefined);
+    const lanesTakePresses = lanes?.takesPresses === true;
+    const lanesScroll = useScrollTop(viewportRef, lanesTakePresses);
     const linesGrabHeight = bandFocus
         ? trackTop
-        : lanes
+        : lanesTakePresses
           ? Math.max(0, lanesTop - lanesScroll)
           : undefined;
     const appendAtPlayhead =

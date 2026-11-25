@@ -559,14 +559,17 @@ function ShapeEditorBar({
     return (
         <animated.div
             ref={place.ref}
-            className="shape-editor-surface text-sub text-text touch:z-30 pointer-events-none absolute z-10 flex flex-col items-center gap-4 whitespace-nowrap *:pointer-events-auto"
+            // Touch: one above the Inspector's edge tab (z-30). Where the field leaves the bar no
+            // spot clear of the tab, the bar covers the tab rather than the tab covering Place
+            className="shape-editor-surface text-sub text-text touch:z-[31] pointer-events-none absolute z-10 flex flex-col items-center gap-4 whitespace-nowrap *:pointer-events-auto"
             style={place.style}
             data-over={overShape}
             {...place.hold}
             data-testid={testId}
             data-shape-editor
             // #927: holds Place; it keeps off the zoom box, the Inspector's tab and the toolbar
-            // panel itself, and the pill keeps off it
+            // panel itself, and the pill keeps off it. With no clear spot it covers them, the
+            // toolbar panel aside
             data-field-layer="mover"
             data-placement={place.above ? "above" : "below"}
             data-held={place.held}

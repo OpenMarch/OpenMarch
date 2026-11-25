@@ -155,6 +155,17 @@ async function bareRuler(page: Page): Promise<Point> {
     return { x: box.x + box.width / 2, y };
 }
 
+/** Whether a finger at `at` lands on the timeline, not a layer over it (the Inspector's tab) */
+async function onTimeline(page: Page, at: Point): Promise<boolean> {
+    return page.evaluate(
+        ({ x, y }) =>
+            !!document
+                .elementFromPoint(x, y)
+                ?.closest('[data-testid="timeline-viewport"]'),
+        at,
+    );
+}
+
 /**
  * Touches the screen through CDP in phases, so the test can look in between.
  * `to` puts the fingers at `points` (finger `i` is the same finger every time;
@@ -374,14 +385,17 @@ test("a second finger cancels a finger's scrub on the page row and puts the play
     await touch.to(box);
     await touch.drag(box, 120);
     await expect.poll(() => playheadAt(page)).not.toBe(before);
-    // A second finger lands, and the two move a little
-    await touch.to(
-        { x: box.x + 120, y: box.y },
-        { x: box.x + 260, y: box.y + 40 },
-    );
+    // A second finger lands on the timeline, and the two move a little. It lands behind the
+    // first: ahead of it is the timeline's right edge, under the Inspector's tab
+    const second = { x: box.x - 140, y: box.y + 40 };
+    expect(
+        await onTimeline(page, second),
+        "the second finger is on the timeline",
+    ).toBe(true);
+    await touch.to({ x: box.x + 120, y: box.y }, second);
     await touch.to(
         { x: box.x + 110, y: box.y },
-        { x: box.x + 250, y: box.y + 40 },
+        { x: second.x - 10, y: second.y },
     );
     await touch.end();
     await expect.poll(() => playheadAt(page)).toBe(before);
